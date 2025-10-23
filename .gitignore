@@ -1,0 +1,32 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Test and coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Environments
+.venv/
+venv/
+.env
+.env.*
+
+# Tools
+.idea/
+.vscode/
+.DS_Store
+*.log
+.uv/
+
+# Local overrides
+*.local
