@@ -79,7 +79,7 @@ from good_agent.utilities.ulid_monotonic import (
 from .config_types import AGENT_CONFIG_KEYS, AgentOnlyConfig, LLMCommonConfig
 
 if TYPE_CHECKING:
-    from litellm.utils import Choices
+    from .llm_client.compat import Choices
 
 from .components import AgentComponent
 from .config import AgentConfigManager

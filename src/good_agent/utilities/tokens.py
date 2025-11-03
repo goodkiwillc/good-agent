@@ -15,18 +15,11 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from ..messages import Message
 
-# Lazy import litellm to avoid import overhead
-_token_counter = None
-
-
+# Use our own llm_client token counter
 def _get_token_counter():
-    """Lazy load litellm token_counter."""
-    global _token_counter
-    if _token_counter is None:
-        from litellm.utils import token_counter
-
-        _token_counter = token_counter
-    return _token_counter
+    """Get token counting functions from our llm_client."""
+    from ..llm_client.utils.tokens import count_tokens, count_message_tokens as count_msg_tokens
+    return count_tokens, count_msg_tokens
 
 
 @lru_cache(maxsize=1024)
@@ -40,9 +33,9 @@ def count_text_tokens(text: str, model: str = "gpt-4o") -> int:
     Returns:
         Number of tokens in the text
     """
-    token_counter = _get_token_counter()
+    count_tokens, _ = _get_token_counter()
     try:
-        return token_counter(model=model, text=text)
+        return count_tokens(text, model=model)
     except Exception as e:
         logger.warning(f"Failed to count tokens for text: {e}")
         # Fallback to rough estimation (4 chars per token)
@@ -64,20 +57,21 @@ def count_message_tokens(
     Returns:
         Number of tokens in the message
     """
-    token_counter = _get_token_counter()
-
+    from ..llm_client.types.common import Message
+    from ..llm_client.utils.tokens import count_message_tokens as count_msg_tokens
+    
     try:
-        # Extract tool calls if present
-        tool_calls = None
-        if include_tools and "tool_calls" in message_dict:
-            tool_calls = message_dict.get("tool_calls")
-
-        # Count tokens using litellm
-        return token_counter(
-            model=model,
-            messages=[message_dict],
-            tools=tool_calls if tool_calls else None,
+        # Convert dict to Message object
+        msg = Message(
+            role=message_dict.get("role", "user"),
+            content=message_dict.get("content"),
+            name=message_dict.get("name"),
+            tool_calls=message_dict.get("tool_calls") if include_tools else None,
+            tool_call_id=message_dict.get("tool_call_id")
         )
+        
+        # Count tokens using our llm_client
+        return count_msg_tokens([msg], model=model)
     except Exception as e:
         logger.warning(f"Failed to count tokens for message: {e}")
         # Fallback to content-based counting
@@ -102,23 +96,24 @@ def count_messages_tokens(
     Returns:
         Total number of tokens across all messages
     """
-    token_counter = _get_token_counter()
-
+    from ..llm_client.types.common import Message
+    from ..llm_client.utils.tokens import count_message_tokens as count_msg_tokens
+    
     try:
-        # Extract tools from assistant messages if present
-        tools = []
-        if include_tools:
-            for msg in messages:
-                if msg.get("role") == "assistant" and "tool_calls" in msg:
-                    msg_tools = msg.get("tool_calls", [])
-                    if msg_tools:
-                        tools.extend(msg_tools)
-
-        return token_counter(
-            model=model,
-            messages=messages,
-            tools=tools if tools else None,
-        )
+        # Convert dicts to Message objects
+        msg_objects = []
+        for msg in messages:
+            msg_obj = Message(
+                role=msg.get("role", "user"),
+                content=msg.get("content"),
+                name=msg.get("name"),
+                tool_calls=msg.get("tool_calls") if include_tools else None,
+                tool_call_id=msg.get("tool_call_id")
+            )
+            msg_objects.append(msg_obj)
+        
+        # Count tokens using our llm_client
+        return count_msg_tokens(msg_objects, model=model)
     except Exception as e:
         logger.warning(f"Failed to count tokens for messages: {e}")
         # Fallback to sum of individual message counts

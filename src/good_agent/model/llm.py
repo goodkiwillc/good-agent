@@ -82,11 +82,10 @@ from .manager import ManagedRouter, ModelManager
 from .overrides import model_override_registry
 
 if TYPE_CHECKING:
-    from litellm.types.completion import (
-        ChatCompletionMessageParam,
-    )
-    from litellm.types.utils import Choices, StreamingChoices, Usage
-    from litellm.utils import ModelResponse
+    # Use our compatibility layer
+    from ..llm_client.compat import ModelResponse, Usage, Choices, StreamingChoices
+    from typing import Any
+    ChatCompletionMessageParam = Any
 
 
 class ModelResponseProtocol(Protocol):
@@ -278,17 +277,20 @@ class LanguageModel(AgentComponent):
         """Lazy-load litellm types only when needed."""
         if type_name not in cls._litellm_types_cache:
             if type_name == "ChatCompletionContentPartTextParam":
-                from litellm.types.completion import ChatCompletionContentPartTextParam
+                # ChatCompletionContentPartTextParam is just a dict
+                ChatCompletionContentPartTextParam = dict
 
                 cls._litellm_types_cache[type_name] = ChatCompletionContentPartTextParam
             elif type_name == "ChatCompletionContentPartImageParam":
-                from litellm.types.completion import ChatCompletionContentPartImageParam
+                # ChatCompletionContentPartImageParam is just a dict
+                ChatCompletionContentPartImageParam = dict
 
                 cls._litellm_types_cache[type_name] = (
                     ChatCompletionContentPartImageParam
                 )
             elif type_name == "ImageURL":
-                from litellm.types.completion import ImageURL
+                # ImageURL is just a dict
+                ImageURL = dict
 
                 cls._litellm_types_cache[type_name] = ImageURL
             elif type_name == "ChatCompletionFileObject":
@@ -296,33 +298,40 @@ class LanguageModel(AgentComponent):
 
                 cls._litellm_types_cache[type_name] = ChatCompletionFileObject
             elif type_name == "ChatCompletionFileObjectFile":
-                from litellm.types.llms.openai import ChatCompletionFileObjectFile
+                # ChatCompletionFileObjectFile is just a dict
+                ChatCompletionFileObjectFile = dict
 
                 cls._litellm_types_cache[type_name] = ChatCompletionFileObjectFile
             elif type_name == "ChatCompletionSystemMessageParam":
-                from litellm.types.completion import ChatCompletionSystemMessageParam
+                # ChatCompletionSystemMessageParam is just a dict
+                ChatCompletionSystemMessageParam = dict
 
                 cls._litellm_types_cache[type_name] = ChatCompletionSystemMessageParam
             elif type_name == "ChatCompletionUserMessageParam":
-                from litellm.types.completion import ChatCompletionUserMessageParam
+                # ChatCompletionUserMessageParam is just a dict
+                ChatCompletionUserMessageParam = dict
 
                 cls._litellm_types_cache[type_name] = ChatCompletionUserMessageParam
             elif type_name == "ChatCompletionAssistantMessageParam":
-                from litellm.types.completion import ChatCompletionAssistantMessageParam
+                # ChatCompletionAssistantMessageParam is just a dict
+                ChatCompletionAssistantMessageParam = dict
 
                 cls._litellm_types_cache[type_name] = (
                     ChatCompletionAssistantMessageParam
                 )
             elif type_name == "ChatCompletionToolMessageParam":
-                from litellm.types.completion import ChatCompletionToolMessageParam
+                # ChatCompletionToolMessageParam is just a dict
+                ChatCompletionToolMessageParam = dict
 
                 cls._litellm_types_cache[type_name] = ChatCompletionToolMessageParam
             elif type_name == "Function":
-                from litellm.types.completion import Function
+                # Function is just a dict
+                Function = dict
 
                 cls._litellm_types_cache[type_name] = Function
             elif type_name == "ChatCompletionMessageToolCallParam":
-                from litellm.types.completion import ChatCompletionMessageToolCallParam
+                # ChatCompletionMessageToolCallParam is just a dict
+                ChatCompletionMessageToolCallParam = dict
 
                 cls._litellm_types_cache[type_name] = ChatCompletionMessageToolCallParam
             else:
@@ -843,7 +852,8 @@ class LanguageModel(AgentComponent):
     def litellm(self) -> Any:
         """Compatibility property - returns router for gradual migration"""
         if not self._litellm:
-            import litellm
+            # Litellm removed - using our own client
+            pass  # No-op
 
             # litellm.callbacks = ["langfuse_otel"]
 
@@ -1533,7 +1543,7 @@ class LanguageModel(AgentComponent):
 
             # Lazy load ModelResponse for type parameter
             # Always use apply_typed at runtime
-            from litellm.utils import ModelResponse
+            from ..llm_client.compat import ModelResponse
 
             ctx = await self.agent.apply_typed(
                 AgentEvents.LLM_COMPLETE_AFTER,

@@ -453,7 +453,8 @@ class ModelOverrideRegistry:
 
         # Populate from litellm support helpers when available
         try:
-            import litellm
+            # Litellm removed - using our own client for capability detection
+            pass  # No-op, we have our own detection
 
             capability_to_litellm = {
                 "function_calling": "supports_function_calling",

@@ -25,8 +25,15 @@ from .overrides import (
 )
 
 if TYPE_CHECKING:
-    from litellm.integrations.custom_logger import CustomLogger
-    from litellm.router import CustomStreamWrapper, ModelResponse, Router
+    # Use our compatibility layer instead of litellm
+    from ..llm_client.compat import CustomStreamWrapper, ModelResponse, Router
+    # CustomLogger can be any callable - use Protocol
+    from typing import Protocol
+    
+    class CustomLogger(Protocol):
+        """Protocol for logger callbacks."""
+        async def async_log_success_event(self, *args, **kwargs): ...
+        async def async_log_failure_event(self, *args, **kwargs): ...
 
 
 @dataclass
@@ -84,7 +91,7 @@ def get_managed_router_class():
 
     if _ManagedRouterClass is None:
         # Import Router only when first needed
-        from litellm.router import Router
+        from ..llm_client.compat import Router
 
         class _ManagedRouter(Router):
             """
@@ -155,11 +162,9 @@ def get_managed_router_class():
 
                 # HACK: Temporarily monkey-patch litellm's callback manager to prevent registration
                 # Save original methods
-                import litellm
-
-                original_add_async_success = (
-                    litellm.logging_callback_manager.add_litellm_async_success_callback
-                )
+                # Litellm callback system removed - using our router's hooks instead
+                # No need for monkey-patching anymore
+                pass
                 original_add_success = (
                     litellm.logging_callback_manager.add_litellm_success_callback
                 )
@@ -485,7 +490,8 @@ class ModelManager:
         # Also register with litellm's model cost tracking if costs provided
         if model_def.input_cost_per_token or model_def.output_cost_per_token:
             try:
-                import litellm
+                # Litellm cost registration removed - using our own client
+                pass  # No-op, we don't need litellm registration
 
                 litellm.model_cost[name] = {
                     "input_cost_per_token": model_def.input_cost_per_token,

@@ -88,7 +88,7 @@ from .model.llm import StreamChunk
 from .tools import ToolCall, ToolCallFunction, ToolResponse
 
 if TYPE_CHECKING:
-    from litellm.utils import Usage
+    from .llm_client.compat import Usage
 
     from .agent import Agent
 
@@ -277,7 +277,7 @@ class MockQueuedLanguageModel:
         # Create a mock LLM response structure that matches what the agent expects
         # Create a proper Choices object and Message
         # Create mock message object
-        from litellm.utils import Message as LiteLLMMessage
+        from .llm_client.compat import Message as LiteLLMMessage
 
         message = LiteLLMMessage()
         message.content = response.content or ""
@@ -302,7 +302,7 @@ class MockQueuedLanguageModel:
 
         # Create the Choices object
         # Create mock choice object
-        from litellm.utils import Choices
+        from .llm_client.compat import Choices
 
         choice = Choices()
         choice.message = message
@@ -322,7 +322,7 @@ class MockQueuedLanguageModel:
             mock_llm_response.usage = response.usage
         else:
             # Default usage for mocks
-            from litellm.utils import Usage
+            from .llm_client.compat import Usage
 
             usage = Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15)
             mock_llm_response.usage = usage
@@ -852,7 +852,7 @@ class MockLanguageModel:
             self.mock_complete_response = mock_response
 
         # Mock usage tracking
-        from litellm.utils import Usage
+        from .llm_client.compat import Usage
 
         self.last_usage = Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15)
         self.total_tokens += self.last_usage.total_tokens
@@ -998,7 +998,7 @@ def create_usage(
     """
     if total_tokens is None:
         total_tokens = prompt_tokens + completion_tokens
-    from litellm.utils import Usage
+    from .llm_client.compat import Usage
 
     return Usage(
         prompt_tokens=prompt_tokens,

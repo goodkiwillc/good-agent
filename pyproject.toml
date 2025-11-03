@@ -13,7 +13,6 @@ dependencies = [
     "jinja2>=3.1.6",
     "lxml-html-clean>=0.4.3",
     "markdown>=3.9",
-    "litellm>=1.50.0",
     "logfire>=1.0.0",
     "mcp>=1.0.0",
     "rich>=13.7.0",
@@ -21,6 +20,9 @@ dependencies = [
     "pydantic>=2.12.3",
     "python-magic>=0.4.27",
     "types-lxml>=2025.8.25",
+    # LLM client dependencies (replacing litellm)
+    "openai>=1.0.0",
+    "tiktoken>=0.5.0",
 ]
 
 [build-system]
