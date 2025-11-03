@@ -13,9 +13,16 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import typer
 import yaml
+from rich import print as rprint
+from rich.console import Console
+from rich.panel import Panel
+from rich.syntax import Syntax
+from rich.table import Table
+from rich.tree import Tree
 
 # Agent templating components
 from good_agent.templating.index import TemplateIndex, TemplateVersionManager
@@ -24,12 +31,6 @@ from good_agent.templating.storage import (
     FileTemplateManager,
     TemplateValidator,
 )
-from rich import print as rprint
-from rich.console import Console
-from rich.panel import Panel
-from rich.syntax import Syntax
-from rich.table import Table
-from rich.tree import Tree
 
 console = Console()
 app = typer.Typer(help="Manage prompt templates")
@@ -266,7 +267,7 @@ def list_templates(
 
     elif format == "tree":
         tree = Tree("📁 Templates")
-        by_dir: dict[str, list[tuple[str, any]]] = {}
+        by_dir: dict[str, list[tuple[str, Any]]] = {}
         for template in templates:
             parts = template.name.split("/")
             if len(parts) > 1:
@@ -445,7 +446,7 @@ def render(
     config = _load_config()
     prompts_dir = project_root / config.get("prompts_dir", "prompts")
 
-    context_dict: dict[str, any] = {}
+    context_dict: dict[str, Any] = {}
     if context:
         try:
             context_dict = json.loads(context)

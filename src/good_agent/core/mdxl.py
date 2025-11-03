@@ -123,7 +123,6 @@ class MDXL:
         self,
         content: str | etree._Element,
         parent: MDXL | None = None,
-        convert_legacy: bool = True,
     ):
         """Initialize MDXL from string or element.
 
@@ -134,15 +133,7 @@ class MDXL:
         """
         self._version: str | None = None  # Store detected version
         if isinstance(content, str):
-            # Check if we need to convert legacy v1 content
-            if convert_legacy and self._should_convert_legacy(content):
-                with open("truth.v1.mdxl", "w") as f:
-                    f.write(content)
-                from .migration import MDXLMigrator
-
-                content = MDXLMigrator.migrate_to_v2(content, citation_urls=None)
-                with open("truth.v2.mdxl", "w") as f:
-                    f.write(content)
+            # Check if we need to convert legacy v1 conten
             self._root = self._parse(content)
         else:
             self._root = content
