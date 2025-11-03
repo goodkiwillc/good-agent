@@ -8,12 +8,12 @@ Import time is optimized to be <200ms.
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .router import ModelRouter
+    from .router import Router
     from .types.chat import ChatRequest, ChatResponse, StreamChunk
     from .types.common import Message, Usage, ModelResponse
 
 __all__ = [
-    "ModelRouter",
+    "Router",
     "ChatRequest",
     "ChatResponse",
     "StreamChunk",
@@ -30,9 +30,9 @@ def __getattr__(name: str) -> Any:
     """Lazy load modules on first access."""
     if name in __all__:
         if name not in _cache:
-            if name == "ModelRouter":
-                from .router import ModelRouter
-                _cache[name] = ModelRouter
+            if name == "Router":
+                from .router import Router
+                _cache[name] = Router
             elif name in ("ChatRequest", "ChatResponse", "StreamChunk"):
                 from . import types as _types_module
                 _cache[name] = getattr(_types_module.chat, name)
