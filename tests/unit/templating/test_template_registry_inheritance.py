@@ -1,0 +1,251 @@
+"""
+Test suite for TemplateRegistry hierarchical inheritance functionality.
+
+Tests the new parent registry lookup system that allows TemplateManager
+instances to create local registries that can fall back to the global registry.
+"""
+
+import pytest
+from good_agent import Agent
+from good_agent.templating import (
+    TEMPLATE_REGISTRY,
+    TemplateRegistry,
+    add_named_template,
+    get_named_template,
+)
+from jinja2 import TemplateNotFound
+
+
+@pytest.fixture(autouse=True)
+def clear_global_templates():
+    """Clear global templates before each test to prevent interference"""
+    # Store original templates
+    original_templates = dict(TEMPLATE_REGISTRY.templates)
+
+    # Clear for test
+    TEMPLATE_REGISTRY._templates.clear()
+
+    yield
+
+    # Restore original templates
+    TEMPLATE_REGISTRY._templates.clear()
+    TEMPLATE_REGISTRY._templates.update(original_templates)
+
+
+def test_template_registry_parent_lookup():
+    """Test that TemplateRegistry can lookup templates from parent registry"""
+    # Add template to global registry
+    add_named_template("global_test", "Global: {{ value }}")
+
+    # Create local registry with global as parent
+    local_registry = TemplateRegistry(parent=TEMPLATE_REGISTRY)
+
+    # Should find global template
+    template = local_registry.get_template("global_test")
+    assert "Global: {{ value }}" == template
+
+    # Should also work via get_source (Jinja2 loader interface)
+    source, _, _ = local_registry.get_source(None, "global_test")
+    assert "Global: {{ value }}" == source
+
+
+def test_template_registry_local_override():
+    """Test that local templates take precedence over parent templates"""
+    # Add template to global registry
+    add_named_template("shared_name", "Global version")
+
+    # Create local registry
+    local_registry = TemplateRegistry(parent=TEMPLATE_REGISTRY)
+
+    # Add template with same name locally
+    local_registry.add_template("shared_name", "Local version")
+
+    # Should get local version
+    template = local_registry.get_template("shared_name")
+    assert "Local version" == template
+
+    # Global should still have its version
+    global_template = get_named_template("shared_name")
+    assert "Global version" == global_template
+
+
+def test_template_registry_list_templates():
+    """Test that list_templates includes both local and parent templates"""
+    # Add global templates
+    add_named_template("global_1", "Global 1")
+    add_named_template("global_2", "Global 2")
+
+    # Create local registry
+    local_registry = TemplateRegistry(parent=TEMPLATE_REGISTRY)
+    local_registry.add_template("local_1", "Local 1")
+    local_registry.add_template("local_2", "Local 2")
+
+    # Should include all templates
+    names = local_registry.list_templates()
+    assert "global_1" in names
+    assert "global_2" in names
+    assert "local_1" in names
+    assert "local_2" in names
+    assert len(names) >= 4
+
+
+def test_template_registry_get_template_names():
+    """Test that get_template_names includes both local and parent templates"""
+    # Add global template
+    add_named_template("global_template", "Global")
+
+    # Create local registry
+    local_registry = TemplateRegistry(parent=TEMPLATE_REGISTRY)
+    local_registry.add_template("local_template", "Local")
+
+    # Should include both
+    names = local_registry.get_template_names()
+    assert "global_template" in names
+    assert "local_template" in names
+
+
+def test_template_registry_getitem_lookup():
+    """Test that __getitem__ supports parent lookup"""
+    # Add global template
+    add_named_template("bracket_test", "Bracket access")
+
+    # Create local registry
+    local_registry = TemplateRegistry(parent=TEMPLATE_REGISTRY)
+
+    # Should work with bracket notation
+    template = local_registry["bracket_test"]
+    assert "Bracket access" == template
+
+
+def test_template_not_found_with_parent():
+    """Test that TemplateNotFound is raised when template not found anywhere"""
+    # Create local registry with empty global parent
+    local_registry = TemplateRegistry(parent=TEMPLATE_REGISTRY)
+
+    # Should raise TemplateNotFound
+    with pytest.raises(TemplateNotFound):
+        local_registry.get_template("nonexistent")
+
+    with pytest.raises(TemplateNotFound):
+        local_registry["nonexistent"]
+
+    with pytest.raises(TemplateNotFound):
+        local_registry.get_source(None, "nonexistent")
+
+
+def test_template_registry_no_parent():
+    """Test that registry works without parent (original behavior)"""
+    # Create registry with explicit no parent (forces new instance)
+    standalone_registry = TemplateRegistry({}, parent=None)
+    standalone_registry.add_template("standalone", "Standalone template")
+
+    # Should work normally
+    template = standalone_registry.get_template("standalone")
+    assert "Standalone template" == template
+
+    # Should not find global templates (since we're not using the global singleton)
+    add_named_template("global_only", "Global only")
+    with pytest.raises(TemplateNotFound):
+        standalone_registry.get_template("global_only")
+
+
+def test_global_registry_singleton_behavior():
+    """Test that global registry maintains singleton behavior"""
+    # These should be the same instance
+    registry1 = TemplateRegistry()
+    registry2 = TemplateRegistry()
+    assert registry1 is registry2
+    assert registry1 is TEMPLATE_REGISTRY
+
+
+def test_non_global_registry_instances():
+    """Test that registries with parameters create new instances"""
+    # These should be different instances
+    registry1 = TemplateRegistry(parent=TEMPLATE_REGISTRY)
+    registry2 = TemplateRegistry(parent=TEMPLATE_REGISTRY)
+    assert registry1 is not registry2
+    assert registry1 is not TEMPLATE_REGISTRY
+    assert registry2 is not TEMPLATE_REGISTRY
+
+
+@pytest.mark.asyncio
+async def test_agent_template_manager_inheritance():
+    """Test that Agent's TemplateManager uses parent registry lookup"""
+    # Add global template
+    add_named_template("agent_global", "Agent can use global: {{ msg }}")
+
+    # Create agent
+    agent = Agent("Test system", context={"msg": "hello"})
+    await agent.ready()
+
+    try:
+        # Agent should find global template
+        template = agent.template.get_template("agent_global")
+        assert "Agent can use global: {{ msg }}" == template
+
+        # Agent should be able to add local templates
+        agent.template.add_template("agent_local", "Local template: {{ msg }}")
+        local_template = agent.template.get_template("agent_local")
+        assert "Local template: {{ msg }}" == local_template
+
+        # Both should be in template names
+        names = agent.template._registry.get_template_names()
+        assert "agent_global" in names
+        assert "agent_local" in names
+
+    finally:
+        await agent.async_close()
+
+
+@pytest.mark.asyncio
+async def test_agent_template_rendering_with_inheritance():
+    """Test that agent can render templates from both local and global registries"""
+    # Add global template
+    add_named_template("greeting", "Hello {{ name }}!")
+
+    # Create agent
+    agent = Agent("Test system", context={"name": "World"})
+    await agent.ready()
+
+    try:
+        # Add message using global template via include
+        agent.append("Message: {% include 'greeting' %}")
+
+        # Should render successfully
+        rendered = agent.messages[-1].render()
+        assert "Message: Hello World!" == rendered.strip()
+
+    finally:
+        await agent.async_close()
+
+
+@pytest.mark.asyncio
+async def test_agent_local_template_override():
+    """Test that agent's local templates override global ones"""
+    # Add global template
+    add_named_template("override_test", "Global version: {{ value }}")
+
+    # Create agent
+    agent = Agent("Test system", context={"value": "test"})
+    await agent.ready()
+
+    try:
+        # Agent should initially get global version
+        template = agent.template.get_template("override_test")
+        assert "Global version: {{ value }}" == template
+
+        # Add local override
+        agent.template.add_template(
+            "override_test", "Local version: {{ value }}", replace=True
+        )
+
+        # Should now get local version
+        template = agent.template.get_template("override_test")
+        assert "Local version: {{ value }}" == template
+
+        # Global should be unchanged
+        global_template = get_named_template("override_test")
+        assert "Global version: {{ value }}" == global_template
+
+    finally:
+        await agent.async_close()

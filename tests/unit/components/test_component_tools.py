@@ -1,0 +1,206 @@
+"""Test tool decorator with AgentComponent methods."""
+
+from typing import TYPE_CHECKING
+
+import pytest
+from good_agent import Agent, AgentComponent, tool
+from good_agent.tools import Tool
+from pydantic import BaseModel
+
+
+class ToDoItem(BaseModel):
+    """A single to-do item."""
+
+    task: str
+    completed: bool = False
+
+
+class ToDoList(BaseModel):
+    """A to-do list."""
+
+    name: str | None = None
+    items: list[ToDoItem]
+
+
+class TaskManager(AgentComponent):
+    """Example component with tool methods."""
+
+    lists: dict[str, ToDoList] = {}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lists = {}
+
+    @tool
+    def create_list(self, name: str | None = None) -> str:
+        """Create a new to-do list with an optional name. Returns the ID of the new list."""
+        list_id = f"list-{len(self.lists) + 1}"
+        self.lists[list_id] = ToDoList(name=name, items=[])
+        return list_id
+
+    @tool(name="add_task", description="Add a task to a to-do list")
+    def add_item(self, list_id: str, task: str) -> bool:
+        """Add a task to the specified list."""
+        if list_id in self.lists:
+            self.lists[list_id].items.append(ToDoItem(task=task))
+            return True
+        return False
+
+    @tool
+    async def get_list(self, list_id: str) -> ToDoList | None:
+        """Get a to-do list by ID."""
+        return self.lists.get(list_id)
+
+    # Regular method (not a tool)
+    def get_all_lists(self) -> dict[str, ToDoList]:
+        """Get all to-do lists."""
+        return self.lists
+
+
+@pytest.mark.asyncio
+async def test_component_tools_registration():
+    """Test that component tools are properly registered with the agent."""
+    # Create agent with TaskManager component
+    task_manager = TaskManager()
+    agent = Agent("You are a task management assistant", extensions=[task_manager])
+    await agent.ready()
+
+    # Tools should now be registered immediately after ready() completes
+
+    # Check that tools were registered
+    assert "create_list" in agent.tools
+    assert "add_task" in agent.tools  # Using custom name
+    assert "get_list" in agent.tools
+
+    # Regular methods should not be registered
+    assert "get_all_lists" not in agent.tools
+
+    # Tools should be callable
+    create_tool = agent.tools["create_list"]
+    assert isinstance(create_tool, Tool)
+
+    # Test calling the tool
+    result = await create_tool(_agent=agent, name="Shopping")
+    assert result.success
+    assert result.response == "list-1"
+    assert task_manager.lists["list-1"].name == "Shopping"
+
+
+@pytest.mark.asyncio
+async def test_component_tools_execution():
+    """Test that component tools can be executed through the agent."""
+    task_manager = TaskManager()
+    agent = Agent(
+        "You are a task management assistant. Use the tools to manage tasks.",
+        extensions=[task_manager],
+    )
+    await agent.ready()
+
+    # Call agent with a request that should use tools
+    response = await agent.call("Create a new list called 'Work Tasks'")
+
+    # Check that a list was created
+    assert len(task_manager.lists) > 0
+
+    # The list should have the requested name
+    created_lists = [
+        lst for lst in task_manager.lists.values() if lst.name == "Work Tasks"
+    ]
+    assert len(created_lists) > 0
+
+
+@pytest.mark.asyncio
+async def test_component_tool_with_agent_reference():
+    """Test that tool methods have access to the agent via self.agent."""
+    from good_agent import tool  # Import tool locally to avoid scope issues
+
+    class SmartTaskManager(AgentComponent):
+        @tool
+        def create_contextual_list(self, name: str) -> str:
+            """Create a list with context from the agent."""
+            # Access agent through self.agent
+            agent_context = self.agent.context if self.agent else {}
+            list_id = f"list-{id(self)}"
+            # In real usage, you could use agent context, messages, etc.
+            return f"Created {name} for agent with {len(self.agent.messages)} messages"
+
+    manager = SmartTaskManager()
+    agent = Agent("Assistant", extensions=[manager])
+    await agent.ready()
+
+    # Add some messages
+    agent.append("Hello")
+    agent.append("Create a list")
+
+    # Call the tool
+    _tool = agent.tools["create_contextual_list"]
+    result = await _tool(_agent=agent, name="Test")
+    assert result.success
+    assert "3 messages" in result.response  # System + 2 user messages
+
+
+@pytest.mark.asyncio
+async def test_component_tool_type_checking():
+    """Test that type checking works correctly with component tools."""
+    # This test mainly verifies that the code compiles with proper type hints
+
+    class TypedManager(AgentComponent):
+        @tool
+        def sync_method(self, x: int) -> int:
+            """A synchronous tool method."""
+            return x * 2
+
+        @tool
+        async def async_method(self, x: int) -> int:
+            """An async tool method."""
+            return x * 3
+
+    manager = TypedManager()
+    agent = Agent("Test", extensions=[manager])
+    await agent.ready()
+
+    # Both sync and async methods should be registered as tools
+    assert "sync_method" in agent.tools
+    assert "async_method" in agent.tools
+
+    # Both should work when called
+    sync_result = await agent.tools["sync_method"](_agent=agent, x=5)
+    assert sync_result.response == 10
+
+    async_result = await agent.tools["async_method"](_agent=agent, x=5)
+    assert async_result.response == 15
+
+    # Type checking verification (this would be caught at type-check time)
+    if TYPE_CHECKING:
+        # The decorated methods should preserve their signatures
+        _: int = manager.sync_method(5)  # Should type check
+        _: int = await manager.async_method(5)  # Should type check with await
+
+
+@pytest.mark.asyncio
+async def test_component_tool_with_hide_parameter():
+    """Test that component tools can hide parameters from the schema."""
+    from good_agent import tool  # Import tool locally to avoid scope issues
+
+    class SecureManager(AgentComponent):
+        @tool(hide=["api_key"])
+        def secure_operation(self, data: str, api_key: str = "secret") -> str:
+            """Perform a secure operation."""
+            return f"Processed {data} with key {api_key[:3]}..."
+
+    manager = SecureManager()
+    agent = Agent("Test", extensions=[manager])
+    await agent.ready()
+
+    tool = agent.tools["secure_operation"]
+
+    # The hidden parameter should not be in the tool signature
+    signature = tool.signature
+    properties = signature["function"]["parameters"]["properties"]
+    assert "data" in properties
+    assert "api_key" not in properties
+
+    # But the tool should still work with the hidden parameter
+    result = await tool(_agent=agent, data="test", api_key="my_secret_key")
+    assert result.success
+    assert "my_" in result.response
