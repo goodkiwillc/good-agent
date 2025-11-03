@@ -36,6 +36,10 @@ class StreamChunk(BaseModel):
     model: str = Field(description="The model used")
     choices: list[dict[str, Any]] = Field(description="Delta choices")
     created: int = Field(description="Unix timestamp")
+    raw_response: dict[str, Any] | None = Field(
+        default=None,
+        description="Raw response from the provider, preserving all fields"
+    )
     
     def get_content(self) -> str | None:
         """Extract content from the first choice delta."""
@@ -55,6 +59,10 @@ class ChatResponse(BaseModel):
     choices: list[dict[str, Any]] = Field(description="Completion choices")
     usage: Usage = Field(description="Token usage")
     created: int = Field(description="Unix timestamp")
+    raw_response: dict[str, Any] | None = Field(
+        default=None,
+        description="Raw response from the provider, preserving all fields"
+    )
     
     def get_content(self) -> str | None:
         """Extract content from the first choice."""
