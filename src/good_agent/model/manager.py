@@ -4,11 +4,10 @@ Model Manager for centralized LLM configuration and management.
 This module provides:
 1. ManagedRouter: Extended Router with per-instance callback isolation
 2. ModelManager: Global registry for custom models and Router creation
-3. Integration with litellm's native model registration
+3. Integration with our custom LLM client
 
-The ManagedRouter extends litellm's Router to provide all its functionality
-(retries, fallbacks, routing strategies, load balancing) while ensuring
-complete callback isolation between different agent instances.
+The ManagedRouter extends our Router to provide callback isolation,
+ensuring that different agent instances don't interfere with each other.
 """
 
 import asyncio
@@ -53,11 +52,11 @@ class ModelDefinition:
     custom_llm_provider: str | None = None
     extra_params: dict[str, Any] = field(default_factory=dict)
 
-    def to_litellm_params(self) -> dict[str, Any]:
-        """Convert to litellm model parameters."""
+    def to_router_params(self) -> dict[str, Any]:
+        """Convert to router model parameters."""
         params = {
             "model": self.name,
-            "litellm_provider": self.provider,
+            "provider": self.provider,
             "input_cost_per_token": self.input_cost_per_token,
             "output_cost_per_token": self.output_cost_per_token,
             "max_tokens": self.max_tokens,
@@ -77,8 +76,8 @@ class ModelDefinition:
         return params
 
     def to_deployment(self) -> dict[str, Any]:
-        """Convert to litellm deployment configuration."""
-        return {"model_name": self.name, "litellm_params": self.to_litellm_params()}
+        """Convert to router deployment configuration."""
+        return {"model_name": self.name, "params": self.to_router_params()}
 
 
 # Global variable to store the actual ManagedRouter class
@@ -97,14 +96,9 @@ def get_managed_router_class():
             """
             Extended Router with managed callback handling for true isolation.
 
-            This Router subclass maintains all of litellm Router's functionality
-            while providing complete callback isolation between instances. Callbacks
-            are managed per-instance and invoked manually, bypassing litellm's global
-            callback system.
-
-            Note: LiteLLM internally tracks deployment callbacks and has a hard limit
-            of 30. To avoid hitting this limit, we override the deployment callbacks
-            with no-ops BEFORE Router.__init__ is called, preventing any global registration.
+            This Router subclass provides complete callback isolation between instances.
+            Callbacks are managed per-instance and invoked manually using the
+            router's hooks system.
             We handle all callbacks manually through _managed_callbacks.
             """
 
@@ -158,50 +152,8 @@ def get_managed_router_class():
                 # Track active requests for debugging
                 self._active_requests = 0
 
-                # No need to assign callbacks - they're already overridden as class methods
-
-                # HACK: Temporarily monkey-patch litellm's callback manager to prevent registration
-                # Save original methods
-                # Litellm callback system removed - using our router's hooks instead
-                # No need for monkey-patching anymore
-                pass
-                original_add_success = (
-                    litellm.logging_callback_manager.add_litellm_success_callback
-                )
-                original_add_async_failure = (
-                    litellm.logging_callback_manager.add_litellm_async_failure_callback
-                )
-                original_add_failure = (
-                    litellm.logging_callback_manager.add_litellm_failure_callback
-                )
-
-                # Replace with no-ops during Router.__init__
-                def noop_add(*args, **kwargs):
-                    pass
-
-                try:
-                    litellm.logging_callback_manager.add_litellm_async_success_callback = noop_add  # type: ignore
-                    litellm.logging_callback_manager.add_litellm_success_callback = (
-                        noop_add  # type: ignore
-                    )
-                    litellm.logging_callback_manager.add_litellm_async_failure_callback = noop_add  # type: ignore
-                    litellm.logging_callback_manager.add_litellm_failure_callback = (
-                        noop_add  # type: ignore
-                    )
-
-                    # Initialize Router - callbacks won't be registered due to monkey-patch
-                    super().__init__(model_list=model_list or [], **router_kwargs)
-
-                finally:
-                    # Restore original methods
-                    litellm.logging_callback_manager.add_litellm_async_success_callback = original_add_async_success  # type: ignore
-                    litellm.logging_callback_manager.add_litellm_success_callback = (
-                        original_add_success  # type: ignore
-                    )
-                    litellm.logging_callback_manager.add_litellm_async_failure_callback = original_add_async_failure  # type: ignore
-                    litellm.logging_callback_manager.add_litellm_failure_callback = (
-                        original_add_failure  # type: ignore
-                    )
+                # Initialize Router - our router uses hooks instead of global callbacks
+                super().__init__(model_list=model_list or [], **router_kwargs)
 
             async def _invoke_async_callbacks(self, method_name: str, *args, **kwargs):
                 """
@@ -259,12 +211,7 @@ def get_managed_router_class():
                 self._active_requests += 1
 
                 try:
-                    # Add callbacks for this request
-                    # We add them globally temporarily because litellm needs them there
-                    # But we'll remove them immediately after
-
-                    # Actually, instead of manipulating global callbacks, we'll
-                    # invoke callbacks manually at the right times
+                    # Invoke callbacks manually using our hooks system
 
                     # Before the request
                     await self._invoke_async_callbacks(
@@ -328,7 +275,9 @@ def get_managed_router_class():
                     if mode is None:
                         mode = instructor.Mode.TOOLS
 
-                    # Use instructor.from_litellm with our acompletion method
+                    # Use instructor with our router's completion method
+                    # Note: instructor.from_litellm works with any completion function
+                    # that follows the OpenAI-style interface (which ours does)
                     self._instructor_client = instructor.from_litellm(
                         self.acompletion,  # Pass our async completion method
                         mode=mode,
@@ -402,7 +351,7 @@ class ManagedRouter:
     Stub class for type hints. Real implementation created lazily.
 
     This allows type checkers to work correctly while the actual
-    class is only created when first needed, avoiding litellm imports.
+    class is only created when first needed.
     """
 
     def __init__(self, *args, **kwargs): ...
@@ -441,7 +390,7 @@ def _get_or_create_base_router(model_list: list[dict[str, Any]]) -> "Router":
 
     # If we haven't hit the pool size limit, create a new router
     if len(_GLOBAL_ROUTER_POOL) < _ROUTER_POOL_SIZE:
-        from litellm.router import Router
+        from ..llm_client.compat import Router
 
         router = Router(model_list=model_list)
         _GLOBAL_ROUTER_POOL.append(router)
@@ -487,18 +436,8 @@ class ModelManager:
         model_def = ModelDefinition(name=name, provider=provider, **kwargs)
         self._models[name] = model_def
 
-        # Also register with litellm's model cost tracking if costs provided
-        if model_def.input_cost_per_token or model_def.output_cost_per_token:
-            try:
-                # Litellm cost registration removed - using our own client
-                pass  # No-op, we don't need litellm registration
-
-                litellm.model_cost[name] = {
-                    "input_cost_per_token": model_def.input_cost_per_token,
-                    "output_cost_per_token": model_def.output_cost_per_token,
-                }
-            except Exception as e:
-                logger.debug(f"Could not register model costs with litellm: {e}")
+        # Cost tracking is handled by the Router itself
+        # No additional registration needed
 
     def register_override(self, override: ModelOverride) -> None:
         """
@@ -538,7 +477,7 @@ class ModelManager:
             model_list.append(
                 {
                     "model_name": primary_model,
-                    "litellm_params": {"model": primary_model},
+                    "params": {"model": primary_model},
                 }
             )
 
@@ -549,7 +488,7 @@ class ModelManager:
                     model_list.append(self._models[fallback].to_deployment())
                 else:
                     model_list.append(
-                        {"model_name": fallback, "litellm_params": {"model": fallback}}
+                        {"model_name": fallback, "params": {"model": fallback}}
                     )
 
         # Create router with isolated callbacks
@@ -577,7 +516,7 @@ class ModelManager:
         # Check if it's a registered model
         if model_name in self._models:
             model_def = self._models[model_name]
-            info.update(model_def.to_litellm_params())
+            info.update(model_def.to_router_params())
 
         # Add override information
         override_info = self._overrides.get_model_info(model_name)
