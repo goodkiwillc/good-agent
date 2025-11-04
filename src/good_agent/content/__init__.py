@@ -1,4 +1,4 @@
-"""Content management module for goodintel_agent.
+"""Content management module for good_agent.
 
 This module contains content parts and rendering functionality.
 """

@@ -30,6 +30,9 @@ RELATED MODULES:
 
 import asyncio
 import copy
+
+# Lazy loading imports - moved to TYPE_CHECKING
+import logging
 from collections.abc import AsyncIterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -46,12 +49,9 @@ from typing import (
     runtime_checkable,
 )
 
-from good_agent.types import URL
-
-# Lazy loading imports - moved to TYPE_CHECKING
-import logging
-logger = logging.getLogger(__name__)
 from pydantic import BaseModel
+
+from good_agent.types import URL
 
 from ..components import AgentComponent
 from ..config import AgentConfigManager
@@ -81,10 +81,14 @@ from ..utilities import url_to_base64
 from .manager import ManagedRouter, ModelManager
 from .overrides import model_override_registry
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     # Use our compatibility layer
-    from ..llm_client.compat import ModelResponse, Usage, Choices, StreamingChoices
     from typing import Any
+
+    from ..llm_client.compat import Choices, ModelResponse, StreamingChoices, Usage
+
     ChatCompletionMessageParam = Any
 
 
@@ -1002,7 +1006,7 @@ class LanguageModel(AgentComponent):
             if cost:
                 self.last_cost = cost
                 self.total_cost += cost
-        except Exception as e:
+        except Exception:
             # logger.debug(f"Could not calculate cost: {e}")
             pass
 
@@ -1291,6 +1295,7 @@ class LanguageModel(AgentComponent):
 
         This does NOT modify agent history; it only adjusts the outbound message list.
         """
+
         # Helper to access attributes on dict-like or object-like instances
         def _get_attr(obj: Any, key: str, default: Any = None) -> Any:
             try:
@@ -1315,7 +1320,9 @@ class LanguageModel(AgentComponent):
             role = _get_attr(msg, "role", None)
 
             # If assistant with tool_calls, ensure immediate tool responses exist
-            tool_calls = _get_attr(msg, "tool_calls", None) if role == "assistant" else None
+            tool_calls = (
+                _get_attr(msg, "tool_calls", None) if role == "assistant" else None
+            )
             if role == "assistant" and tool_calls:
                 # Append the assistant message first
                 result.append(msg)
