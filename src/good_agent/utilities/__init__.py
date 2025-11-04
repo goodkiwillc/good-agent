@@ -1,4 +1,4 @@
-"""Utilities for goodintel_agent."""
+"""Utilities for good_agent."""
 
 from .printing import print_message, url_to_base64
 from .tokens import (

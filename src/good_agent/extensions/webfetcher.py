@@ -7,14 +7,18 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
-from good_common.utilities import map_as_completed
 try:  # optional dependency; allow import without goodintel_fetch
-    from goodintel_fetch.web import ExtractedContent, fetch, Request
+    from goodintel_fetch.web import ExtractedContent, Request, fetch
 except Exception:  # pragma: no cover - optional dependency
     from goodintel_fetch.web import Request  # type: ignore
+
     ExtractedContent = object  # type: ignore
+
     def fetch(*args, **kwargs):  # type: ignore
-        raise ImportError("goodintel_fetch is required for WebFetcher; install it to enable fetching")
+        raise ImportError(
+            "goodintel_fetch is required for WebFetcher; install it to enable fetching"
+        )
+
 
 from good_agent.components.component import AgentComponent
 from good_agent.models import Renderable
@@ -23,9 +27,9 @@ from good_agent.types import URL, NullableParsedDate
 
 if TYPE_CHECKING:
     try:
-        from goodintel_fetch.web import Response
+        pass
     except Exception:  # pragma: no cover
-        from typing import Any as Response
+        pass
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +76,9 @@ class WebFetcher(AgentComponent):
         default_ttl: int | datetime.timedelta = 3600,
         default_format: Literal["full", "summary"] = "full",
         validate_content: bool = True,
-        summarization_strategy: Literal["chain_of_density", "bullets", "tldr", "basic"] = "chain_of_density",
+        summarization_strategy: Literal[
+            "chain_of_density", "bullets", "tldr", "basic"
+        ] = "chain_of_density",
         word_limit: int = 120,
         enable_summarization: bool = True,
         summarization_model: str = "gpt-4.1-mini",
@@ -80,7 +86,9 @@ class WebFetcher(AgentComponent):
     ):
         super().__init__(**kwargs)
         self.default_ttl = (
-            default_ttl if isinstance(default_ttl, datetime.timedelta) else datetime.timedelta(seconds=default_ttl)
+            default_ttl
+            if isinstance(default_ttl, datetime.timedelta)
+            else datetime.timedelta(seconds=default_ttl)
         )
         self.validate_content = validate_content
         self.summarization_strategy = summarization_strategy
@@ -101,16 +109,22 @@ class WebFetcher(AgentComponent):
     ) -> ExtractedContent | WebFetchSummary:
         fmt = format or self.default_format
         ttl = ttl or int(self.default_ttl.total_seconds())
-        validate = self.validate_content if validate_content is None else validate_content
+        validate = (
+            self.validate_content if validate_content is None else validate_content
+        )
         strat = strategy or self.summarization_strategy
         limit = word_limit or self.word_limit
 
-        async for response in fetch(urls=[url], ttl=ttl, log_progress=False, canonical=True):
+        async for response in fetch(
+            urls=[url], ttl=ttl, log_progress=False, canonical=True
+        ):
             if fmt == "summary":
                 md = getattr(response, "metadata", {}) or {}
                 summary = md.get("summary") if isinstance(md, dict) else None
                 if not summary and self.enable_summarization:
-                    content = getattr(response, "main", None) or getattr(response, "full", None)
+                    content = getattr(response, "main", None) or getattr(
+                        response, "full", None
+                    )
                     summary = await self._summarize_content(
                         content or "",
                         strategy=strat,
@@ -142,7 +156,9 @@ class WebFetcher(AgentComponent):
                 )
 
         req = Request(url=str(url))
-        return ExtractedContent(request=req, url=str(url), status_code=404, title=None, main=None)
+        return ExtractedContent(
+            request=req, url=str(url), status_code=404, title=None, main=None
+        )
 
     @tool
     async def fetch_many(
@@ -154,7 +170,9 @@ class WebFetcher(AgentComponent):
         results: list[ExtractedContent | WebFetchSummary] = []
         fmt = format or self.default_format
         ttl = ttl or int(self.default_ttl.total_seconds())
-        async for response in fetch(urls=urls, ttl=ttl, log_progress=False, canonical=True):
+        async for response in fetch(
+            urls=urls, ttl=ttl, log_progress=False, canonical=True
+        ):
             if fmt == "summary":
                 md = getattr(response, "metadata", {}) or {}
                 summary = md.get("summary") if isinstance(md, dict) else None
@@ -202,6 +220,7 @@ class WebFetcher(AgentComponent):
         summarization_prompt: str | None = None,
     ) -> str:
         return (content or "").strip()[: max(20, word_limit)]
+
 
 #     async def _fetch_urls(
 #         self,
@@ -444,7 +463,7 @@ class WebFetcher(AgentComponent):
 #         )
 
 #         # Lazy import to avoid circular dependency
-#         from goodintel_agent import Agent
+#         from good_agent import Agent
 
 #         # Use async context manager for proper initialization
 #         system_prompt = """You are an expert summarizer. Create concise, information-dense summaries.
@@ -570,7 +589,7 @@ class WebFetcher(AgentComponent):
 #         self, content: str, word_limit: int, summarization_prompt: str | None = None
 #     ) -> str:
 #         """Create bullet point summary."""
-#         from goodintel_agent import Agent
+#         from good_agent import Agent
 
 #         async with Agent(
 #             "You are an expert at creating concise bullet point summaries.",
@@ -601,7 +620,7 @@ class WebFetcher(AgentComponent):
 #         self, content: str, word_limit: int, summarization_prompt: str | None = None
 #     ) -> str:
 #         """Create TL;DR summary."""
-#         from goodintel_agent import Agent
+#         from good_agent import Agent
 
 #         async with Agent(
 #             "You are an expert at creating TL;DR summaries.",
@@ -633,7 +652,7 @@ class WebFetcher(AgentComponent):
 #         self, content: str, word_limit: int, summarization_prompt: str | None = None
 #     ) -> str:
 #         """Create basic summary."""
-#         from goodintel_agent import Agent
+#         from good_agent import Agent
 
 #         async with Agent(
 #             "You are an expert summarizer.", model=self.summarization_model

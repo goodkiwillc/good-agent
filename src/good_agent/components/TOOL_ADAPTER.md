@@ -25,17 +25,17 @@ The adapter system hooks into three key events in the tool lifecycle:
 ### Basic Structure
 
 ```python
-from goodintel_agent.components import ToolAdapter, AgentComponent
-from goodintel_agent.components.tool_adapter import AdapterMetadata
+from good_agent.components import ToolAdapter, AgentComponent
+from good_agent.components.tool_adapter import AdapterMetadata
 
 class MyAdapter(ToolAdapter):
     """Custom adapter for modifying tool behavior."""
-    
+
     def should_adapt(self, tool, agent):
         """Determine if this adapter applies to the tool."""
         # Return True if this adapter should modify the tool
         return "specific_param" in tool.name
-    
+
     def analyze_transformation(self, tool, signature):
         """Analyze what transformations will be performed."""
         # Used for conflict detection
@@ -44,7 +44,7 @@ class MyAdapter(ToolAdapter):
             added_params={"new_param"},
             removed_params={"old_param"}
         )
-    
+
     def adapt_signature(self, tool, signature, agent):
         """Transform the tool signature for the LLM."""
         import copy
@@ -56,7 +56,7 @@ class MyAdapter(ToolAdapter):
             "description": "New parameter"
         }
         return adapted
-    
+
     def adapt_parameters(self, tool_name, parameters, agent):
         """Transform parameters from LLM to original format."""
         adapted = dict(parameters)
@@ -65,7 +65,7 @@ class MyAdapter(ToolAdapter):
             value = adapted.pop("new_param")
             adapted["original_param"] = process(value)
         return adapted
-    
+
     def adapt_response(self, tool_name, response, agent):
         """Optionally transform the tool response."""
         # Return None to keep original, or modified response
@@ -79,7 +79,7 @@ class MyComponent(AgentComponent):
     def __init__(self):
         super().__init__()
         self.adapter = MyAdapter(self)
-    
+
     async def install(self, agent):
         await super().install(agent)
         # Register the adapter
@@ -97,18 +97,18 @@ class CitationAdapter(ToolAdapter):
     def __init__(self, component):
         super().__init__(component)
         self.citations = []  # Store URL-to-index mapping
-    
+
     def should_adapt(self, tool, agent):
         # Adapt tools with URL parameters
         schema = tool.model.model_json_schema()
         properties = schema.get("properties", {})
         return any("url" in k.lower() for k in properties)
-    
+
     def adapt_signature(self, tool, signature, agent):
         # Replace url: str with citation_idx: int
         adapted = copy.deepcopy(signature)
         params = adapted["function"]["parameters"]["properties"]
-        
+
         if "url" in params:
             params["citation_idx"] = {
                 "type": "integer",
@@ -117,7 +117,7 @@ class CitationAdapter(ToolAdapter):
             }
             del params["url"]
         return adapted
-    
+
     def adapt_parameters(self, tool_name, parameters, agent):
         # Convert index back to URL
         adapted = dict(parameters)
@@ -137,10 +137,10 @@ class AuthAdapter(ToolAdapter):
     def __init__(self, component, api_key):
         super().__init__(component)
         self.api_key = api_key
-    
+
     def should_adapt(self, tool, agent):
         return tool.name in ["fetch_api", "call_service"]
-    
+
     def adapt_signature(self, tool, signature, agent):
         # Add optional auth flag
         adapted = copy.deepcopy(signature)
@@ -151,7 +151,7 @@ class AuthAdapter(ToolAdapter):
             "default": True
         }
         return adapted
-    
+
     def adapt_parameters(self, tool_name, parameters, agent):
         adapted = dict(parameters)
         if adapted.pop("use_auth", True):
@@ -172,7 +172,7 @@ class CacheAdapter(ToolAdapter):
     def __init__(self, component):
         super().__init__(component)
         self.cache = {}
-    
+
     def adapt_parameters(self, tool_name, parameters, agent):
         # Check cache before execution
         cache_key = f"{tool_name}:{hash(frozenset(parameters.items()))}"
@@ -181,7 +181,7 @@ class CacheAdapter(ToolAdapter):
             # (In practice, would need to handle this differently)
             print(f"Cache hit for {tool_name}")
         return parameters
-    
+
     def adapt_response(self, tool_name, response, agent):
         # Store response in cache
         cache_key = f"{tool_name}:latest"
@@ -204,7 +204,7 @@ When multiple adapters modify the same tool:
 Configure how conflicts are handled:
 
 ```python
-from goodintel_agent.components.tool_adapter import ConflictStrategy
+from good_agent.components.tool_adapter import ConflictStrategy
 
 class MyAdapter(ToolAdapter):
     def __init__(self, component):
@@ -228,15 +228,15 @@ class MyAdapter(ToolAdapter):
 class EnhancedComponent(AgentComponent):
     def __init__(self):
         super().__init__()
-        
+
         # Multiple adapters with different priorities
         self.citation_adapter = CitationAdapter(self)  # priority=100
         self.auth_adapter = AuthAdapter(self, "key")    # priority=50
         self.cache_adapter = CacheAdapter(self)         # priority=200
-    
+
     async def install(self, agent):
         await super().install(agent)
-        
+
         # Register in any order - priority determines execution
         self.register_tool_adapter(self.citation_adapter)
         self.register_tool_adapter(self.auth_adapter)
@@ -309,7 +309,7 @@ Handle missing/invalid parameters gracefully:
 ```python
 def adapt_parameters(self, tool_name, parameters, agent):
     adapted = dict(parameters)
-    
+
     if "citation_idx" in adapted:
         idx = adapted.pop("citation_idx")
         if 0 <= idx < len(self.citations):
@@ -317,7 +317,7 @@ def adapt_parameters(self, tool_name, parameters, agent):
         else:
             # Handle invalid index
             raise ValueError(f"Invalid citation index: {idx}")
-    
+
     return adapted
 ```
 
@@ -328,10 +328,10 @@ Respect component enabled state:
 ```python
 async def install(self, agent):
     await super().install(agent)
-    
+
     # Adapters automatically respect component.enabled
     self.register_tool_adapter(self.adapter)
-    
+
     # Disable component disables adapters
     # self.enabled = False
 ```
@@ -347,17 +347,17 @@ from unittest.mock import MagicMock
 def test_adapter_transformation():
     component = MagicMock()
     adapter = MyAdapter(component)
-    
+
     # Test should_adapt
     tool = MagicMock()
     tool.name = "fetch_url"
     assert adapter.should_adapt(tool, agent=None)
-    
+
     # Test signature transformation
     original_sig = {...}
     adapted_sig = adapter.adapt_signature(tool, original_sig, agent=None)
     assert "new_param" in adapted_sig["function"]["parameters"]["properties"]
-    
+
     # Test parameter transformation
     params = {"new_param": "value"}
     adapted = adapter.adapt_parameters("fetch_url", params, agent=None)
@@ -373,15 +373,15 @@ async def test_adapter_with_agent():
         def __init__(self):
             super().__init__()
             self.adapter = MyAdapter(self)
-        
+
         async def install(self, agent):
             await super().install(agent)
             self.register_tool_adapter(self.adapter)
-    
+
     component = TestComponent()
     agent = Agent("Test", tools=[my_tool], extensions=[component])
     await agent.ready()
-    
+
     # Verify adapter is applied
     # Test tool execution with adapted parameters
 ```
@@ -449,7 +449,7 @@ class CompositeAdapter(ToolAdapter):
     def __init__(self, component, adapters):
         super().__init__(component)
         self.adapters = adapters
-    
+
     def adapt_signature(self, tool, signature, agent):
         result = signature
         for adapter in self.adapters:

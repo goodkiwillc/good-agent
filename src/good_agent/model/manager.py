@@ -11,12 +11,10 @@ ensuring that different agent instances don't interfere with each other.
 """
 
 import asyncio
+import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 from weakref import WeakValueDictionary
-
-import logging
-logger = logging.getLogger(__name__)
 
 from .overrides import (
     ModelOverride,
@@ -25,14 +23,19 @@ from .overrides import (
 
 if TYPE_CHECKING:
     # Use our compatibility layer instead of litellm
-    from ..llm_client.compat import CustomStreamWrapper, ModelResponse, Router
     # CustomLogger can be any callable - use Protocol
     from typing import Protocol
-    
+
+    from ..llm_client.compat import CustomStreamWrapper, ModelResponse, Router
+
     class CustomLogger(Protocol):
         """Protocol for logger callbacks."""
+
         async def async_log_success_event(self, *args, **kwargs): ...
         async def async_log_failure_event(self, *args, **kwargs): ...
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
