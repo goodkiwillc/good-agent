@@ -1,18 +1,3 @@
-"""
-CONTEXT: Template-based rendering system for models and structured data.
-ROLE: Provide Jinja2-based template rendering with model integration, filters, and
-      XML extraction capabilities for generating structured output.
-DEPENDENCIES: Jinja2 for templating, lxml for XML processing, goodintel_core.templating for template management.
-ARCHITECTURE: Abstract base class with template inheritance, filtering, and context management.
-KEY EXPORTS: Renderable, TemplateFilterParams, RenderableModel
-USAGE PATTERNS:
-  1) Extend Renderable for template-based model rendering
-  2) Use __template__ class attribute for Jinja2 templates
-  3) Apply filters and custom context for structured output generation
-  4) Extract XML content with structured processing
-RELATED MODULES: goodintel_core.templating (template system), .mixins (model utilities), ..utilities.lxml (XML processing)
-"""
-
 import logging
 from abc import ABC
 from collections import ChainMap
@@ -112,7 +97,7 @@ class Renderable(BaseModel, ModelAllFields, AbstractTemplate, ABC):
             self._template_config = ChainMap(class_config)
 
     def model_dump_render(self, **kwargs):
-        from goodintel_core.utilities.text import unindent
+        from good_agent.utilities.text import unindent
 
         _all_fields = self.__class__.model_all_fields()
         _sub_models = set()
@@ -177,7 +162,7 @@ class Renderable(BaseModel, ModelAllFields, AbstractTemplate, ABC):
         self,
         **config,
     ) -> str:
-        from goodintel_core.utilities.text import unindent
+        from good_agent.utilities.text import unindent
 
         data = self.model_dump_render()
 
@@ -256,7 +241,7 @@ class RenderableCollection(
 
     @property
     def render_items(self):
-        from goodintel_core.utilities.text import unindent
+        from good_agent.utilities.text import unindent
 
         _render_type = self._template_config.get("render_type", "direct")
         _items = [unindent(item.render()) for item in self.items]

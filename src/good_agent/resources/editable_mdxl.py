@@ -1,7 +1,3 @@
-"""
-Enhanced EditableMDXL - Read entire doc + precise edits with better tool interface.
-"""
-
 import logging
 import re
 from typing import Any

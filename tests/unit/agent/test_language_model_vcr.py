@@ -1,19 +1,3 @@
-"""
-Test LanguageModel with VCR to record real API interactions.
-
-This module tests the LanguageModel component with actual API calls recorded
-using VCR.py. This ensures that:
-1. The LLM integration works correctly with real providers
-2. Streaming functionality is properly tested with real responses
-3. Tests remain fast and deterministic after initial recording
-
-To record new cassettes:
-    VCR_RECORD_MODE=new_episodes pytest test_language_model_vcr.py
-
-To replay existing cassettes (default):
-    pytest test_language_model_vcr.py
-"""
-
 import pytest
 from good_agent import Agent
 from good_agent.messages import AssistantMessage

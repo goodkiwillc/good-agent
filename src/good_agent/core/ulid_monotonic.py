@@ -1,11 +1,3 @@
-"""
-Monotonic ULID generator for goodintel-core.
-
-This module provides a thread-safe, monotonic ULID generator that ensures
-unique IDs even when multiple ULIDs are generated within the same millisecond.
-The implementation is based on the ULID spec and provides Pydantic compatibility.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -235,7 +227,7 @@ def create_monotonic_ulid() -> ULID:
         ULID: A new monotonic ULID instance.
 
     Example:
-        >>> from goodintel_core.utilities.ulid_monotonic import create_monotonic_ulid
+        >>> from good_agent.utilities.ulid_monotonic import create_monotonic_ulid
         >>> ulid = create_monotonic_ulid()
     """
     return MonotonicULID.generate()
@@ -249,7 +241,7 @@ async def create_monotonic_ulid_async() -> ULID:
         ULID: A new monotonic ULID instance.
 
     Example:
-        >>> from goodintel_core.utilities.ulid_monotonic import (
+        >>> from good_agent.utilities.ulid_monotonic import (
         ...     create_monotonic_ulid_async,
         ... )
         >>> ulid = await create_monotonic_ulid_async()

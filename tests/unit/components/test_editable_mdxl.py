@@ -1,7 +1,3 @@
-"""
-Tests for enhanced EditableMDXL resource with improved tools.
-"""
-
 import pytest
 from good_agent import Agent
 

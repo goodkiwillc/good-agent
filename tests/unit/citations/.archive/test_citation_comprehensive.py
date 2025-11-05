@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-"""
-Comprehensive test for all citation resolution scenarios.
-"""
 
 import asyncio
 

@@ -1,5 +1,3 @@
-"""Test Agent list-style assignment functionality."""
-
 import pytest
 from good_agent import (
     Agent,

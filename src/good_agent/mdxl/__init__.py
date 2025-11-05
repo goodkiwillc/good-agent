@@ -1,15 +1,3 @@
-"""
-Minimal MDXL wrapper for XML manipulation used by EditableMDXL and tests.
-
-Implements a small subset of functionality:
-- MDXL(xml_string)
-- .outer -> full XML as string
-- .llm_outer_text -> concatenated text content of document
-- .select_all(xpath) -> list of wrapped elements with ._root for lxml element access
-- .select_one(xpath)
-- .without(*xpaths) -> new MDXL instance with matching nodes removed
-"""
-
 from __future__ import annotations
 
 from copy import deepcopy

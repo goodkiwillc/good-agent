@@ -1,9 +1,3 @@
-"""
-Comprehensive tests for the SearchProviderRegistry.
-
-Tests provider registration, capability matching, and intelligent selection.
-"""
-
 from unittest.mock import AsyncMock, Mock
 
 import pytest

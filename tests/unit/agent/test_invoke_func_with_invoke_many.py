@@ -1,11 +1,3 @@
-"""
-Test for the invoke_func with invoke_many interaction issue.
-
-This test ensures that when using a bound function created with invoke_func
-inside invoke_many, the tool call IDs match correctly and no duplicate
-messages are created.
-"""
-
 from datetime import datetime
 from typing import Any
 

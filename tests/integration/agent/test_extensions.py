@@ -1,7 +1,3 @@
-"""
-Tests for the extension system
-"""
-
 import pytest
 from good_agent import Agent, AgentComponent, CitationIndex, Paragraph
 from good_agent.tools import tool

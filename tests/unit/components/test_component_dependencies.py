@@ -1,5 +1,3 @@
-"""Test component dependency validation."""
-
 import pytest
 from good_agent import Agent, AgentComponent
 

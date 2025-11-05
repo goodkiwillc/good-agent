@@ -1,10 +1,3 @@
-"""
-MCP Tool Adapter for GoodIntel Agent.
-
-Adapts MCP server tools to the GoodIntel Tool interface, enabling
-seamless integration of MCP tools with the agent's existing tool system.
-"""
-
 import asyncio
 from typing import Any, Generic, TypeVar
 

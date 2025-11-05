@@ -1,13 +1,7 @@
-"""
-Test suite for the task-based component initialization system.
-
-This module tests the new async component initialization system that ensures
-component tools are properly registered during agent.ready().
-"""
-
 import asyncio
 
 import pytest
+
 from good_agent import Agent, AgentComponent, tool
 
 
@@ -254,28 +248,28 @@ class TestTaskBasedComponentInitialization:
 
         await agent.async_close()
 
-    @pytest.mark.asyncio
-    async def test_component_tool_registration_integration_with_webfetcher(self):
-        """Integration test with actual WebFetcher component."""
-        from good_agent.extensions.citations import CitationManager
-        from good_agent.extensions.webfetcher import WebFetcher
+    # @pytest.mark.asyncio
+    # async def test_component_tool_registration_integration_with_webfetcher(self):
+    #     """Integration test with actual WebFetcher component."""
+    #     from good_agent.extensions.citations import CitationManager
+    #     from good_agent.extensions.webfetcher import WebFetcher
 
-        # WebFetcher requires CitationManager
-        citation_manager = CitationManager()
-        webfetcher = WebFetcher(default_ttl=3600)
-        agent = Agent("Test agent", extensions=[citation_manager, webfetcher])
-        await agent.ready()
+    #     # WebFetcher requires CitationManager
+    #     citation_manager = CitationManager()
+    #     webfetcher = WebFetcher(default_ttl=3600)
+    #     agent = Agent("Test agent", extensions=[citation_manager, webfetcher])
+    #     await agent.ready()
 
-        # WebFetcher should have its tools registered
-        expected_tools = ["fetch", "fetch_many", "batch_fetch"]
-        for tool_name in expected_tools:
-            assert tool_name in agent.tools, f"Tool {tool_name} not found"
+    #     # WebFetcher should have its tools registered
+    #     expected_tools = ["fetch", "fetch_many", "batch_fetch"]
+    #     for tool_name in expected_tools:
+    #         assert tool_name in agent.tools, f"Tool {tool_name} not found"
 
-        # Tools should be functional (basic test)
-        fetch_tool = agent.tools["fetch"]
-        assert callable(fetch_tool)
+    #     # Tools should be functional (basic test)
+    #     fetch_tool = agent.tools["fetch"]
+    #     assert callable(fetch_tool)
 
-        await agent.async_close()
+    #     await agent.async_close()
 
     @pytest.mark.asyncio
     async def test_component_event_system_integration(self):

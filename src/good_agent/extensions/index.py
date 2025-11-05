@@ -1,9 +1,3 @@
-"""
-Citation indexing extension for goodintel-agent.
-
-This extension provides a way to track sources and citations within agent conversations.
-"""
-
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, TypedDict

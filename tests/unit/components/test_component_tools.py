@@ -1,5 +1,3 @@
-"""Test tool decorator with AgentComponent methods."""
-
 from typing import TYPE_CHECKING
 
 import pytest

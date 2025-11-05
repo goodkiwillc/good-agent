@@ -1,13 +1,3 @@
-"""Templating subsystem for good_agent.
-
-This module provides Jinja2-based template management with:
-- Sandboxed execution for security
-- File-based template storage
-- Template versioning and indexing
-- Context providers for dynamic values
-- Context value dependency injection
-"""
-
 # Provide type aliases and core registries required during import
 # Importing from core templating avoids circular imports with this package
 from good_agent.core.templating import (  # re-export for compatibility

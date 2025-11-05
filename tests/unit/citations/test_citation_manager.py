@@ -1,13 +1,3 @@
-"""
-Tests for CitationManager core behavior.
-
-Focuses on:
-- Manager initialization and installation
-- Global index lifecycle
-- Public API methods (parse, export, summaries)
-- Shared index behavior
-"""
-
 import pytest
 from good_agent import Agent
 from good_agent.extensions.citations import CitationIndex, CitationManager

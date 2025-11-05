@@ -1,14 +1,3 @@
-"""
-Logfire integration for comprehensive Agent tracking and observability.
-
-This extension provides detailed logging of:
-- Agent lifecycle events (initialization, forking, state changes)
-- LLM interactions with actual rendered content
-- Tool executions and results
-- Context and configuration changes
-- Agent inheritance and relationships
-"""
-
 from __future__ import annotations
 
 import json

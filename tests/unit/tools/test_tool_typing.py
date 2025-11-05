@@ -1,20 +1,3 @@
-"""
-Comprehensive type testing for tool decorators and Tool class.
-
-This test file verifies that:
-1. The @tool decorator properly types sync and async functions
-2. Tool.__call__ returns correctly typed ToolResponse objects
-3. Complex types (Pydantic models, generics, unions) work correctly
-4. Error handling maintains type safety
-5. Tool signature and model generation work properly
-
-Note on static type checking:
-Python type checkers (mypy, pyright, Pylance) see async functions as
-Callable[..., Coroutine[Any, Any, T]] rather than Callable[..., T].
-This is a fundamental Python typing limitation. The runtime behavior
-is correct - Tool properly awaits async functions.
-"""
-
 import asyncio
 from typing import Any
 

@@ -1,10 +1,3 @@
-"""
-Signal handling utilities for graceful shutdown of EventRouter and Agent.
-
-This module provides utilities to handle SIGINT/SIGTERM signals properly,
-ensuring that async tasks are cancelled and resources are cleaned up.
-"""
-
 import asyncio
 import signal
 import sys

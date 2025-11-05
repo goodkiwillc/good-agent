@@ -1,5 +1,3 @@
-"""Tests for message content rendering with v2 content parts API."""
-
 from unittest.mock import patch
 
 import pytest

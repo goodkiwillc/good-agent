@@ -1,5 +1,3 @@
-"""Tests to prevent import time regression."""
-
 import subprocess
 import sys
 

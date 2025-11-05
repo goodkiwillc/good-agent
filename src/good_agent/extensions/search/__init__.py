@@ -1,10 +1,3 @@
-"""
-AgentSearch Component - Discovery operations across multiple data sources.
-
-This module provides a unified search interface that intelligently routes
-queries to appropriate providers based on capabilities and requirements.
-"""
-
 from .component import AgentSearch
 from .models import (
     DataDomain,

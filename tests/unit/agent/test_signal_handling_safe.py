@@ -1,9 +1,3 @@
-"""
-Safe version of signal handling tests that don't send real signals during collection.
-
-These tests verify signal handling infrastructure without risking test runner interruption.
-"""
-
 import asyncio
 import gc
 import signal

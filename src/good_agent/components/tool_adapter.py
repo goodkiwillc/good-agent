@@ -1,17 +1,3 @@
-"""
-Tool Adapter System for AgentComponents.
-
-This module provides a framework for components to intercept and modify tool
-behavior transparently. Components can adapt tool signatures, transform
-parameters, and optionally modify responses without changing the original tools.
-
-The adapter pattern enables use cases like:
-- Citation management: Converting URL parameters to citation indices
-- Authentication: Injecting auth tokens into tool calls
-- Validation: Adding parameter validation or constraints
-- Routing: Redirecting tool calls to different implementations
-"""
-
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

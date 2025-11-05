@@ -1,9 +1,3 @@
-"""goodintel_agent - Advanced agent framework with optimized lazy loading.
-
-This module uses lazy loading to minimize import time. Heavy dependencies
-like litellm are only imported when actually needed.
-"""
-
 import logging
 from typing import TYPE_CHECKING
 

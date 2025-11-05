@@ -1,10 +1,3 @@
-"""
-Integration tests for the complete template workflow.
-
-Tests the full integration of template storage, indexing, rendering, and
-Agent integration including case-insensitive resolution and inheritance.
-"""
-
 import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock

@@ -1,5 +1,3 @@
-"""Test datetime formatting capabilities in templates."""
-
 from datetime import date, datetime, timedelta
 
 import pytest

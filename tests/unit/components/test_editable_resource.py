@@ -1,9 +1,3 @@
-"""
-Tests for EditableResource class.
-
-Following TDD Red/Green/Refactor process.
-"""
-
 import pytest
 from good_agent import Agent
 

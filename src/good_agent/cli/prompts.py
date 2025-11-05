@@ -1,11 +1,3 @@
-"""
-Prompt templates CLI registered under the Agent package.
-
-This provides commands for creating, managing, validating, rendering and
-versioning prompt template files. It replaces the previous core CLI version
-and should be registered via the goodintel CLI plugin system.
-"""
-
 from __future__ import annotations
 
 import asyncio

@@ -1,7 +1,3 @@
-"""
-Tests for agent conversation mode implementation.
-"""
-
 import asyncio
 
 import pytest

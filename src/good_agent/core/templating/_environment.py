@@ -1,18 +1,3 @@
-"""
-CONTEXT: Environment construction and template registry for GoodIntel templating.
-ROLE: Provides a layered TemplateRegistry (BaseLoader), default environment config,
-      helpers to register and retrieve named templates, and high-level render function.
-DEPENDENCIES:
-  - jinja2 BaseLoader/Environment for compilation and rendering
-  - _core for AbstractTemplate and dependency registration decorators
-ARCHITECTURE: Used by modules to build a shared, extensible Jinja environment with
-  project-wide filters/extensions and safe defaults. Tests validate storage and context.
-SECURITY: autoescape is False by default; enable autoescape in config for untrusted HTML
-  or ensure explicit escaping at render sites.
-KEY EXPORTS: TemplateRegistry, TEMPLATE_REGISTRY, create_environment, render_template,
-  add_named_template, get_named_template.
-"""
-
 import datetime
 import inspect
 import logging
@@ -181,7 +166,7 @@ def add_named_template(
     replace: bool = False,
     append_newline: bool = False,
 ):
-    from goodintel_core.utilities.text import string
+    from good_agent.utilities.text import string
 
     """Add a named template to the global registry with optional newline and replace.
 

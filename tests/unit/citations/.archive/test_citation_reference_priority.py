@@ -1,7 +1,3 @@
-"""
-Test citation reference priority when both global index and local references exist.
-"""
-
 import pytest
 from good_agent import Agent
 from good_agent.content import RenderMode

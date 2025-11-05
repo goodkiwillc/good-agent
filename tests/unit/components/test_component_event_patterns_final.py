@@ -1,13 +1,3 @@
-"""
-Definitive integration test for AgentComponent event handling patterns.
-
-This test confirms that:
-1. @on decorators work correctly in AgentComponents (via EventRouter inheritance)
-2. Manual registration during setup/install works
-3. Both patterns can be used together effectively
-4. Component lifecycle and event handling work as expected
-"""
-
 import pytest
 from good_agent import Agent, AgentComponent, AgentEvents, tool
 from good_agent.utilities.event_router import EventContext, on

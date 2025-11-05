@@ -1,7 +1,3 @@
-"""
-StatefulResource base class for managing stateful resources with agents.
-"""
-
 from abc import ABC, ABCMeta, abstractmethod
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, Generic, TypeVar

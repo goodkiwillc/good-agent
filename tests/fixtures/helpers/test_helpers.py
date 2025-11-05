@@ -1,5 +1,3 @@
-"""Test helpers for good_agent tests."""
-
 from typing import Any
 
 from good_agent.components.component import AgentComponent

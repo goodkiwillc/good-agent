@@ -1,37 +1,3 @@
-"""
-Model-specific configuration overrides for LLM parameters.
-
-This module provides a system for automatically handling model-specific
-configuration requirements and constraints. For example, GPT-5 models
-only support temperature=1, while o1 models don't support various
-parameters like presence_penalty.
-
-Usage:
-    # The overrides are automatically applied when using LanguageModel
-    from good_agent.model.llm import LanguageModel
-    from good_agent.config import AgentConfigManager
-
-    config = AgentConfigManager(model="gpt-5-mini")
-    llm = LanguageModel(config)
-
-    # Temperature will be automatically dropped for GPT-5 models
-    response = await llm.complete(messages, temperature=0.7)
-
-    # Register custom overrides for your own models
-    from good_agent.model.overrides import ModelOverride, ParameterOverride
-
-    custom_override = ModelOverride(
-        model_pattern="my-custom-model*",
-        parameter_overrides={
-            "unsupported_param": ParameterOverride(action="drop"),
-            "required_param": ParameterOverride(action="override", value="fixed_value")
-        },
-        defaults={"custom_default": 100}
-    )
-
-    LanguageModel.register_model_override(custom_override)
-"""
-
 from collections.abc import Callable
 from dataclasses import MISSING, dataclass, field, fields
 from typing import Any

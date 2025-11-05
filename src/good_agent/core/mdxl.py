@@ -1,84 +1,3 @@
-"""
-CONTEXT: Core MDXL (Markdown XML) implementation providing XML-flavored markdown container with structured data support.
-ROLE: Central MDXL document model with XPath navigation, YAML data blocks, citation management, and text rendering capabilities.
-DEPENDENCIES:
-  - lxml.etree: High-performance XML parsing and manipulation
-  - yaml: YAML frontmatter and data block parsing
-  - box.Box: Dictionary-like object with attribute access for YAML data
-  - typing: Type hints and overloads for flexible content handling
-ARCHITECTURE:
-  - MDXL class: Core document container with element wrapping
-  - XPath navigation: Efficient tree traversal and element selection
-  - YAML integration: Structured data extraction and manipulation
-  - Text rendering: Multiple output modes with filtering capabilities
-  - Caching layer: Performance optimization for repeated operations
-KEY EXPORTS: MDXL class, xpath_filter_llm(), render_text_modes()
-USAGE PATTERNS:
-  1. Document parsing: MDXL(xml_string) for structured document access
-  2. Data extraction: mdxl.data for YAML frontmatter and data blocks
-  3. Content navigation: mdxl.xpath() for element selection
-  4. Text rendering: mdxl.render_text() with various output modes
-RELATED MODULES:
-  - migration.py: Legacy format conversion and version management
-  - inline_citations.py: Citation extraction and management
-  - ops.py: Content manipulation and transformation operations
-  - edit.py: Document editing and modification utilities
-
-MDXL FORMAT SPECIFICATION:
-  - XML-based markdown with structured data blocks
-  - YAML frontmatter for metadata configuration
-  - Citations and references management
-  - Private content filtering for LLM processing
-  - Multiple rendering modes (clean, full, llm, citations)
-
-PERFORMANCE CHARACTERISTICS:
-  - Parsing: O(N) where N = document size (lxml optimization)
-  - XPath queries: O(log N) for indexed operations, O(N) for complex queries
-  - Text rendering: O(N) with caching for repeated renders
-  - Memory usage: O(N) for document tree plus O(M) for cache (M = unique renders)
-  - Large documents: Streaming parsing available for >10MB documents
-
-TEXT RENDERING MODES:
-  - clean: Remove private content, citations, references for LLM consumption
-  - full: Complete document including all content and metadata
-  - llm: Optimized for LLM processing with structured filtering
-  - citations: Extract and format citations and references separately
-  - custom: User-defined XPath filtering rules
-
-CITATION MANAGEMENT:
-  - Automatic citation extraction from document content
-  - Reference list generation and formatting
-  - Citation validation and duplicate detection
-  - Integration with external citation databases
-
-YAML DATA INTEGRATION:
-  - Frontmatter extraction for document metadata
-  - Data block parsing for structured content
-  - Attribute access via Box objects for convenience
-  - Validation and type checking for YAML structures
-
-FILTERING CAPABILITIES:
-  - Private content removal for sensitive data protection
-  - LLM-specific filtering for optimized processing
-  - Custom XPath filters for content selection
-  - Recursive filtering with parent-child inheritance
-
-USAGE EXAMPLES:
-  ```python
-  # Parse MDXL document
-  mdxl = MDXL(document_string)
-
-  # Access YAML data
-  metadata = mdxl.data.title
-
-  # Navigate with XPath
-  sections = mdxl.xpath("//section[@level='2']")
-
-  # Render filtered text
-  clean_text = mdxl.render_text(mode="clean")
-  ```
-"""
-
 from __future__ import annotations
 
 import copy
@@ -378,7 +297,7 @@ class MDXL:
         Returns:
             Dictionary of attribute names to values
         """
-        from goodintel_core.types import URL
+        from good_agent.types import URL
 
         attributes: dict[str, Any] = dict(self._root.attrib)
         for k, v in attributes.items():

@@ -1,10 +1,3 @@
-"""
-Integration tests for agent.invoke functionality.
-
-These tests verify that the invoke methods work correctly with real LLM interactions
-and demonstrate the expected usage patterns from the specification.
-"""
-
 import json
 
 import pytest

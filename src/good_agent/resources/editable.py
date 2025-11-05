@@ -1,7 +1,3 @@
-"""
-EditableResource implementation for editing text/document content.
-"""
-
 from .base import StatefulResource
 
 

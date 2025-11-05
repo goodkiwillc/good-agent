@@ -1,21 +1,3 @@
-"""
-CONTEXT: Core templating primitives for GoodIntel built on Jinja2.
-ROLE: Provide base template abstraction, dependency (filters/functions) registry, and
-      environment factory used by higher-level templating APIs.
-DEPENDENCIES:
-  - jinja2 Environment/Context/EvalContext for rendering
-  - ChainMap for layered config and dependency composition
-ARCHITECTURE: Consumed by goodintel_core.templating._environment to construct
-  environments and by modules registering filters/functions via decorators.
-KEY EXPORTS: AbstractTemplate, register_filter, register_function.
-USAGE PATTERNS:
-  1) Subclass AbstractTemplate and implement render() or provide __template__.
-  2) Decorate helpers with @register_filter/@register_function to expose in Jinja.
-  3) Build environments with new_template_environment(configs..., loader=...).
-RELATED MODULES: goodintel_core.templating._environment, goodintel_core.templating._filters,
-  goodintel_core.templating._extensions
-"""
-
 import inspect
 import typing
 import warnings
@@ -32,7 +14,8 @@ from jinja2 import (
 from jinja2 import (
     pass_eval_context as _pass_eval_context,
 )
-from jinja2.runtime import Context, EvalContext
+from jinja2.nodes import EvalContext
+from jinja2.runtime import Context
 
 
 def _extract_template(cls):

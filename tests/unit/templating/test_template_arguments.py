@@ -1,5 +1,3 @@
-"""Tests for template argument support in Agent.invoke()"""
-
 import pytest
 from good_agent import Agent, Template, tool
 

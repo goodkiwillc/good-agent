@@ -1,13 +1,3 @@
-"""
-Tests for CitationAdapter tool integration.
-
-Focuses on:
-- Tool signature transformation (url -> citation_idx)
-- Parameter translation at runtime (indices -> URLs)
-- Integration with agent tool system
-- Multiple URLs support
-"""
-
 from typing import Annotated
 
 import pytest

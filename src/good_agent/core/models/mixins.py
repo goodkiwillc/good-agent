@@ -1,17 +1,3 @@
-"""
-CONTEXT: Mixin classes and utilities for extending model functionality.
-ROLE: Provide reusable mixins and utilities for model introspection, class properties,
-      and type information management across goodintel_core models.
-DEPENDENCIES: good_common.modeling for type introspection, pydantic for model infrastructure.
-ARCHITECTURE: Utility mixins that can be composed with base model classes for enhanced functionality.
-KEY EXPORTS: classproperty, ModelAllFields, TypeInfo utilities
-USAGE PATTERNS:
-  1) Use classproperty for computed class-level properties
-  2) Apply ModelAllFields for comprehensive field introspection
-  3) Extend TypeInfo protocols for custom type handling
-RELATED MODULES: .base (base model classes), .renderable (template models)
-"""
-
 from abc import ABC
 from typing import TYPE_CHECKING, Protocol, TypeVar
 

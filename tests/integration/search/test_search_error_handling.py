@@ -1,9 +1,3 @@
-"""
-Tests for error handling and edge cases in AgentSearch.
-
-Tests provider failures, invalid inputs, and graceful degradation.
-"""
-
 import asyncio
 from unittest.mock import AsyncMock, Mock
 

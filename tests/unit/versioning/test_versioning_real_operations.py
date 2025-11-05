@@ -1,10 +1,3 @@
-"""Integration tests for versioning with real agent operations.
-
-These tests verify that versioning works correctly with actual Agent
-operations without complex mocking. Uses simple mock responses or
-actual tools where possible.
-"""
-
 from unittest.mock import Mock, patch
 
 import pytest

@@ -1,11 +1,3 @@
-"""
-CitationIndex - Core citation registry for URL deduplication and indexing.
-
-This module provides the CitationIndex class that maintains a global registry
-of all citations, ensuring URL deduplication and providing efficient lookups
-between URLs and indices.
-"""
-
 from __future__ import annotations
 
 from collections.abc import Iterator

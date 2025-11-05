@@ -1,17 +1,3 @@
-"""
-Integration tests for AgentComponent event handling patterns.
-
-This test suite verifies that both @on decorator patterns and manual event
-registration work correctly within the AgentComponent lifecycle, testing:
-
-1. @on decorator auto-registration during component initialization
-2. Manual registration during setup() and install() phases
-3. Event handler execution order and priority handling
-4. Component state interactions (enabled/disabled)
-5. Agent access patterns in different registration contexts
-6. Lifecycle timing and handler availability
-"""
-
 import asyncio
 from unittest.mock import MagicMock
 

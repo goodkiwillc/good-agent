@@ -1,13 +1,3 @@
-"""
-Tests for global citation index coordination.
-
-Focuses on:
-- Same URL always gets same global index
-- Local-to-global index mapping
-- Citation lookup from global index
-- Sparse index handling
-"""
-
 import pytest
 from good_agent import Agent, AssistantMessage
 from good_agent.extensions.citations import CitationIndex, CitationManager

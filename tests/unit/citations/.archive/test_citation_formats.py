@@ -1,13 +1,3 @@
-"""
-Unit tests for citation format detection and transformation.
-
-Tests the citation format utilities including:
-- Format detection (markdown, LLM, XML, etc.)
-- Citation extraction from text
-- Format transformation between different types
-- Edge cases and malformed citations
-"""
-
 from good_agent.extensions.citations import (
     CitationExtractor,
     CitationFormat,

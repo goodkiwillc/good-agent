@@ -1,5 +1,3 @@
-"""Test default global context providers."""
-
 from datetime import date, datetime
 
 import pytest

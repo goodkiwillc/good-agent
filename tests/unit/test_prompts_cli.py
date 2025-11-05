@@ -1,10 +1,3 @@
-"""
-Unit tests for the prompts CLI commands.
-
-Tests all CLI commands for template management including init, new, list,
-scan, validate, render, snapshot, history, and restore.
-"""
-
 import os
 import tempfile
 from pathlib import Path

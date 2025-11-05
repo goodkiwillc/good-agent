@@ -1,10 +1,3 @@
-"""
-AgentSearch component for discovery operations across multiple platforms.
-
-Provides unified search interface with intelligent provider routing,
-result normalization, and integration with other agent components.
-"""
-
 import asyncio
 import logging
 from datetime import date, datetime, timedelta

@@ -1,11 +1,3 @@
-"""
-Unit tests for the template storage system.
-
-Tests the FileSystemStorage, ChainedStorage, and FileTemplateManager classes
-with comprehensive coverage of all features including case-insensitive resolution,
-YAML frontmatter parsing, and template snapshots.
-"""
-
 import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock

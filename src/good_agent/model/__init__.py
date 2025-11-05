@@ -1,12 +1,3 @@
-"""Model submodule for language model management and configuration.
-
-This module contains:
-- LanguageModel: Core LLM interface with callback isolation
-- ModelManager: Registry for custom models and router factory
-- ManagedRouter: Extended Router with per-instance callback management
-- ModelOverrideRegistry: Model-specific configuration and capabilities
-"""
-
 from typing import TYPE_CHECKING
 
 # For static type checking only - lazy load everything

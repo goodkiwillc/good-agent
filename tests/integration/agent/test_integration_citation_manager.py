@@ -1,13 +1,3 @@
-"""
-Integration tests for CitationManager.
-
-Tests the full citation management pipeline including:
-- Event-driven citation extraction from messages
-- Format transformation during rendering
-- Multi-agent citation sharing
-- Real-world usage scenarios
-"""
-
 import pytest
 from good_agent import Agent
 from good_agent.content import RenderMode

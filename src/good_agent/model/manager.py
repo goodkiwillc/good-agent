@@ -1,16 +1,3 @@
-"""
-Model Manager for centralized LLM configuration and management.
-
-This module provides:
-1. ManagedRouter: Extended Router with per-instance callback isolation
-2. ModelManager: Global registry for custom models and Router creation
-3. Integration with litellm's native model registration
-
-The ManagedRouter extends litellm's Router to provide all its functionality
-(retries, fallbacks, routing strategies, load balancing) while ensuring
-complete callback isolation between different agent instances.
-"""
-
 import asyncio
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, cast, overload

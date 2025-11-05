@@ -1,17 +1,3 @@
-"""
-EditableYAML - Object-native YAML editor resource (v2 API).
-
-Design:
-- Parses YAML to a Python object at initialization and keeps it in-memory
-- StatefulResource.state is a Box for convenient dot/item access in code
-- Mutations operate on the in-memory object and are serialized to YAML only on read/text
-- Tool methods accept JSON-native values (dict/list/str/number/bool/None), not YAML text snippets
-
-Notes:
-- Paths are dot-separated mapping keys (arrays are treated as whole values; no numeric indexing)
-- YAML round-trips via PyYAML; comments are not preserved
-"""
-
 from __future__ import annotations
 
 import copy

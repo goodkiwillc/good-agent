@@ -1,10 +1,3 @@
-"""
-Template index and auto-versioning system for prompt management.
-
-This module provides automatic version tracking and metadata management
-for prompt template files without requiring git.
-"""
-
 import hashlib
 import json
 from datetime import datetime

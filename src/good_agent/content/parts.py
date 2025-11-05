@@ -1,10 +1,3 @@
-"""
-New content part models with full Pydantic serialization support.
-
-This module provides the new content part system that enables proper
-serialization, storage, and LLM API compatibility.
-"""
-
 import re
 from enum import Enum
 from typing import Annotated, Any, Literal

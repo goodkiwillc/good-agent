@@ -1,18 +1,3 @@
-"""Integration tests for versioning using VCR to record real LLM interactions.
-
-This provides realistic testing of versioning with actual LLM responses,
-tool calls, and multi-turn conversations.
-
-These tests use the @pytest.mark.vcr decorator to automatically record/replay
-LLM interactions. See VCR_USAGE.md for details.
-
-To record new cassettes:
-    VCR_RECORD_MODE=new_episodes pytest test_versioning_vcr_integration.py
-
-To replay existing cassettes (default):
-    pytest test_versioning_vcr_integration.py
-"""
-
 import pytest
 from good_agent import Agent, tool
 from good_agent.messages import AssistantMessage, UserMessage

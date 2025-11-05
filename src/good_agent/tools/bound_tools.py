@@ -1,7 +1,3 @@
-"""
-Bound tool implementation that makes tool-decorated methods become Tool instances.
-"""
-
 from __future__ import annotations
 
 import inspect

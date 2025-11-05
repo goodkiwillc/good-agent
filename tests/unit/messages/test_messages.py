@@ -1,5 +1,3 @@
-"""Comprehensive test suite for messages.py module."""
-
 import datetime
 from datetime import timezone
 from unittest.mock import patch

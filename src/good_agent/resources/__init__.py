@@ -1,7 +1,3 @@
-"""
-Resource management for stateful agent interactions.
-"""
-
 from .base import StatefulResource
 from .editable import EditableResource
 from .editable_mdxl import EditableMDXL

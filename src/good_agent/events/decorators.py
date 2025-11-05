@@ -1,10 +1,3 @@
-"""
-Type-safe event decorators and mixins for the Agent class.
-
-This module provides convenience decorators and a mixin class that add
-type-safe event handler registration methods to the Agent class.
-"""
-
 from __future__ import annotations
 
 from collections.abc import Callable

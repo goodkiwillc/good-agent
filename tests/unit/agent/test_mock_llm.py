@@ -1,5 +1,3 @@
-"""Tests for MockLanguageModel functionality"""
-
 import pytest
 from good_agent.mock import (
     MockLanguageModel,

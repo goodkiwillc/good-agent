@@ -1,10 +1,3 @@
-"""
-Test suite for edge cases and error conditions in component initialization.
-
-Tests various failure modes, timeouts, and edge cases in the task-based
-component initialization system.
-"""
-
 import asyncio
 
 import pytest

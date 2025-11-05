@@ -1,45 +1,36 @@
-"""
-CONTEXT: Comprehensive retry and backoff utilities for resilient operations.
-ROLE: Provide flexible retry strategies with exponential backoff, jitter, and async support
-      for handling transient failures across goodintel_core services.
-DEPENDENCIES: asyncio for async operations, loguru for logging, standard library for timing.
-ARCHITECTURE: Strategy pattern with configurable backoff algorithms, stop conditions, and retry policies.
-              Supports both sync and async operations with comprehensive customization.
-KEY EXPORTS: retry, AsyncRetryer, StopCondition, BackoffStrategy
-USAGE PATTERNS:
-  1) Decorate functions with @retry for automatic retry on exceptions
-  2) Use AsyncRetryer for async function retry with configurable policies
-  3) Customize stop conditions, backoff strategies, and retry predicates
-  4) Apply jitter for distributed systems to avoid thundering herd
-RELATED MODULES:
-  - goodintel_core.clients: Client retry and error handling
-  - goodintel_core.workflows: Workflow step retry and recovery
-  - goodintel_core.utilities.observable: Observable pattern with retry support
-"""
-
 from __future__ import annotations
 
 import abc
 import asyncio
 import datetime
 import functools
-import inspect
+import logging
 import random
 import sys
 import typing
 from collections import ChainMap
-from collections.abc import AsyncGenerator, AsyncIterator, Callable
+from collections.abc import AsyncGenerator
 from enum import Enum, auto
 from typing import (
     Any,
+    Awaitable,
+    Callable,
     Generic,
+    Mapping,
+    MutableMapping,
+    ParamSpec,
     TypeVar,
+    cast,
 )
 
-import logging
 logger = logging.getLogger(__name__)
 
 TIME_UNIT_TYPE = typing.Union[int, float, datetime.timedelta]
+
+P = ParamSpec("P")
+T = TypeVar("T")
+
+MaybeAsyncCallable = Callable[P, Awaitable[T]] | Callable[P, T]
 
 MAX_WAIT = sys.maxsize / 2
 
@@ -70,20 +61,22 @@ class wait_base(abc.ABC):
     """Abstract base class for wait strategies."""
 
     @abc.abstractmethod
-    def __call__(self, retry_state: RetryState) -> float:
+    def __call__(self, retry_state: RetryState[Any]) -> float:
         pass
 
     def __add__(self, other: wait_base) -> wait_combine:
         return wait_combine(self, other)
 
-    def __radd__(self, other: wait_base) -> wait_combine | wait_base:
+    def __radd__(self, other: object) -> wait_combine | wait_base:
         # make it possible to use multiple waits with the built-in sum function
         if other == 0:  # type: ignore[comparison-overlap]
             return self
-        return self.__add__(other)
+        if isinstance(other, wait_base):
+            return self.__add__(other)
+        raise TypeError("Unsupported operand type for wait_base addition")
 
 
-WaitBaseT = typing.Union[wait_base, typing.Callable[["RetryState"], float | int]]
+WaitBaseT = typing.Union[wait_base, Callable[["RetryState[Any]"], float | int]]
 
 
 class wait_fixed(wait_base):
@@ -92,7 +85,7 @@ class wait_fixed(wait_base):
     def __init__(self, wait: TIME_UNIT_TYPE) -> None:
         self.wait_fixed = _to_seconds(wait)
 
-    def __call__(self, retry_state: RetryState) -> float:
+    def __call__(self, retry_state: RetryState[Any]) -> float:
         return self.wait_fixed
 
 
@@ -110,7 +103,7 @@ class wait_random(wait_base):
         self.wait_random_min = _to_seconds(min)
         self.wait_random_max = _to_seconds(max)
 
-    def __call__(self, retry_state: RetryState) -> float:
+    def __call__(self, retry_state: RetryState[Any]) -> float:
         return self.wait_random_min + (
             random.random() * (self.wait_random_max - self.wait_random_min)
         )
@@ -122,7 +115,7 @@ class wait_combine(wait_base):
     def __init__(self, *strategies: wait_base) -> None:
         self.wait_funcs = strategies
 
-    def __call__(self, retry_state: RetryState) -> float:
+    def __call__(self, retry_state: RetryState[Any]) -> float:
         return sum(x(retry_state=retry_state) for x in self.wait_funcs)
 
 
@@ -145,7 +138,7 @@ class wait_chain(wait_base):
     def __init__(self, *strategies: wait_base) -> None:
         self.strategies = strategies
 
-    def __call__(self, retry_state: RetryState) -> float:
+    def __call__(self, retry_state: RetryState[Any]) -> float:
         wait_func_no = min(max(retry_state.attempt, 1), len(self.strategies))
         wait_func = self.strategies[wait_func_no - 1]
         return wait_func(retry_state=retry_state)
@@ -168,7 +161,7 @@ class wait_incrementing(wait_base):
         self.increment = _to_seconds(increment)
         self.max = _to_seconds(max)
 
-    def __call__(self, retry_state: RetryState) -> float:
+    def __call__(self, retry_state: RetryState[Any]) -> float:
         result = self.start + (self.increment * (retry_state.attempt - 1))
         return max(0, min(result, self.max))
 
@@ -198,7 +191,7 @@ class wait_exponential(wait_base):
         self.max = _to_seconds(max)
         self.exp_base = exp_base
 
-    def __call__(self, retry_state: RetryState) -> float:
+    def __call__(self, retry_state: RetryState[Any]) -> float:
         try:
             exp = self.exp_base ** (retry_state.attempt - 1)
             result = self.multiplier * exp
@@ -235,7 +228,7 @@ class wait_random_exponential(wait_exponential):
 
     """
 
-    def __call__(self, retry_state: RetryState) -> float:
+    def __call__(self, retry_state: RetryState[Any]) -> float:
         high = super().__call__(retry_state=retry_state)
         return random.uniform(self.min, high)
 
@@ -264,7 +257,7 @@ class wait_exponential_jitter(wait_base):
         self.exp_base = exp_base
         self.jitter = jitter
 
-    def __call__(self, retry_state: RetryState) -> float:
+    def __call__(self, retry_state: RetryState[Any]) -> float:
         jitter = random.uniform(0, self.jitter)
         try:
             exp = self.exp_base ** (retry_state.attempt - 1)
@@ -272,10 +265,6 @@ class wait_exponential_jitter(wait_base):
         except OverflowError:
             result = self.max
         return max(0, min(result, self.max))
-
-
-T = TypeVar("T")  # Return type of the target function
-
 
 class RetryAction(Enum):
     """Possible actions after an attempt."""
@@ -300,20 +289,20 @@ class RetryState(Generic[T]):
 
     def __init__(
         self,
-        parent: Retry,
+        parent: "Retry[T]",
         attempt: int,
-        function: Callable[..., T],
+        function: MaybeAsyncCallable,
         args: tuple[Any, ...],
-        kwargs: dict[str, Any],
+        kwargs: Mapping[str, Any],
         exception: Exception | None = None,
         result: T | None = None,
     ):
-        self._parent = parent
-        self._args = args
-        self._kwargs = ChainMap(kwargs)
+        self._parent: Retry[T] = parent
+        self._args: tuple[Any, ...] = args
+        self._kwargs: ChainMap[str, Any] = ChainMap(dict(kwargs))
 
         self.attempt = attempt
-        self.function = function
+        self.function: MaybeAsyncCallable = function
 
         self.exception = exception
         self.result = result
@@ -321,19 +310,22 @@ class RetryState(Generic[T]):
         self.action: RetryAction = RetryAction.RETRY
 
     @property
-    def kwargs(self) -> ChainMap:
+    def kwargs(self) -> ChainMap[str, Any]:
         return self._kwargs
 
     @kwargs.setter
-    def kwargs(self, value):
-        self._kwargs = self._kwargs.new_child(value)
+    def kwargs(self, value: Mapping[str, Any] | None) -> None:
+        if value is None:
+            self._kwargs = self._kwargs.new_child()
+        else:
+            self._kwargs = self._kwargs.new_child(dict(value))
 
     @property
     def args(self) -> tuple[Any, ...]:
         return self._args
 
     @args.setter
-    def args(self, value):
+    def args(self, value: tuple[Any, ...]) -> None:
         if value:
             self._args = value
 
@@ -356,7 +348,7 @@ class RetryState(Generic[T]):
         """Whether this was the last allowed attempt."""
         return self.attempt == self.max_attempts
 
-    def retry(self, *args, **kwargs) -> None:
+    def retry(self, *args: Any, **kwargs: Any) -> None:
         """
         Force a retry with optionally modified arguments.
 
@@ -402,11 +394,13 @@ class Retry(Generic[T]):
     def __init__(
         self,
         max_attempts: int = 3,
-        wait: Callable[[RetryState], float] = None,
-        retry_on: tuple[type] = (Exception,),
-        break_and_suppress: tuple[type] = tuple(),
-        break_and_propagate: tuple[type] = (KeyboardInterrupt, asyncio.CancelledError),
-        # logger: Optional[logging.Logger] = None,
+        wait: WaitBaseT | None = None,
+        retry_on: tuple[type[BaseException], ...] = (Exception,),
+        break_and_suppress: tuple[type[BaseException], ...] = (),
+        break_and_propagate: tuple[type[BaseException], ...] = (
+            KeyboardInterrupt,
+            asyncio.CancelledError,
+        ),
         debug: bool = False,
         timeout: float | None = None,
     ):
@@ -422,7 +416,7 @@ class Retry(Generic[T]):
             timeout: Timeout for each attempt in seconds (None for no timeout)
         """
         self.max_attempts = max(1, max_attempts)
-        self.wait = wait or (lambda _: 0)  # Default to no wait
+        self.wait: Callable[[RetryState[Any]], float] = self._resolve_wait(wait)
         self._retry_on = retry_on
         self._break_and_suppress = break_and_suppress
         self._break_and_propagate = break_and_propagate
@@ -430,21 +424,45 @@ class Retry(Generic[T]):
         self._debug = debug
         self.timeout = timeout
 
-    def log(self, message: str, options: dict | None = None, *args, **kwargs) -> None:
+    @staticmethod
+    def _resolve_wait(wait: WaitBaseT | None) -> Callable[[RetryState[Any]], float]:
+        if wait is None:
+            return lambda _: 0.0
+        if isinstance(wait, wait_base):
+            return lambda state: float(wait(state))
+        return lambda state: float(wait(state))
+
+    def log(
+        self,
+        message: str,
+        options: Mapping[str, Any] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         """Log a message with the retry logger."""
-        options = options or {}
+        _ = options or {}
         if self._debug:
             logger.debug(message, *args, **kwargs)
 
-    def __enter__(self):
+    def __enter__(self) -> "Retry[T]":
         """Enter the context manager."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any,
+    ) -> None:
         """Exit the context manager."""
         pass
 
-    def __call__(self, function, *args, **kwargs) -> AsyncIterator[RetryState]:
+    def __call__(
+        self,
+        function: MaybeAsyncCallable,
+        *args: Any,
+        **kwargs: Any,
+    ) -> AsyncGenerator[RetryState[T], None]:
         """
         Create a retry operation for the function with the given arguments.
 
@@ -456,18 +474,19 @@ class Retry(Generic[T]):
         Returns:
             An async generator yielding RetryState objects
         """
-        return self._retry_generator(function, args, kwargs)
+        return self._retry_generator(function, args, dict(kwargs))
 
     async def _retry_generator(
-        self, function: Callable[..., T], args, kwargs
-    ) -> AsyncGenerator[RetryState]:
+        self,
+        function: MaybeAsyncCallable,
+        args: tuple[Any, ...],
+        kwargs: Mapping[str, Any],
+    ) -> AsyncGenerator[RetryState[T], None]:
         """Async generator for retry operations."""
-        is_async = asyncio.iscoroutinefunction(function) or inspect.isawaitable(
-            function
-        )
+        is_async = asyncio.iscoroutinefunction(function)
         current_attempt = 0
         current_args = args
-        current_kwargs = kwargs.copy()
+        current_kwargs: MutableMapping[str, Any] = dict(kwargs)
 
         while current_attempt < self.max_attempts:
             self.log(f"iteration {current_attempt=}")
@@ -500,7 +519,6 @@ class Retry(Generic[T]):
                         function, state.args, state.kwargs, is_async
                     )
                 else:
-                    # logger.debug("Executing without timeout")
                     result = await self._execute(
                         function, state.args, state.kwargs, is_async
                     )
@@ -550,7 +568,7 @@ class Retry(Generic[T]):
             else:  # RetryAction.RETRY
                 # Update for next attempt
                 current_args = state.args
-                current_kwargs = state.kwargs
+                current_kwargs = dict(state.kwargs)
 
                 # Check if we've reached max attempts
                 if current_attempt >= self.max_attempts:
@@ -559,19 +577,33 @@ class Retry(Generic[T]):
                     )
                     break
 
-    async def _execute_with_timeout(self, function, args, kwargs, is_async):
+    async def _execute_with_timeout(
+        self,
+        function: MaybeAsyncCallable,
+        args: tuple[Any, ...],
+        kwargs: Mapping[str, Any],
+        is_async: bool,
+    ) -> T:
         """Execute the function with a timeout."""
         return await asyncio.wait_for(
             self._execute(function, args, kwargs, is_async), timeout=self.timeout
         )
 
-    async def _execute(self, function, args, kwargs, is_async):
+    async def _execute(
+        self,
+        function: MaybeAsyncCallable,
+        args: tuple[Any, ...],
+        kwargs: Mapping[str, Any],
+        is_async: bool,
+    ) -> T:
         """Execute the function with the given arguments."""
         if is_async:
-            return await function(*args, **kwargs)
+            async_callable = cast(Callable[..., Awaitable[T]], function)
+            return await async_callable(*args, **kwargs)
         else:
             # Run synchronous functions in a thread pool
             loop = asyncio.get_running_loop()
+            sync_callable = cast(Callable[..., T], function)
             return await loop.run_in_executor(
-                None, functools.partial(function, *args, **kwargs)
+                None, functools.partial(sync_callable, *args, **kwargs)
             )

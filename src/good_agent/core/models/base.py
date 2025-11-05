@@ -1,21 +1,3 @@
-"""
-CONTEXT: Core model base classes used across goodintel_core and extensions.
-ROLE: Provide Pydantic-based foundations with validated private attrs, stable hashing,
-and identity semantics for all domain models.
-DEPENDENCIES:
-  - pydantic BaseModel/TypeAdapter for validation
-  - good_common.utilities for fast, stable hashing and base62 encoding
-  - goodintel_core.types.UUID for time-ordered identifiers
-ARCHITECTURE: Sits beneath models/*; Renderable, Entities, and storage-facing
-types extend these bases to inherit config, hashing, and identity patterns.
-KEY EXPORTS: PrivateAttrBase, GoodBase, Identifiable
-USAGE PATTERNS:
-  1) Extend GoodBase for general models to inherit config + hashing
-  2) Extend Identifiable when a stable UUID id is required
-  3) Use PrivateAttrBase when validated private attributes are needed
-RELATED MODULES: goodintel_core.models.entities, .renderable, goodintel_core.types
-"""
-
 import warnings
 from abc import ABC
 from typing import Any, ClassVar

@@ -1,9 +1,3 @@
-"""Tests for fixing system message versioning.
-
-These tests follow the RED/GREEN/REFACTOR approach to fix the issue where
-set_system_message() bypasses the versioning system.
-"""
-
 import pytest
 from good_agent import Agent
 from good_agent.messages import SystemMessage

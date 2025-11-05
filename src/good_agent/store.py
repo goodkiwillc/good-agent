@@ -1,13 +1,3 @@
-"""
-Message store interface for the goodintel-agent library.
-
-Provides in-memory storage with Redis backing for messages, enabling:
-- Fast retrieval by message ID
-- Caching layer for frequently accessed messages
-- Thread-safe operations
-- Automatic TTL management
-"""
-
 import asyncio
 import weakref
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable

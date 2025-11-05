@@ -1,0 +1,240 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"<|edit-context|>\nYou are now editing doc.\n\nThis
+      is a forked context specifically for editing. The original conversation context
+      and history are preserved below.\nUse the provided tools to read and modify
+      the content.\nWhen you''re done editing, use the save tool to persist changes
+      and return to the main context.\n<|/edit-context|>\n\nYou are a YAML editor.
+      Only modify the document via the provided tools. Use the ''set'' tool to update
+      values. Return a short confirmation when done.","role":"system"},{"content":[{"text":"Update
+      meta.version to ''3.0'' and set config.title to ''Final''. Confirm when done.","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"read","description":"","parameters":{"type":"object","properties":{"start_line":{"anyOf":[{"type":"integer"},{"type":"null"}],"default":null},"num_lines":{"anyOf":[{"type":"integer"},{"type":"null"}],"default":null}},"required":[],"additionalProperties":false}}},{"type":"function","function":{"name":"get","description":"","parameters":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}}},{"type":"function","function":{"name":"set","description":"","parameters":{"type":"object","properties":{"path":{"type":"string"},"value":{},"create_missing":{"default":true,"type":"boolean"},"strategy":{"default":"assign","type":"string"},"array_key":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"validate":{"default":true,"type":"boolean"},"coerce_to_existing_type":{"default":true,"type":"boolean"},"reasoning":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["path","value"],"additionalProperties":false}}},{"type":"function","function":{"name":"delete","description":"","parameters":{"type":"object","properties":{"path":{"type":"string"},"validate":{"default":true,"type":"boolean"},"reasoning":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["path"],"additionalProperties":false}}},{"type":"function","function":{"name":"replace","description":"","parameters":{"type":"object","properties":{"pattern":{"type":"string"},"replacement":{"type":"string"},"flags":{"default":"","type":"string"},"validate":{"default":true,"type":"boolean"},"reasoning":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["pattern","replacement"],"additionalProperties":false}}},{"type":"function","function":{"name":"patch","description":"","parameters":{"type":"object","properties":{"ops":{"items":{"additionalProperties":true,"type":"object"},"type":"array"},"validate":{"default":true,"type":"boolean"},"coerce_to_existing_type":{"default":true,"type":"boolean"}},"required":["ops"],"additionalProperties":false}}},{"type":"function","function":{"name":"validate","description":"","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}},{"type":"function","function":{"name":"text","description":"","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}},{"type":"function","function":{"name":"save","description":"","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '3304'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.109.1
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.109.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CYfc23VqwIBfRnEojLyGymiLTS7Zf\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1762379146,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_9ol2a2iU76mICFW4SBY8zYt5\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"set\",\n
+        \             \"arguments\": \"{\\\"path\\\": \\\"meta.version\\\", \\\"value\\\":
+        \\\"3.0\\\"}\"\n            }\n          },\n          {\n            \"id\":
+        \"call_8oXlZBfYcjMlo812ppevHuLQ\",\n            \"type\": \"function\",\n
+        \           \"function\": {\n              \"name\": \"set\",\n              \"arguments\":
+        \"{\\\"path\\\": \\\"config.title\\\", \\\"value\\\": \\\"Final\\\"}\"\n            }\n
+        \         }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 411,\n    \"completion_tokens\":
+        54,\n    \"total_tokens\": 465,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 999f8a429c0b76f2-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 05 Nov 2025 21:45:48 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=jr3euJP32nrtESDHbXPPoagX7AvjyhvDAvuEsYU9yXc-1762379148-1.0.1.1-D4D25.yGyYapkVC8VZNO8as5cLlgjtKZe_CRSwSsbyS2m5gWwaSOVay338Ubz7Wt.X2ecQuGo5NQY4ZmyK3LdnrUDixZbQ6ZKqbyZDKMP7g;
+        path=/; expires=Wed, 05-Nov-25 22:15:48 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=NWFh.pbY7tHYVhxvTNWzGxceDceq4O6nvqZnPG6kPjM-1762379148092-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1356'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999857'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"<|edit-context|>\nYou are now editing doc.\n\nThis
+      is a forked context specifically for editing. The original conversation context
+      and history are preserved below.\nUse the provided tools to read and modify
+      the content.\nWhen you''re done editing, use the save tool to persist changes
+      and return to the main context.\n<|/edit-context|>\n\nYou are a YAML editor.
+      Only modify the document via the provided tools. Use the ''set'' tool to update
+      values. Return a short confirmation when done.","role":"system"},{"content":[{"text":"Update
+      meta.version to ''3.0'' and set config.title to ''Final''. Confirm when done.","type":"text"}],"role":"user"},{"role":"assistant","content":"","tool_calls":[{"id":"call_9ol2a2iU76mICFW4SBY8zYt5","type":"function","function":{"name":"set","arguments":"{\"path\":
+      \"meta.version\", \"value\": \"3.0\"}"}},{"id":"call_8oXlZBfYcjMlo812ppevHuLQ","type":"function","function":{"name":"set","arguments":"{\"path\":
+      \"config.title\", \"value\": \"Final\"}"}}]},{"role":"tool","content":"ok","tool_call_id":"call_9ol2a2iU76mICFW4SBY8zYt5"},{"role":"tool","content":"ok","tool_call_id":"call_8oXlZBfYcjMlo812ppevHuLQ"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"read","description":"","parameters":{"type":"object","properties":{"start_line":{"anyOf":[{"type":"integer"},{"type":"null"}],"default":null},"num_lines":{"anyOf":[{"type":"integer"},{"type":"null"}],"default":null}},"required":[],"additionalProperties":false}}},{"type":"function","function":{"name":"get","description":"","parameters":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}}},{"type":"function","function":{"name":"set","description":"","parameters":{"type":"object","properties":{"path":{"type":"string"},"value":{},"create_missing":{"default":true,"type":"boolean"},"strategy":{"default":"assign","type":"string"},"array_key":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null},"validate":{"default":true,"type":"boolean"},"coerce_to_existing_type":{"default":true,"type":"boolean"},"reasoning":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["path","value"],"additionalProperties":false}}},{"type":"function","function":{"name":"delete","description":"","parameters":{"type":"object","properties":{"path":{"type":"string"},"validate":{"default":true,"type":"boolean"},"reasoning":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["path"],"additionalProperties":false}}},{"type":"function","function":{"name":"replace","description":"","parameters":{"type":"object","properties":{"pattern":{"type":"string"},"replacement":{"type":"string"},"flags":{"default":"","type":"string"},"validate":{"default":true,"type":"boolean"},"reasoning":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["pattern","replacement"],"additionalProperties":false}}},{"type":"function","function":{"name":"patch","description":"","parameters":{"type":"object","properties":{"ops":{"items":{"additionalProperties":true,"type":"object"},"type":"array"},"validate":{"default":true,"type":"boolean"},"coerce_to_existing_type":{"default":true,"type":"boolean"}},"required":["ops"],"additionalProperties":false}}},{"type":"function","function":{"name":"validate","description":"","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}},{"type":"function","function":{"name":"text","description":"","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}},{"type":"function","function":{"name":"save","description":"","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '3803'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=jr3euJP32nrtESDHbXPPoagX7AvjyhvDAvuEsYU9yXc-1762379148-1.0.1.1-D4D25.yGyYapkVC8VZNO8as5cLlgjtKZe_CRSwSsbyS2m5gWwaSOVay338Ubz7Wt.X2ecQuGo5NQY4ZmyK3LdnrUDixZbQ6ZKqbyZDKMP7g;
+        _cfuvid=NWFh.pbY7tHYVhxvTNWzGxceDceq4O6nvqZnPG6kPjM-1762379148092-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.109.1
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.109.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CYfc4ATrLs7q3lOxPY2rsmjFsV48m\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1762379148,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Updated meta.version to '3.0' and set
+        config.title to 'Final'.\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 481,\n    \"completion_tokens\":
+        18,\n    \"total_tokens\": 499,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 999f8a4beea376f2-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 05 Nov 2025 21:45:49 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '963'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999852'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

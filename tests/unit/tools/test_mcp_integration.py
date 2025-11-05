@@ -1,7 +1,3 @@
-"""
-Tests for MCP (Model Context Protocol) integration with GoodIntel Agent.
-"""
-
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 

@@ -1,5 +1,3 @@
-"""Test Agent render events (MESSAGE_RENDER_BEFORE/AFTER)."""
-
 import pytest
 from good_agent import Agent, AgentEvents
 from good_agent.messages import RenderMode, UserMessage

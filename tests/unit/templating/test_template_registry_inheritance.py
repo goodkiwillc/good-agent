@@ -1,10 +1,3 @@
-"""
-Test suite for TemplateRegistry hierarchical inheritance functionality.
-
-Tests the new parent registry lookup system that allows TemplateManager
-instances to create local registries that can fall back to the global registry.
-"""
-
 import pytest
 from good_agent import Agent
 from good_agent.templating import (

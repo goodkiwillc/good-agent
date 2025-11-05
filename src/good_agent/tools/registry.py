@@ -1,13 +1,3 @@
-"""
-Tool Registry for the goodintel-agent library.
-
-Provides global tool registration and discovery with support for:
-- Tag-based tool selection (e.g., "weather:*")
-- Entry point integration for automatic discovery
-- Tool versioning and lifecycle management
-- Thread-safe operations
-"""
-
 import asyncio
 import importlib.metadata
 import os

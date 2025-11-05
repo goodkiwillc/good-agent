@@ -1,11 +1,3 @@
-"""
-Focused integration test for @on decorator patterns in AgentComponents.
-
-This test verifies that the @on decorator pattern works correctly for
-AgentComponent event handling, demonstrating both decorator and manual
-registration patterns work as expected.
-"""
-
 import asyncio
 
 import pytest

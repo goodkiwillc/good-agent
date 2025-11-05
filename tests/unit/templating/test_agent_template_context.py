@@ -1,5 +1,3 @@
-"""Test that agent instance is available in template rendering context."""
-
 import pytest
 from good_agent import Agent, UserMessage
 from good_agent.content import TemplateContentPart, TextContentPart

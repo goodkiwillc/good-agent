@@ -1,13 +1,3 @@
-"""
-Tests for CitationManager EventRouter integration.
-
-Focuses on:
-- MESSAGE_CREATE_BEFORE extracts citations
-- MESSAGE_RENDER_BEFORE transforms citations
-- MESSAGE_APPEND_AFTER handles pre-created messages
-- Event ordering and handler priorities
-"""
-
 import pytest
 from good_agent import Agent
 from good_agent.content import RenderMode

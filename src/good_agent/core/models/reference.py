@@ -1,17 +1,3 @@
-"""
-CONTEXT: Standardized reference data types for model validation and constraints.
-ROLE: Provide typed literals for ISO language codes and US state codes to ensure
-      data consistency and validation across goodintel_core models.
-DEPENDENCIES: typing module for Literal type definitions.
-ARCHITECTURE: Simple type alias definitions for use in pydantic model fields.
-KEY EXPORTS: ISO_LANG_CODE, STATE_CODE
-USAGE PATTERNS:
-  1) Use ISO_LANG_CODE for language code validation in models
-  2) Use STATE_CODE for US state code validation in addresses
-  3) Combine with pydantic Field() for validation and documentation
-RELATED MODULES: .entities (Person, Organization models), ..types (other reference types)
-"""
-
 import typing
 
 ISO_LANG_CODE = typing.Literal[

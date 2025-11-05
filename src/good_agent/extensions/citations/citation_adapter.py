@@ -1,12 +1,3 @@
-"""
-Citation adapter for tool parameter transformation.
-
-This module provides the CitationAdapter class that intercepts tools with URL
-parameters and transforms them to use citation indices instead. This allows
-the LLM to reference citations by index rather than full URLs, improving
-token efficiency and citation accuracy.
-"""
-
 from __future__ import annotations
 
 import copy

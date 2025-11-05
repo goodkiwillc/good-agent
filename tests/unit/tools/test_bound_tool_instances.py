@@ -1,7 +1,3 @@
-"""
-Test that @tool decorated methods on AgentComponents become actual Tool instances.
-"""
-
 import pytest
 from good_agent import Agent, AgentComponent, tool
 from good_agent.tools import BoundTool, Tool

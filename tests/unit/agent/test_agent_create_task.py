@@ -1,5 +1,3 @@
-"""Test Agent.create_task() utility method."""
-
 import asyncio
 
 import pytest

@@ -1,10 +1,3 @@
-"""
-File-based template storage system for the GoodIntel Agent framework.
-
-This module provides a storage abstraction layer for managing prompt templates
-from various sources including local filesystem, git repositories, and cloud storage.
-"""
-
 import asyncio
 import hashlib
 import json

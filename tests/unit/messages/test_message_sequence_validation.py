@@ -1,5 +1,3 @@
-"""Test message sequence validation functionality."""
-
 import pytest
 from good_agent import Agent
 from good_agent.messages import (

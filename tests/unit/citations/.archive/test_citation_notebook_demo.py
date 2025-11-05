@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Demonstration of how to properly access citations in messages.
-This can be added to the campaign-analyst-v2.ipynb notebook.
-"""
 
 import asyncio
 

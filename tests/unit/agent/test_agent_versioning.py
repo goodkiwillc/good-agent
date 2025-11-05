@@ -1,9 +1,3 @@
-"""Integration tests for Agent versioning functionality.
-
-These tests follow the specification in .spec/thread-versioning-refactor.md
-and implement Phase 3: Agent Integration Tests (lines 601-672).
-"""
-
 import pytest
 import pytest_asyncio
 from good_agent import Agent

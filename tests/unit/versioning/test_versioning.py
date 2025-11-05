@@ -1,9 +1,3 @@
-"""Tests for the thread versioning system.
-
-These tests follow the specification in .spec/thread-versioning-refactor.md
-and implement Phase 1: Infrastructure Tests (lines 482-534).
-"""
-
 from unittest.mock import Mock
 
 import pytest

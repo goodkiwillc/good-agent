@@ -1,14 +1,3 @@
-"""
-Citation format detection and transformation utilities.
-
-This module provides utilities for detecting different citation formats
-in text content and transforming between them. Supports:
-- Markdown citations: [1], [2]
-- LLM-optimized format: [!CITE_1!], [!CITE_2!]
-- XML idx attributes: idx="1", idx="2"
-- URL attributes: url="https://..."
-"""
-
 from __future__ import annotations
 
 import re

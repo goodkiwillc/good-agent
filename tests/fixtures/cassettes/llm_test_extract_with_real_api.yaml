@@ -1,0 +1,116 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"system","content":"You are a weather assistant"},{"role":"user","content":"The
+      weather in Paris is 22 degrees and sunny today."}],"model":"gpt-4o-mini","n":1,"parallel_tool_calls":true,"temperature":0,"tool_choice":{"type":"function","function":{"name":"WeatherInfo"}},"tools":[{"type":"function","function":{"name":"WeatherInfo","description":"Structured
+      response model for weather extraction.","parameters":{"properties":{"temperature":{"title":"Temperature","type":"integer"},"condition":{"title":"Condition","type":"string"},"location":{"title":"Location","type":"string"}},"required":["condition","location","temperature"],"type":"object"}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '682'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.109.1
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.109.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CYfcNxraTd3A5Y2jufiYXMtbNfcpb\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1762379167,\n  \"model\": \"gpt-4o-mini-2024-07-18\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_ISjh3acxlW7OrSOG4lBBmLos\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"WeatherInfo\",\n
+        \             \"arguments\": \"{\\\"temperature\\\":22,\\\"condition\\\":\\\"sunny\\\",\\\"location\\\":\\\"Paris\\\"}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 87,\n    \"completion_tokens\":
+        14,\n    \"total_tokens\": 101,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_560af6e559\"\n}\n"
+    headers:
+      CF-RAY:
+      - 999f8ac18cd0a3aa-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 05 Nov 2025 21:46:07 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=q.as0NdUw.SJkoIT8Ct9pTXi8b9vlHtJ8UYm0CllCGw-1762379167-1.0.1.1-k_CltP80jUtkvOm.gWk_GklMRwG6qrurVgJIL5Seqf3s5ZE3v0esau2tXrjoBeRm72g_sY5XuT06uYDAAqwGgzvQ9KnIG.CiYFjziCezyyI;
+        path=/; expires=Wed, 05-Nov-25 22:16:07 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=k805XHNQF7jF51EDUhnpo3dnJ_0J3I6Q3N.s2VFOzVw-1762379167755-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '707'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999975'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

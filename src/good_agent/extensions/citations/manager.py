@@ -1,12 +1,3 @@
-"""
-CitationManager - Coordinates citations between local messages and global index.
-
-This module provides the CitationManager class that handles the complex task
-of managing citations across multiple sources, formats, and rendering contexts.
-It ensures agents can properly cite information sources while maintaining
-consistency across multi-turn conversations and multiple agent instances.
-"""
-
 from __future__ import annotations
 
 import logging

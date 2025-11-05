@@ -1,5 +1,3 @@
-"""Tests for token counting utilities."""
-
 from good_agent.agent import Agent
 from good_agent.messages import (
     AssistantMessage,

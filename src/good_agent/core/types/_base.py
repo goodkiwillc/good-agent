@@ -1,26 +1,3 @@
-"""
-CONTEXT: Base type definitions for foundational data structures in the GoodIntel platform.
-ROLE: Provides core type abstractions for identifiers and string-based dictionaries with validation and utility methods.
-DEPENDENCIES:
-  - good_common.types: URL implementation with validation and parsing capabilities
-ARCHITECTURE:
-  - StringDict: Type alias for string-to-string mappings with validation hints
-  - Identifier: URL-based identifier system with standardized structure and domain handling
-KEY EXPORTS: StringDict, Identifier
-USAGE PATTERNS:
-  1. StringDict for configuration, metadata, and key-value data storage
-  2. Identifier for resource identification with URL-based structure and domain extraction
-RELATED MODULES:
-  - goodintel_core.models: Base classes using these foundational types
-  - goodintel_core.clients: Resource identification in external systems
-  - goodintel_core.serialization: Data structure validation and conversion
-
-PERFORMANCE NOTES:
-  - StringDict provides compile-time type hints with runtime dict behavior
-  - Identifier inherits URL parsing performance characteristics
-  - Domain extraction uses efficient string operations
-"""
-
 from typing import Self
 
 from good_agent.core.types import URL

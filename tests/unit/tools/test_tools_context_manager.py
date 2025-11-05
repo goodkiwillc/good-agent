@@ -1,14 +1,3 @@
-"""
-Tests for agent.tools() context manager functionality.
-
-This test module uses TDD (Red/Green/Refactor) to implement the tools context manager.
-The context manager should support:
-- replace: Replace all tools with new ones
-- append: Add new tools to existing ones
-- filter: Filter existing tools with a function
-- Automatic restoration of original tools after context exit
-"""
-
 import pytest
 from good_agent import Agent, tool
 

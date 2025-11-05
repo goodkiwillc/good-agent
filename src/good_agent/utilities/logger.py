@@ -1,16 +1,3 @@
-"""
-CONTEXT: Logging utility with Prefect integration and fallback support.
-ROLE: Provide consistent logging across the library with automatic Prefect context
-      detection and standard logging fallback for non-Prefect environments.
-DEPENDENCIES: prefect for run context, Python's standard logging module.
-ARCHITECTURE: Simple factory function that detects environment and returns appropriate logger.
-KEY EXPORTS: get_logger
-USAGE PATTERNS:
-  1) Use get_logger(__name__) in any module for environment-appropriate logging
-  2) Works seamlessly in Prefect flows/tasks and standalone execution
-  3) Provides consistent interface regardless of logging backend
-"""
-
 from __future__ import annotations
 
 import logging

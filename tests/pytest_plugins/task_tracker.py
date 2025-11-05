@@ -1,5 +1,3 @@
-"""Pytest plugin to track Observable task issues"""
-
 import asyncio
 import logging
 

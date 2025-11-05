@@ -1,5 +1,3 @@
-"""Unit tests for context provider dependency injection system."""
-
 from unittest.mock import AsyncMock, Mock
 
 import pytest

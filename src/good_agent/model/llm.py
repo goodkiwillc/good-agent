@@ -1,33 +1,3 @@
-"""
-CONTEXT: Core Language Model abstraction providing unified interface for LLM interactions.
-ROLE: Central LLM orchestration layer handling model management, message formatting,
-      capability detection, token tracking, and retry/fallback logic.
-DEPENDENCIES:
-  - litellm: Multi-provider LLM abstraction and routing
-  - instructor: Structured output extraction and response validation
-  - .manager: ManagedRouter for isolated callback handling and retry logic
-  - .overrides: Model-specific parameter override system
-  - good_agent.events: Event system for lifecycle tracking
-ARCHITECTURE:
-  - Entry point for all LLM operations in the agent system
-  - Wraps litellm Router with ManagedRouter for instance isolation
-  - Integrates with instructor for structured output capabilities
-  - Provides unified message formatting and capability detection
-  - Tracks usage statistics and handles fallback model routing
-KEY EXPORTS: LanguageModel class, ModelConfig TypedDict, StreamChunk dataclass
-USAGE PATTERNS:
-  1. Direct instantiation: LanguageModel(model="gpt-4", temperature=0.7)
-  2. Via AgentConfigManager: LanguageModel(config=config_manager)
-  3. With fallback models: LanguageModel(model="gpt-4", fallback_models=["gpt-3.5"])
-  4. Structured output: await llm.extract(messages, response_model=MySchema)
-RELATED MODULES:
-  - .manager: ManagedRouter and ModelManager for routing logic
-  - .overrides: Model-specific configuration overrides
-  - ..messages: Message types and content handling
-  - ..events: LLM lifecycle events
-  - ..config: Configuration management integration
-"""
-
 import asyncio
 import copy
 from collections.abc import AsyncIterator, Sequence
@@ -1520,6 +1490,13 @@ class LanguageModel(AgentComponent):
             llm=self,
         )
 
+        # Ensure parallel_tool_calls is still not present after event handlers
+        # Event handlers might have modified ctx.parameters["config"]
+        if "parallel_tool_calls" in ctx.parameters["config"] and not ctx.parameters[
+            "config"
+        ].get("tools"):
+            ctx.parameters["config"].pop("parallel_tool_calls", None)
+
         try:
             # Router already handles retries/fallbacks via model_list configuration
             response = await self.router.acompletion(
@@ -1765,6 +1742,11 @@ class LanguageModel(AgentComponent):
         config = self._prepare_request_config(**kwargs)
         model = config.get("model", self.model)
 
+        # Ensure parallel_tool_calls is only sent when tools are specified
+        if "parallel_tool_calls" in config and not config.get("tools"):
+            # Some providers reject this flag without accompanying tools
+            config.pop("parallel_tool_calls", None)
+
         # Fire before event
         start_time = time.time()
         self.do(
@@ -1783,6 +1765,10 @@ class LanguageModel(AgentComponent):
             try:
                 # Update config with current model
                 config["model"] = model
+
+                # Ensure parallel_tool_calls is still not present after event handlers
+                if "parallel_tool_calls" in config and not config.get("tools"):
+                    config.pop("parallel_tool_calls", None)
 
                 # Use the router's streaming completion
                 stream_response = await self.router.acompletion(

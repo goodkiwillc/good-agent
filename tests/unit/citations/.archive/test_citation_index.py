@@ -1,14 +1,3 @@
-"""
-Unit tests for CitationIndex.
-
-Tests the core functionality of the CitationIndex class including:
-- URL deduplication and canonicalization
-- Index allocation and retrieval
-- Alias management
-- Metadata and tagging
-- Merging operations
-"""
-
 import pytest
 from good_agent.extensions.citations import CitationIndex
 from goodintel_core.types import URL

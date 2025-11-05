@@ -1,13 +1,3 @@
-"""
-Comprehensive test suite for Agent signal handling and interruption.
-
-These tests verify the complete signal handling chain from OS signals
-to Agent cleanup, addressing gaps in existing interruption tests.
-
-All tests in this file require signal handling and should be run with:
-    pytest -m requires_signals
-"""
-
 import asyncio
 import gc
 import os

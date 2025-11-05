@@ -1,9 +1,3 @@
-"""Context managers for thread versioning operations.
-
-These context managers provide temporary thread modifications with restoration,
-allowing for isolated operations and thread forking.
-"""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

@@ -1,9 +1,3 @@
-"""
-Tests for StatefulResource base class.
-
-Following TDD Red/Green/Refactor process for implementation.
-"""
-
 import pytest
 from good_agent import Agent, tool
 

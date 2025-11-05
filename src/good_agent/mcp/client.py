@@ -1,9 +1,3 @@
-"""
-MCP Client Manager for GoodIntel Agent.
-
-Manages connections to MCP servers and provides tool discovery/registration.
-"""
-
 import asyncio
 from typing import Any, TypedDict
 from urllib.parse import urlparse

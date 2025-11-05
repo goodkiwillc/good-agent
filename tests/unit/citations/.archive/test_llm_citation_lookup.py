@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Test to demonstrate that LLM responses with citation references [1], [2]
-are NOT looking up URLs from the global index.
-"""
 
 import asyncio
 

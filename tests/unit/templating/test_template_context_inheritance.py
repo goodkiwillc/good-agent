@@ -1,10 +1,3 @@
-"""
-Test suite for template context inheritance improvements.
-
-This test file validates that the context hierarchy and resolution
-works correctly across all template rendering paths.
-"""
-
 import asyncio
 from datetime import datetime
 

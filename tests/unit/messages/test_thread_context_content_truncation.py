@@ -1,12 +1,3 @@
-"""Test ThreadContext with message content truncation/condensing.
-
-This tests the scenario where we:
-1. Have messages with verbose content (e.g., tool responses)
-2. Use ThreadContext to replace messages with truncated/condensed versions
-3. Add new messages with the condensed context
-4. Verify original full messages are restored after context
-"""
-
 import pytest
 from good_agent import Agent, tool
 from good_agent.content.parts import TextContentPart

@@ -1,12 +1,3 @@
-"""
-Test suite to ensure markdown citation blocks are properly handled.
-
-This addresses the bug where markdown reference blocks like:
-[1]: https://example.com
-were being incorrectly transformed into:
-[!CITE_1!]: [!CITE_178!]
-"""
-
 import pytest
 from good_agent import Agent
 from good_agent.content import RenderMode

@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-"""
-Test to investigate citation mapping bug where multiple URLs map to [!CITE_1!].
-"""
 
 import asyncio
 

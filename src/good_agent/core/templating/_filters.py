@@ -1,10 +1,3 @@
-"""
-CONTEXT: Built-in Jinja filters used across GoodIntel templates.
-ROLE: Provide serialization, datetime formatting, whitespace utilities, and helpers
-      for rendering custom objects.
-RELATED MODULES: goodintel_core.templating._core (register_filter), _environment.
-"""
-
 import datetime
 import textwrap
 

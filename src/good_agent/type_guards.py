@@ -1,10 +1,3 @@
-"""
-Type guard functions for improved type safety.
-
-This module provides reusable type guard functions that help narrow union types
-and provide better type safety throughout the codebase.
-"""
-
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any, TypeGuard
 

@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-"""
-Debug test to understand citation processing flow.
-"""
 
 import asyncio
 import sys

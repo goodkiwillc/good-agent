@@ -1,14 +1,3 @@
-"""
-Unit tests for the tool adapter system.
-
-Tests cover:
-- Basic adapter functionality
-- Multiple adapter scenarios
-- Conflict detection and resolution
-- Type safety validation
-- Integration with AgentComponent
-"""
-
 import copy
 from unittest.mock import MagicMock
 

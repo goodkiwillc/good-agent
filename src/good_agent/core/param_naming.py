@@ -1,10 +1,3 @@
-"""
-Parameter naming utilities for SQL queries.
-
-This module provides utilities for generating unique, collision-resistant parameter names
-for parameterized SQL queries, particularly for ClickHouse.
-"""
-
 import hashlib
 from typing import Any
 

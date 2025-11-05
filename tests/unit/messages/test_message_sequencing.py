@@ -1,14 +1,3 @@
-"""
-Test message sequencing requirements for tool calls.
-
-Critical requirement: Tool response messages MUST immediately follow the assistant
-message that contains the corresponding tool calls. No other messages should
-appear between an assistant message with tool calls and its tool responses.
-
-Additionally, when models support parallel tool calls, multiple tool calls
-should be consolidated into a single assistant message.
-"""
-
 import pytest
 from good_agent import Agent, tool
 from good_agent.messages import (

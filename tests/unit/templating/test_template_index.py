@@ -1,10 +1,3 @@
-"""
-Unit tests for the template index and versioning system.
-
-Tests the TemplateIndex and TemplateVersionManager classes for auto-versioning,
-snapshot management, and version history tracking.
-"""
-
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path

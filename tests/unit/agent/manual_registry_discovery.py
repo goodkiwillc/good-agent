@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-"""
-Quick test to demonstrate SearchProviderRegistry behavior
-"""
 
 import asyncio
 

@@ -1,10 +1,3 @@
-"""
-CONTEXT: Custom Jinja2 extensions for GoodIntel templating.
-ROLE: Implement section blocks with indentation preservation and a multiline include
-      preprocessor that indents included content to match calling site.
-KEY EXPORTS: SectionExtension, MultiLineInclude.
-"""
-
 import re
 from typing import Any
 

@@ -1,5 +1,3 @@
-"""Test that FilteredMessageList properly triggers events for all message types"""
-
 import pytest
 from good_agent import Agent, AgentEvents
 from good_agent.messages import ToolMessage

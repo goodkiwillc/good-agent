@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Final verification test for the citation mapping bug fix.
-This specifically tests that [!CITE_X!] references correctly map to global index X.
-"""
 
 import asyncio
 

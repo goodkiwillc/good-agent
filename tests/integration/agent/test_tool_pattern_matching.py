@@ -1,5 +1,3 @@
-"""Test tool pattern matching functionality"""
-
 import pytest
 import pytest_asyncio
 from good_agent import Agent

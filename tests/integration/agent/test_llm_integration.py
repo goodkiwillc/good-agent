@@ -1,5 +1,3 @@
-"""Integration tests for LLM functionality in Agent"""
-
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 

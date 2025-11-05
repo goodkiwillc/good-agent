@@ -1,9 +1,3 @@
-"""Tests for MessageList versioning functionality.
-
-These tests follow the specification in .spec/thread-versioning-refactor.md
-and implement Phase 2: MessageList Enhancement Tests (lines 536-600).
-"""
-
 import pytest
 from good_agent import Agent
 from good_agent.messages import (

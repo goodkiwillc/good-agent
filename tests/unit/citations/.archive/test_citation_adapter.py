@@ -1,13 +1,3 @@
-"""
-Unit tests for the CitationAdapter tool adapter.
-
-Tests cover:
-- Strict parameter matching (url, urls only)
-- Signature transformation
-- Parameter transformation
-- Integration with CitationManager
-"""
-
 from unittest.mock import MagicMock
 
 import pytest

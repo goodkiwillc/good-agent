@@ -1,11 +1,3 @@
-"""
-MCP (Model Context Protocol) integration for GoodIntel Agent.
-
-This module provides both client and server capabilities for MCP:
-- Client: Allows agents to connect to and use MCP servers as tool sources
-- Server: Exposes agent instances and tools via the MCP protocol
-"""
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

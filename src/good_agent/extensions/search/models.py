@@ -1,10 +1,3 @@
-"""
-Data models for the AgentSearch component.
-
-Defines standardized result formats and capability descriptors
-that work across all search providers.
-"""
-
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum

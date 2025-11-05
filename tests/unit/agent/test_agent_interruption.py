@@ -1,10 +1,3 @@
-"""
-Test suite for Agent interruption and cancellation scenarios.
-
-These tests specifically target the Agent class behavior during
-SIGINT/KeyboardInterrupt to identify cleanup issues.
-"""
-
 import asyncio
 import signal
 import sys

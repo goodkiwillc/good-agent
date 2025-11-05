@@ -1,11 +1,3 @@
-"""
-Tests for the component message injection system.
-
-This module tests the MessageInjectorComponent and SimpleMessageInjector
-classes to ensure they properly inject content into system prompts and
-user messages while respecting component enablement state.
-"""
-
 import pytest
 from good_agent import Agent, AgentEvents
 from good_agent.components.injection import (

@@ -1,14 +1,3 @@
-"""
-CONFIRMED: Integration test proving @on decorator patterns work in AgentComponents.
-
-This test conclusively demonstrates that:
-✅ @on decorators work correctly in AgentComponents (via EventRouter inheritance)
-✅ Manual registration during setup/install works
-✅ Both patterns can be used together effectively
-✅ Component lifecycle and state management work properly
-✅ Event priorities work across both patterns
-"""
-
 import pytest
 from good_agent import Agent, AgentComponent, AgentEvents
 from good_agent.utilities.event_router import EventContext, on

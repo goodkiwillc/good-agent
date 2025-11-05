@@ -1,7 +1,3 @@
-"""
-Debug test to understand @on decorator behavior in AgentComponents.
-"""
-
 import pytest
 from good_agent import Agent, AgentComponent, AgentEvents
 from good_agent.utilities.event_router import EventContext, on

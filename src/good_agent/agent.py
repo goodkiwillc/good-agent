@@ -1,43 +1,3 @@
-"""
-CONTEXT: Core Agent class implementing AI-powered conversational interface with tool support.
-ROLE: Central orchestrator for LLM interactions, message management, and tool execution.
-DEPENDENCIES:
-  - good_agent.utilities.event_router for async event handling
-  - .model.llm for language model abstraction
-  - .tools for tool binding and execution
-  - .templating for message template processing
-ARCHITECTURE:
-  - Entry point for all agent operations
-  - Integrates with LanguageModel via model property
-  - Manages message history and tool state
-  - Emits events for extension integration
-KEY EXPORTS: Agent class, AgentConfigParameters, FilterPattern type alias
-USAGE PATTERNS:
-  1. Direct instantiation: Agent(model=model, tools=[...])
-  2. Via AgentPool for concurrent processing
-  3. With context managers for resource cleanup
-RELATED MODULES:
-  - messages.py: Message types and validation
-  - tools.py: Tool system and execution
-  - pool.py: Multi-agent orchestration
-  - conversation.py: Higher-level conversation interface
-
-PERFORMANCE CONTEXT:
-- Initialization: ~10-50ms depending on components and MCP servers
-- Memory usage: ~1-5MB base + message history
-- Thread safety: NOT thread-safe - use AgentPool for concurrency
-- Typical execution: 500ms-3s depending on LLM and tools
-
-STATE FLOW: Agent follows state machine pattern (AgentState enum):
-INITIALIZING → READY → PENDING_RESPONSE → PROCESSING → PENDING_TOOLS → READY
-
-EXTENSION POINTS:
-- AgentComponent subclasses for custom functionality
-- Event handlers for lifecycle hooks
-- Tool registration for custom capabilities
-- Template providers for dynamic content
-"""
-
 import asyncio
 import functools
 import logging
@@ -2237,14 +2197,15 @@ class Agent(EventRouter):
 
         # Check and resolve any pending tool calls first
         pending_tool_calls = self.get_pending_tool_calls()
+        message_index = 0
         if pending_tool_calls:
             logger.debug(
                 f"Resolving {len(pending_tool_calls)} pending tool calls before execution"
             )
             async for tool_message in self.resolve_pending_tool_calls():
                 # Create and yield tool message for each resolved call
-                iterations += 1
-                tool_message._i = iterations - 1
+                tool_message._i = message_index
+                message_index += 1
                 yield tool_message
 
         while iterations < max_iterations:
@@ -2261,7 +2222,8 @@ class Agent(EventRouter):
             iterations += 1
 
             # Set iteration index
-            response._i = iterations - 1
+            response._i = message_index
+            message_index += 1
 
             # Yield the response
             yield response
@@ -2270,8 +2232,8 @@ class Agent(EventRouter):
             if response.tool_calls:
                 # Resolve the tool calls that were just added
                 async for tool_message in self.resolve_pending_tool_calls():
-                    iterations += 1
-                    tool_message._i = iterations - 1
+                    tool_message._i = message_index
+                    message_index += 1
                     # Yield each tool response message
                     yield tool_message
                 # Continue to next iteration for another LLM call

@@ -1,11 +1,3 @@
-"""
-Test reference block filtering functionality in CitationManager.
-
-This test verifies that the CitationManager properly filters out
-confused reference blocks like [!CITE_18!]: [!CITE_87!] that can appear
-in processed content.
-"""
-
 import pytest
 from good_agent import Agent
 from good_agent.extensions.citations import CitationManager

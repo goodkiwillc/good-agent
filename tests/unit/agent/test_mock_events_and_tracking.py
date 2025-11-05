@@ -1,5 +1,3 @@
-"""Test that MockAgent properly triggers events and tracks API calls."""
-
 import asyncio
 
 import pytest

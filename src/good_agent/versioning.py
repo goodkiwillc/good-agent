@@ -1,9 +1,3 @@
-"""Thread versioning system for Agent message history management.
-
-This module implements a versioned thread architecture with global message storage,
-allowing for non-destructive history tracking, thread branching, and context isolation.
-"""
-
 from __future__ import annotations
 
 import weakref

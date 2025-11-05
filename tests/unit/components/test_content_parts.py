@@ -1,5 +1,3 @@
-"""Tests for new content part models."""
-
 import json
 
 from good_agent.content import (

@@ -1,10 +1,3 @@
-"""
-Thin environment wrappers that delegate to good_agent.templating.
-
-This module preserves the agent API while ensuring we build on the core
-templating implementation first and foremost.
-"""
-
 from collections.abc import Callable
 from typing import Any
 

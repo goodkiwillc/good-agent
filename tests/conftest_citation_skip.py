@@ -1,13 +1,3 @@
-"""
-Configuration to skip obsolete CitationManager tests.
-This file should be imported by conftest.py to apply the skips.
-
-Tests are categorized as:
-- OBSOLETE: Test old implementation details no longer relevant
-- MIGRATED: Behavior now tested in test_citation_manager_v2.py or test_citation_manager_migration.py
-- PENDING: Need migration but not yet done
-"""
-
 import pytest
 
 # Tests that are genuinely obsolete and should be skipped

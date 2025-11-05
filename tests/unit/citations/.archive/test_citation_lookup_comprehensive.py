@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-"""
-Test citation lookup for both [!CITE_X!] (LLM format) and [X] (markdown) formats.
-"""
 
 import asyncio
 

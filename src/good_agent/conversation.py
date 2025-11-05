@@ -1,10 +1,3 @@
-"""
-Agent conversation mode implementation.
-
-Provides the conversation context manager for agent-to-agent communication
-using the async with agent_one | agent_two as conversation: syntax.
-"""
-
 import uuid
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any, Self, Union

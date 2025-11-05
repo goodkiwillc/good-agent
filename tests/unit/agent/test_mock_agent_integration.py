@@ -1,5 +1,3 @@
-"""Test that MockAgent properly intercepts LLM calls during normal agent operations."""
-
 import pytest
 from good_agent import Agent
 from good_agent.mock import (

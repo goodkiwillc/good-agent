@@ -1,17 +1,3 @@
-"""
-CONTEXT: Application-specific models for structured data extraction and rendering.
-ROLE: Provide models for extracting structured data from XML/HTML and rendering applications
-      with associated metadata and content.
-DEPENDENCIES: lxml.html for XML parsing, good_common.utilities for timestamps, pydantic for validation.
-ARCHITECTURE: Builds on GoodBase and Renderable for structured data with template support.
-KEY EXPORTS: Application, XMLExtractor
-USAGE PATTERNS:
-  1) Extract structured data from XML/HTML sources using Application model
-  2) Render applications using template system via Renderable inheritance
-  3) Extract first-level XML content for structured processing
-RELATED MODULES: .base (GoodBase), .renderable (Renderable), ..types (URL)
-"""
-
 import datetime
 import logging
 from typing import Any, ClassVar, Generic, Literal, TypeVar
@@ -124,7 +110,7 @@ class IterableCollection(Renderable, Generic[T_Item]):
 
     @property
     def render_items(self):
-        from goodintel_core.utilities.text import string
+        from good_agent.utilities.text import string
 
         _items = [string.unindent(item.render()) for item in self.items]
         if self.render_type == "direct":

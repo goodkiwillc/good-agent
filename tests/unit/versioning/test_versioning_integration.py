@@ -1,9 +1,3 @@
-"""Integration tests for thread versioning with real Agent operations.
-
-These tests verify that versioning works correctly with actual Agent
-operations like call(), execute(), and tool usage.
-"""
-
 import json
 from unittest.mock import AsyncMock, Mock, patch
 

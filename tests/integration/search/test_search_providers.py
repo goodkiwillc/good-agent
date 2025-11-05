@@ -1,13 +1,4 @@
 #!/usr/bin/env python
-"""
-Integration test script for AgentSearch component with plugin registration.
-
-This script tests:
-1. Entry point discovery for search providers
-2. Provider validation and registration
-3. AgentSearch component integration
-4. Actual search functionality with both Twitter and ValueSerp providers
-"""
 
 import asyncio
 import os

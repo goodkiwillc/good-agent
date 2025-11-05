@@ -1,7 +1,3 @@
-"""
-Simple VCR test to debug recording issues.
-"""
-
 import os
 
 import pytest

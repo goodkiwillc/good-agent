@@ -1,10 +1,3 @@
-"""
-Search provider abstractions and registry.
-
-Defines the interface for search providers and manages their
-discovery, registration, and capability tracking.
-"""
-
 import importlib.metadata
 from abc import ABC, abstractmethod
 from typing import Any, Protocol, runtime_checkable

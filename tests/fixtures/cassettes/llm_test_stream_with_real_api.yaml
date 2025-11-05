@@ -1,0 +1,308 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"system","content":"You are a helpful assistant"},{"role":"user","content":"Count
+      from 1 to 5"}],"model":"gpt-4o-mini","n":1,"parallel_tool_calls":true,"stream":true,"stream_options":{"include_usage":true},"temperature":0.5,"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '257'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.109.1
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.109.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"error\": {\n    \"message\": \"Invalid value for 'parallel_tool_calls':
+        'parallel_tool_calls' is only allowed when 'tools' are specified.\",\n    \"type\":
+        \"invalid_request_error\",\n    \"param\": \"parallel_tool_calls\",\n    \"code\":
+        null\n  }\n}"
+    headers:
+      CF-RAY:
+      - 999f8aa2194d7612-SEA
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '235'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 05 Nov 2025 21:46:02 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=ettNervdF9pcxH5nuwWxw39cqlFxMiM2DpcQYNtGPw8-1762379162-1.0.1.1-ciupwxCL9.vVRJUS14OkebrhDotFYWVJJhBnsBNwSMM2lAKUrAwjuM9Km82SDUXAdBiysusqOAbgxnkWz4iTsgRRo_ZyE.13Zkx2UzGJGbg;
+        path=/; expires=Wed, 05-Nov-25 22:16:02 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=FxBT7o3Ji3rrg8tkSWxpPmMmXb5UT8rkZYE_iT_oCeg-1762379162453-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '429'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999985'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 400
+      message: Bad Request
+- request:
+    body: '{"messages":[{"role":"system","content":"You are a helpful assistant"},{"role":"user","content":"Count
+      from 1 to 5"}],"model":"gpt-4o-mini","n":1,"parallel_tool_calls":true,"stream":true,"stream_options":{"include_usage":true},"temperature":0.5,"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '257'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=ettNervdF9pcxH5nuwWxw39cqlFxMiM2DpcQYNtGPw8-1762379162-1.0.1.1-ciupwxCL9.vVRJUS14OkebrhDotFYWVJJhBnsBNwSMM2lAKUrAwjuM9Km82SDUXAdBiysusqOAbgxnkWz4iTsgRRo_ZyE.13Zkx2UzGJGbg;
+        _cfuvid=FxBT7o3Ji3rrg8tkSWxpPmMmXb5UT8rkZYE_iT_oCeg-1762379162453-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.109.1
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.109.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"error\": {\n    \"message\": \"Invalid value for 'parallel_tool_calls':
+        'parallel_tool_calls' is only allowed when 'tools' are specified.\",\n    \"type\":
+        \"invalid_request_error\",\n    \"param\": \"parallel_tool_calls\",\n    \"code\":
+        null\n  }\n}"
+    headers:
+      CF-RAY:
+      - 999f8aaac95e7612-SEA
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '235'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 05 Nov 2025 21:46:03 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '55'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999987'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 400
+      message: Bad Request
+- request:
+    body: '{"messages":[{"role":"system","content":"You are a helpful assistant"},{"role":"user","content":"Count
+      from 1 to 5"}],"model":"gpt-4o-mini","n":1,"parallel_tool_calls":true,"stream":true,"stream_options":{"include_usage":true},"temperature":0.5,"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '257'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=ettNervdF9pcxH5nuwWxw39cqlFxMiM2DpcQYNtGPw8-1762379162-1.0.1.1-ciupwxCL9.vVRJUS14OkebrhDotFYWVJJhBnsBNwSMM2lAKUrAwjuM9Km82SDUXAdBiysusqOAbgxnkWz4iTsgRRo_ZyE.13Zkx2UzGJGbg;
+        _cfuvid=FxBT7o3Ji3rrg8tkSWxpPmMmXb5UT8rkZYE_iT_oCeg-1762379162453-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.109.1
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.109.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"error\": {\n    \"message\": \"Invalid value for 'parallel_tool_calls':
+        'parallel_tool_calls' is only allowed when 'tools' are specified.\",\n    \"type\":
+        \"invalid_request_error\",\n    \"param\": \"parallel_tool_calls\",\n    \"code\":
+        null\n  }\n}"
+    headers:
+      CF-RAY:
+      - 999f8ab2b8117612-SEA
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '235'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 05 Nov 2025 21:46:05 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '410'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999987'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 400
+      message: Bad Request
+version: 1

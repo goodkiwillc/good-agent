@@ -1,11 +1,3 @@
-"""
-Tests for compatibility between MDXL and CitationManager.
-
-The issue: When MDXL content with a markdown reference block is processed,
-the CitationManager correctly extracts citations but then re-adds them
-as [!CITE_X!] references at the end.
-"""
-
 import pytest
 from good_agent import Agent
 from good_agent.content import RenderMode

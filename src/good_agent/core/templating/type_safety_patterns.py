@@ -1,19 +1,3 @@
-"""
-CONTEXT: Type-safety patterns used in templating and error handling to avoid brittle
-  hasattr checks and improve static analysis and IDE hints.
-ROLE: Provide lightweight protocols, guards, and utilities that inform how
-  templating modules access optional attributes (e.g., Jinja exceptions) safely.
-KEY EXPORTS: Initializable, ErrorWithContext, process_exception_safely,
-  handle_error_with_direct_check, has_location_info, process_with_typeguard,
-  ConfigurableComponent, ConcreteComponent, ErrorInfo, get_attribute_safely.
-USAGE PATTERNS:
-  1) Prefer Protocols/TypeGuards over hasattr
-  2) Use getattr with defaults for optional attributes
-  3) Favor direct isinstance checks for known library types
-RELATED MODULES: goodintel_core.templating._environment (error reporting),
-  goodintel_core.templating._core (registry utilities).
-"""
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, runtime_checkable

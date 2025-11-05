@@ -1,13 +1,3 @@
-"""
-Tests for citation behavior across message lifecycle.
-
-Focuses on:
-- Message creation with various citation formats
-- Local citation storage (sequential indices in message.citations)
-- Message rendering for different audiences (DISPLAY vs LLM)
-- Format transformations during rendering
-"""
-
 import pytest
 from good_agent import Agent
 from good_agent.content import RenderMode

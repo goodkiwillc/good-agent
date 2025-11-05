@@ -1,9 +1,3 @@
-"""Token counting utilities for messages and agents.
-
-This module provides token counting functionality with caching support for
-efficient token count calculations across messages and agent contexts.
-"""
-
 from __future__ import annotations
 
 from functools import lru_cache

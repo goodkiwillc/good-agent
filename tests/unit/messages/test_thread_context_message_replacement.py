@@ -1,12 +1,3 @@
-"""Test ThreadContext with message replacement before fork point.
-
-This tests a critical scenario where we:
-1. Have a conversation with tool calls
-2. Use ThreadContext to truncate/replace messages
-3. Add new messages in the context
-4. Verify original messages are restored after context
-"""
-
 import pytest
 from good_agent import Agent, tool
 from good_agent.content.parts import TextContentPart

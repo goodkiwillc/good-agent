@@ -1,10 +1,3 @@
-"""
-Test LanguageModel streaming functionality with mocked responses.
-
-This module tests the streaming interface to ensure it properly handles
-streaming responses similar to the original thread library implementation.
-"""
-
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest

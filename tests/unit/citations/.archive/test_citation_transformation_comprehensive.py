@@ -1,12 +1,3 @@
-"""
-Comprehensive test suite for citation transformation between different display modes.
-
-This test file specifically tests:
-1. The issue where markdown reference blocks with [!CITE_X!] references weren't being resolved
-2. Round-trip transformations between all citation formats
-3. Proper citation extraction and display in different render modes
-"""
-
 import asyncio
 
 import pytest

@@ -1,10 +1,3 @@
-"""
-Type-safe event parameter definitions for the Agent event system.
-
-This module provides TypedDict definitions for all agent events, enabling
-proper type checking and IDE support when working with event handlers.
-"""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, NotRequired, TypedDict

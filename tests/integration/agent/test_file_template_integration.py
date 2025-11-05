@@ -1,10 +1,3 @@
-"""
-Integration tests for seamless file-based template integration with Agent.
-
-Tests that the Agent class automatically loads and uses file-based templates
-without requiring manual rendering.
-"""
-
 import tempfile
 from pathlib import Path
 

@@ -1,9 +1,3 @@
-"""
-Performance and concurrency tests for AgentSearch.
-
-Tests parallel execution, timeouts, and performance characteristics.
-"""
-
 import asyncio
 import random
 import time

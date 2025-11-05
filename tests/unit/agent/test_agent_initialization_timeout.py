@@ -1,5 +1,3 @@
-"""Test cases for Agent initialization timeout issues when tools are provided."""
-
 import asyncio
 import time
 

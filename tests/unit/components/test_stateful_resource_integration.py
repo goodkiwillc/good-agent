@@ -1,9 +1,3 @@
-"""
-Integration tests for StatefulResource with Agent.
-
-Tests the complete integration with thread_context and tools context managers.
-"""
-
 import pytest
 from good_agent import Agent, tool
 

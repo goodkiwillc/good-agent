@@ -1,9 +1,3 @@
-"""
-Tests for search query building and date handling.
-
-Tests query transformation, date calculations, and relative time windows.
-"""
-
 from datetime import date, datetime, timedelta
 from unittest.mock import AsyncMock, Mock
 

@@ -1,9 +1,3 @@
-"""
-Test suite for type-safe event handling system.
-
-Tests TypedDict definitions, convenience decorators, and type-safe event dispatch.
-"""
-
 import asyncio
 from unittest.mock import patch
 

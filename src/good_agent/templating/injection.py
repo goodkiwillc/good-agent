@@ -1,5 +1,3 @@
-"""Context provider dependency injection system."""
-
 import asyncio
 import inspect
 from collections.abc import Callable

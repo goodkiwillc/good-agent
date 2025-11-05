@@ -1,12 +1,3 @@
-"""
-Tools module for goodintel-agent.
-
-This module provides tool functionality including:
-- Tool definitions and decorators (tools.py)
-- Global tool registry (registry.py)
-- Bound tools for component integration (bound_tools.py)
-"""
-
 # Import all public API from each module to maintain backward compatibility
 from .bound_tools import BoundTool, create_component_tool_decorator
 from .registry import (

@@ -1,5 +1,3 @@
-"""Utilities for goodintel_agent."""
-
 from .printing import print_message, url_to_base64
 from .tokens import (
     count_message_tokens,

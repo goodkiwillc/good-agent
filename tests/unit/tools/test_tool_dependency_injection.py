@@ -1,10 +1,3 @@
-"""
-Comprehensive tests for tool dependency injection functionality.
-
-This module tests the automatic injection of Agent, ToolCall, ToolContext,
-and AgentComponent types into tool functions.
-"""
-
 import json
 from typing import TYPE_CHECKING, cast
 

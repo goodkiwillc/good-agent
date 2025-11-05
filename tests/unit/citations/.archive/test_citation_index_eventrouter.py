@@ -1,9 +1,3 @@
-"""
-Test CitationIndex EventRouter integration.
-
-Tests that CitationIndex properly handles events from the Agent using EventContext.
-"""
-
 import pytest
 from good_agent import Agent
 from good_agent.extensions.index import Citation, CitationIndex, Paragraph

@@ -1,5 +1,3 @@
-"""Test add_tool_invocation with arbitrary response types."""
-
 from typing import Any
 
 import pytest

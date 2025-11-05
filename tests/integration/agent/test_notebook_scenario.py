@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Test to reproduce the exact scenario from the notebook where citations get mismatched.
-The issue is likely in how WebFetcher adds citations to the index.
-"""
 
 import pytest
 from good_agent import Agent, AssistantMessage

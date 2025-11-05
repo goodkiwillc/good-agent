@@ -1,5 +1,3 @@
-"""Test that call() method automatically executes tool calls by default."""
-
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
