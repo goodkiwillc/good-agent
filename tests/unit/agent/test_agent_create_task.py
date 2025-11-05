@@ -93,11 +93,11 @@ class TestAgentCreateTask:
             completed[key] = True
 
         # Create tasks with wait_on_ready=True
-        task1 = agent.create_task(mark_complete("task1"), wait_on_ready=True)
-        task2 = agent.create_task(mark_complete("task2"), wait_on_ready=True)
+        agent.create_task(mark_complete("task1"), wait_on_ready=True)
+        agent.create_task(mark_complete("task2"), wait_on_ready=True)
 
         # Create task with wait_on_ready=False
-        task3 = agent.create_task(mark_complete("task3"), wait_on_ready=False)
+        agent.create_task(mark_complete("task3"), wait_on_ready=False)
 
         # Tasks should not be complete yet
         assert not completed["task1"]

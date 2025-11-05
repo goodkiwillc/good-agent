@@ -73,7 +73,7 @@ class TestComponentDependencies:
         comp = ComponentWithMissingDep()
 
         with pytest.raises(ValueError) as exc_info:
-            async with Agent("Test system", extensions=[comp]) as agent:
+            async with Agent("Test system", extensions=[comp]):
                 pass  # Should not reach here
 
         assert "Component dependency validation failed" in str(exc_info.value)
@@ -130,7 +130,7 @@ class TestComponentDependencies:
         )  # Depends on both A and B, but B is missing
 
         with pytest.raises(ValueError) as exc_info:
-            async with Agent("Test system", extensions=[comp_a, comp_multi]) as agent:
+            async with Agent("Test system", extensions=[comp_a, comp_multi]):
                 pass
 
         assert "ComponentWithMultipleDeps requires ComponentB" in str(exc_info.value)
@@ -155,7 +155,7 @@ class TestComponentDependencies:
         comp2 = ComponentB()  # Depends on ComponentA which is missing
 
         with pytest.raises(ValueError) as exc_info:
-            async with Agent("Test system", extensions=[comp1, comp2]) as agent:
+            async with Agent("Test system", extensions=[comp1, comp2]):
                 pass
 
         error_msg = str(exc_info.value)

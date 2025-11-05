@@ -173,7 +173,7 @@ class TestCitationAdapterTransformation:
 
         # Add citations
         idx1 = manager.index.add("https://example.com")
-        idx2 = manager.index.add("https://test.com")
+        manager.index.add("https://test.com")
         idx3 = manager.index.add("https://demo.com")
 
         # Simulate LLM providing citation indices
@@ -288,7 +288,7 @@ class TestCitationAdapterIntegration:
 
         # Add some citations
         idx1 = manager.index.add("https://example.com", value="Example Site")
-        idx2 = manager.index.add("https://test.com", value="Test Site")
+        manager.index.add("https://test.com", value="Test Site")
 
         # What the LLM sees: fetch_url(citation_idx: int, timeout: int)
         # Simulate the transformation that would happen

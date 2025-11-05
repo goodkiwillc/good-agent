@@ -318,14 +318,13 @@ class TestAgentComponentEventIntegration:
         # Trigger tool events to test priority handling
         # Check if test_component_tool exists
         if "test_component_tool" in agent.tools:
-            tool = agent.tools["test_component_tool"]
+            agent.tools["test_component_tool"]
         else:
             # Create a mock tool for testing
             from good_agent.tools import Tool
 
             mock_tool = Tool(fn=lambda value: f"test:{value}", name="mock_tool")
             agent.tools["mock_tool"] = mock_tool
-            tool = mock_tool
 
         # Trigger tool before event
         await agent.apply(

@@ -1650,7 +1650,6 @@ class MDXL:
         # Second pass: Find order of first use for each unique URL
         url_first_use = OrderedDict()
         active_context = {}
-        section_idx = 0
 
         for line in lines:
             # Update context when we hit definitions

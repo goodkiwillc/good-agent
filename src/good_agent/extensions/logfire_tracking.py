@@ -376,7 +376,7 @@ class LogfireExtension(AgentComponent):
 
         messages = params.get("messages")
         config: dict[str, Any] = params.get("config", {})
-        language_model = params.get("language_model")
+        params.get("language_model")
 
         if not messages:
             return
@@ -439,7 +439,7 @@ class LogfireExtension(AgentComponent):
         """Log LLM response with usage statistics."""
         # Handle both typed params and EventContext
         params = ctx.parameters if isinstance(ctx, EventContext) else ctx.parameters
-        timestamp = self._get_timestamp_from_context(ctx)
+        self._get_timestamp_from_context(ctx)
 
         response = params.get("response")
         usage = params.get("usage")

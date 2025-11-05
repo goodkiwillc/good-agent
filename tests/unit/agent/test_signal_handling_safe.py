@@ -340,7 +340,7 @@ class TestWeakReferenceManagement:
             assert before_count > 0
 
         # Delete without explicit close
-        agent_id = id(agent)
+        id(agent)
         del agent
         gc.collect()
         await asyncio.sleep(0.1)

@@ -261,7 +261,7 @@ Additional context: {{ details }}
 
         # Accessing content should raise an error since the template can't be found
         with pytest.raises(RuntimeError) as exc_info:
-            rendered_content = str(system_msg.content)
+            str(system_msg.content)
 
         # Verify the error mentions the missing template
         assert "system/base" in str(exc_info.value)

@@ -283,8 +283,8 @@ class TestCachingBehavior:
         msg = UserMessage("Test multi-model caching")
 
         # Count with different models
-        count_gpt4o = get_message_token_count(msg, model="gpt-4o")
-        count_gpt35 = get_message_token_count(msg, model="gpt-3.5-turbo")
+        get_message_token_count(msg, model="gpt-4o")
+        get_message_token_count(msg, model="gpt-3.5-turbo")
 
         # Should have two cache entries
         assert hasattr(msg, "_token_count_cache")

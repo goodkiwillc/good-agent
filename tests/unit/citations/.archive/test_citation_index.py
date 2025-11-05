@@ -420,8 +420,8 @@ class TestCitationIndexEdgeCases:
         url1 = URL("https://example.com")
         url2 = URL("https://test.org")
 
-        idx1 = index.add(url1)
-        idx2 = index.add(url2)
+        index.add(url1)
+        index.add(url2)
 
         # Create circular alias (manually manipulate internal state for test)
         canonical1 = str(URL(url1).canonicalize())

@@ -215,12 +215,11 @@ class TestErrorHandling:
         await agent.ready()
 
         # Search with invalid platform name
-        response = await agent.invoke(
+        await agent.invoke(
             "search",
             query="test",
             platforms=["invalid_platform", "google"],  # One invalid, one valid
         )
-        results = response.response
 
         # Should still search Google, ignore invalid
         provider.search.assert_called_once()
@@ -248,12 +247,11 @@ class TestErrorHandling:
         await agent.ready()
 
         # Search with invalid domain name
-        response = await agent.invoke(
+        await agent.invoke(
             "search",
             query="test",
             domains=["invalid_domain", "web"],  # One invalid, one valid
         )
-        results = response.response
 
         # Should still search web domain
         provider.search.assert_called_once()
@@ -281,8 +279,7 @@ class TestErrorHandling:
         await agent.ready()
 
         # Search with empty query
-        response = await agent.invoke("search", query="")
-        results = response.response
+        await agent.invoke("search", query="")
 
         # Should still call provider (provider decides how to handle empty query)
         provider.search.assert_called_once()

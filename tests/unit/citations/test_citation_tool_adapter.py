@@ -333,7 +333,7 @@ class TestEndToEndToolIntegration:
 
         # Add URL to index
         url = URL("https://example.com/doc.pdf")
-        idx = manager.index.add(url)
+        manager.index.add(url)
 
         # Manually call tool with citation_idx (simulating LLM call)
         # In real usage, LLM would see adapted signature with citation_idx

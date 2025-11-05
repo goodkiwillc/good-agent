@@ -60,7 +60,7 @@ class TestSignalHandlerInstallation:
     async def test_signal_handlers_installed_on_agent_creation(self):
         """Verify OS signal handlers are installed when Agent is created."""
         # Capture original handlers
-        original_handlers = capture_signal_handlers()
+        capture_signal_handlers()
 
         # Create agent with signal handling explicitly enabled
         agent = Agent("Test assistant")
@@ -192,7 +192,7 @@ class TestExternalSignalSimulation:
     @pytest.mark.asyncio
     async def test_multiple_sigint_force_exit(self):
         """Test that second SIGINT forces exit."""
-        with signal_handler_spy() as calls:
+        with signal_handler_spy():
             agent = Agent("Test assistant")
             await agent.ready()
 

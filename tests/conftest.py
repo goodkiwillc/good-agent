@@ -24,7 +24,7 @@ async def _patched_to_serialized_response(resp, aread):
 
     # Store decoder state if it exists and handle the assertion
     had_decoder = hasattr(resp, "_decoder")
-    decoder = getattr(resp, "_decoder", None)
+    getattr(resp, "_decoder", None)
 
     # Remove _decoder temporarily to satisfy VCR's assertion
     if had_decoder:

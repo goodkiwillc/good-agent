@@ -44,7 +44,7 @@ class TestThreadContextContentTruncation:
         agent.append("Can you give me more specific information about web frameworks?")
 
         # Capture original messages
-        original_messages = [msg for msg in agent.messages]
+        [msg for msg in agent.messages]
         original_verbose_content = str(agent.messages[2])  # The verbose response
 
         # Use ThreadContext to work with condensed versions
@@ -142,8 +142,7 @@ class TestThreadContextContentTruncation:
             for i, msg in enumerate(ctx.messages):
                 if isinstance(msg, AssistantMessage) and "Result 1:" in str(msg):
                     # Extract key info and condense
-                    original_content = str(msg)
-                    query_match = "Searching for: " in original_content
+                    str(msg)
 
                     # Create condensed version
                     condensed = AssistantMessage(
@@ -245,7 +244,7 @@ class TestThreadContextContentTruncation:
             )
 
             # Fork has condensed conversation
-            fork_length = sum(len(str(msg)) for msg in fork.messages)
+            sum(len(str(msg)) for msg in fork.messages)
 
         # Original is completely unchanged - still has full verbose history
         assert len(agent.messages) == len(original_messages)
@@ -296,7 +295,7 @@ class TestThreadContextContentTruncation:
                     ]
                 )
 
-                aggressive_length = len(str(ctx2.messages[1]))
+                len(str(ctx2.messages[1]))
 
                 # Work with ultra-condensed version
                 ctx2.append("Applications?")
@@ -328,7 +327,6 @@ class TestThreadContextContentTruncation:
 
         agent.append("Question 2")
         agent.append("Verbose answer 2 with even more details...", role="assistant")
-        version_after_q2 = agent._version_manager.version_count
 
         # Use context to work with truncated versions
         async with agent.thread_context() as ctx:

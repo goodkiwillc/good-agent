@@ -184,7 +184,7 @@ class TestApplyTypedMethod:
             assert ctx.parameters["agent"] == agent
 
         # Use typed helper
-        ctx = await typed.apply(
+        await typed.apply(
             AgentEvents.EXECUTE_ITERATION_BEFORE,
             agent=agent,
             iteration=5,

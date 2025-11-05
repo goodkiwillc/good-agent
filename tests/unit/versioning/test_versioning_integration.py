@@ -60,7 +60,7 @@ class TestVersioningWithAgentOperations:
         initial_message_count = len(agent.messages)
 
         # Make a call
-        response = await agent.call("Hello, how are you?")
+        await agent.call("Hello, how are you?")
 
         # Should have created versions for user message and assistant response
         assert agent._version_manager.version_count == initial_version_count + 2
@@ -224,7 +224,7 @@ class TestVersioningWithAgentOperations:
             mock_complete.side_effect = [tool_response, final_response]
 
             # Execute with tool
-            response = await agent.call("Use the test tool")
+            await agent.call("Use the test tool")
 
         # Should have: system + user + assistant (tool call) + tool response + assistant (final)
         assert len(agent.messages) == 5

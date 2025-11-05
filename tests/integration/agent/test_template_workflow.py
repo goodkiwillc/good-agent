@@ -164,7 +164,7 @@ Limit results to {{ limit | default(10) }} items.""")
     async def test_complete_workflow(self, template_system):
         """Test the complete template workflow from creation to rendering."""
         storage = template_system["storage"]
-        index = template_system["index"]
+        template_system["index"]
         manager = template_system["manager"]
 
         # 1. Verify templates were created and indexed
@@ -345,7 +345,7 @@ This is my personal template for {{ task }}.""")
     async def test_template_snapshots(self, template_system):
         """Test template snapshot functionality."""
         manager = template_system["manager"]
-        storage = template_system["storage"]
+        template_system["storage"]
 
         # Get template through manager to trigger snapshot creation
         content = await manager.get_template("system/analyst")

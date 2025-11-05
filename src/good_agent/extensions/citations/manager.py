@@ -142,7 +142,7 @@ class CitationManager(AgentComponent):
     def _on_tools_generate_signature(
         self, ctx: EventContext[ToolsGenerateSignature, ToolSignature]
     ):
-        tool = ctx.parameters["tool"]
+        ctx.parameters["tool"]
         signature = ctx.output
 
         return signature

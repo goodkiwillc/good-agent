@@ -95,7 +95,7 @@ async def test_component_tools_execution():
     await agent.ready()
 
     # Call agent with a request that should use tools
-    response = await agent.call("Create a new list called 'Work Tasks'")
+    await agent.call("Create a new list called 'Work Tasks'")
 
     # Check that a list was created
     assert len(task_manager.lists) > 0
@@ -117,8 +117,7 @@ async def test_component_tool_with_agent_reference():
         def create_contextual_list(self, name: str) -> str:
             """Create a list with context from the agent."""
             # Access agent through self.agent
-            agent_context = self.agent.context if self.agent else {}
-            list_id = f"list-{id(self)}"
+            f"list-{id(self)}"
             # In real usage, you could use agent context, messages, etc.
             return f"Created {name} for agent with {len(self.agent.messages)} messages"
 

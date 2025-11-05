@@ -113,7 +113,7 @@ class TestAgentVersioning:
         versioned_agent.append("Message 2")
         versioned_agent.append("Message 3")
 
-        original_count = len(versioned_agent.messages)
+        len(versioned_agent.messages)
 
         async with ThreadContext(versioned_agent, truncate_at=2) as ctx_agent:
             # Should only see first 2 messages

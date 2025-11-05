@@ -1104,7 +1104,7 @@ class TestRenderRecursionGuard:
                 content = msg.render(RenderMode.DISPLAY)
 
                 # Get the log output
-                log_contents = log_output.getvalue()
+                log_output.getvalue()
 
                 # Since we disabled the recursion trigger, we won't see the warning
                 # The test is effectively disabled to avoid event loop conflicts
@@ -1162,7 +1162,7 @@ class TestRenderRecursionGuard:
 
                 # Since we disabled the recursion trigger, we won't see the warning
                 # The test is effectively disabled to avoid event loop conflicts
-                log_contents = log_output.getvalue()
+                log_output.getvalue()
                 # assert "Recursion detected" in log_contents
                 pass  # Test effectively disabled
             finally:
@@ -1209,7 +1209,7 @@ class TestRenderRecursionGuard:
 
                 # Since we disabled the recursion trigger, we won't see the warning
                 # The test is effectively disabled to avoid event loop conflicts
-                log_contents = log_output.getvalue()
+                log_output.getvalue()
                 # assert "Recursion detected" in log_contents
                 pass  # Test effectively disabled
             finally:
@@ -1233,7 +1233,7 @@ class TestRenderRecursionGuard:
             """Function to run in separate thread."""
             try:
                 # Create message (no agent needed for this test)
-                msg = UserMessage(content="Thread test")
+                UserMessage(content="Thread test")
 
                 # Simulate render call stack
                 from good_agent.messages import _get_render_stack

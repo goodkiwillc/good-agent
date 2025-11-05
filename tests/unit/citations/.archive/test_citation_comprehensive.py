@@ -143,7 +143,7 @@ async def test_all_citation_scenarios():
 
     # Simulate tool adding citations to index
     idx1 = cm6.index.add("https://fetched1.com")
-    idx2 = cm6.index.add("https://fetched2.com")
+    cm6.index.add("https://fetched2.com")
     idx3 = cm6.index.add("https://fetched3.com")
 
     print(f"Tool-populated index: {dict(cm6.index.items())}")

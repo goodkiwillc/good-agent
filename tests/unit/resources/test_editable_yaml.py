@@ -45,20 +45,20 @@ fields:
     ed = EditableYAML(doc)
     await ed.initialize()
 
-    r1 = await ed.set("fields.a", {"y": 2}, strategy="merge")
+    await ed.set("fields.a", {"y": 2}, strategy="merge")
     y1 = yaml.safe_load((await ed.text()).response) or {}
     assert y1["fields"]["a"] == {"x": 1, "y": 2}
 
-    r2 = await ed.set("fields.a", {"x": 10, "z": 5}, strategy="deep_merge")
+    await ed.set("fields.a", {"x": 10, "z": 5}, strategy="deep_merge")
     y2 = yaml.safe_load((await ed.text()).response) or {}
     assert y2["fields"]["a"] == {"x": 10, "y": 2, "z": 5}
 
-    r3 = await ed.set("fields.b", [2, 3], strategy="merge_array")
+    await ed.set("fields.b", [2, 3], strategy="merge_array")
     y3 = yaml.safe_load((await ed.text()).response) or {}
     assert y3["fields"]["b"] == [1, 2, 3]
 
     patch_list = [{"name": "b", "v": 3}, {"name": "c", "v": 9}]
-    r4 = await ed.set("fields.objs", patch_list, strategy="merge_array", array_key="name")
+    await ed.set("fields.objs", patch_list, strategy="merge_array", array_key="name")
     y4 = yaml.safe_load((await ed.text()).response) or {}
     objs = {o["name"]: o for o in y4["fields"]["objs"]}
     assert objs["a"]["v"] == 1

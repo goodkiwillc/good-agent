@@ -167,7 +167,7 @@ class TestVersioningWithRealLLM:
         assert original_last_msg in str(agent.messages[original_msg_count - 1])
 
         # New branch appended (content varies based on LLM response)
-        last_msg_str = str(agent.messages[-1]).lower()
+        str(agent.messages[-1]).lower()
         assert len(agent.messages[-1].content) > 0  # Non-empty response
 
         await agent.async_close()
@@ -235,7 +235,7 @@ class TestVersioningWithRealLLM:
             )
 
             # Response should follow from the cat context (but exact content varies)
-            response_lower = response.content.lower()
+            response.content.lower()
             # Just verify we got a response about characteristics
             assert len(response.content) > 0
 

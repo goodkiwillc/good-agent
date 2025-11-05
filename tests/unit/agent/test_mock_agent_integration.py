@@ -145,7 +145,7 @@ async def test_mock_agent_appending_to_original():
 
     mock_response = mock_message("Mock response", role="assistant")
 
-    with MockAgent(agent, mock_response) as mock_agent:
+    with MockAgent(agent, mock_response):
         # Messages should be appended to the original agent
         agent.append("User message", role="user")
 

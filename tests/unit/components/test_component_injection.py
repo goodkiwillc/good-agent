@@ -96,7 +96,7 @@ class TestMessageInjectorComponent:
 
         # Trigger the render event manually (this is what LLM does internally)
         output_parts = list(user_msg.content_parts)  # Copy the list
-        ctx = agent.apply_sync(
+        agent.apply_sync(
             AgentEvents.MESSAGE_RENDER_BEFORE,
             output=output_parts,
             message=user_msg,

@@ -929,7 +929,7 @@ class LanguageModel(AgentComponent):
                 config["route"] = _strip_or_prefix(config["route"])
 
         # Log if any overrides were applied (for debugging)
-        model_info = model_override_registry.get_model_info(model_name)
+        model_override_registry.get_model_info(model_name)
 
         return config
 
@@ -962,7 +962,7 @@ class LanguageModel(AgentComponent):
             if cost:
                 self.last_cost = cost
                 self.total_cost += cost
-        except Exception as e:
+        except Exception:
             # logger.debug(f"Could not calculate cost: {e}")
             pass
 

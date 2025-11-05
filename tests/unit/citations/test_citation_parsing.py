@@ -15,10 +15,6 @@ class TestContentCitationParsing:
         [2]: https://example.com/source2.html
         """
 
-        citations = [
-            "https://example.com/source1.pdf",
-            "https://example.com/source2.html",
-        ]
 
         parsed_content, extracted_citations = citation_manager.parse(
             content, content_format="markdown"

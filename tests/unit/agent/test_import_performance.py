@@ -224,7 +224,7 @@ class TestImportBenchmarks:
             # Import
 
         # Run benchmark
-        result = benchmark(import_minimal)
+        benchmark(import_minimal)
 
     @pytest.mark.skipif(
         True, reason="pytest-benchmark not installed, skipping benchmark tests"
@@ -245,7 +245,7 @@ class TestImportBenchmarks:
             # Import everything
 
         # Run benchmark
-        result = benchmark(import_full)
+        benchmark(import_full)
 
 
 if __name__ == "__main__":

@@ -430,8 +430,8 @@ def _modify_function_for_injection(func: Callable) -> Callable:
         async def wrapper(*args, **kwargs):
             # Check if 'agent' and 'message' are in kwargs (for context providers)
             # These would be passed by the resolver
-            agent = kwargs.get("agent")
-            message = kwargs.get("message")
+            kwargs.get("agent")
+            kwargs.get("message")
             context = kwargs.get("_context", {})
 
             # Inject context values

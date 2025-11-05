@@ -74,7 +74,7 @@ class TestMessageRegistry:
 
         gc.collect()
 
-        owner = registry.get_agent(msg_id)
+        registry.get_agent(msg_id)
         # Mock objects may not be garbage collected immediately, so we test cleanup
         cleaned = registry.cleanup_dead_references()
         # This test may be flaky due to GC timing, but cleanup method should work

@@ -26,7 +26,7 @@ class TestMessageSequencing:
             agent.append("What's the weather and time?")
 
             # Use invoke_many for parallel execution
-            results = await agent.invoke_many(
+            await agent.invoke_many(
                 [
                     (get_weather, {"location": "Paris"}),
                     (get_time, {"timezone": "Europe/Paris"}),
@@ -86,7 +86,7 @@ class TestMessageSequencing:
             agent.append("Process these numbers")
 
             # Execute multiple tools in parallel
-            results = await agent.invoke_many(
+            await agent.invoke_many(
                 [(tool_a, {"x": 5}), (tool_b, {"x": 5}), (tool_c, {"x": 5})]
             )
 
@@ -123,7 +123,7 @@ class TestMessageSequencing:
             agent.append("Search for Python tutorials")
 
             # This WILL create bad sequencing with current implementation
-            results = await agent.invoke_many(
+            await agent.invoke_many(
                 [
                     (news_search, {"query": "Python tutorials"}),
                     (web_search, {"query": "Python tutorials"}),
@@ -181,7 +181,7 @@ class TestMessageSequencing:
             agent.append("Process this data")
 
             # All bound functions - should each create their own assistant/tool pairs
-            results = await agent.invoke_many(
+            await agent.invoke_many(
                 [
                     (upper_processor, {"data": "hello"}),
                     (lower_processor, {"data": "WORLD"}),
@@ -220,7 +220,7 @@ class TestMessageSequencing:
             agent.append("Fetch data from multiple sources")
 
             # These should be consolidated into one assistant message
-            results = await agent.invoke_many(
+            await agent.invoke_many(
                 [
                     (fetch_data, {"source": "database"}),
                     (fetch_data, {"source": "api"}),

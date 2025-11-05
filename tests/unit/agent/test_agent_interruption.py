@@ -435,7 +435,7 @@ class TestSignalHandling:
                     await exec_task
                 except asyncio.CancelledError:
                     pass
-                except Exception as e:
+                except Exception:
                     # May get other exceptions if cancellation propagates differently
                     pass
 

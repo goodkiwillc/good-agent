@@ -99,7 +99,7 @@ async def test_mock_response_has_expected_structure():
 
     with MockAgent(agent, mock_response) as mock:
         agent.append("Test", role="user")
-        response = await agent.call()
+        await agent.call()
 
         # Get the mock LLM response
         api_response = mock.api_responses[0]

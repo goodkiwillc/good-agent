@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent
 
 
@@ -8,8 +9,8 @@ class TestEditableMDXL:
     @pytest.mark.asyncio
     async def test_available_tools(self):
         """Test that we have all the expected tools."""
-        from good_agent.resources.editable_mdxl import EditableMDXL
         from good_agent.mdxl import MDXL
+        from good_agent.resources.editable_mdxl import EditableMDXL
 
         mdxl = MDXL("<doc><title>Test</title></doc>")
         resource = EditableMDXL(mdxl)
@@ -33,8 +34,8 @@ class TestEditableMDXL:
     @pytest.mark.asyncio
     async def test_read_filters_content(self):
         """Test that read shows the entire document filtered for LLM."""
-        from good_agent.resources.editable_mdxl import EditableMDXL
         from good_agent.mdxl import MDXL
+        from good_agent.resources.editable_mdxl import EditableMDXL
 
         # Document with private elements and references
         mdxl = MDXL("""
@@ -75,8 +76,8 @@ class TestEditableMDXL:
     @pytest.mark.asyncio
     async def test_xpath_cleanup(self):
         """Test that XPath selectors are cleaned up properly."""
-        from good_agent.resources.editable_mdxl import EditableMDXL
         from good_agent.mdxl import MDXL
+        from good_agent.resources.editable_mdxl import EditableMDXL
 
         mdxl = MDXL("""
         <doc>
@@ -98,8 +99,8 @@ class TestEditableMDXL:
     @pytest.mark.asyncio
     async def test_update_text_content(self):
         """Test updating text content of elements."""
-        from good_agent.resources.editable_mdxl import EditableMDXL
         from good_agent.mdxl import MDXL
+        from good_agent.resources.editable_mdxl import EditableMDXL
 
         mdxl = MDXL("""
         <doc>
@@ -126,8 +127,8 @@ class TestEditableMDXL:
     @pytest.mark.asyncio
     async def test_update_attributes_dict(self):
         """Test updating element attributes with dict format."""
-        from good_agent.resources.editable_mdxl import EditableMDXL
         from good_agent.mdxl import MDXL
+        from good_agent.resources.editable_mdxl import EditableMDXL
 
         mdxl = MDXL("""
         <doc>
@@ -166,8 +167,8 @@ class TestEditableMDXL:
     @pytest.mark.asyncio
     async def test_replace_text(self):
         """Test replacing text within elements."""
-        from good_agent.resources.editable_mdxl import EditableMDXL
         from good_agent.mdxl import MDXL
+        from good_agent.resources.editable_mdxl import EditableMDXL
 
         mdxl = MDXL("""
         <doc>
@@ -206,8 +207,8 @@ class TestEditableMDXL:
     @pytest.mark.asyncio
     async def test_insert_after(self):
         """Test inserting elements after a reference."""
-        from good_agent.resources.editable_mdxl import EditableMDXL
         from good_agent.mdxl import MDXL
+        from good_agent.resources.editable_mdxl import EditableMDXL
 
         mdxl = MDXL("""
         <doc>
@@ -243,8 +244,8 @@ class TestEditableMDXL:
     @pytest.mark.asyncio
     async def test_insert_before(self):
         """Test inserting elements before a reference."""
-        from good_agent.resources.editable_mdxl import EditableMDXL
         from good_agent.mdxl import MDXL
+        from good_agent.resources.editable_mdxl import EditableMDXL
 
         mdxl = MDXL("""
         <doc>
@@ -279,8 +280,8 @@ class TestEditableMDXL:
     @pytest.mark.asyncio
     async def test_append_child(self):
         """Test appending child elements."""
-        from good_agent.resources.editable_mdxl import EditableMDXL
         from good_agent.mdxl import MDXL
+        from good_agent.resources.editable_mdxl import EditableMDXL
 
         mdxl = MDXL("""
         <doc>
@@ -311,8 +312,8 @@ class TestEditableMDXL:
     @pytest.mark.asyncio
     async def test_delete(self):
         """Test deleting elements."""
-        from good_agent.resources.editable_mdxl import EditableMDXL
         from good_agent.mdxl import MDXL
+        from good_agent.resources.editable_mdxl import EditableMDXL
 
         mdxl = MDXL("""
         <doc>
@@ -339,8 +340,8 @@ class TestEditableMDXL:
     @pytest.mark.asyncio
     async def test_agent_integration(self):
         """Test integration with Agent."""
-        from good_agent.resources.editable_mdxl import EditableMDXL
         from good_agent.mdxl import MDXL
+        from good_agent.resources.editable_mdxl import EditableMDXL
 
         mdxl = MDXL("""
         <document>
@@ -352,7 +353,7 @@ class TestEditableMDXL:
         resource = EditableMDXL(mdxl)
 
         async with Agent("Document editor") as agent:
-            async with resource(agent):
+            async with resource(agent) as r:
                 # Should have all tools
                 assert "read" in agent.tools
                 assert "update" in agent.tools
@@ -370,9 +371,7 @@ class TestEditableMDXL:
                 assert "Test Document" in response
 
                 # Update with dict attributes - find the tool by name
-                update_tool = agent.tools["update"]
-                update_result = await update_tool(
-                    _agent=agent,
+                update_result = await r.update(
                     xpath="//content",
                     text_content="Updated content",
                     attributes={"status": "reviewed", "version": "2"},

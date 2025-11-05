@@ -110,7 +110,6 @@ class TestVersioningWithRealOperations:
         parent.append("Parent message 2")
 
         # Parent should have versions (note: system message issue)
-        parent_versions = parent._version_manager.version_count
 
         # Fork with messages
         child = parent.fork(include_messages=True)
@@ -167,7 +166,6 @@ class TestVersioningWithRealOperations:
 
             # Changes in fork don't affect parent
             forked.append("Fork only")
-            forked_versions = forked._version_manager.version_count
 
         # Parent unchanged
         assert agent._version_manager.version_count == final_versions
@@ -182,7 +180,6 @@ class TestVersioningWithRealOperations:
 
         # Build history
         agent.append("v1")
-        v1_count = agent._version_manager.version_count
 
         agent.append("v2")
         v2_count = agent._version_manager.version_count
@@ -247,7 +244,7 @@ class TestVersioningWithRealOperations:
             initial_msgs = len(agent.messages)
 
             # Make a call
-            response = await agent.call("Hello")
+            await agent.call("Hello")
 
             # Should have added user and assistant messages
             assert len(agent.messages) == initial_msgs + 2

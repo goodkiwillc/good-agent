@@ -723,7 +723,7 @@ class Agent(EventRouter):
             version_index: The version index to revert to
         """
         # Revert the version manager
-        message_ids = self._version_manager.revert_to(version_index)
+        self._version_manager.revert_to(version_index)
 
         # Sync the message list with the new version
         self._messages._sync_from_version()
@@ -927,7 +927,7 @@ class Agent(EventRouter):
 
         # Extract parameters from context with proper typing
         # Type checker knows these fields exist from AgentInitializeParams TypedDict
-        agent = ctx.parameters["agent"]
+        ctx.parameters["agent"]
         tools = ctx.parameters["tools"]
 
         # If no tools, nothing to do (already marked ready in constructor)
@@ -1691,7 +1691,7 @@ class Agent(EventRouter):
                     **kwargs,
                 )
 
-                llm_request = self.model.api_requests[-1]
+                self.model.api_requests[-1]
                 llm_response = self.model.api_responses[-1]
 
             else:
@@ -3189,7 +3189,7 @@ class Agent(EventRouter):
             else ctx.parameters.get("parameters", visible_params)
         )
 
-        modified_tool_name = ctx.parameters.get("tool_name", resolved_name)
+        ctx.parameters.get("tool_name", resolved_name)
 
         # Merge modified visible params with hidden params for execution
         execution_params = dict(
@@ -3335,7 +3335,7 @@ class Agent(EventRouter):
                             tool_error = f"Failed to convert function to tool: {e}"
 
             # Check if this is a bound function (special handling needed)
-            is_bound_func = callable(tool) and getattr(
+            callable(tool) and getattr(
                 tool, "_is_invoke_func_bound", False
             )
 

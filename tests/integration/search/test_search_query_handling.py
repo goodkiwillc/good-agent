@@ -63,13 +63,12 @@ class TestDateHandling:
         since_date = date(2024, 1, 1)
         until_date = date(2024, 1, 31)
 
-        response = await agent.invoke(
+        await agent.invoke(
             "search",
             query="test",
             since=since_date,
             until=until_date,
         )
-        results = response.response
 
         # Check that dates were properly converted to datetime
         assert provider.last_query.since == datetime(2024, 1, 1, 0, 0, 0)
@@ -92,20 +91,17 @@ class TestDateHandling:
         agent.context["today"] = test_date
 
         # Test last_day
-        response = await agent.invoke("search", query="test", timeframe="last_day")
-        results = response.response
+        await agent.invoke("search", query="test", timeframe="last_day")
         assert provider.last_query.since.date() == date(2024, 6, 14)
         assert provider.last_query.until.date() == date(2024, 6, 15)
 
         # Test last_week
-        response = await agent.invoke("search", query="test", timeframe="last_week")
-        results = response.response
+        await agent.invoke("search", query="test", timeframe="last_week")
         assert provider.last_query.since.date() == date(2024, 6, 8)
         assert provider.last_query.until.date() == date(2024, 6, 15)
 
         # Test last_month
-        response = await agent.invoke("search", query="test", timeframe="last_month")
-        results = response.response
+        await agent.invoke("search", query="test", timeframe="last_month")
         assert provider.last_query.since.date() == date(2024, 5, 16)
         assert provider.last_query.until.date() == date(2024, 6, 15)
 
@@ -124,14 +120,13 @@ class TestDateHandling:
         agent.context["today"] = date(2024, 6, 15)
 
         # Provide both explicit dates and relative window
-        response = await agent.invoke(
+        await agent.invoke(
             "search",
             query="test",
             since=date(2024, 1, 1),
             until=date(2024, 12, 31),
             timeframe="last_week",  # Should override explicit dates
         )
-        results = response.response
 
         # Should use last_week, not explicit dates
         assert provider.last_query.since.date() == date(2024, 6, 8)
@@ -150,8 +145,7 @@ class TestDateHandling:
         await agent.ready()
 
         # Don't set context date
-        response = await agent.invoke("search", query="test", timeframe="last_day")
-        results = response.response
+        await agent.invoke("search", query="test", timeframe="last_day")
 
         # Should use actual today
         today = date.today()
@@ -177,10 +171,9 @@ class TestDateHandling:
         agent.context["today"] = past_date
 
         # Search last week from that past date
-        response = await agent.invoke(
+        await agent.invoke(
             "search", query="historical", timeframe="last_week"
         )
-        results = response.response
 
         # Should calculate from the past date
         assert provider.last_query.since.date() == date(2023, 3, 8)
@@ -202,14 +195,13 @@ class TestQueryBuilding:
         agent = Agent("Test", extensions=[search])
         await agent.ready()
 
-        response = await agent.invoke(
+        await agent.invoke(
             "search",
             query="test query",
             limit=50,
             content_type="video",
             sort_by="recent",
         )
-        results = response.response
 
         query = provider.last_query
         assert query.text == "test query"
@@ -256,13 +248,12 @@ class TestQueryBuilding:
         await agent.ready()
 
         # Search with filters
-        response = await agent.invoke(
+        await agent.invoke(
             "search_entities",
             entity_type="person",
             name="John Smith",
             filters={"title": "CEO", "company": "TechCorp", "location": "NYC"},
         )
-        results = response.response
 
         # Check query was built correctly
         query = provider.last_query
@@ -317,12 +308,11 @@ class TestQueryBuilding:
         await agent.ready()
 
         # Search specific platforms
-        response = await agent.invoke(
+        await agent.invoke(
             "search",
             query="test",
             platforms=["google", "twitter"],
         )
-        results = response.response
 
         # Should have called web and social providers
         web_provider.search.assert_called_once()
@@ -335,12 +325,11 @@ class TestQueryBuilding:
         news_provider.search.reset_mock()
 
         # Search specific domains
-        response = await agent.invoke(
+        await agent.invoke(
             "search",
             query="test",
             domains=["news", "social_media"],
         )
-        results = response.response
 
         # Should have called news and social providers (both match the domains)
         # Platform-specific providers are still usable for domain searches
@@ -362,14 +351,12 @@ class TestQueryBuilding:
         await agent.ready()
 
         # Search without specifying limit
-        response = await agent.invoke("search", query="test")
-        results = response.response
+        await agent.invoke("search", query="test")
 
         assert provider.last_query.limit == 25
 
         # Search with explicit limit
-        response = await agent.invoke("search", query="test", limit=100)
-        results = response.response
+        await agent.invoke("search", query="test", limit=100)
 
         assert provider.last_query.limit == 100
 
@@ -412,13 +399,12 @@ class TestQueryBuilding:
         agent = Agent("Test", extensions=[search])
         await agent.ready()
 
-        response = await agent.invoke(
+        await agent.invoke(
             "search",
             query="test query",
             limit=10,
             sort_by="recent",
         )
-        results = response.response
 
         # Check transformation was applied
         assert provider.last_transformed["q"] == "site:example.com test query"

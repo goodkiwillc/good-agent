@@ -202,7 +202,7 @@ class EditableMDXL(StatefulResource[MDXL]):
                 else:
                     # Set/update attribute
                     logger.debug(f"Setting attribute '{key}' = '{value}'")
-                    element.set(key, value)
+                    element._root.set(key, value)
                     updates.append(f"set {key}='{value}'")
 
         # Update data
@@ -645,7 +645,11 @@ class EditableMDXL(StatefulResource[MDXL]):
         else:
             elem_str += "/>"
 
-        parent.append(elem_str)
+        # Parse and append new element
+        from lxml import etree
+
+        new_elem = etree.fromstring(elem_str)
+        parent._root.append(new_elem)
 
         self._modified = True
         result = f"Appended <{element_tag}> as child of {parent_xpath}"

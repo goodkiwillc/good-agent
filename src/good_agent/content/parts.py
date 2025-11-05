@@ -144,7 +144,7 @@ class TemplateContentPart(BaseContentPart):
                 env = get_default_environment(use_sandbox=True)
                 template = env.from_string(self.template)
                 rendered = template.render(**render_context)
-        except Exception as e:
+        except Exception:
             # Re-raise template errors to make them fatal
             raise
 

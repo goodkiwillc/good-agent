@@ -47,7 +47,7 @@ async def test_editable_yaml_real_llm_edits_with_tools(llm_vcr):
         assert resource.state.config.title == "Draft"
 
         # Ask the LLM to perform a concrete edit via tools
-        final = await agent.call(
+        await agent.call(
             "Update meta.version to '3.0' and set config.title to 'Final'. Confirm when done."
         )
 

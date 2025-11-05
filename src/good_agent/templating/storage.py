@@ -407,7 +407,7 @@ class StorageTemplateLoader(BaseLoader):
             # We need to run async code in a sync context
             # Use asyncio.run_coroutine_threadsafe for running loops
             try:
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 # We're in an async context, but Jinja2 called us synchronously
                 # Use a thread to fetch the template
                 import threading
@@ -678,7 +678,7 @@ Here are some example analyses:
     manager = FileTemplateManager(storage)
 
     # Get and render template
-    template = await manager.get_template("system/analyst")
+    await manager.get_template("system/analyst")
     rendered = manager.render(
         "{% include 'system/analyst' %}",
         {
