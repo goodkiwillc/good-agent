@@ -276,72 +276,6 @@ class LanguageModel(AgentComponent):
     # Class-level ModelManager for shared model registration
     _model_manager = ModelManager()
 
-    @classmethod
-    def _get_litellm_type(cls, type_name: str) -> Any:
-        """Lazy-load litellm types only when needed."""
-        if type_name not in cls._litellm_types_cache:
-            if type_name == "ChatCompletionContentPartTextParam":
-                # ChatCompletionContentPartTextParam is just a dict
-                ChatCompletionContentPartTextParam = dict
-
-                cls._litellm_types_cache[type_name] = ChatCompletionContentPartTextParam
-            elif type_name == "ChatCompletionContentPartImageParam":
-                # ChatCompletionContentPartImageParam is just a dict
-                ChatCompletionContentPartImageParam = dict
-
-                cls._litellm_types_cache[type_name] = (
-                    ChatCompletionContentPartImageParam
-                )
-            elif type_name == "ImageURL":
-                # ImageURL is just a dict
-                ImageURL = dict
-
-                cls._litellm_types_cache[type_name] = ImageURL
-            elif type_name == "ChatCompletionFileObject":
-                from litellm.types.llms.openai import ChatCompletionFileObject
-
-                cls._litellm_types_cache[type_name] = ChatCompletionFileObject
-            elif type_name == "ChatCompletionFileObjectFile":
-                # ChatCompletionFileObjectFile is just a dict
-                ChatCompletionFileObjectFile = dict
-
-                cls._litellm_types_cache[type_name] = ChatCompletionFileObjectFile
-            elif type_name == "ChatCompletionSystemMessageParam":
-                # ChatCompletionSystemMessageParam is just a dict
-                ChatCompletionSystemMessageParam = dict
-
-                cls._litellm_types_cache[type_name] = ChatCompletionSystemMessageParam
-            elif type_name == "ChatCompletionUserMessageParam":
-                # ChatCompletionUserMessageParam is just a dict
-                ChatCompletionUserMessageParam = dict
-
-                cls._litellm_types_cache[type_name] = ChatCompletionUserMessageParam
-            elif type_name == "ChatCompletionAssistantMessageParam":
-                # ChatCompletionAssistantMessageParam is just a dict
-                ChatCompletionAssistantMessageParam = dict
-
-                cls._litellm_types_cache[type_name] = (
-                    ChatCompletionAssistantMessageParam
-                )
-            elif type_name == "ChatCompletionToolMessageParam":
-                # ChatCompletionToolMessageParam is just a dict
-                ChatCompletionToolMessageParam = dict
-
-                cls._litellm_types_cache[type_name] = ChatCompletionToolMessageParam
-            elif type_name == "Function":
-                # Function is just a dict
-                Function = dict
-
-                cls._litellm_types_cache[type_name] = Function
-            elif type_name == "ChatCompletionMessageToolCallParam":
-                # ChatCompletionMessageToolCallParam is just a dict
-                ChatCompletionMessageToolCallParam = dict
-
-                cls._litellm_types_cache[type_name] = ChatCompletionMessageToolCallParam
-            else:
-                raise ValueError(f"Unknown litellm type: {type_name}")
-        return cls._litellm_types_cache[type_name]
-
     def __init__(
         self,
         **kwargs: Unpack[ModelConfig],
@@ -351,7 +285,6 @@ class LanguageModel(AgentComponent):
         self._debug = kwargs.get("debug", False)
 
         # Create ManagedRouter with isolated callbacks
-        self._litellm = None
         self._router: "ManagedRouter | None" = None
         self._instructor_patched = False
         self._instructor = None  # Will hold the instructor-patched router
