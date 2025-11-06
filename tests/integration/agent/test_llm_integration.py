@@ -2,11 +2,12 @@ import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from litellm.types.utils import Choices
+from litellm.utils import Message as LiteLLMMessage
+
 from good_agent import Agent
 from good_agent.messages import AssistantMessage, ToolMessage, UserMessage
-from good_agent.tools import Tool, ToolCall, ToolCallFunction
-from litellm.utils import Choices
-from litellm.utils import Message as LiteLLMMessage
+from good_agent.tools import ToolCall, ToolCallFunction, tool
 
 
 class MockLLMResponse:
@@ -40,12 +41,12 @@ async def create_test_agent():
 
     good_agent.tools.registry._global_registry = None
 
-    @Tool
+    @tool
     def get_weather(location: str) -> str:
         """Get current weather for a location"""
         return f"The weather in {location} is sunny and 72°F"
 
-    @Tool
+    @tool
     def calculate(expression: str) -> str:
         """Calculate a mathematical expression"""
         try:

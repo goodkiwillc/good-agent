@@ -4,6 +4,10 @@ from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
+from openai.types.completion_usage import CompletionUsage
+from pydantic import BaseModel
+from ulid import ULID
+
 from good_agent.agent import Agent
 from good_agent.content import (
     RenderMode,
@@ -23,9 +27,6 @@ from good_agent.messages import (
 )
 from good_agent.tools import ToolCall, ToolResponse
 from good_agent.types import URL
-from openai.types.completion_usage import CompletionUsage
-from pydantic import BaseModel
-from ulid import ULID
 
 
 class TestAnnotation:
@@ -57,8 +58,8 @@ class TestMessageBase:
 
     def test_message_id_generation(self):
         """Test that messages get unique IDs."""
-        msg1 = UserMessage(content="Test 1")
-        msg2 = UserMessage(content="Test 2")
+        msg1 = UserMessage("Test 1")
+        msg2 = UserMessage("Test 2")
         assert isinstance(msg1.id, ULID)
         assert isinstance(msg2.id, ULID)
         assert msg1.id != msg2.id
@@ -66,37 +67,37 @@ class TestMessageBase:
     def test_message_timestamp(self):
         """Test timestamp is set on creation."""
         before = datetime.datetime.now(timezone.utc)
-        msg = UserMessage(content="Test")
+        msg = UserMessage("Test")
         after = datetime.datetime.now(timezone.utc)
         assert before <= msg.timestamp <= after
 
     def test_message_metadata(self):
         """Test message metadata storage."""
         metadata = {"source": "api", "version": "1.0"}
-        msg = UserMessage(content="Test", metadata=metadata)
+        msg = UserMessage("Test", metadata=metadata)
         assert msg.metadata == metadata
 
     def test_message_name(self):
         """Test message name field."""
-        msg = UserMessage(content="Test", name="user_123")
+        msg = UserMessage("Test", name="user_123")
         assert msg.name == "user_123"
 
     def test_message_usage(self):
         """Test completion usage tracking."""
         usage = CompletionUsage(prompt_tokens=10, completion_tokens=20, total_tokens=30)
-        msg = AssistantMessage(content="Response", usage=usage)
+        msg = AssistantMessage("Response", usage=usage)
         assert msg.usage == usage
         assert msg.usage.prompt_tokens == 10
 
     def test_message_hidden_params(self):
         """Test hidden parameters storage."""
         hidden = {"internal_id": "abc123", "trace_id": "xyz789"}
-        msg = UserMessage(content="Test", hidden_params=hidden)
+        msg = UserMessage("Test", hidden_params=hidden)
         assert msg.hidden_params == hidden
 
     def test_message_immutability(self):
         """Test that messages are frozen/immutable."""
-        msg = UserMessage(content="Test")
+        msg = UserMessage("Test")
         from pydantic import ValidationError
 
         with pytest.raises(ValidationError):
@@ -104,7 +105,7 @@ class TestMessageBase:
 
     def test_model_post_init(self):
         """Test post-init initialization of attributes."""
-        msg = UserMessage(content="Test")
+        msg = UserMessage("Test")
         # Check new implementation structure
         assert hasattr(msg, "content_parts")  # Public field in new API
         assert hasattr(msg, "_rendered_cache")  # Still a private attribute
@@ -117,12 +118,10 @@ class TestMessageBase:
 
     def test_copy_with_new_fields(self):
         """Test copy_with creates new message with updated fields."""
-        original = UserMessage(
-            content="Original", name="user1", metadata={"key": "value"}
-        )
+        original = UserMessage("Original", name="user1", metadata={"key": "value"})
 
         # Copy with new content
-        copied = original.copy_with(content="Updated")
+        copied = original.copy_with("Updated")
         assert copied.content == "Updated"
         assert copied.name == "user1"  # Preserved
         assert copied.metadata == {"key": "value"}  # Preserved
@@ -146,7 +145,7 @@ class TestMessageBase:
     def test_clear_render_cache(self):
         """Test clearing render cache."""
         # Initialize message with content properly
-        msg = UserMessage(content="Test")
+        msg = UserMessage("Test")
 
         # Render to populate cache
         result = msg.render(RenderMode.DISPLAY)
@@ -182,7 +181,7 @@ class TestUserMessage:
 
     def test_user_message_role(self):
         """Test UserMessage has correct role."""
-        msg = UserMessage(content="Test")
+        msg = UserMessage("Test")
         assert msg.role == "user"
 
     def test_user_message_with_images(self):
@@ -191,31 +190,31 @@ class TestUserMessage:
             URL("https://example.com/image1.jpg"),
             URL("https://example.com/image2.jpg"),
         ]
-        msg = UserMessage(content="Look at these", images=images)
+        msg = UserMessage("Look at these", images=images)
         assert msg.images == images
         assert len(msg.images) == 2
 
     def test_user_message_with_bytes_image(self):
         """Test UserMessage with bytes image."""
         image_bytes = b"fake_image_data"
-        msg = UserMessage(content="Image", images=[image_bytes])
+        msg = UserMessage("Image", images=[image_bytes])
         assert msg.images[0] == image_bytes
 
     def test_user_message_image_detail(self):
         """Test image detail setting."""
-        msg = UserMessage(content="Test", image_detail="high")
+        msg = UserMessage("Test", image_detail="high")
         assert msg.image_detail == "high"
 
-        msg2 = UserMessage(content="Test", image_detail="low")
+        msg2 = UserMessage("Test", image_detail="low")
         assert msg2.image_detail == "low"
 
         # Default is "auto"
-        msg3 = UserMessage(content="Test")
+        msg3 = UserMessage("Test")
         assert msg3.image_detail == "auto"
 
     def test_user_message_init_with_content(self):
         """Test UserMessage initialization with content."""
-        msg = UserMessage(content="Hello world")
+        msg = UserMessage("Hello world")
         assert len(msg.content_parts) == 1
         assert isinstance(msg.content_parts[0], TextContentPart)
         assert msg.content_parts[0].text == "Hello world"
@@ -235,12 +234,12 @@ class TestSystemMessage:
 
     def test_system_message_role(self):
         """Test SystemMessage has correct role."""
-        msg = SystemMessage(content="Instructions")
+        msg = SystemMessage("Instructions")
         assert msg.role == "system"
 
     def test_system_message_init(self):
         """Test SystemMessage initialization."""
-        msg = SystemMessage(content="System instructions")
+        msg = SystemMessage("System instructions")
         # Check content was properly parsed into content parts
         assert len(msg.content_parts) == 1
         assert isinstance(msg.content_parts[0], TextContentPart)
@@ -261,7 +260,7 @@ class TestAssistantMessage:
 
     def test_assistant_message_role(self):
         """Test AssistantMessage has correct role."""
-        msg = AssistantMessage(content="Response")
+        msg = AssistantMessage("Response")
         assert msg.role == "assistant"
 
     def test_assistant_message_with_tool_calls(self):
@@ -278,14 +277,14 @@ class TestAssistantMessage:
                 arguments=json.dumps({"operation": "add", "a": 1, "b": 2}),
             ),
         )
-        msg = AssistantMessage(content="I'll calculate that", tool_calls=[tool_call])
+        msg = AssistantMessage("I'll calculate that", tool_calls=[tool_call])
         assert msg.tool_calls == [tool_call]
         assert msg.tool_calls[0].name == "calculator"
 
     def test_assistant_message_reasoning(self):
         """Test AssistantMessage reasoning field."""
         msg = AssistantMessage(
-            content="The answer is 42",
+            "The answer is 42",
             reasoning="I calculated 6 * 7 to get 42",
         )
         assert msg.reasoning == "I calculated 6 * 7 to get 42"
@@ -293,7 +292,7 @@ class TestAssistantMessage:
     def test_assistant_message_refusal(self):
         """Test AssistantMessage refusal field."""
         msg = AssistantMessage(
-            content="I cannot do that",
+            "I cannot do that",
             refusal="This request violates policy",
         )
         assert msg.refusal == "This request violates policy"
@@ -304,7 +303,7 @@ class TestAssistantMessage:
             URL("https://source1.com"),
             URL("https://source2.com"),
         ]
-        msg = AssistantMessage(content="According to sources", citations=citations)
+        msg = AssistantMessage("According to sources", citations=citations)
         assert msg.citations == citations
 
     def test_assistant_message_annotations(self):
@@ -313,9 +312,9 @@ class TestAssistantMessage:
             Annotation(text="Python", start=0, end=6, metadata={"type": "language"}),
             Annotation(text="API", start=10, end=13),
         ]
-        msg = AssistantMessage(content="Python's API", annotations=annotations)
+        msg = AssistantMessage("Python's API", annotations=annotations)
         assert msg.annotations == annotations
-        assert msg.annotations[0].metadata["type"] == "language"
+        assert msg.annotations and msg.annotations[0].metadata["type"] == "language"
 
 
 class TestToolMessage:
@@ -323,13 +322,13 @@ class TestToolMessage:
 
     def test_tool_message_role(self):
         """Test ToolMessage has correct role."""
-        msg = ToolMessage(content="Result", tool_call_id="123", tool_name="calculator")
+        msg = ToolMessage("Result", tool_call_id="123", tool_name="calculator")
         assert msg.role == "tool"
 
     def test_tool_message_required_fields(self):
         """Test ToolMessage requires tool_call_id and tool_name."""
         msg = ToolMessage(
-            content="42",
+            "42",
             tool_call_id="call_abc",
             tool_name="calculator",
         )
@@ -345,7 +344,7 @@ class TestToolMessage:
             success=True,
         )
         msg = ToolMessage(
-            content="Weather data",
+            "Weather data",
             tool_call_id="call_123",
             tool_name="weather",
             tool_response=response,
@@ -357,7 +356,7 @@ class TestToolMessage:
         """Test that tool_name is aliased to name."""
         # Using tool_name sets name
         msg1 = ToolMessage(
-            content="Result",
+            "Result",
             tool_call_id="123",
             tool_name="my_tool",
         )
@@ -366,7 +365,7 @@ class TestToolMessage:
 
         # Using name sets tool_name
         msg2 = ToolMessage(
-            content="Result",
+            "Result",
             tool_call_id="456",
             name="another_tool",
         )
@@ -392,7 +391,7 @@ class TestAssistantMessageStructuredOutput:
         )
 
         msg = AssistantMessageStructuredOutput[SearchResult](
-            content="Found 2 results",
+            "Found 2 results",
             output=output,
         )
 
@@ -408,7 +407,7 @@ class TestAssistantMessageStructuredOutput:
             value: str
 
         msg = AssistantMessageStructuredOutput[DataModel](
-            content="Data",
+            "Data",
             output=DataModel(value="test"),
         )
 
@@ -494,8 +493,8 @@ class TestMessageList:
     def test_message_list_creation(self):
         """Test creating MessageList."""
         messages = [
-            UserMessage(content="Hello"),
-            AssistantMessage(content="Hi"),
+            UserMessage("Hello"),
+            AssistantMessage("Hi"),
         ]
         msg_list = MessageList(messages)
         assert len(msg_list) == 2
@@ -510,11 +509,11 @@ class TestMessageList:
     def test_message_list_filter_by_role(self):
         """Test filtering messages by role."""
         messages = [
-            SystemMessage(content="System"),
-            UserMessage(content="User 1"),
-            AssistantMessage(content="Assistant 1"),
-            UserMessage(content="User 2"),
-            AssistantMessage(content="Assistant 2"),
+            SystemMessage("System"),
+            UserMessage("User 1"),
+            AssistantMessage("Assistant 1"),
+            UserMessage("User 2"),
+            AssistantMessage("Assistant 2"),
         ]
         msg_list = MessageList(messages)
 
@@ -531,9 +530,9 @@ class TestMessageList:
     def test_message_list_filter_by_attributes(self):
         """Test filtering by arbitrary attributes."""
         messages = [
-            UserMessage(content="Test 1", name="alice"),
-            UserMessage(content="Test 2", name="bob"),
-            UserMessage(content="Test 3", name="alice"),
+            UserMessage("Test 1", name="alice"),
+            UserMessage("Test 2", name="bob"),
+            UserMessage("Test 3", name="alice"),
         ]
         msg_list = MessageList(messages)
 
@@ -544,11 +543,11 @@ class TestMessageList:
     def test_message_list_property_accessors(self):
         """Test property accessors for message types."""
         messages = [
-            SystemMessage(content="System"),
-            UserMessage(content="User 1"),
-            AssistantMessage(content="Assistant"),
-            ToolMessage(content="Tool", tool_call_id="1", tool_name="test"),
-            UserMessage(content="User 2"),
+            SystemMessage("System"),
+            UserMessage("User 1"),
+            AssistantMessage("Assistant"),
+            ToolMessage("Tool", tool_call_id="1", tool_name="test"),
+            UserMessage("User 2"),
         ]
         msg_list = MessageList(messages)
 
@@ -566,7 +565,7 @@ class TestMessageList:
 
     def test_message_list_indexing(self):
         """Test indexing and slicing."""
-        messages = [UserMessage(content=f"Message {i}") for i in range(5)]
+        messages = [UserMessage(f"Message {i}") for i in range(5)]
         msg_list = MessageList(messages)
 
         # Single index
@@ -583,9 +582,9 @@ class TestMessageList:
     def test_message_list_filter_chaining(self):
         """Test chaining filter operations."""
         messages = [
-            UserMessage(content="Test", name="alice"),
-            UserMessage(content="Test", name="bob"),
-            AssistantMessage(content="Response", name="assistant"),
+            UserMessage("Test", name="alice"),
+            UserMessage("Test", name="bob"),
+            AssistantMessage("Response", name="assistant"),
         ]
         msg_list = MessageList(messages)
 
@@ -753,7 +752,7 @@ class TestMessageEventIntegration:
             return output
 
         # Create message with agent reference
-        msg = UserMessage(content="Test")
+        msg = UserMessage("Test")
         msg._set_agent(agent)
 
         # Debug: Verify agent reference
@@ -812,7 +811,7 @@ class TestMessageEventIntegration:
                 return output
             return output.upper() if isinstance(output, str) else output
 
-        msg = UserMessage(content="test")
+        msg = UserMessage("test")
         msg._set_agent(agent)
 
         # Direct render is pure - no transformations
@@ -895,7 +894,7 @@ class TestRenderCaching:
 
     def test_cache_without_templates(self):
         """Test that non-template content is cached."""
-        msg = UserMessage(content="Static")
+        msg = UserMessage("Static")
 
         # First render
         result1 = msg.render(RenderMode.DISPLAY)
@@ -916,14 +915,14 @@ class TestRenderCaching:
 
     def test_cache_cleared_on_content_change(self):
         """Test cache is cleared when content changes."""
-        msg = UserMessage(content="Original")
+        msg = UserMessage("Original")
 
         # Render and cache
         msg.render(RenderMode.DISPLAY)
         assert len(msg._rendered_cache) == 1
 
         # Update content (creates new message)
-        msg2 = msg.copy_with(content="New")
+        msg2 = msg.copy_with("New")
         # New message should have empty cache
         assert len(msg2._rendered_cache) == 0
 
@@ -933,7 +932,7 @@ class TestRenderCaching:
         agent = Agent()
         await agent.ready()  # Wait for agent to be ready
 
-        msg = UserMessage(content="Test")
+        msg = UserMessage("Test")
         msg._set_agent(agent)
 
         # LLM rendering with agent should not be cached
@@ -952,7 +951,7 @@ class TestMessageCompatibility:
 
     def test_message_without_content(self):
         """Test message without content parts falls back to legacy."""
-        msg = UserMessage(content="Legacy content")
+        msg = UserMessage("Legacy content")
         # Don't set content parts
         msg._content = []
 
@@ -962,7 +961,7 @@ class TestMessageCompatibility:
     def test_mixed_initialization(self):
         """Test various initialization patterns."""
         # Content only
-        msg1 = UserMessage(content="Content")
+        msg1 = UserMessage("Content")
         assert msg1.content == "Content"
 
         # Template only
@@ -970,7 +969,7 @@ class TestMessageCompatibility:
         assert msg2.raw_content == "Template {{ x }}"
 
         # Both content and template - new behavior: content wins for display
-        msg3 = UserMessage(content="Content", template="Template")
+        msg3 = UserMessage("Content", template="Template")
         # The content property should show what was passed as content
         assert msg3.content == "Content"
         # raw_content is legacy - we don't guarantee its behavior anymore
@@ -995,16 +994,16 @@ class TestErrorHandling:
     def test_invalid_attempt_number(self):
         """Test validation of attempt number."""
         # Valid
-        msg = UserMessage(content="Test", attempt=1)
+        msg = UserMessage("Test", attempt=1)
         assert msg.attempt == 1
 
         # Invalid
         with pytest.raises(ValueError, match="Attempt number must be >= 1"):
-            UserMessage(content="Test", attempt=0)
+            UserMessage("Test", attempt=0)
 
     def test_index_without_agent(self):
         """Test index property without agent."""
-        msg = UserMessage(content="Test")
+        msg = UserMessage("Test")
         with pytest.raises(ValueError, match="Message not attached to agent"):
             _ = msg.index
 
@@ -1014,7 +1013,7 @@ class TestErrorHandling:
         agent = Agent()
         await agent.ready()  # Wait for agent to be ready
         try:
-            msg = UserMessage(content="Test")
+            msg = UserMessage("Test")
             msg._set_agent(agent)
 
             with pytest.raises(ValueError, match="Message not attached to agent"):
@@ -1034,7 +1033,7 @@ class TestErrorHandling:
             pass
 
         mock_agent = MockAgent()
-        msg = UserMessage(content="Test")
+        msg = UserMessage("Test")
 
         # Manually set the weak reference
         import weakref
@@ -1069,7 +1068,7 @@ class TestRenderRecursionGuard:
             agent.context["name"] = "World"
 
             # Create a message with template content
-            msg = UserMessage(content="Hello {{ name }}")
+            msg = UserMessage("Hello {{ name }}")
             agent.append(msg)
 
             def problematic_event_handler(message=None, **kwargs):
@@ -1132,7 +1131,7 @@ class TestRenderRecursionGuard:
 
         try:
             # Create a message without templates (so it can be cached)
-            msg = UserMessage(content="Simple message")
+            msg = UserMessage("Simple message")
             agent.append(msg)
 
             # Pre-render to populate cache
@@ -1184,7 +1183,7 @@ class TestRenderRecursionGuard:
             agent.context["name"] = "Test"
 
             # Create a message with template (won't be cached)
-            msg = UserMessage(content="Hello {{ name }}")
+            msg = UserMessage("Hello {{ name }}")
             agent.append(msg)
 
             def recursive_handler(message=None, **kwargs):
@@ -1233,7 +1232,7 @@ class TestRenderRecursionGuard:
             """Function to run in separate thread."""
             try:
                 # Create message (no agent needed for this test)
-                UserMessage(content="Thread test")
+                UserMessage("Thread test")
 
                 # Simulate render call stack
                 from good_agent.messages import _get_render_stack
@@ -1278,7 +1277,7 @@ class TestRenderRecursionGuard:
     @pytest.mark.asyncio
     async def test_render_guard_different_modes_different_keys(self):
         """Test that different render modes use different guard keys."""
-        msg = UserMessage(content="Test message")
+        msg = UserMessage("Test message")
 
         # Mock the render stack to track keys
         with patch("good_agent.messages._get_render_stack") as mock_get_stack:

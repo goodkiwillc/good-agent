@@ -542,6 +542,36 @@ class TestAgentPipeline:
                 )
 
 
+class TestAgentRouting:
+    async def test_agent_routing_basic(self):
+        from good_agent import Agent
+
+        agent = Agent("You are a helpful assistant.")
+
+        # @agent.router
+
+
+        @agent.route("/init")
+        async def on_init(agent: Agent):
+            agent.append("Hello! How can I assist you today?")
+
+            return agent.next('mode')
+
+        @agent.route("/mode")
+        async def choose_mode(agent: Agent):
+            message = await agent.call(
+                "Would you like to chat or execute a command?"
+            )
+
+            if "chat" in message.content.lower():
+                return agent.next("chat_mode")
+            elif "execute" in message.content.lower():
+                return agent.next("exec_mode")
+            else:
+                agent.append("I didn't understand that. Please choose chat or execute.")
+                return agent.next("mode")
+
+
 
 class TestAgentCli:
     async def test_agent_cli_basic(self):

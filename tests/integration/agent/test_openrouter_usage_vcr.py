@@ -1,7 +1,13 @@
 import os
+import warnings
 
 import pytest
+
 from good_agent.messages import AssistantMessage, Message
+
+warnings.warn(
+    "BAD Test: why are we directly importing openai client in tests? Why is litell ignored."
+)
 
 
 @pytest.mark.integration
