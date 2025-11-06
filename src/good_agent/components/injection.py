@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
-
 import logging
-logger = logging.getLogger(__name__)
 
 from ..content import ContentPartType, TemplateContentPart, TextContentPart
 from ..events import AgentEvents
 from ..messages import SystemMessage, UserMessage
 from .component import AgentComponent
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from ..agent import Agent

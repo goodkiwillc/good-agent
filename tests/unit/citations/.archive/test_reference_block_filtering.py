@@ -12,10 +12,7 @@ async def test_processed_reference_block_filtering():
     # Create agent with CitationManager
     citation_manager = CitationManager()
 
-    async with Agent(
-        "Test agent",
-        extensions=[citation_manager]
-    ) as agent:
+    async with Agent("Test agent", extensions=[citation_manager]) as agent:
         # Content with confused reference blocks
         content_with_confused_refs = """
 Here is some content with proper citations [!CITE_1!] and [!CITE_2!].
@@ -37,9 +34,7 @@ Final content with another citation [!CITE_3!].
         ]
 
         agent.append(
-            "assistant",
-            content_with_confused_refs.strip(),
-            citations=citations
+            "assistant", content_with_confused_refs.strip(), citations=citations
         )
 
         # Render for user display (this should filter out reference blocks)
@@ -73,10 +68,7 @@ async def test_markdown_reference_block_filtering():
 
     citation_manager = CitationManager()
 
-    async with Agent(
-        "Test agent",
-        extensions=[citation_manager]
-    ) as agent:
+    async with Agent("Test agent", extensions=[citation_manager]) as agent:
         # Content with markdown reference blocks
         content_with_ref_blocks = """
 Here is some content with citations [1] and [2].
@@ -110,10 +102,7 @@ async def test_mixed_reference_block_filtering():
 
     citation_manager = CitationManager()
 
-    async with Agent(
-        "Test agent",
-        extensions=[citation_manager]
-    ) as agent:
+    async with Agent("Test agent", extensions=[citation_manager]) as agent:
         # Content with both types of reference blocks
         mixed_content = """
 Content with regular citations [!CITE_1!] and [2].
@@ -130,11 +119,7 @@ More content.
 
         citations = [URL("https://example1.com")]
 
-        agent.append(
-            "assistant",
-            mixed_content.strip(),
-            citations=citations
-        )
+        agent.append("assistant", mixed_content.strip(), citations=citations)
 
         # Render for display
         from good_agent.content import RenderMode

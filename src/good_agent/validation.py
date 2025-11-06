@@ -1,9 +1,7 @@
 from collections.abc import Sequence
 from enum import Enum
 from typing import TYPE_CHECKING
-
 import logging
-logger = logging.getLogger(__name__)
 
 from .messages import (
     AssistantMessage,
@@ -12,6 +10,8 @@ from .messages import (
     SystemMessage,
     ToolMessage,
 )
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     pass
@@ -353,7 +353,9 @@ class MessageSequenceValidator:
                 "before assistant message",
             ]
             issues = [
-                issue for issue in issues if not any(p in issue for p in suppress_patterns)
+                issue
+                for issue in issues
+                if not any(p in issue for p in suppress_patterns)
             ]
 
         # Handle logging/raising for the REMAINING issues only

@@ -6,12 +6,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 from weakref import WeakKeyDictionary, ref
 
+import logging
+
 import logfire
 from good_agent.utilities.event_router import EventContext, on
 from logfire import ConsoleOptions
 from logfire._internal.config import GLOBAL_CONFIG
-import logging
-logger = logging.getLogger(__name__)
 
 from ..components import AgentComponent
 from ..content import RenderMode
@@ -30,6 +30,8 @@ from ..events.types import (
     ToolCallBeforeParams,
     ToolCallErrorParams,
 )
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from ..agent import Agent

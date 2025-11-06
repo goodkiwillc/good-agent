@@ -5,15 +5,16 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
+import logging
 
 import yaml
 from good_agent.templating import TemplateRegistry, create_environment
 from jinja2 import BaseLoader, ChoiceLoader, Environment, TemplateNotFound
-import logging
-logger = logging.getLogger(__name__)
 from pydantic import BaseModel, Field
 
 from .environment import create_simple_template_environment
+
+logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------
 # Storage Protocol and Base Classes

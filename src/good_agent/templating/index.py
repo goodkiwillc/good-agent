@@ -3,11 +3,12 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+import logging
 
 import yaml
-import logging
-logger = logging.getLogger(__name__)
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 
 class TemplateMetadata(BaseModel):

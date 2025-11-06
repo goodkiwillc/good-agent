@@ -30,7 +30,9 @@ class MDXL:
     def select_all(self, xpath: str) -> List[MDXLElement]:
         results = self._root.xpath(xpath)
         # Filter only element nodes
-        elems: Iterable[etree._Element] = [r for r in results if isinstance(r, etree._Element)]
+        elems: Iterable[etree._Element] = [
+            r for r in results if isinstance(r, etree._Element)
+        ]
         return [MDXLElement(e) for e in elems]
 
     def select_one(self, xpath: str) -> MDXLElement | None:

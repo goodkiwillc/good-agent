@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import weakref
 from typing import TYPE_CHECKING, Any
-
 import logging
-logger = logging.getLogger(__name__)
+
 from ulid import ULID
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .agent import Agent

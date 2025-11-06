@@ -3335,9 +3335,7 @@ class Agent(EventRouter):
                             tool_error = f"Failed to convert function to tool: {e}"
 
             # Check if this is a bound function (special handling needed)
-            callable(tool) and getattr(
-                tool, "_is_invoke_func_bound", False
-            )
+            callable(tool) and getattr(tool, "_is_invoke_func_bound", False)
 
             # Create tool call - always create it for all tools
             tool_call_id = f"call_{ULID()}"

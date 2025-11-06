@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-
 import logging
-logger = logging.getLogger(__name__)
+
 from ulid import ULID
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .agent import Agent

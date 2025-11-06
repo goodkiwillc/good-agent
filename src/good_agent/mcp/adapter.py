@@ -1,11 +1,12 @@
 import asyncio
 from typing import Any, Generic, TypeVar
-
 import logging
-logger = logging.getLogger(__name__)
+
 from pydantic import BaseModel, Field, create_model
 
 from ..tools import Tool, ToolResponse
+
+logger = logging.getLogger(__name__)
 
 T_Response = TypeVar("T_Response")
 

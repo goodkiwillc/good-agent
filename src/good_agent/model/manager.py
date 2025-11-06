@@ -2,14 +2,14 @@ import asyncio
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 from weakref import WeakValueDictionary
-
 import logging
-logger = logging.getLogger(__name__)
 
 from .overrides import (
     ModelOverride,
     model_override_registry,
 )
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from litellm.integrations.custom_logger import CustomLogger

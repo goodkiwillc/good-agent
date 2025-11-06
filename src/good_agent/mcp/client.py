@@ -1,9 +1,8 @@
 import asyncio
 from typing import Any, TypedDict
 from urllib.parse import urlparse
-
 import logging
-logger = logging.getLogger(__name__)
+
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
@@ -11,6 +10,8 @@ from pydantic import BaseModel, Field
 
 from ..components.component import AgentComponent
 from .adapter import MCPToolAdapter, MCPToolSpec
+
+logger = logging.getLogger(__name__)
 
 
 class MCPServerConfig(TypedDict, total=False):

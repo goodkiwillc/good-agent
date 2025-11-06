@@ -401,9 +401,7 @@ class TestRegisterToolDecorator:
         assert metadata["name"] == "custom_name"
 
     @patch("good_agent.tools.registry.get_tool_registry_sync")
-    @patch(
-        "good_agent.tools.tools.Tool"
-    )  # Patch where Tool is imported in registry
+    @patch("good_agent.tools.tools.Tool")  # Patch where Tool is imported in registry
     def test_register_tool_decorator_auto_register(
         self, mock_tool_class, mock_get_registry
     ):

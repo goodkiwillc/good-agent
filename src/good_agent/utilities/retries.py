@@ -266,6 +266,7 @@ class wait_exponential_jitter(wait_base):
             result = self.max
         return max(0, min(result, self.max))
 
+
 class RetryAction(Enum):
     """Possible actions after an attempt."""
 

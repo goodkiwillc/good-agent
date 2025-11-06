@@ -20,7 +20,7 @@ from good_agent.types import URL
 
 # Lazy loading imports - moved to TYPE_CHECKING
 import logging
-logger = logging.getLogger(__name__)
+
 from pydantic import BaseModel
 
 from ..components import AgentComponent
@@ -50,6 +50,8 @@ from ..utilities import url_to_base64
 # Lazy loading ManagedRouter - moved to property
 from .manager import ManagedRouter, ModelManager
 from .overrides import model_override_registry
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from litellm.types.completion import (
@@ -1251,6 +1253,7 @@ class LanguageModel(AgentComponent):
 
         This does NOT modify agent history; it only adjusts the outbound message list.
         """
+
         # Helper to access attributes on dict-like or object-like instances
         def _get_attr(obj: Any, key: str, default: Any = None) -> Any:
             try:
@@ -1275,7 +1278,9 @@ class LanguageModel(AgentComponent):
             role = _get_attr(msg, "role", None)
 
             # If assistant with tool_calls, ensure immediate tool responses exist
-            tool_calls = _get_attr(msg, "tool_calls", None) if role == "assistant" else None
+            tool_calls = (
+                _get_attr(msg, "tool_calls", None) if role == "assistant" else None
+            )
             if role == "assistant" and tool_calls:
                 # Append the assistant message first
                 result.append(msg)

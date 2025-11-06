@@ -9,12 +9,9 @@ from typing import (
     cast,
 )
 from unittest.mock import MagicMock
+import logging
 
 import orjson
-
-# Lazy loading litellm types - moved to TYPE_CHECKING
-import logging
-logger = logging.getLogger(__name__)
 from pydantic import BaseModel
 from ulid import ULID
 
@@ -34,6 +31,9 @@ from .messages import (
 )
 from .model.llm import StreamChunk
 from .tools import ToolCall, ToolCallFunction, ToolResponse
+
+# Lazy loading litellm types - moved to TYPE_CHECKING
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from litellm.utils import Usage

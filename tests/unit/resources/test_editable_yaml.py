@@ -116,7 +116,9 @@ fields:
 @pytest.mark.asyncio
 async def test_validation_and_rollback_v2():
     def validator(doc: dict):
-        fields = set((doc.get("fields") or {}).keys()) if isinstance(doc, dict) else set()
+        fields = (
+            set((doc.get("fields") or {}).keys()) if isinstance(doc, dict) else set()
+        )
         if "invalid_col" in fields:
             return False, ["invalid_col not allowed"]
         return True, []

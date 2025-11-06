@@ -502,9 +502,9 @@ class TestExecuteMethod:
                             # Track that we injected a message
                             msg._conditional_injection_triggered = True  # type: ignore
 
-                    case ToolMessage(content=content, tool_name=tool_name):
+                    case ToolMessage(content=content, tool_name=_tool_name):
                         # Tool messages could be processed here if needed
-                        # For example: print(f"Tool {tool_name} returned: {content}")
+                        # For example: print(f"Tool {_tool_name} returned: {content}")
                         pass
 
                     case _:

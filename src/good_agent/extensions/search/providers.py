@@ -1,9 +1,7 @@
 import importlib.metadata
 from abc import ABC, abstractmethod
 from typing import Any, Protocol, runtime_checkable
-
 import logging
-logger = logging.getLogger(__name__)
 
 from .models import (
     DataDomain,
@@ -14,6 +12,8 @@ from .models import (
     SearchQuery,
     SearchResult,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @runtime_checkable
