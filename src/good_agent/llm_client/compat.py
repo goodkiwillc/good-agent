@@ -26,6 +26,7 @@ class Choices:
         self.finish_reason = kwargs.get("finish_reason", "stop")
         self.index = kwargs.get("index", 0)
         self.message = kwargs.get("message")
+        self.provider_specific_fields = kwargs.get("provider_specific_fields", {})
     
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
@@ -87,12 +88,28 @@ class Router(_Router):
         if messages and isinstance(messages[0], dict):
             messages = [Message(**msg) if isinstance(msg, dict) else msg for msg in messages]
         
-        return await super().acompletion(
+        response = await super().acompletion(
             messages=messages,  # type: ignore
             model=model,
             stream=stream,
             **kwargs
         )
+        
+        # Convert choices dicts to Choices objects for compatibility
+        if hasattr(response, 'choices') and response.choices:
+            converted_choices = []
+            for choice in response.choices:
+                if isinstance(choice, dict):
+                    choice_obj = Choices()
+                    choice_obj.message = choice.get("message")
+                    choice_obj.finish_reason = choice.get("finish_reason")
+                    choice_obj.index = choice.get("index", 0)
+                    converted_choices.append(choice_obj)
+                else:
+                    converted_choices.append(choice)
+            response.choices = converted_choices
+        
+        return response
 
 
 # Module-level functions for compatibility

@@ -31,7 +31,8 @@ class Router:
 
     def __init__(
         self,
-        models: list[str],
+        models: list[str] | None = None,
+        model_list: list[dict] | None = None,
         fallback_models: list[str] | None = None,
         api_key: str | None = None,
         max_retries: int = 2,
@@ -43,7 +44,8 @@ class Router:
         Initialize router.
 
         Args:
-            models: List of primary models to use
+            models: List of primary model names (simple format)
+            model_list: List of model dicts with config (litellm-compatible)
             fallback_models: List of fallback models if primary fails
             api_key: API key for providers
             max_retries: Maximum number of retries per model
@@ -51,7 +53,21 @@ class Router:
             timeout: Request timeout
             **kwargs: Additional provider configuration
         """
-        self.models = models
+        # Support both simple models list and litellm-style model_list
+        if model_list:
+            # Extract model names from litellm-style config
+            self.models = [
+                m.get("model_name") or m.get("litellm_params", {}).get("model") or m.get("params", {}).get("model")
+                for m in model_list
+            ]
+            self.model_list = model_list
+        elif models:
+            self.models = models
+            self.model_list = [{"model_name": m, "params": {"model": m}} for m in models]
+        else:
+            self.models = []
+            self.model_list = []
+            
         self.fallback_models = fallback_models or []
         self.api_key = api_key
         self.max_retries = max_retries
@@ -305,6 +321,10 @@ class Router:
     async def async_completion(self, *args: Any, **kwargs: Any) -> ChatResponse:
         """Alias for completion."""
         return await self.completion(*args, **kwargs)
+    
+    async def acompletion(self, *args: Any, **kwargs: Any) -> ChatResponse:
+        """Alias for completion() for litellm compatibility."""
+        return await self.completion(*args, **kwargs)  # type: ignore
 
     def get_stats(self) -> dict[str, int]:
         """Get router statistics."""

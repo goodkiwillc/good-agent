@@ -34,9 +34,9 @@ class Message(BaseModel):
     role: Literal["system", "user", "assistant", "tool"] = Field(
         description="The role of the message sender"
     )
-    content: str | None = Field(
+    content: str | list[dict[str, Any]] | None = Field(
         default=None,
-        description="The content of the message"
+        description="The content of the message (string or list of content parts)"
     )
     name: str | None = Field(
         default=None,
