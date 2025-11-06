@@ -266,28 +266,28 @@ class TestAgentInterruption:
             assert "tool_completed" not in execution_log
 
     @pytest.mark.asyncio
-    @pytest.mark.skip(
-        reason="Test timing is too fragile - core cancellation behavior is covered by test_simple_nested_call_cancellation"
-    )
     async def test_nested_agent_calls_interruption(self):
         """Test interruption of nested agent.call() operations.
 
-        This is a simplified test that just verifies cancellation propagates
-        through nested agent.call() operations without requiring complex recursion.
+        This test verifies that cancellation propagates through nested agent.call()
+        operations using event-based synchronization for reliable timing.
         """
-        tool_started = False
+        # Use events for reliable synchronization
+        tool_started_event = asyncio.Event()
+        nested_call_started_event = asyncio.Event()
         tool_completed = False
-        nested_call_started = False
 
         @tool
         async def slow_tool() -> str:
             """A tool that makes a nested agent call."""
-            nonlocal tool_started, tool_completed, nested_call_started
-            tool_started = True
+            nonlocal tool_completed
+
+            # Signal that tool has started
+            tool_started_event.set()
 
             # Make a nested agent call that will take time
             try:
-                nested_call_started = True
+                nested_call_started_event.set()
                 await agent.call("Nested call")
 
                 # Should not reach here if properly cancelled
@@ -315,9 +315,14 @@ class TestAgentInterruption:
             type: str = "function"
             function: MockFunction = None
 
+        call_count = 0
+
         async def mock_complete(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+
             # Simulate a slow LLM response
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.2)
 
             mock_response = MagicMock()
             mock_choice = MagicMock()
@@ -329,7 +334,7 @@ class TestAgentInterruption:
             # Always return tool call for slow_tool
             mock_choice.message.tool_calls = [
                 MockToolCall(
-                    id="call_1",
+                    id=f"call_{call_count}",
                     function=MockFunction(name="slow_tool", arguments="{}"),
                 )
             ]
@@ -341,11 +346,11 @@ class TestAgentInterruption:
                 # Start the agent call
                 task = asyncio.create_task(agent.call("Start tool"))
 
-                # Wait for LLM mock to return and tool to start
-                await asyncio.sleep(0.6)
+                # Wait for tool to start and nested call to begin
+                await asyncio.wait_for(tool_started_event.wait(), timeout=2.0)
+                await asyncio.wait_for(nested_call_started_event.wait(), timeout=2.0)
 
-                # At this point, the tool should have started and the nested call should be in progress
-                # Cancel the task mid-execution
+                # Now cancel the task while the nested call is in progress
                 task.cancel()
 
                 try:
@@ -357,8 +362,8 @@ class TestAgentInterruption:
                 await asyncio.sleep(0.1)
 
                 # The tool should have started but not completed
-                assert tool_started, "Tool should have started"
-                assert nested_call_started, "Nested call should have started"
+                assert tool_started_event.is_set(), "Tool should have started"
+                assert nested_call_started_event.is_set(), "Nested call should have started"
                 assert not tool_completed, (
                     "Tool should not have completed due to cancellation"
                 )

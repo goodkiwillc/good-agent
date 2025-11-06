@@ -1,11 +1,12 @@
 import re
 
 import pytest
+
 from good_agent import Agent
 from good_agent.content import RenderMode
+from good_agent.core.mdxl import MDXL
 from good_agent.extensions.citations import CitationManager
 from good_agent.resources.editable_mdxl import EditableMDXL
-from good_agent.mdxl import MDXL
 from good_agent.types import URL
 
 
