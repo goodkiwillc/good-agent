@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent
 from good_agent.messages import AssistantMessage, ToolMessage
 from good_agent.tools import ToolResponse, tool
@@ -45,6 +46,7 @@ class TestAddToolInvocations:
             # The assistant message is the first one added after the system message
             assistant_msg = agent.messages[initial_len]
             assert isinstance(assistant_msg, AssistantMessage)
+            assert assistant_msg.tool_calls is not None
             assert len(assistant_msg.tool_calls) == 3
             assert assistant_msg.tool_calls[0].function.name == "calculator"
             assert assistant_msg.tool_calls[1].function.name == "calculator"
@@ -67,9 +69,7 @@ class TestAddToolInvocations:
         def simple_tool(x: int) -> int:
             return x * 2
 
-        async with Agent(
-            "Test agent", model="gpt-3.5-turbo", tools=[simple_tool]
-        ) as agent:
+        async with Agent("Test agent", tools=[simple_tool]) as agent:
             # Mock the model to NOT support parallel function calling
             monkeypatch.setattr(
                 agent.model, "supports_parallel_function_calling", lambda: False

@@ -50,8 +50,8 @@ class TestTextTokenCounting:
         """Test that different models may produce different counts."""
         text = "Test model differences"
 
-        count_gpt4o = count_text_tokens(text, model="gpt-4o")
-        count_gpt35 = count_text_tokens(text, model="gpt-3.5-turbo")
+        count_gpt4o = count_text_tokens(text, model="gpt-5")
+        count_gpt35 = count_text_tokens(text, model="gpt-4o")
 
         # Counts should be similar but may differ slightly
         assert count_gpt4o > 0

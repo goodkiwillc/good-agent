@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from good_agent.config import AgentConfigManager
 from good_agent.model.llm import LanguageModel
-from litellm import Router
+from litellm.router import Router
 from pydantic import BaseModel
 
 # Add the tests directory to the path so we can import test_helpers
@@ -76,7 +76,7 @@ def mock_agent(config):
 
 
 @pytest.fixture
-def language_model(mock_agent):
+def language_model(mock_agent: MockAgent):
     lm = LanguageModel()
     mock_agent.install_component(lm)
     return lm
