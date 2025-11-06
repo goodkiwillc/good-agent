@@ -1,8 +1,8 @@
 import asyncio
+import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 from weakref import WeakValueDictionary
-import logging
 
 from .overrides import (
     ModelOverride,
@@ -12,8 +12,10 @@ from .overrides import (
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from litellm.files.main import ModelResponse
     from litellm.integrations.custom_logger import CustomLogger
-    from litellm.router import CustomStreamWrapper, ModelResponse, Router
+    from litellm.litellm_core_utils.streaming_handler import CustomStreamWrapper
+    from litellm.router import Router
 
 
 @dataclass

@@ -3,7 +3,7 @@
 
 ## Quickstart
 ```python
-from goodintel_agent import Agent
+from good_agent import Agent
 
 async with Agent("You are a helpful assistant.") as agent:
     agent.append("What is 2+2?")
@@ -33,7 +33,7 @@ async with Agent(
 ## Structured output (Pydantic)
 ```python
 from pydantic import BaseModel
-from goodintel_agent import Agent
+from good_agent import Agent
 
 class Weather(BaseModel):
     temp_c: float
@@ -51,7 +51,7 @@ async with Agent("Return JSON matching the schema.") as agent:
 
 ## Iterate on each LLM response
 ```python
-from goodintel_agent import Agent, AssistantMessage, ToolMessage,
+from good_agent import Agent, AssistantMessage, ToolMessage,
 
 async def get_ip() -> str:
     return "XXX.XXX.XXX.XXX"
@@ -146,7 +146,7 @@ Injected message:
 
 ## Use simple functions as tools directly
 ```python
-from goodintel_agent import Agent
+from good_agent import Agent
 
 async def calculate(x: int, y: int) -> int:
     """Add two integers together."""
@@ -166,7 +166,7 @@ async with Agent("Use tools when helpful.", tools=[calculate]) as agent:
 ### Tool Registration and Dependency Injection
 ```python
 from fast_depends import Depends
-from goodintel_agent import Agent, Renderable, tool
+from good_agent import Agent, Renderable, tool
 from .. import SearchClient, WebFetcher, get_search_client, get_web_fetcher
 
 
@@ -259,7 +259,7 @@ async with Agent(
 
 ## Component tools (method-based) and auto-registration
 ```python
-from goodintel_agent import Agent, AgentComponent, tool
+from good_agent import Agent, AgentComponent, tool
 
 class Math(AgentComponent):
     @tool
@@ -274,7 +274,7 @@ async with Agent("Use mul for multiplication.", extensions=[Math()]) as agent:
 
 ## Component tools (method-based) and auto-registration
 ```python
-from goodintel_agent import Agent, AgentComponent, tool
+from good_agent import Agent, AgentComponent, tool
 
 class Math(AgentComponent):
     @tool
@@ -288,7 +288,7 @@ async with Agent("Use mul for multiplication.", extensions=[Math()]) as agent:
 
 ## MCP and registry tools
 ```python
-from goodintel_agent import Agent
+from good_agent import Agent
 
 async with Agent(
     "Use external tools when available."
@@ -304,8 +304,8 @@ async with Agent(
 
 ## Events (observe/steer lifecycle)
 ```python
-from goodintel_agent import Agent, AgentEvents
-from goodintel_agent.events.types import ToolCallAfterParams
+from good_agent import Agent, AgentEvents
+from good_agent.events.types import ToolCallAfterParams
 from goodintel_core.utilities.event_router import EventContext
 
 async with Agent("Log tool calls") as agent:
@@ -320,7 +320,7 @@ async with Agent("Log tool calls") as agent:
 
 ## Streaming and iterative execution
 ```python
-from goodintel_agent import Agent
+from good_agent import Agent
 
 async with Agent("Stream a very short story.") as agent:
     agent.append("Tell a 2-sentence story")
@@ -336,7 +336,7 @@ async with Agent("Stream a very short story.") as agent:
 
 ## Multi‑agent conversations (pipe operator)
 ```python
-from goodintel_agent import Agent
+from good_agent import Agent
 
 async with Agent("You are A") as a, Agent("You are B") as b:
     async with a | b:
@@ -355,7 +355,7 @@ async with Agent("You are A") as a, Agent("You are B") as b:
 
 ## Resource‑scoped editing (MDXL)
 ```python
-from goodintel_agent import Agent, EditableMDXL
+from good_agent import Agent, EditableMDXL
 from goodintel_core.mdxl import MDXL
 
 doc = MDXL.from_string("<document><summary>draft</summary></document>")
@@ -371,7 +371,7 @@ Notes:
 
 ## Components: hooks, suites, and shared state
 ```python
-from goodintel_agent import Agent, CitationManager, TaskManager
+from good_agent import Agent, CitationManager, TaskManager
 
 # Components can modify messages/tool calls and maintain shared state
 cites = CitationManager()           # maps URLs -> indices; presents [!CITE_{x}!] to LLM
@@ -386,7 +386,7 @@ async with Agent("Research with citations and todos.", extensions=[cites, tasks]
 
 ### Component “suites” of tools (e.g., AgentSearch)
 ```python
-from goodintel_agent import Agent, AgentSearch
+from good_agent import Agent, AgentSearch
 
 async with Agent("Use search tools where needed.", extensions=[AgentSearch()]) as agent:
     await agent.tools["search"](_agent=agent, query="vector databases", limit=5)
@@ -395,7 +395,7 @@ async with Agent("Use search tools where needed.", extensions=[AgentSearch()]) a
 
 ## Rich templating and context providers
 ```python
-from goodintel_agent import Agent, Template, global_context_provider
+from good_agent import Agent, Template, global_context_provider
 
 @global_context_provider("timestamp")
 def now():
@@ -409,7 +409,7 @@ async with Agent(tmpl.render(role="assistant")) as agent:
 
 ## Mocking for development
 ```python
-from goodintel_agent import Agent, AgentMockInterface, MockResponse
+from good_agent import Agent, AgentMockInterface, MockResponse
 
 mock = AgentMockInterface()
 mock.queue(MockResponse.message("assistant", "Hello (mocked)"))
@@ -422,7 +422,7 @@ async with Agent("Test", extensions=[mock]) as agent:
 
 ## Agent‑as‑Tool (compose specialists)
 ```python
-from goodintel_agent import Agent, tool
+from good_agent import Agent, tool
 
 def wrap_agent_as_tool(name: str, specialist: Agent):
     @tool(name=name)
@@ -441,8 +441,8 @@ async with Agent("Coordinator") as orchestrator, Agent("You are a Python expert.
 
 ## Concurrency: AgentPool
 ```python
-from goodintel_agent.pool import AgentPool
-from goodintel_agent import Agent
+from good_agent.pool import AgentPool
+from good_agent import Agent
 
 pool = AgentPool([Agent("You help.") for _ in range(3)])
 # Distribute work: pool[i].call(...)

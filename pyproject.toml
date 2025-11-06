@@ -30,7 +30,46 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "good-dev>=0.1.1",
+    "ipykernel>=7.1.0",
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",
+    "ruff>=0.14.3",
     "vcrpy>=7.0.0",
+]
+
+
+
+[tool.pytest.ini_options]
+# Define where pytest should look for tests
+# Only include root tests to avoid provider conftest conflicts
+# Provider tests should be run separately from their package directory
+testpaths = ["tests"]
+# Ensure root directory is in Python path
+pythonpath = ["."]
+# Prevent conftest.py import conflicts by using importlib
+# Force namespace packages to avoid module name conflicts
+# Skip prefect_harness tests by default (use -m prefect_harness to run them)
+addopts = "--import-mode=importlib --strict-config --confcutdir=. -m 'not slow'"
+# Test discovery patterns
+python_files = ["test_*.py", "*_test.py"]
+# Directories to skip during collection
+norecursedirs = ["*.egg", ".eggs", "dist", "build", "docs", ".tox", ".git", "__pycache__", ".venv", "node_modules"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(pathname)s:%(lineno)d - %(message)s"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+markers = [
+    "unit",
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "slow: marks tests as slow running",
+]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    # Ignore deprecation warning from clickhouse_connect about utcfromtimestamp
+    "ignore:datetime.datetime.utcfromtimestamp\\(\\) is deprecated:DeprecationWarning:clickhouse_connect.datatypes.temporal",
+    # Ignore connection pool warnings that are expected in concurrent tests
+    "ignore:Connection pool is full:UserWarning",
 ]

@@ -73,6 +73,7 @@ from .templating import (
     global_context_provider,
 )
 from .tools import (
+    BoundTool,
     Tool,
     ToolCall,
     ToolCallFunction,
@@ -2196,9 +2197,9 @@ class Agent(EventRouter):
         iterations = 0
 
         # Check and resolve any pending tool calls first
-        pending_tool_calls = self.get_pending_tool_calls()
+
         message_index = 0
-        if pending_tool_calls:
+        if pending_tool_calls := self.get_pending_tool_calls():
             logger.debug(
                 f"Resolving {len(pending_tool_calls)} pending tool calls before execution"
             )
@@ -3088,7 +3089,7 @@ class Agent(EventRouter):
     @overload
     async def invoke(
         self,
-        tool: Tool[..., T_FuncResp],
+        tool: Tool[..., T_FuncResp] | BoundTool[Any, Any, T_FuncResp],
         *,
         tool_name: str | None = None,
         tool_call_id: str | None = None,

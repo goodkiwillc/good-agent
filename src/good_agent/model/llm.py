@@ -1,5 +1,8 @@
 import asyncio
 import copy
+
+# Lazy loading imports - moved to TYPE_CHECKING
+import logging
 from collections.abc import AsyncIterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,12 +19,9 @@ from typing import (
     runtime_checkable,
 )
 
-from good_agent.types import URL
-
-# Lazy loading imports - moved to TYPE_CHECKING
-import logging
-
 from pydantic import BaseModel
+
+from good_agent.types import URL
 
 from ..components import AgentComponent
 from ..config import AgentConfigManager
@@ -57,8 +57,7 @@ if TYPE_CHECKING:
     from litellm.types.completion import (
         ChatCompletionMessageParam,
     )
-    from litellm.types.utils import Choices, StreamingChoices, Usage
-    from litellm.utils import ModelResponse
+    from litellm.types.utils import Choices, ModelResponse, StreamingChoices, Usage
 
 
 class ModelResponseProtocol(Protocol):
@@ -93,9 +92,6 @@ class ResponseWithHiddenParams(Protocol):
 class ResponseWithResponseHeaders(ModelResponseProtocol, Protocol):
     @property
     def _response_headers(self) -> dict[str, Any] | Any: ...
-
-
-type ModelName = str
 
 
 type ModelName = str
@@ -817,8 +813,6 @@ class LanguageModel(AgentComponent):
         if not self._litellm:
             import litellm
 
-            # litellm.callbacks = ["langfuse_otel"]
-
             self._litellm = litellm
         return self._litellm
 
@@ -930,6 +924,11 @@ class LanguageModel(AgentComponent):
             if "route" in config and isinstance(config.get("route"), str):
                 config["route"] = _strip_or_prefix(config["route"])
 
+        # Ensure parallel_tool_calls is only sent when tools are specified
+        if "parallel_tool_calls" in config and not config.get("tools"):
+            # Some providers reject this flag without accompanying tools
+            config.pop("parallel_tool_calls", None)
+
         # Log if any overrides were applied (for debugging)
         model_override_registry.get_model_info(model_name)
 
@@ -968,11 +967,6 @@ class LanguageModel(AgentComponent):
             # logger.debug(f"Could not calculate cost: {e}")
             pass
 
-    # # Single text/template returns string
-    # if len(message.content_parts) == 1:
-    #     part = message.content_parts[0]
-    #     if isinstance(part, (TextContentPart, TemplateContentPart)):
-    #         return message.render(RenderMode.LLM)
     async def _format_message_content(
         self,
         content_parts: list[ContentPartType],
@@ -1223,7 +1217,7 @@ class LanguageModel(AgentComponent):
 
     async def format_message_list_for_llm(
         self, messages: list[Message]
-    ) -> list["ChatCompletionMessageParam"]:
+    ) -> list["ChatCompletionMessageParam | dict[str, Any]"]:
         """Format a list of messages for LLM consumption with event hooks.
 
         This method handles all message formatting including:
@@ -1246,7 +1240,7 @@ class LanguageModel(AgentComponent):
         return messages_for_llm
 
     def _ensure_tool_call_pairs_for_formatted_messages(
-        self, messages: Sequence["ChatCompletionMessageParam"]
+        self, messages: Sequence["ChatCompletionMessageParam | dict[str, Any]"]
     ) -> list["ChatCompletionMessageParam"]:
         """Ensure assistant messages with tool_calls are immediately followed by
         corresponding tool messages in the payload sent to the API.
@@ -1471,6 +1465,8 @@ class LanguageModel(AgentComponent):
         """
         import time
 
+        messages = self._ensure_tool_call_pairs_for_formatted_messages(messages)
+
         kwargs["stream"] = stream  # type: ignore Ensure stream is always set in kwargs
 
         config = self._prepare_request_config(**kwargs)
@@ -1478,11 +1474,6 @@ class LanguageModel(AgentComponent):
         # Apply model-specific overrides LAST so they take precedence
         model_name = str(config.get("model", self.model))
         config = model_override_registry.apply(model_name, config)
-
-        # Ensure parallel_tool_calls is only sent when tools are specified
-        if "parallel_tool_calls" in config and not config.get("tools"):
-            # Some providers reject this flag without accompanying tools
-            config.pop("parallel_tool_calls", None)
 
         # Fire before event (using apply_typed for type safety)
         start_time = time.time()
@@ -1495,12 +1486,17 @@ class LanguageModel(AgentComponent):
             llm=self,
         )
 
-        # Ensure parallel_tool_calls is still not present after event handlers
-        # Event handlers might have modified ctx.parameters["config"]
         if "parallel_tool_calls" in ctx.parameters["config"] and not ctx.parameters[
             "config"
         ].get("tools"):
-            ctx.parameters["config"].pop("parallel_tool_calls", None)
+            logger.warning("`parallel_tool_calls` added back in")
+
+        # # Ensure parallel_tool_calls is still not present after event handlers
+        # # Event handlers might have modified ctx.parameters["config"]
+        # if "parallel_tool_calls" in ctx.parameters["config"] and not ctx.parameters[
+        #     "config"
+        # ].get("tools"):
+        #     ctx.parameters["config"].pop("parallel_tool_calls", None)
 
         try:
             # Router already handles retries/fallbacks via model_list configuration
@@ -1513,9 +1509,10 @@ class LanguageModel(AgentComponent):
             # Fire after event
             end_time = time.time()
 
+            from litellm.types.utils import ModelResponse
+
             # Lazy load ModelResponse for type parameter
             # Always use apply_typed at runtime
-            from litellm.utils import ModelResponse
 
             ctx = await self.agent.apply_typed(
                 AgentEvents.LLM_COMPLETE_AFTER,
@@ -1650,9 +1647,7 @@ class LanguageModel(AgentComponent):
         import time
 
         # Ensure outbound payload has assistant tool_calls immediately followed by tool messages
-        prepared_messages = self._ensure_tool_call_pairs_for_formatted_messages(
-            list(messages)
-        )
+        messages = self._ensure_tool_call_pairs_for_formatted_messages(list(messages))
 
         config = self._prepare_request_config(**kwargs)
 
@@ -1666,7 +1661,7 @@ class LanguageModel(AgentComponent):
             AgentEvents.LLM_EXTRACT_BEFORE,
             CompletionEvent,
             None,  # No specific return type expected for 'before' event
-            messages=prepared_messages,
+            messages=messages,
             config=config,
             response_model=response_model,
             llm=self,

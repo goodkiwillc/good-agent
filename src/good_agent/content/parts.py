@@ -2,7 +2,7 @@ import re
 from enum import Enum
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, BeforeValidator, Discriminator, Field
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Discriminator, Field
 
 
 def is_template(text: str) -> bool:
@@ -47,12 +47,10 @@ PROCESSED_TEXT = Annotated[str, BeforeValidator(_process_text)]
 class BaseContentPart(BaseModel):
     """Base class for all serializable content parts."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=False, extra="forbid")
+
     type: str
     metadata: dict[str, Any] = Field(default_factory=dict)
-
-    class Config:
-        arbitrary_types_allowed = False
-        extra = "forbid"  # Strict validation
 
 
 class TextContentPart(BaseContentPart):

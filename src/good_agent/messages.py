@@ -924,7 +924,10 @@ class SystemMessage(Message):
     role: Literal["system"] = "system"  # type: ignore
 
 
-class ToolMessage(Message):
+T_ToolResponse = TypeVar("T_ToolResponse", bound=ToolResponse)
+
+
+class ToolMessage(Message, Generic[T_ToolResponse]):
     """Tool response message"""
 
     @overload
@@ -933,7 +936,7 @@ class ToolMessage(Message):
         content: str | None = None,
         tool_call_id: str | None = None,
         tool_name: str | None = None,
-        tool_response: ToolResponse | None = None,
+        tool_response: T_ToolResponse | None = None,
         **data,
     ):
         """Initialize with content and tool call details"""
@@ -945,7 +948,7 @@ class ToolMessage(Message):
         *content: MessageContent,
         tool_call_id: str | None = None,
         tool_name: str | None = None,
-        tool_response: ToolResponse | None = None,
+        tool_response: T_ToolResponse | None = None,
         **data,
     ):
         """Initialize with content parts and tool call details"""
@@ -967,7 +970,7 @@ class ToolMessage(Message):
     role: Literal["tool"] = "tool"  # type: ignore
     tool_call_id: str
     tool_name: str  # Name of the tool that was called
-    tool_response: ToolResponse | None = None
+    tool_response: T_ToolResponse | None = None
 
     def __display__(self) -> str:
         """Protocol method for display rendering.
@@ -1541,9 +1544,6 @@ class MessageList(list[T_Message], Generic[T_Message]):
             return result
         return result
 
-    def __call__(self, mode: Literal["fork_merge"] = "fork_merge"):
-        pass
-
 
 class FilteredMessageList(MessageList[T_Message], Generic[T_Message]):
     """Role-specific message wrapper with agent integration and simplified API.
@@ -1805,73 +1805,3 @@ class FilteredMessageList(MessageList[T_Message], Generic[T_Message]):
         ```
         """
         return len(self) > 0
-
-    # def _legacy_render(self) -> str:
-    #     """Legacy rendering for backward compatibility."""
-    #     # If we have cached rendered content, return it
-    #     if self._rendered_content is not None:
-    #         return self._rendered_content
-
-    #     # If we have raw content (template), render it
-    #     if self._raw_content is not None:
-    #         # Lazy rendering - render on first access
-    #         if self._agent_ref is not None:
-    #             agent = self._agent_ref()
-    #             if agent and hasattr(agent, "template"):
-    #                 # Render the template with the message's context
-    #                 try:
-    #                     # Start with agent context
-    #                     agent_context = dict(agent.context._chainmap)
-
-    #                     # Merge message context
-    #                     if self._context and isinstance(self._context, dict):
-    #                         agent_context.update(self._context)
-
-    #                     # Add sync context providers only (skip async ones)
-    #                     for key, provider in _GLOBAL_CONTEXT_PROVIDERS.items():
-    #                         if key not in agent_context:
-    #                             try:
-    #                                 if asyncio.iscoroutinefunction(provider):
-    #                                     # Skip async providers for now
-    #                                     continue
-    #                                 agent_context[key] = provider()
-    #                             except Exception:
-    #                                 # Skip failed providers
-    #                                 continue
-
-    #                     # Add instance providers
-    #                     for key, provider in agent.template._context_providers.items():
-    #                         if key not in agent_context:
-    #                             try:
-    #                                 if asyncio.iscoroutinefunction(provider):
-    #                                     # Skip async providers for now
-    #                                     continue
-    #                                 agent_context[key] = provider()
-    #                             except Exception:
-    #                                 # Skip failed providers
-    #                                 continue
-
-    #                     # Render template with context
-    #                     rendered = agent.template.render_template(
-    #                         self._raw_content, agent_context
-    #                     )
-
-    #                     # Only cache if no context providers were used (static rendering)
-    #                     has_providers = bool(_GLOBAL_CONTEXT_PROVIDERS) or bool(
-    #                         agent.template._context_providers
-    #                     )
-    #                     if not has_providers:
-    #                         self._rendered_content = rendered
-
-    #                     return rendered
-    #                 except Exception:
-    #                     # If template rendering fails, return raw content
-    #                     return self._raw_content
-    #         # Fallback to raw content if no agent or template manager
-    #         return self._raw_content
-
-    #     # Return direct content if set
-    #     if self._content is not None:
-    #         return self._content
-
-    #     return ""
