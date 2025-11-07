@@ -3588,6 +3588,11 @@ class Agent(EventRouter):
         # Second pass: find tool calls without responses
         for msg in self.messages:
             match msg:
+                case AssistantMessageStructuredOutput():
+                    # Skip structured output messages - their tool_calls reference
+                    # Pydantic schemas, not actual tools, and will be handled during
+                    # message formatting for LLM API calls
+                    continue
                 case AssistantMessage(tool_calls=tool_calls) if tool_calls:
                     # Check if this assistant message has tool calls
                     for tool_call in tool_calls:

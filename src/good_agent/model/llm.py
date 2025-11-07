@@ -1224,18 +1224,28 @@ class LanguageModel(AgentComponent):
         - Firing render events for extensions
         - Converting content parts to LLM format
         - Handling templates, images, and files
+        - Ensuring tool call/response pairs are valid (injects synthetic tool responses)
 
         Args:
             messages: List of Message objects to format
 
         Returns:
-            List of formatted messages ready for LLM API
+            List of formatted messages ready for LLM API, with synthetic tool
+            responses injected for any assistant messages with tool_calls that
+            don't have corresponding tool responses
         """
         # Process messages in order (not parallel) to maintain sequence
         messages_for_llm = []
         for msg in messages:
             formatted = await self._format_message(msg, RenderMode.LLM)
             messages_for_llm.append(formatted)
+
+        # Ensure all tool calls have corresponding tool responses
+        # This is critical for AssistantMessageStructuredOutput which may have
+        # tool_calls in the message history but no actual ToolMessage responses
+        messages_for_llm = self._ensure_tool_call_pairs_for_formatted_messages(
+            messages_for_llm
+        )
 
         return messages_for_llm
 
@@ -1465,7 +1475,7 @@ class LanguageModel(AgentComponent):
         """
         import time
 
-        messages = self._ensure_tool_call_pairs_for_formatted_messages(messages)
+        # Note: messages already have tool call pairs ensured by format_message_list_for_llm()
 
         kwargs["stream"] = stream  # type: ignore Ensure stream is always set in kwargs
 
@@ -1646,8 +1656,7 @@ class LanguageModel(AgentComponent):
         """
         import time
 
-        # Ensure outbound payload has assistant tool_calls immediately followed by tool messages
-        messages = self._ensure_tool_call_pairs_for_formatted_messages(list(messages))
+        # Note: messages already have tool call pairs ensured by format_message_list_for_llm()
 
         config = self._prepare_request_config(**kwargs)
 

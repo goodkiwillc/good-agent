@@ -32,6 +32,71 @@ class TestStructuredOutputSequencing:
     """Test that AssistantMessageStructuredOutput is properly handled in message sequencing"""
 
     @pytest.mark.asyncio
+    async def test_ensure_tool_pairs_called_correctly(self):
+        """Test that _ensure_tool_call_pairs is actually called and works"""
+
+        class Weather(BaseModel):
+            location: str
+            temperature: float
+            condition: str
+
+        async with Agent("You are helpful") as agent:
+            # Manually create an AssistantMessageStructuredOutput
+            weather_output = Weather(location="New York", temperature=72.0, condition="Sunny")
+            tool_call = ToolCall(
+                id="call_weather_123",
+                type="function",
+                function=ToolCallFunction(
+                    name="Weather",
+                    arguments=json.dumps(weather_output.model_dump())
+                )
+            )
+
+            structured_msg = AssistantMessageStructuredOutput[Weather](
+                "Weather retrieved",
+                output=weather_output,
+                tool_calls=[tool_call]
+            )
+
+            # Add messages to agent history
+            agent.messages.append(UserMessage("What's the weather?"))
+            agent.messages.append(structured_msg)
+            agent.messages.append(UserMessage("Is that typical?"))
+
+            # Format messages (this is what agent.call does before calling complete)
+            formatted = await agent.model.format_message_list_for_llm(agent.messages)
+
+            print("\n=== Before _ensure_tool_call_pairs ===")
+            for i, msg in enumerate(formatted):
+                role = msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", None)
+                tool_calls = msg.get("tool_calls") if isinstance(msg, dict) else getattr(msg, "tool_calls", None)
+                print(f"{i}: role={role}, has_tool_calls={bool(tool_calls)}")
+
+            # Now call _ensure_tool_call_pairs (this is what complete() does)
+            with_pairs = agent.model._ensure_tool_call_pairs_for_formatted_messages(formatted)
+
+            print("\n=== After _ensure_tool_call_pairs ===")
+            for i, msg in enumerate(with_pairs):
+                role = msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", None)
+                tool_call_id = msg.get("tool_call_id") if isinstance(msg, dict) else getattr(msg, "tool_call_id", None)
+                print(f"{i}: role={role}, tool_call_id={tool_call_id}")
+
+            # Find assistant with tool_calls
+            assistant_idx = None
+            for i, msg in enumerate(with_pairs):
+                role = msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", None)
+                tool_calls = msg.get("tool_calls") if isinstance(msg, dict) else getattr(msg, "tool_calls", None)
+                if role == "assistant" and tool_calls:
+                    assistant_idx = i
+                    break
+
+            assert assistant_idx is not None
+            # Check if synthetic tool response was injected
+            next_msg = with_pairs[assistant_idx + 1]
+            next_role = next_msg.get("role") if isinstance(next_msg, dict) else getattr(next_msg, "role", None)
+            assert next_role == "tool", f"Expected synthetic tool response after assistant, got {next_role}"
+
+    @pytest.mark.asyncio
     async def test_structured_output_followed_by_regular_call_real(self):
         """Test the real scenario: response_model call followed by regular call"""
 
