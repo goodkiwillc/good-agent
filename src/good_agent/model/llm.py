@@ -21,7 +21,7 @@ from typing import (
 
 from pydantic import BaseModel
 
-from good_agent.types import URL
+from good_agent.core.types import URL
 
 from ..components import AgentComponent
 from ..config import AgentConfigManager

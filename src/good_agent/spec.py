@@ -5,7 +5,7 @@ import warnings
 import pytest
 
 from good_agent import Agent, AssistantMessage, Message, ToolMessage
-from good_agent.models import Renderable
+from good_agent.core.models import Renderable
 
 logger = logging.getLogger(__name__)
 
@@ -382,7 +382,7 @@ class TestEventLifecycle:
     async def test_basic_event_hooks(self):
         from good_agent import Agent, AgentEvents
         from good_agent.events.types import ToolCallAfterParams
-        from good_agent.utilities.event_router import EventContext
+        from good_agent.core.event_router import EventContext
 
         async with Agent("Log tool calls") as agent:
             _on_tool_called_invoked = False

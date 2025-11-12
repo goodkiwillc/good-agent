@@ -2,8 +2,8 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, TypedDict
 
-from good_agent.types import URL
-from good_agent.utilities.event_router import EventContext
+from good_agent.core.types import URL
+from good_agent.core.event_router import EventContext
 from ulid import ULID
 
 from ..base import Index

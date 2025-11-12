@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 from good_agent import Agent, AgentComponent, AgentEvents, tool
-from good_agent.utilities.event_router import EventContext, on
+from good_agent.core.event_router import EventContext, on
 
 
 class SimpleDecoratorComponent(AgentComponent):
@@ -276,7 +276,7 @@ class TestComponentDecoratorPatterns:
 @pytest.mark.asyncio
 async def test_eventrouter_inheritance_confirmed():
     """Confirm AgentComponent properly inherits EventRouter functionality."""
-    from good_agent.utilities.event_router import EventRouter
+    from good_agent.core.event_router import EventRouter
 
     component = SimpleDecoratorComponent()
 

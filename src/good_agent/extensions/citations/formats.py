@@ -4,7 +4,7 @@ import re
 from enum import Enum
 from typing import NamedTuple
 
-from good_agent.types import URL
+from good_agent.core.types import URL
 
 
 class CitationFormat(Enum):
