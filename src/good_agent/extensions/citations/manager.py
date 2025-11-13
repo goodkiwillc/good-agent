@@ -1409,7 +1409,7 @@ class CitationManager(AgentComponent):
             return
 
         # Update the first text content part
-        from goodintel_agent.content.parts import TextContentPart
+        from good_agent.content.parts import TextContentPart
 
         for i, part in enumerate(message.content_parts):
             if isinstance(part, TextContentPart):

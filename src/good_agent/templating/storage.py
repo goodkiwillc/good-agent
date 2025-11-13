@@ -352,7 +352,7 @@ class TemplatePathResolver:
             "version": "1.0",
             "search_paths": [
                 {"path": "./prompts", "priority": 100},
-                {"path": "~/.goodintel/prompts", "priority": 50},
+                {"path": "~/.good-agent/prompts", "priority": 50},
             ],
         }
 
@@ -639,7 +639,7 @@ async def example_usage():
     storage = ChainedStorage(
         [
             FileSystemStorage("./prompts"),  # Project templates
-            FileSystemStorage("~/.goodintel/prompts"),  # User templates
+            FileSystemStorage("~/.good-agent/prompts"),  # User templates
         ]
     )
 

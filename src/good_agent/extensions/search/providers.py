@@ -202,7 +202,7 @@ class SearchProviderRegistry:
     def __init__(self):
         """Initialize empty registry."""
         self._providers: dict[str, SearchProvider] = {}
-        self._entry_point_group = "goodintel.search_providers"
+        self._entry_point_group = "good_agent.search_providers"
         self._capability_index: dict[
             tuple, list[str]
         ] = {}  # (op, domain, platform) -> [provider_names]

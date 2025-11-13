@@ -853,7 +853,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
         """Set the parent agent reference"""
         self._agent_ref = weakref.ref(agent)
 
-    def copy_with(self, **kwargs) -> Self:
+    def copy_with(self, content: Any | None = None, **kwargs) -> Self:
         """
         Create a copy of this message with updated fields.
 
@@ -870,11 +870,17 @@ class Message(PrivateAttrBase, GoodBase, ABC):
         data = self.model_dump(exclude={"id"})
 
         # Handle content update specially - need to create new content_parts
-        if "content" in kwargs:
+        if content is not None:
             # Remove old content_parts and let __init__ parse the new content
             data.pop("content_parts", None)
             # Pass content to constructor
+            data["content"] = content
+        elif "content" in kwargs:
+            data.pop("content_parts", None)
             data["content"] = kwargs.pop("content")
+        elif "content_parts" in kwargs:
+            # Allow direct replacement of content parts
+            data["content_parts"] = kwargs.pop("content_parts")
 
         # Update with remaining values
         data.update(kwargs)

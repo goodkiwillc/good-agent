@@ -1,4 +1,4 @@
-# goodintel_agent Test Organization
+# good_agent Test Organization
 
 ## Recommended Structure
 
@@ -117,11 +117,11 @@ The separated structure enables efficient CI/CD:
 
 ### Current Structure
 Tests are currently organized as:
-- `goodintel_agent/unit/*` - Unit tests
-- `goodintel_agent/integration/*` - Integration tests  
-- `goodintel_agent/templating/unit/*` - Templating unit tests
-- `goodintel_agent/templating/integration/*` - Templating integration tests
-- `goodintel_agent/extensions/*` - Extension tests
+- `good_agent/unit/*` - Unit tests
+- `good_agent/integration/*` - Integration tests  
+- `good_agent/templating/unit/*` - Templating unit tests
+- `good_agent/templating/integration/*` - Templating integration tests
+- `good_agent/extensions/*` - Extension tests
 - Root level test files - Mixed unit/integration tests
 
 ### Migration Strategy
@@ -129,8 +129,8 @@ To implement the recommended structure:
 
 1. **Create new directories** matching source structure
 2. **Move tests** while preserving functionality:
-   - `goodintel_agent/unit/*` → `unit/{module}/`
-   - `goodintel_agent/integration/*` → `integration/{module}/`
+   - `good_agent/unit/*` → `unit/{module}/`
+   - `good_agent/integration/*` → `integration/{module}/`
    - Root tests → Categorize and move appropriately
 3. **Update imports** if necessary
 4. **Add pytest markers** for test categorization

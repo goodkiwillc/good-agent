@@ -237,7 +237,7 @@ class TestImportBenchmarks:
             import sys
 
             modules_to_clear = [
-                m for m in sys.modules.keys() if m.startswith("goodintel")
+                m for m in sys.modules.keys() if m.startswith("good_agent")
             ]
             for m in modules_to_clear:
                 del sys.modules[m]

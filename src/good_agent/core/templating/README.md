@@ -19,7 +19,7 @@ Defaults used by `create_environment` (can be overridden via `config`):
 
 ## Quick start
 ```python
-from goodintel_core.templating import create_environment
+from good_agent.core.templating import create_environment
 
 env = create_environment()
 tmpl = env.from_string("Hello {{ name }}")
@@ -53,7 +53,7 @@ Tag content
 Use the global registry as a loader and add named templates programmatically:
 
 ```python
-from goodintel_core.templating import (
+from good_agent.core.templating import (
     create_environment,
     add_named_template,
     get_named_template,
@@ -76,7 +76,7 @@ Layered/temporary contexts are supported via `TemplateRegistry.new_context({...}
 `render_template` accepts strings, bytes, or `AbstractTemplate` instances and will construct an environment if none is provided.
 
 ```python
-from goodintel_core.templating import render_template
+from good_agent.core.templating import render_template
 
 rendered = render_template("Value: {{ x }}", {"x": 42})
 ```
@@ -87,7 +87,7 @@ On syntax errors it raises a `RuntimeError` with a helpful context snippet.
 Subclass `AbstractTemplate` and implement `render()` or provide a `__template__` class variable.
 
 ```python
-from goodintel_core.templating import AbstractTemplate
+from good_agent.core.templating import AbstractTemplate
 
 class Hello(AbstractTemplate):
     __template__ = "Hello {{ name }}"
@@ -110,7 +110,7 @@ You can also render class‑based templates from within Jinja using the built‑
 Decorators attach callables to the global dependency registry that’s automatically applied to all environments constructed via `create_environment`.
 
 ```python
-from goodintel_core.templating import register_filter, register_function
+from good_agent.core.templating import register_filter, register_function
 
 @register_filter("shout", deprecated_aliases=["loud"], pass_context=None)
 def shout(s: str) -> str:

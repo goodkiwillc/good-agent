@@ -330,9 +330,9 @@ class ToolRegistry:
             return
 
         try:
-            # Load from goodintel.agent.tools entry point group
+            # Load from good_agent.tools entry point group
             entry_points = importlib.metadata.entry_points().select(
-                group="goodintel.agent.tools"
+                group="good_agent.tools"
             )
 
             for entry_point in entry_points:

@@ -3,7 +3,6 @@ from collections.abc import Sequence
 from good_agent.core.models import Renderable
 
 # Remove direct fetch imports - now handled by WebFetcher
-# from goodintel_fetch.web import fetch, ExtractedContent
 # Storage (from store module)
 # External dependencies
 from pydantic import BaseModel
