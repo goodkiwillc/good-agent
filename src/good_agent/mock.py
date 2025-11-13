@@ -415,8 +415,10 @@ class MockAgent:
         self._mock_model = MockQueuedLanguageModel(self.responses, agent=self.agent)
 
         # Replace the LanguageModel component in the agent's extensions
-        self.agent._extensions[LanguageModel] = self._mock_model
-        self.agent._extension_names["LanguageModel"] = self._mock_model
+        self.agent._component_registry._extensions[LanguageModel] = self._mock_model
+        self.agent._component_registry._extension_names["LanguageModel"] = (
+            self._mock_model
+        )
 
         logger.info(
             f"MockAgent activated for agent {self.agent.id} with {len(self.responses)} queued responses"
@@ -432,8 +434,10 @@ class MockAgent:
         from .model.llm import LanguageModel
 
         # Restore the original LanguageModel component
-        self.agent._extensions[LanguageModel] = self._original_model
-        self.agent._extension_names["LanguageModel"] = self._original_model
+        self.agent._component_registry._extensions[LanguageModel] = self._original_model
+        self.agent._component_registry._extension_names["LanguageModel"] = (
+            self._original_model
+        )
 
         responses_used = self._mock_model.response_index if self._mock_model else 0
         logger.info(
@@ -909,7 +913,7 @@ def create_citation(url: str, title: str | None = None) -> CitationURL:
     Returns:
         CitationURL object
     """
-    from good_agent.types import URL
+    from good_agent.core.types import URL
 
     return URL(url)
 

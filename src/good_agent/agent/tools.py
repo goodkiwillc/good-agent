@@ -1,0 +1,655 @@
+"""ToolExecutor manages tool execution, parallel invocation, and pending tool call resolution."""
+
+import logging
+from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
+from typing import TYPE_CHECKING, Any, TypeVar, overload
+
+import orjson
+from ulid import ULID
+
+from good_agent.events import AgentEvents
+from good_agent.messages import ToolMessage
+from good_agent.tools import (
+    BoundTool,
+    Tool,
+    ToolCall,
+    ToolCallFunction,
+    ToolResponse,
+)
+
+if TYPE_CHECKING:
+    from good_agent.agent import Agent
+
+logger = logging.getLogger(__name__)
+
+T_FuncResp = TypeVar("T_FuncResp")
+
+
+class ToolExecutor:
+    """Manages tool execution lifecycle including invocation and pending call resolution.
+
+    Handles:
+    - Direct tool invocation with parameter rendering
+    - Parallel tool execution
+    - Pending tool call resolution
+    - Tool error handling and event emission
+    """
+
+    def __init__(self, agent: "Agent") -> None:
+        """Initialize ToolExecutor.
+
+        Args:
+            agent: Parent Agent instance
+        """
+        self.agent = agent
+
+    @overload
+    async def invoke(
+        self,
+        tool: Tool[..., T_FuncResp] | BoundTool[Any, Any, T_FuncResp],
+        *,
+        tool_name: str | None = None,
+        tool_call_id: str | None = None,
+        skip_assistant_message: bool = False,
+        **parameters: Any,
+    ) -> ToolResponse[T_FuncResp]: ...
+
+    @overload
+    async def invoke(
+        self,
+        tool: str,
+        *,
+        tool_name: str | None = None,
+        tool_call_id: str | None = None,
+        skip_assistant_message: bool = False,
+        **parameters: Any,
+    ) -> ToolResponse: ...
+
+    @overload
+    async def invoke(
+        self,
+        tool: Callable[..., Awaitable[T_FuncResp]],
+        *,
+        tool_name: str | None = None,
+        tool_call_id: str | None = None,
+        skip_assistant_message: bool = False,
+        **parameters: Any,
+    ) -> ToolResponse[T_FuncResp]: ...
+
+    async def invoke(
+        self,
+        tool: Tool | Callable | str,
+        *,
+        tool_name: str | None = None,
+        tool_call_id: str | None = None,
+        skip_assistant_message: bool = False,
+        hide: list[str] | None = None,
+        **parameters: Any,
+    ) -> ToolResponse:
+        """Directly invoke a tool and add messages to conversation.
+
+        Args:
+            tool: Tool instance, callable, or tool name string
+            tool_name: Optional name override
+            tool_call_id: Optional tool call ID (generated if not provided)
+            skip_assistant_message: If True, only add tool response
+            hide: List of parameter names to hide from tool definition
+            **parameters: Parameters to pass to the tool
+
+        Returns:
+            ToolResponse with execution result
+        """
+        # Render any Template parameters with agent context
+        rendered_params = await self.agent._render_template_parameters(parameters)
+
+        # Resolve tool if string name provided
+        resolved_tool, resolved_name = self._resolve_tool(tool_name, tool, hide)
+
+        logger.debug(f"Invoking tool: {resolved_name} with params: {rendered_params}")
+
+        # Generate tool call ID if not provided
+        tool_call_id = tool_call_id or f"call_{ULID()}"
+
+        # Separate visible and hidden parameters
+        visible_params = dict(rendered_params)
+        # Remove special parameters that shouldn't be recorded
+        visible_params.pop("_agent", None)
+        visible_params.pop("_tool_call", None)
+        if isinstance(resolved_tool, Tool) and hasattr(resolved_tool, "_hidden_params"):
+            for hidden_param in resolved_tool._hidden_params:
+                visible_params.pop(hidden_param, None)
+
+        # Create tool call with only visible parameters
+        tool_call = ToolCall(
+            id=tool_call_id,
+            type="function",
+            function=ToolCallFunction(
+                name=resolved_name,
+                arguments=orjson.dumps(visible_params).decode("utf-8"),
+            ),
+        )
+
+        # Emit tool:call event with visible parameters only
+        ctx = await self.agent.apply(
+            AgentEvents.TOOL_CALL_BEFORE,
+            tool_name=resolved_name,
+            parameters=visible_params,
+            tool_call_id=tool_call_id,
+        )
+
+        # Use potentially modified parameters from apply hook
+        modified_params = (
+            ctx.output
+            if ctx.output is not None
+            else ctx.parameters.get("parameters", visible_params)
+        )
+
+        # Merge modified visible params with hidden params for execution
+        execution_params = dict(rendered_params)
+        execution_params.update(modified_params)
+
+        # Execute the tool
+        try:
+            # Coerce JSON-like strings to proper types based on tool schema
+            execution_params = self._coerce_tool_parameters(
+                resolved_tool, execution_params
+            )
+
+            # Remove special parameters if they're in execution_params to avoid duplicates
+            execution_params.pop("_agent", None)
+            execution_params.pop("_tool_call", None)
+
+            result = await resolved_tool(
+                **execution_params, _agent=self.agent, _tool_call=tool_call
+            )
+
+            # Handle different return types
+            if isinstance(result, ToolResponse):
+                tool_response = ToolResponse(
+                    tool_name=resolved_name,
+                    tool_call_id=tool_call_id,
+                    response=result.response,
+                    parameters=visible_params,
+                    success=result.success,
+                    error=result.error,
+                )
+            else:
+                tool_response = ToolResponse(
+                    tool_name=resolved_name,
+                    tool_call_id=tool_call_id,
+                    response=result,
+                    parameters=visible_params,
+                    success=True,
+                    error=None,
+                )
+
+            # Emit success event
+            self.agent.do(
+                AgentEvents.TOOL_CALL_AFTER,
+                tool_name=resolved_name,
+                tool_call_id=tool_call_id,
+                response=tool_response,  # Pass the full ToolResponse object
+                parameters=visible_params,
+                success=tool_response.success,
+            )
+
+        except Exception as e:
+            logger.exception(f"Error invoking tool {resolved_name}: {e}")
+            tool_response = ToolResponse(
+                tool_name=resolved_name,
+                tool_call_id=tool_call_id,
+                response=None,
+                parameters=visible_params,
+                success=False,
+                error=str(e),
+            )
+
+            # Emit error event
+            self.agent.do(
+                AgentEvents.TOOL_CALL_ERROR,
+                tool_name=resolved_name,
+                tool_call_id=tool_call_id,
+                error=str(e),
+                parameters=visible_params,
+            )
+
+        # Add assistant message with tool call if not skipped
+        if not skip_assistant_message:
+            assistant_message = self.agent.model.create_message(
+                content="",
+                role="assistant",
+                tool_calls=[tool_call],
+            )
+            self.agent.append(assistant_message)
+
+        # Create and add tool message
+        tool_message = self.agent.model.create_message(
+            content=self._convert_to_tool_response(tool_response),
+            tool_call_id=tool_call_id,
+            tool_name=resolved_name,
+            tool_response=tool_response,
+            role="tool",
+        )
+        self.agent.append(tool_message)
+
+        return tool_response
+
+    async def invoke_many(
+        self,
+        invocations: Sequence[tuple[Tool | str | Callable, dict[str, Any]]],
+    ) -> list[ToolResponse]:
+        """Execute multiple tools in parallel.
+
+        Args:
+            invocations: Sequence of (tool, parameters) tuples
+
+        Returns:
+            List of ToolResponse objects in invocation order
+        """
+        if not invocations:
+            return []
+
+        # Build tool calls and prepare execution tasks
+        tool_calls = []
+        tasks = []
+        tool_infos = []
+
+        for tool_ref, params in invocations:
+            # Render any Template parameters
+            rendered_params = await self.agent._render_template_parameters(params)
+
+            # Resolve tool - handle errors gracefully
+            tool = None
+            tool_error = None
+
+            try:
+                tool_name = self._resolve_tool_name(tool_ref)
+            except ValueError as e:
+                tool_name = str(tool_ref)
+                tool_error = str(e)
+
+            if not tool_error:
+                if isinstance(tool_ref, str):
+                    if tool_ref in self.agent.tools:
+                        tool = self.agent.tools[tool_ref]
+                    else:
+                        tool_error = f"Tool '{tool_ref}' not found in agent's tools"
+                elif isinstance(tool_ref, Tool):
+                    tool = tool_ref
+                elif callable(tool_ref):
+                    if getattr(tool_ref, "_is_invoke_func_bound", False):
+                        # Type ignore needed because we're handling a special bound function case
+                        tool = tool_ref  # type: ignore[assignment]
+                        tool_name = getattr(tool_ref, "__name__", "bound_invoke")
+                    else:
+                        try:
+                            tool = Tool(tool_ref)
+                        except Exception as e:
+                            tool_error = f"Failed to convert function to tool: {e}"
+
+            # Create tool call
+            tool_call_id = f"call_{ULID()}"
+            tool_call = ToolCall(
+                id=tool_call_id,
+                type="function",
+                function=ToolCallFunction(
+                    name=tool_name,
+                    arguments=orjson.dumps(rendered_params).decode("utf-8"),
+                ),
+            )
+
+            tool_calls.append(tool_call)
+            tool_infos.append((tool, tool_name, tool_call_id, tool_call, tool_error))
+
+            # Create execution task
+            async def execute_tool(
+                t=tool,
+                p=rendered_params,
+                tid=tool_call_id,
+                tn=tool_name,
+                tc=tool_call,
+                error=tool_error,
+            ):
+                if error:
+                    return ToolResponse(
+                        tool_name=tn,
+                        tool_call_id=tid,
+                        response=None,
+                        parameters=p,
+                        success=False,
+                        error=error,
+                    )
+
+                try:
+                    if t is None:
+                        return ToolResponse(
+                            tool_name=tn,
+                            tool_call_id=tid,
+                            response=None,
+                            parameters=p,
+                            success=False,
+                            error=f"Tool '{tn}' not found",
+                        )
+
+                    # Coerce parameters
+                    execution_params = self._coerce_tool_parameters(t, p)
+
+                    # Execute tool
+                    result = await t(
+                        **execution_params, _agent=self.agent, _tool_call=tc
+                    )
+
+                    # Handle return types
+                    if isinstance(result, ToolResponse):
+                        return ToolResponse(
+                            tool_name=tn,
+                            tool_call_id=tid,
+                            response=result.response,
+                            parameters=p,
+                            success=result.success,
+                            error=result.error,
+                        )
+                    else:
+                        return ToolResponse(
+                            tool_name=tn,
+                            tool_call_id=tid,
+                            response=result,
+                            parameters=p,
+                            success=True,
+                            error=None,
+                        )
+
+                except Exception as e:
+                    logger.exception(f"Error executing tool {tn}: {e}")
+                    return ToolResponse(
+                        tool_name=tn,
+                        tool_call_id=tid,
+                        response=None,
+                        parameters=p,
+                        success=False,
+                        error=str(e),
+                    )
+
+            tasks.append(execute_tool())
+
+        # Add assistant message with all tool calls
+        assistant_message = self.agent.model.create_message(
+            content="",
+            role="assistant",
+            tool_calls=tool_calls,
+        )
+        self.agent.append(assistant_message)
+
+        # Execute all tools in parallel
+        import asyncio
+
+        results = await asyncio.gather(*tasks)
+
+        # Add tool messages for all results
+        for tool_response in results:
+            tool_message = self.agent.model.create_message(
+                content=self._convert_to_tool_response(tool_response),
+                tool_call_id=tool_response.tool_call_id,
+                tool_name=tool_response.tool_name,
+                tool_response=tool_response,
+                role="tool",
+            )
+            self.agent.append(tool_message)
+
+            # Emit events
+            if tool_response.success:
+                self.agent.do(
+                    AgentEvents.TOOL_CALL_AFTER,
+                    tool_name=tool_response.tool_name,
+                    tool_call_id=tool_response.tool_call_id,
+                    response=tool_response,  # Pass the full ToolResponse object
+                    parameters=tool_response.parameters,
+                    success=tool_response.success,
+                )
+            else:
+                self.agent.do(
+                    AgentEvents.TOOL_CALL_ERROR,
+                    tool_name=tool_response.tool_name,
+                    tool_call_id=tool_response.tool_call_id,
+                    error=tool_response.error,
+                    parameters=tool_response.parameters,
+                )
+
+        return results
+
+    async def resolve_pending_tool_calls(self) -> AsyncIterator[ToolMessage]:
+        """Find and execute all pending tool calls in conversation.
+
+        Yields:
+            ToolMessage for each resolved tool call
+        """
+        pending = self.get_pending_tool_calls()
+        for tool_call in pending:
+            tool_name = tool_call.function.name
+
+            if tool_name not in self.agent.tools:
+                logger.warning(
+                    f"Tool '{tool_name}' not found for pending tool call {tool_call.id}"
+                )
+
+                # Create error response
+                tool_response = ToolResponse(
+                    tool_name=tool_name,
+                    tool_call_id=tool_call.id,
+                    response=None,
+                    parameters=tool_call.parameters,
+                    success=False,
+                    error=f"Tool '{tool_name}' not found",
+                )
+
+                # Create and add tool message for the error
+                tool_message = self.agent.model.create_message(
+                    content=f"Error: {tool_response.error}",
+                    tool_call_id=tool_call.id,
+                    tool_name=tool_name,
+                    tool_response=tool_response,
+                    role="tool",
+                )
+                self.agent.append(tool_message)
+
+                # Emit error event
+                self.agent.do(
+                    AgentEvents.TOOL_CALL_ERROR,
+                    tool_name=tool_name,
+                    tool_call_id=tool_call.id,
+                    error=tool_response.error,
+                    parameters=tool_call.parameters,
+                )
+                yield tool_message
+            else:
+                tool_response = await self.invoke(
+                    tool_name,
+                    tool_call_id=tool_call.id,
+                    skip_assistant_message=True,
+                    **tool_call.parameters,
+                )
+
+                tool_message = self.agent.tool[-1]
+                assert tool_message.tool_call_id == tool_call.id
+                yield tool_message
+
+    def get_pending_tool_calls(self) -> list[ToolCall]:
+        """Get list of tool calls that don't have corresponding responses.
+
+        Returns:
+            List of ToolCall objects that are pending execution
+        """
+        from good_agent.messages import AssistantMessage, ToolMessage
+
+        pending_calls = []
+        resolved_call_ids = set()
+
+        # Collect all resolved tool call IDs
+        for msg in self.agent.messages:
+            if isinstance(msg, ToolMessage) and msg.tool_call_id:
+                resolved_call_ids.add(msg.tool_call_id)
+
+        # Find assistant messages with unresolved tool calls
+        for msg in self.agent.messages:
+            if isinstance(msg, AssistantMessage) and msg.tool_calls:
+                for tool_call in msg.tool_calls:
+                    if tool_call.id not in resolved_call_ids:
+                        pending_calls.append(tool_call)
+
+        return pending_calls
+
+    def has_pending_tool_calls(self) -> bool:
+        """Check if there are any pending tool calls.
+
+        Returns:
+            True if there are pending tool calls
+        """
+        return len(self.get_pending_tool_calls()) > 0
+
+    # Helper methods
+
+    def _resolve_tool_name(self, tool: Tool | Callable | str) -> str:
+        """Resolve tool name from various input types.
+
+        Args:
+            tool: Tool instance, callable, or string name
+
+        Returns:
+            Resolved tool name
+
+        Raises:
+            ValueError: If tool name cannot be determined
+        """
+        if isinstance(tool, str):
+            return tool
+        elif isinstance(tool, Tool):
+            # Tool instances have a name property
+            return str(tool.name) if hasattr(tool, "name") else str(tool)
+        elif callable(tool):
+            if hasattr(tool, "__name__"):
+                return str(tool.__name__)
+            else:
+                raise ValueError(f"Cannot determine name for callable: {tool}")
+        else:
+            raise ValueError(f"Invalid tool type: {type(tool)}")
+
+    def _resolve_tool(
+        self,
+        tool_name: str | None,
+        tool: Tool | Callable | str,
+        hide: list[str] | None = None,
+    ) -> tuple[Tool | Callable, str]:
+        """Resolve tool instance and name from inputs.
+
+        Args:
+            tool_name: Optional explicit tool name
+            tool: Tool instance, callable, or string name
+            hide: Optional list of parameters to hide
+
+        Returns:
+            Tuple of (resolved_tool, resolved_name)
+        """
+        if isinstance(tool, str):
+            if tool not in self.agent.tools:
+                raise ValueError(f"Tool '{tool}' not found in agent's tools")
+            resolved_tool = self.agent.tools[tool]
+            resolved_name = tool_name or tool
+        elif isinstance(tool, Tool):
+            resolved_tool = tool
+            resolved_name = tool_name or str(tool.name)
+        elif callable(tool):
+            # Convert callable to Tool if not already
+            resolved_tool = Tool(tool, hidden_params=hide or [])
+            resolved_name = tool_name or str(getattr(tool, "__name__", "unknown"))
+        else:
+            raise ValueError(f"Invalid tool type: {type(tool)}")
+
+        return resolved_tool, resolved_name
+
+    def _coerce_tool_parameters(
+        self, tool: Tool | Callable, parameters: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Coerce JSON-like string parameters to proper types based on tool schema.
+
+        Args:
+            tool: Tool instance or callable
+            parameters: Raw parameters dict
+
+        Returns:
+            Coerced parameters dict
+        """
+        if not isinstance(tool, Tool):
+            return parameters
+
+        # Get tool schema to understand expected types
+        # Tool might not have get_schema method, check first
+        if not hasattr(tool, "get_schema"):
+            return parameters
+
+        schema = tool.get_schema()  # type: ignore[attr-defined]
+        if "parameters" not in schema:
+            return parameters
+
+        coerced = dict(parameters)
+        param_schemas = schema["parameters"].get("properties", {})
+
+        # Helper to resolve nested tool schemas
+        def _resolve_tool_for_schema(t: Any) -> Any:
+            if isinstance(t, Tool):
+                return t.get_schema()  # type: ignore[attr-defined]
+            elif isinstance(t, type):
+                # For Pydantic models, get schema
+                if hasattr(t, "model_json_schema"):
+                    return t.model_json_schema()  # type: ignore[attr-defined]
+            return None
+
+        for param_name, param_value in parameters.items():
+            if param_name not in param_schemas:
+                continue
+
+            param_schema = param_schemas[param_name]
+
+            # Handle string values that should be coerced
+            if isinstance(param_value, str):
+                param_type = param_schema.get("type")
+
+                # Coerce based on schema type
+                if param_type == "boolean":
+                    if param_value.lower() in ("true", "1", "yes"):
+                        coerced[param_name] = True
+                    elif param_value.lower() in ("false", "0", "no"):
+                        coerced[param_name] = False
+                elif param_type == "integer":
+                    try:
+                        coerced[param_name] = int(param_value)
+                    except ValueError:
+                        pass
+                elif param_type == "number":
+                    try:
+                        coerced[param_name] = float(param_value)
+                    except ValueError:
+                        pass
+                elif param_type in ("object", "array"):
+                    try:
+                        coerced[param_name] = orjson.loads(param_value)
+                    except Exception:
+                        pass
+
+        return coerced
+
+    def _convert_to_tool_response(self, tool_response: ToolResponse) -> str:
+        """Convert ToolResponse to message content string.
+
+        Args:
+            tool_response: ToolResponse object
+
+        Returns:
+            String content for tool message
+        """
+        if tool_response.error:
+            return f"Error: {tool_response.error}"
+        elif isinstance(tool_response.response, str):
+            return tool_response.response
+        else:
+            # Convert non-string responses to string representation
+            return str(tool_response.response)

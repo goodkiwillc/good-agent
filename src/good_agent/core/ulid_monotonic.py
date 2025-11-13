@@ -227,7 +227,7 @@ def create_monotonic_ulid() -> ULID:
         ULID: A new monotonic ULID instance.
 
     Example:
-        >>> from good_agent.utilities.ulid_monotonic import create_monotonic_ulid
+        >>> from good_agent.core.ulid_monotonic import create_monotonic_ulid
         >>> ulid = create_monotonic_ulid()
     """
     return MonotonicULID.generate()
@@ -241,7 +241,7 @@ async def create_monotonic_ulid_async() -> ULID:
         ULID: A new monotonic ULID instance.
 
     Example:
-        >>> from good_agent.utilities.ulid_monotonic import (
+        >>> from good_agent.core.ulid_monotonic import (
         ...     create_monotonic_ulid_async,
         ... )
         >>> ulid = await create_monotonic_ulid_async()

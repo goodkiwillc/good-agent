@@ -1,7 +1,8 @@
 import pytest
 import pytest_asyncio
-from good_agent import Agent
-from good_agent.tools import Tool, get_tool_registry
+
+from good_agent import Agent, tool
+from good_agent.tools import get_tool_registry
 
 
 @pytest_asyncio.fixture
@@ -16,23 +17,23 @@ async def setup_test_tools():
     registry = await get_tool_registry()
 
     # Create weather tools
-    @Tool
+    @tool
     def get_current_weather(location: str) -> str:
         """Get current weather for a location"""
         return f"Weather in {location}: Sunny, 72°F"
 
-    @Tool
+    @tool
     def get_weather_forecast(location: str, days: int = 7) -> str:
         """Get weather forecast for a location"""
         return f"{days}-day forecast for {location}: Mostly sunny"
 
     # Create calculation tools
-    @Tool
+    @tool
     def calculate_sum(a: float, b: float) -> float:
         """Calculate sum of two numbers"""
         return a + b
 
-    @Tool
+    @tool
     def calculate_product(a: float, b: float) -> float:
         """Calculate product of two numbers"""
         return a * b
@@ -147,7 +148,7 @@ class TestToolPatternMatching:
         """Test mixing pattern strings with direct tool instances"""
 
         # Create a direct tool
-        @Tool
+        @tool
         def custom_tool(input: str) -> str:
             """A custom tool"""
             return f"Custom: {input}"

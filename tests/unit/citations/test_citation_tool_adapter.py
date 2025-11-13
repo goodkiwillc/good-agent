@@ -4,7 +4,7 @@ import pytest
 from good_agent import Agent
 from good_agent.extensions.citations import CitationManager
 from good_agent.tools import Tool
-from good_agent.types import URL
+from good_agent.core.types import URL
 from pydantic import Field
 
 

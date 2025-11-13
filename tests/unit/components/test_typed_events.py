@@ -19,7 +19,7 @@ from good_agent.events import (
 )
 from good_agent.messages import UserMessage
 from good_agent.tools import ToolResponse
-from good_agent.utilities.event_router import EventContext, on
+from good_agent.core.event_router import EventContext, on
 
 
 class TestTypedEventParameters:

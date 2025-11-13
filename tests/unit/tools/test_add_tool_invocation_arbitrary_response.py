@@ -1,9 +1,10 @@
 from typing import Any
 
 import pytest
+from pydantic import BaseModel
+
 from good_agent import Agent
 from good_agent.tools import ToolResponse, tool
-from pydantic import BaseModel
 
 
 class CustomResponse(BaseModel):
@@ -224,7 +225,7 @@ class TestAddToolInvocationArbitraryResponse:
             function=ToolCallFunction(name="test_tool", arguments='{"param": "value"}'),
         )
 
-        assistant_msg = AssistantMessage(content="", tool_calls=[tool_call])
+        assistant_msg = AssistantMessage(tool_calls=[tool_call])
         agent.append(assistant_msg)
 
         # Now add tool invocation, skipping assistant message
