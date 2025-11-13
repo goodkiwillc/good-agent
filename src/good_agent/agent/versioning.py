@@ -26,7 +26,7 @@ class AgentVersioningManager:
     - Version change events
     """
 
-    def __init__(self, agent: "Agent") -> None:
+    def __init__(self, agent: Agent) -> None:
         """Initialize versioning manager.
 
         Args:

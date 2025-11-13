@@ -34,11 +34,12 @@ async with Agent(
     # initial global context state (can be modified at different scopes)
     # primarily for in-template usage
     context={
-        'variable': 'value'
+        'variable': 'value',
+        'another_varliable': lambda ctx: 'computed value',
     },
     # register tools
     tools=[
-
+        # supports: Tool instances (from @tool decorator), plain functions, string names of already-registered tools
     ],
 
     # auto-initialized components that can be overridden:
@@ -129,5 +130,606 @@ async with Agent(
     message_validation_mode: Literal["strict", "warn", "silent"] = "warn",
     enable_signal_handling: bool = True,
 ) as agent:
+
+```
+
+
+
+## Structured output (Pydantic/Instructor)
+```python
+from pydantic import BaseModel
+from good_agent import Agent
+
+class Weather(BaseModel):
+    temp_c: float
+    summary: str
+
+async with Agent("Return JSON matching the schema.") as agent:
+    agent.append("Weather tomorrow in Paris")
+    result = await agent.call(response_model=Weather)
+
+    if result.output.temp_c > 20:
+        agent.append("Will it be warm enough to go to the park?")
+
+    else:
+        # too cold for park
+        agent.append("Come up with some indoor activities ideas for Paris tomorrow.")
+
+    result2 = await agent.call()
+    print(result2.content)
+
+```
+
+
+
+## Iterate on each LLM response
+```python
+from good_agent import Agent, AssistantMessage, ToolMessage,
+
+async def get_ip() -> str:
+    return "XXX.XXX.XXX.XXX"
+
+async def get_location(ip: str) -> str:
+    return "San Francisco, CA"
+
+async def get_weather(city: str) -> str:
+    return f"In {city}, It's sunny and 75 degrees."
+
+
+async with Agent(
+    "You are a helpful assistant",
+    tools=[get_ip, get_location, get_weather],
+) as agent:
+    """
+    Each message yielded from execute() can be matched using structural pattern
+    matching. Properties of the message can be extracted directly in the match
+    statement for easy access.
+    """
+    agent.append("What's the weather like today?")
+    async for message in agent.execute():
+        match message:
+            # Structural pattern matching with message types
+            case ToolMessage(i=i, tool_name=tool_name):
+                print(f"{i}: Tool {message.tool_name} output:", message.content)
+            case AssistantMessage(i=i, tool_calls=tool_calls):
+                if tool_calls:
+                    for call in tool_calls:
+                        print(f"{i}: Assistant requested tool call:", call.name)
+                else:
+                    print(f"{i}: Assistant:", message.content)
+
+            case Message(
+                i=i,
+                role=role,
+                content=content,
+                tool_response=tool_response,
+                ok=ok,
+                index=index,
+                attempt=attempt,
+                retry=retry,
+                last_attempt=last_attempt,
+                agent=agent,
+            ):
+                # i: int current iteration loop index
+                # role: Literal["system", "user", "assistant", "tool"] role of the message
+                # content: message content
+                # tool_response: tool response if applicable
+                # ok: whether the message was successfully generated
+                # index: index of the message in current history context
+                # attempt: current attempt number for this message
+                # retry: whether this is a retry of a previous message
+                # last_attempt: whether this is the last attempt allowed
+                # agent: reference to the agent instance
+                pass
+
+    # Output:
+    """
+    0: Assistant requested tool call: get_ip
+    1: Tool get_ip output: XXX.XXX.XXX.XXX
+    2: Assistant requested tool call: get_location
+    3: Tool get_location output: San Francisco, CA
+    4: Assistant requested tool call: get_weather
+    5: Tool get_weather output: In San Francisco, It's sunny and 75 degrees.
+    6: Assistant: The weather in San Francisco today is sunny with a temperature of 75 degrees.
+    """
+
+```
+
+
+
+### Manipulate Agent State During Iteration
+```python
+async with Agent(
+    "You are a helpful assistant",
+    tools=[get_ip, get_location, get_weather],
+) as agent:
+    agent.append("What's the weather like today?")
+    async for message in agent.execute():
+        match message:
+            case ToolMessage(i=i, tool_name=tool_name):
+                print(f"{i}: Tool {message.tool_name} output:", message.content)
+                if tool_name == "get_ip":
+                    agent.append(
+                        """
+                        <injected_context>
+                            IP Lookup inaccurate, using geolocation instead...
+                            User location is: Palo Alto, CA
+                        </injected_content>
+                        """
+                    )
+                    print(f"Injected message:\n{agent[-1].content}")
+            case AssistantMessage(i=i, tool_calls=tool_calls):
+                if tool_calls:
+                    for call in tool_calls:
+                        print(f"{i}: Assistant requested tool call:", call.name)
+                else:
+                    print(f"{i}: Assistant:", message.content)
+
+    # Output:
+    """
+    0: Assistant requested tool call: get_ip
+    1: Tool get_ip output: XXX.XXX.XXX.XXX
+    Injected message:
+    <injected_context>
+        IP Lookup inaccurate, using geolocation instead...
+        User location is: Palo Alto, CA
+    </injected_content>
+    2: Assistant requested tool call: get_weather
+    3: Tool get_weather output: In Palo Alto, It's sunny and 75 degrees.
+    4: Assistant: The weather in Palo Alto today is sunny with a temperature of 75 degrees.
+    """
+    ```
+
+
+## Tools
+
+## Use simple functions as tools directly
+```python
+from good_agent import Agent
+
+async def calculate(x: int, y: int) -> int:
+    """Add two integers together."""
+    return x + y
+
+async with Agent("Use tools when helpful.", tools=[calculate]) as agent:
+    agent.append("Add 2 and 3")
+    await agent.call()
+    assert agent[-1].role = "assistant"
+    assert agent[-1].content == "5" # final response from agent
+    assert agent.assistant[-2].tool_calls[0].name == "calculate"  # tool call record
+    assert agent.assistant[-2].tool_calls[0].arguments == {"x": 2, "y": 3}
+    assert agent.tools[-1].tool_response.response == 5 # typed tool response
+```
+
+
+### Tool Registration and Dependency Injection
+```python
+from fast_depends import Depends
+from good_agent import Agent, Renderable, tool
+from .. import SearchClient, WebFetcher, get_search_client, get_web_fetcher
+
+
+class SearchResult(Renderable):
+    url: str
+    title: str | None = None
+    content: str | None = None
+
+class SearchResults(Renderable):
+    __template__ = '''
+    {% for item in items %}
+    !# section 'item' url=item.url
+       {{item.title}}
+       ---
+       {{item.content}}
+    !# end section
+    {% endfor %}
+    '''
+
+    items: list[SearchResult]
+
+    # convenience for dictionary-like access
+    def __getitem__(self, url: str) -> SearchResult:
+        for item in self.items:
+            if item.url == url:
+                return item
+        raise KeyError(url)
+
+@tool
+async def search_web(
+    query: str,
+    limit: int = 5,
+    fetch_pages: bool = False,
+    search_client: SearchClient = Depends(get_search_client),  # FastAPI-style DI with Fast Depends
+    fetcher: WebFetcher = Depends(get_web_fetcher),
+
+    # Also supports automatic dependency injection for Agent components: @TODO: need to document this more
+) -> str:
+    """Search the web and return results."""
+    # Dummy implementation
+    results: SearchResults = await search_client.search(query, limit=limit)
+    if fetch_pages:
+        pages: dict[str, str] = await fetcher.fetch_urls([r.url for r in results.items])
+        for url, page in pages.items():
+            results[url].content = page
+
+    return ToolResponse(
+        response=results
+    )
+
+
+```
+
+
+
+## Direct tool invocation (declarative)
+Call a tool like any other function, but the agent "remembers" the tool call as if it made the call itself.
+
+```python
+# Orchestrate tools without an LLM roundtrip and record them in context
+async with Agent(
+    "You are a research agent. Search for information and write a report based on the results.",
+    tools=[search_web]
+) as agent:
+    hits = await agent.invoke(search_web, query="python decorators", limit=5, fetch_pages=True)
+
+    assert agent[-1].content == """
+    <item url="...">
+    Title
+    ---
+    Text
+    </item>
+    """
+```
+
+
+
+### Agent-driven tool calls (LLM decides when to use tools)
+```python
+
+async with Agent(
+    """
+    You are a research agent. Search for information and write a report based on the results.
+    """,
+    tools=[search_web]
+) as agent:
+    agent.append("Research python decorators and summarize.")
+    response = await agent.call()
+    assert response.content.startswith("<item url=")
+    assert len(response.tool_response.response.items) == 5
+    assert agent[-2].tool_calls[0].name == "search_web"
+
+```
+
+
+## Component tools (method-based) and auto-registration
+```python
+from good_agent import Agent, AgentComponent, tool
+
+class Math(AgentComponent):
+    @tool
+    def mul(self, x: int, y: int) -> int:
+        return x * y
+
+async with Agent("Use mul for multiplication.", extensions=[Math()]) as agent:
+    agent.append("Multiply 6 by 7")
+    await agent.call()
+```
+
+
+## Component tools (method-based) and auto-registration
+```python
+from good_agent import Agent, AgentComponent, tool
+
+class Math(AgentComponent):
+    @tool
+    def mul(self, x: int, y: int) -> int:
+        return x * y
+
+async with Agent("Use mul for multiplication.", extensions=[Math()]) as agent:
+    agent.append("Multiply 6 by 7")
+    await agent.call()
+```
+
+
+## MCP and registry tools
+```python
+from good_agent import Agent
+
+async with Agent(
+    "Use external tools when available."
+) as agent:
+    await agent.tools.load_mcp_servers(["my-mcp-server-config"])  # MCP integration
+    for name in agent.tools.keys():
+        print("tool:", name)
+    # Call via invoke for proper context capture
+    result = await agent.invoke("server:search", query="latest PRs")
+    print(result.response)
+```
+
+
+
+## Streaming and iterative execution
+```python
+from good_agent import Agent
+
+async with Agent("Stream a very short story.") as agent:
+    agent.append("Tell a 2-sentence story")
+    async for message in agent.execute(streaming=True):
+        for chunk in message.stream():
+            print(chunk, end='', flush=True)
+
+# TODO: add example of instructor-based streaming structured output compilation
+
+
+```
+
+
+
+## Multi‑agent conversations (pipe operator)
+```python
+from good_agent import Agent
+
+researcher = Agent("Research assistant. Find information online.", name="Researcher")
+
+async with researcher:
+    await researcher.call(
+        "Do some research on the the best open-source AI frameworks available in 2025."
+    )
+
+async with (
+    researcher |
+    (writer := Agent("Technical writer. Create clear summaries.", name="Writer"))
+) as conversation:
+        # Automatically wires the two agents together:
+        # - Assistant messages from A are delivered to B as user messages
+        # - Assistant messages from B are delivered to A as user messages
+        # - Ensures both agents are initialized and closed properly
+
+        # append an assistant message -- this is sent to the writer as a user message
+        researcher.append("Write a report based on your research findings.", role="assistant")
+
+        async for message in conversation.execute():
+            match message:
+                case Message(agent=researcher):
+                    print(f"[Researcher] {message.content}")
+                case Message(agent=writer):
+                    print(f"[Writer] {message.content}")
+
+```
+
+
+# Agent Modes
+
+
+```python
+
+
+agent = Agent(
+    'system prompt',
+    model='gpt-4',
+    tools=[...]
+)
+
+@agent.modes.add('code-review')
+async def code_review(
+    agent: Agent
+):
+
+    code_review_toolkit = [
+        BashTool(),
+        FileReaderTool(),
+        CodeAnalyzerTool(),
+    ]
+
+    with agent.context(
+        system_message_suffix='''
+        !# section mode type='code-review'
+            Agent in code review mode.
+            - Only read and analyze code.
+            - Do not write or modify code.
+            - You may write markdown or reference files as needed.
+        !# section end
+        ''',
+        tools=code_review_toolkit
+    ):
+
+        agent.append(
+            '''
+            Analyze the codebase in your environment `{{cwd}}`.
+            '''
+        )
+
+        async for message in agent.execute():
+            match message:
+                case Message(content=content, role=role):
+                    logger.info(f'[{role}] {content}')
+
+        await agent.call(
+            'Make sure you have written any of your findings to a file called REVIEW.md'
+        )
+
+        return agent
+
+async with agent:
+
+    with agent.mode('code-review') as code_reviewer:
+        pass
+
+###
+
+async with agent.mode('code-review') as code_reviewer:
+    pass
+
+
+agent.modes.list()  # ['code-review']
+
+
+```
+
+# Commands
+Interative shortcuts for specific prompting patterns and workflows.
+
+```python
+from good_agent import Agent, command
+
+agent = Agent(
+    'system prompt',
+    model='gpt-4',
+    tools=[...]
+)
+
+agent.commands.add(
+    'pytester',
+    description='Run pytest',
+    prompt='''
+    Run pytest on {{directory}} and analyze the results.
+
+    Instructions:
+     - Run tests
+     - Analyze failures
+     - Fix code
+
+    {{input}}
+    ''',
+    parameters={
+        'directory': {
+            'type': 'string',
+            'description': 'Directory to run pytest in',
+            'default': '.',
+        },
+    }
+)
+
+###
+
+# Simple command registration via dectorator - default doesn't even need to take arguments and can just use docstrings
+
+@command(
+    name='code_auditor',
+    description='Audit code for style and best practices.',
+)
+async def code_auditor_command():
+    """
+    Audit code in the specified directory for style and best practices.
+    """
+
+
+###
+
+# Command can also take arguments
+@command(
+    name='format_code',
+    description='Format code using black.',
+)
+async def format_code_command(
+    directory: Path = Context('cwd'),
+    agent: Agent = Context()  # DI of agent instance
+):
+    """
+    Format code using black in the specified directory.
+    """
+    # Dummy implementation
+    import subprocess
+
+    subprocess.run(['black', str(directory)])
+    return f"Code formatted using black in {directory}"
+
+
+# File-based commands
+
+agent = Agent(
+    'system prompt',
+    model='gpt-5',
+    commands_directory='./commands',
+    tools=[...]
+)
+
+```
+ - commands/
+    - pytester.md
+    - code_auditor.md
+    - format.sh
+    - researcher.py
+
+pytester.md
+```markdown
+---
+name: pytester
+description: Run pytest.
+parameters:
+  directory:
+    type: string
+    description: Directory to run pytest in
+    default: .
+---
+Run pytest on {{directory}} and analyze the results.
+
+Instructions:
+ - Run tests
+ - Analyze failures
+ - Fix code
+
+{{input}}
+```
+
+format.sh
+```bash
+#!/bin/env bash
+# Format code using black
+black $directory
+
+echo "Code formatted using black in $directory"
+
+```
+
+
+researcher.py
+
+```python
+# single-file dependencies?
+from good_agent import Agent, tool, command
+
+@tool
+async def research_topic(topic: str) -> str:
+    '''Research a topic and return a summary.'''
+    # Dummy implementation
+    return f"Research summary for {topic}."
+
+
+@command(
+    name='researcher',
+    description='Research a topic and summarize findings.',
+)
+async def researcher_command(
+    agent: Agent,
+    topic: str,
+):
+    summary = await agent.invoke(research_topic, topic=topic)
+    agent.append(f"Research summary:\n{summary.response}")
+    return agent
+
+```
+
+Invoked in a chat session:
+
+```bash
+ > /pytester directory='./my_project' pay attention to edge cases
+
+```
+
+# Sub-Agents
+
+```python
+
+from good_agent import Agent
+
+parent_agent = Agent(
+    'system prompt for parent agent',
+    model='gpt-4',
+    tools=[...]
+)
+
+
+
 
 ```

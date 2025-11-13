@@ -13,15 +13,12 @@ from collections.abc import AsyncGenerator
 from enum import Enum, auto
 from typing import (
     Any,
-    Awaitable,
-    Callable,
     Generic,
-    Mapping,
-    MutableMapping,
     ParamSpec,
     TypeVar,
     cast,
 )
+from collections.abc import Awaitable, Callable, Mapping, MutableMapping
 
 logger = logging.getLogger(__name__)
 
@@ -290,7 +287,7 @@ class RetryState(Generic[T]):
 
     def __init__(
         self,
-        parent: "Retry[T]",
+        parent: Retry[T],
         attempt: int,
         function: MaybeAsyncCallable,
         args: tuple[Any, ...],
@@ -445,7 +442,7 @@ class Retry(Generic[T]):
         if self._debug:
             logger.debug(message, *args, **kwargs)
 
-    def __enter__(self) -> "Retry[T]":
+    def __enter__(self) -> Retry[T]:
         """Enter the context manager."""
         return self
 
@@ -463,7 +460,7 @@ class Retry(Generic[T]):
         function: MaybeAsyncCallable,
         *args: Any,
         **kwargs: Any,
-    ) -> AsyncGenerator[RetryState[T], None]:
+    ) -> AsyncGenerator[RetryState[T]]:
         """
         Create a retry operation for the function with the given arguments.
 
@@ -482,7 +479,7 @@ class Retry(Generic[T]):
         function: MaybeAsyncCallable,
         args: tuple[Any, ...],
         kwargs: Mapping[str, Any],
-    ) -> AsyncGenerator[RetryState[T], None]:
+    ) -> AsyncGenerator[RetryState[T]]:
         """Async generator for retry operations."""
         is_async = asyncio.iscoroutinefunction(function)
         current_attempt = 0

@@ -2,7 +2,7 @@ import uuid
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any, Self, Union
 
-from typing_extensions import TypeVar
+from typing import TypeVar
 from ulid import ULID
 
 if TYPE_CHECKING:

@@ -14,7 +14,6 @@ from good_agent.tools import Tool, ToolSignature
 from good_agent.validation import ValidationError
 
 if TYPE_CHECKING:
-
     from good_agent.agent import Agent
 
 logger = logging.getLogger(__name__)
@@ -38,7 +37,7 @@ class LLMCoordinator:
     - Usage tracking
     """
 
-    def __init__(self, agent: "Agent") -> None:
+    def __init__(self, agent: Agent) -> None:
         """Initialize LLM coordinator.
 
         Args:
