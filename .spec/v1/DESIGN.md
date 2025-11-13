@@ -569,7 +569,7 @@ async def modify_file(
 
 ```
 
-State
+Stateful resources allow an agent to interact with an object with external state over multiple steps with a narrowly defined set of methods. The resource manages the state and provides tools to the agent to manipulate the resource. At the end of the interaction, the resource's state can be persisted or otherwise utilized, and the agent can continue, either will the full history of interactions or just the final state (or something else).
 
 
 
