@@ -36,6 +36,7 @@ from good_agent.core.ulid_monotonic import (
 )
 
 from .agent_managers.components import ComponentRegistry
+from .agent_managers.context import ContextManager
 from .agent_managers.llm import LLMCoordinator
 from .agent_managers.messages import MessageManager
 from .agent_managers.state import AgentState, AgentStateMachine
@@ -541,6 +542,9 @@ class Agent(EventRouter):
         # Initialize ComponentRegistry
         self._component_registry = ComponentRegistry(self)
 
+        # Initialize ContextManager
+        self._context_manager = ContextManager(self)
+
         # Task management for Agent.create_task()
         self._managed_tasks: dict[asyncio.Task, dict[str, Any]] = {}
         self._task_stats = {
@@ -724,9 +728,7 @@ class Agent(EventRouter):
                 response = await forked.call("Summarize")
                 # Response only exists in fork
         """
-        from .thread_context import ForkContext
-
-        return ForkContext(self, truncate_at, **fork_kwargs)
+        return self._context_manager.fork_context(truncate_at, **fork_kwargs)
 
     def thread_context(self, truncate_at: int | None = None):
         """Create a thread context for temporary modifications.
@@ -742,9 +744,7 @@ class Agent(EventRouter):
                 response = await ctx_agent.call("Summarize")
                 # After context, agent has original messages + response
         """
-        from .thread_context import ThreadContext
-
-        return ThreadContext(self, truncate_at)
+        return self._context_manager.thread_context(truncate_at)
 
     async def ready(self) -> None:
         """
@@ -1826,86 +1826,7 @@ class Agent(EventRouter):
             include_messages: Whether to copy messages to the forked agent
             **kwargs: Configuration overrides for the new agent
         """
-        # Get current config and update with kwargs
-        config = self.config.as_dict()
-        config.update(kwargs)
-
-        # Filter config to only include valid AgentConfigParameters
-        valid_params = AGENT_CONFIG_KEYS
-        filtered_config = {k: v for k, v in config.items() if k in valid_params}
-
-        override_keys = {
-            key
-            for key in kwargs
-            if key
-            in {
-                "language_model",
-                "mock",
-                "tool_manager",
-                "template_manager",
-                "extensions",
-            }
-        }
-        self._clone_extensions_for_config(filtered_config, override_keys)
-
-        # Create new agent using the constructor
-        new_agent = Agent(**filtered_config)
-
-        # Copy messages if requested
-        if include_messages:
-            for msg in self._messages:
-                # Create new message with same content but new ID
-                # We need to create a new instance to get a new ID
-                msg_data = msg.model_dump(exclude={"id", "role"})
-
-                # Preserve content_parts directly to avoid triggering render
-                # which would cause event loop conflicts in async contexts
-                if hasattr(msg, "content_parts"):
-                    msg_data["content_parts"] = msg.content_parts
-
-                # Create new message of the same type and add via proper methods
-                match msg:
-                    case SystemMessage():
-                        # Use set_system_message for system messages
-                        new_msg = new_agent.model.create_message(
-                            **msg_data, role="system"
-                        )
-                        new_agent.set_system_message(new_msg)
-                    case UserMessage():
-                        new_msg = new_agent.model.create_message(
-                            **msg_data, role="user"
-                        )
-                        new_agent.append(new_msg)
-                    case AssistantMessage():
-                        new_msg = new_agent.model.create_message(
-                            **msg_data, role="assistant"
-                        )
-                        new_agent.append(new_msg)
-                    case ToolMessage():
-                        new_msg = new_agent.model.create_message(
-                            **msg_data, role="tool"
-                        )
-                        new_agent.append(new_msg)
-                    case _:
-                        raise ValueError(f"Unknown message type: {type(msg).__name__}")
-
-        # Set version to match source (until modified)
-        new_agent._version_id = self._version_id
-
-        # Initialize version history with current state
-        if new_agent._messages:
-            new_agent._versions = [[msg.id for msg in new_agent._messages]]
-
-        # Emit agent:fork event
-        # @TODO: event naming
-        self.do(
-            AgentEvents.AGENT_FORK_AFTER,
-            parent=self,
-            child=new_agent,
-            config_changes=kwargs,
-        )
-
-        return new_agent
+        return self._context_manager.fork(include_messages, **kwargs)
 
     @ensure_ready
     async def spawn(
