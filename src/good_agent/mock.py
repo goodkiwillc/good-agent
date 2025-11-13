@@ -909,7 +909,7 @@ def create_citation(url: str, title: str | None = None) -> CitationURL:
     Returns:
         CitationURL object
     """
-    from good_agent.types import URL
+    from good_agent.core.types import URL
 
     return URL(url)
 

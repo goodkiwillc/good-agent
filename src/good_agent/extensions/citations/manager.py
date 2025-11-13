@@ -4,7 +4,7 @@ import logging
 import re
 from typing import TYPE_CHECKING, Literal
 
-from good_agent.utilities.event_router import EventContext, on
+from good_agent.core.event_router import EventContext, on
 
 from ...components import AgentComponent
 from ...content import RenderMode
@@ -448,7 +448,7 @@ class CitationManager(AgentComponent):
         # )
         # logger.debug(f"CitationManager: Content preview: {str(content_parts)[:100]}...")
 
-        from good_agent.types import URL
+        from good_agent.core.types import URL
 
         from ...content import TemplateContentPart, TextContentPart, is_template
 
@@ -818,7 +818,7 @@ class CitationManager(AgentComponent):
         Returns:
             Tuple of (normalized_content, extracted_citations)
         """
-        from good_agent.types import URL
+        from good_agent.core.types import URL
 
         # First collect all URLs in order
         url_matches = list(CitationPatterns.XML_URL_ATTR.finditer(content))
@@ -1086,7 +1086,7 @@ class CitationManager(AgentComponent):
             message: Message to update
             content: XML content with URL attributes
         """
-        from good_agent.types import URL
+        from good_agent.core.types import URL
 
         # Find all url="..." attributes
         url_matches = list(CitationPatterns.XML_URL_ATTR.finditer(content))
@@ -1240,7 +1240,7 @@ class CitationManager(AgentComponent):
         # Convert any XML url attributes directly to global idx for LLM consumption
         # This covers cases where creation-time normalization didn't run
         try:
-            from good_agent.types import URL
+            from good_agent.core.types import URL
 
             from .formats import CitationPatterns as _CP
 
@@ -1446,7 +1446,7 @@ class CitationManager(AgentComponent):
             >>> print(citations)
             ['https://example.com']
         """
-        from good_agent.types import URL
+        from good_agent.core.types import URL
 
         # Extract citations from content
         extracted_citations = []

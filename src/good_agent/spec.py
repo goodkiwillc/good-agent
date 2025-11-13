@@ -5,7 +5,7 @@ import warnings
 import pytest
 
 from good_agent import Agent, AssistantMessage, Message, ToolMessage
-from good_agent.models import Renderable
+from good_agent.core.models import Renderable
 
 logger = logging.getLogger(__name__)
 
@@ -91,13 +91,12 @@ class TestBasicUsage:
             assert agent[-1].content == "5"  # final response from agent
             # agent.assistant
             assert (
-                agent.assistant[-2].tool_calls and
-                agent.assistant[-2].tool_calls[0].name == "calculate"
+                agent.assistant[-2].tool_calls
+                and agent.assistant[-2].tool_calls[0].name == "calculate"
             )  # tool call record
-            assert (
-                agent.assistant[-2].tool_calls and
-                agent.assistant[-2].tool_calls[0].parameters == {"x": 2, "y": 3}
-            )
+            assert agent.assistant[-2].tool_calls and agent.assistant[-2].tool_calls[
+                0
+            ].parameters == {"x": 2, "y": 3}
             assert (
                 # agent.tools[-1].tool_calls and
                 agent.tool[-1].tool_response == 5
@@ -382,7 +381,7 @@ class TestEventLifecycle:
     async def test_basic_event_hooks(self):
         from good_agent import Agent, AgentEvents
         from good_agent.events.types import ToolCallAfterParams
-        from good_agent.utilities.event_router import EventContext
+        from good_agent.core.event_router import EventContext
 
         async with Agent("Log tool calls") as agent:
             _on_tool_called_invoked = False
@@ -475,71 +474,56 @@ class TestAgentPipeline:
         agent = Agent("You are a helpful assistant")
 
         @agent.pipeline  # is pipeline the best name?
-        async def start_conversation(
-            agent: Agent
-        ):
+        async def start_conversation(agent: Agent):
             pass
 
     async def test_orchestrated_agent(self):
         from typing import Literal
         from pydantic import BaseModel
+
         agent = Agent()
 
-
         class DecisionModel(BaseModel):
-            category: Literal['a', 'b', 'c']
+            category: Literal["a", "b", "c"]
 
         @agent.then  # what's our router paradigm here?
         async def inital_research(
-            agent: Agent, # always ready
+            agent: Agent,  # always ready
         ):
-            agent[-1] # message
+            agent[-1]  # message
 
-            agent.append(
-                "Add message to context"
-            )
+            agent.append("Add message to context")
 
             async with (
-                agent | (sub_agent := Agent(
-                    "Search agent"
-                ))
+                agent | (sub_agent := Agent("Search agent"))
                 # conversation ensures agents ready
             ) as conversation:
                 async for message in conversation.execute():
                     match message:
-                        case Message(
-                            parent=agent
-                        ):
+                        case Message(parent=agent):
                             pass
-                        case Message(
-                            parent=sub_agent
-                        ):
+                        case Message(parent=sub_agent):
                             pass
 
-            message = await agent.call(response_model=DecisionModel):
+            message = await agent.call(response_model=DecisionModel)
 
-            if message.output.category == 'a':
+            if message.output.category == "a":
                 # do something
 
-                tool_response = await agent.invoke('tool_name', key='value', test=100)
+                tool_response = await agent.invoke("tool_name", key="value", test=100)
 
                 async with agent.fork(
                     "system message",  # system message not currently set this way
                     compact_convesation="",
                 ) as forked_subagent:
-
                     forked_subagent.call()
 
-                message = await agent.call(
+                message = await agent.call()
 
-                )
-
-            elif message.output.category == 'b':
+            elif message.output.category == "b":
                 # do something else
 
-                message = await agent.call(
-
-                )
+                message = await agent.call()
 
 
 class TestAgentRouting:
@@ -550,18 +534,15 @@ class TestAgentRouting:
 
         # @agent.router
 
-
         @agent.route("/init")
         async def on_init(agent: Agent):
             agent.append("Hello! How can I assist you today?")
 
-            return agent.next('mode')
+            return agent.next("mode")
 
         @agent.route("/mode")
         async def choose_mode(agent: Agent):
-            message = await agent.call(
-                "Would you like to chat or execute a command?"
-            )
+            message = await agent.call("Would you like to chat or execute a command?")
 
             if "chat" in message.content.lower():
                 return agent.next("chat_mode")
@@ -570,7 +551,6 @@ class TestAgentRouting:
             else:
                 agent.append("I didn't understand that. Please choose chat or execute.")
                 return agent.next("mode")
-
 
 
 class TestAgentCli:

@@ -26,7 +26,7 @@ from good_agent.messages import (
     UserMessage,
 )
 from good_agent.tools import ToolCall, ToolResponse
-from good_agent.types import URL
+from good_agent.core.types import URL
 
 
 class TestAnnotation:

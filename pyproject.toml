@@ -31,8 +31,10 @@ build-backend = "uv_build"
 dev = [
     "good-dev>=0.1.1",
     "ipykernel>=7.1.0",
+    "mypy>=1.18.2",
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",
+    "pyupgrade>=3.21.1",
     "ruff>=0.14.3",
     "vcrpy>=7.0.0",
 ]

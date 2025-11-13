@@ -1,6 +1,6 @@
 import pytest
 from good_agent import Agent, AgentComponent, AgentEvents, tool
-from good_agent.utilities.event_router import EventContext, on
+from good_agent.core.event_router import EventContext, on
 
 
 class ComprehensiveEventComponent(AgentComponent):
@@ -132,7 +132,7 @@ class TestComponentEventPatterns:
         assert AgentEvents.MESSAGE_APPEND_AFTER in config["events"]
 
         # Verify EventRouter inheritance
-        from good_agent.utilities.event_router import EventRouter
+        from good_agent.core.event_router import EventRouter
 
         assert isinstance(component, EventRouter)
 
@@ -315,7 +315,7 @@ class TestComponentEventPatterns:
 @pytest.mark.asyncio
 async def test_eventrouter_inheritance_verification():
     """Confirm AgentComponent properly inherits EventRouter capabilities."""
-    from good_agent.utilities.event_router import EventRouter
+    from good_agent.core.event_router import EventRouter
 
     component = ComprehensiveEventComponent()
 
