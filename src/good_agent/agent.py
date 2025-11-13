@@ -41,6 +41,7 @@ from .agent_managers.llm import LLMCoordinator
 from .agent_managers.messages import MessageManager
 from .agent_managers.state import AgentState, AgentStateMachine
 from .agent_managers.tools import ToolExecutor
+from .agent_managers.versioning import AgentVersioningManager
 from .config_types import AGENT_CONFIG_KEYS, AgentOnlyConfig, LLMCommonConfig
 
 if TYPE_CHECKING:
@@ -311,9 +312,7 @@ class Agent(EventRouter):
     _conversation: "Conversation | None" = None
     _id: ULID
     _session_id: ULID
-    _version_id: ULID
     _name: str | None = None
-    _versions: list[list[ULID]] = []
     _extensions: dict[type[AgentComponent], AgentComponent]
     _extension_names: dict[str, AgentComponent]
     _agent_ref: "weakref.ref[Agent | None] | None" = None
@@ -512,19 +511,19 @@ class Agent(EventRouter):
         self._session_id = (
             self._id
         )  # Session ID starts as agent ID, but can be overridden
-        self._version_id = create_monotonic_ulid()
         self._name: str | None = None
-        self._versions: list[list[ULID]] = []
 
         # Initialize versioning infrastructure
-        from .versioning import MessageRegistry, VersionManager
+        from .versioning import MessageRegistry
 
         self._message_registry = MessageRegistry()
-        self._version_manager = VersionManager()
+
+        # Initialize AgentVersioningManager
+        self._versioning_manager = AgentVersioningManager(self)
 
         # Enable versioning for messages
         self._messages._init_versioning(
-            self._message_registry, self._version_manager, self
+            self._message_registry, self._versioning_manager._version_manager, self
         )
 
         # Initialize MessageManager
@@ -642,7 +641,7 @@ class Agent(EventRouter):
     @property
     def version_id(self) -> ULID:
         """Agent's version identifier (changes with modifications)"""
-        return self._version_id
+        return self._versioning_manager.version_id
 
     @property
     def name(self) -> str | None:
@@ -691,7 +690,22 @@ class Agent(EventRouter):
         Returns:
             List of message IDs in the current version
         """
-        return self._version_manager.current_version
+        return self._versioning_manager.current_version
+
+    @property
+    def _version_manager(self):
+        """Backward compatibility: access to the underlying version manager."""
+        return self._versioning_manager._version_manager
+
+    @property
+    def _version_id(self):
+        """Backward compatibility: access to version ID."""
+        return self._versioning_manager._version_id
+
+    @property
+    def _versions(self):
+        """Backward compatibility: access to version history."""
+        return self._versioning_manager._versions
 
     def revert_to_version(self, version_index: int) -> None:
         """Revert the agent's messages to a specific version.
@@ -702,16 +716,7 @@ class Agent(EventRouter):
         Args:
             version_index: The version index to revert to
         """
-        # Revert the version manager
-        self._version_manager.revert_to(version_index)
-
-        # Sync the message list with the new version
-        self._messages._sync_from_version()
-
-        # Update version ID to indicate change
-        self._version_id = create_monotonic_ulid()
-
-        logger.debug(f"Agent {self._id} reverted to version {version_index}")
+        self._versioning_manager.revert_to_version(version_index)
 
     def fork_context(self, truncate_at: int | None = None, **fork_kwargs):
         """Create a fork context for isolated operations.
@@ -1186,12 +1191,14 @@ class Agent(EventRouter):
             put_message(new_msg)  # Store in global store
 
         # Set version to match source (until modified)
-        new_agent._version_id = self._version_id
+        new_agent._versioning_manager._version_id = self._versioning_manager._version_id
         # Forked agents get their own session_id (already set to new_agent._id)
 
         # Initialize version history with current state
         if new_agent._messages:
-            new_agent._versions = [[msg.id for msg in new_agent._messages]]
+            new_agent._versioning_manager._versions = [
+                [msg.id for msg in new_agent._messages]
+            ]
 
         return new_agent
 
@@ -3169,31 +3176,7 @@ class Agent(EventRouter):
 
     def _update_version(self) -> None:
         """Update the agent's version ID when state changes."""
-        old_version = self._version_id
-        # Use monotonic ULID generation to ensure strict ordering
-        # create_monotonic_ulid() ensures monotonic ordering even within the same millisecond
-        # by incrementing the random component when timestamps are identical
-        self._version_id = create_monotonic_ulid()
-
-        # Update version history
-        current_message_ids = [msg.id for msg in self._messages]
-        self._versions.append(current_message_ids)
-
-        # Emit agent:version:change event
-        changes = {
-            "messages": len(self._messages),
-            "last_version_messages": len(self._versions[-2])
-            if len(self._versions) > 1
-            else 0,
-        }
-        # @TODO: event naming
-        self.do(
-            AgentEvents.AGENT_VERSION_CHANGE,
-            agent=self,
-            old_version=old_version,
-            new_version=self._version_id,
-            changes=changes,
-        )
+        self._versioning_manager.update_version()
 
     def __bool__(self):
         """Agent is always truthy - avoids __len__ conflict."""
