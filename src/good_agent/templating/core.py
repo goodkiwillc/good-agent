@@ -650,7 +650,7 @@ class TemplateManager(AgentComponent):
         replace: bool = False,
         append_newline: bool = False,
     ):
-        from good_agent.utilities.text import string
+        from good_agent.core.text import string
 
         if isinstance(template, bytes):
             template = template.decode("utf-8")

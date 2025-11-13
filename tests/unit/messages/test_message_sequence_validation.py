@@ -1,4 +1,6 @@
 import pytest
+from ulid import ULID
+
 from good_agent import Agent
 from good_agent.messages import (
     AssistantMessage,
@@ -12,7 +14,6 @@ from good_agent.validation import (
     ValidationError,
     ValidationMode,
 )
-from ulid import ULID
 
 
 class TestMessageSequenceValidator:
@@ -50,7 +51,6 @@ class TestMessageSequenceValidator:
         messages = [
             UserMessage(content="Get the weather"),
             AssistantMessage(
-                content="",
                 tool_calls=[
                     ToolCall(
                         id=tool_call_id,

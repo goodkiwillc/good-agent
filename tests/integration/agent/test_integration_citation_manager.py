@@ -2,7 +2,7 @@ import pytest
 from good_agent import Agent
 from good_agent.content import RenderMode
 from good_agent.extensions.citations import CitationIndex, CitationManager
-from good_agent.types import URL
+from good_agent.core.types import URL
 from loguru import logger
 
 

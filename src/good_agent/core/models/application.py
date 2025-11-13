@@ -110,7 +110,7 @@ class IterableCollection(Renderable, Generic[T_Item]):
 
     @property
     def render_items(self):
-        from good_agent.utilities.text import string
+        from good_agent.core.text import string
 
         _items = [string.unindent(item.render()) for item in self.items]
         if self.render_type == "direct":

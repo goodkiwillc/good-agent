@@ -97,7 +97,7 @@ class Renderable(BaseModel, ModelAllFields, AbstractTemplate, ABC):
             self._template_config = ChainMap(class_config)
 
     def model_dump_render(self, **kwargs):
-        from good_agent.utilities.text import unindent
+        from good_agent.core.text import unindent
 
         _all_fields = self.__class__.model_all_fields()
         _sub_models = set()
@@ -162,7 +162,7 @@ class Renderable(BaseModel, ModelAllFields, AbstractTemplate, ABC):
         self,
         **config,
     ) -> str:
-        from good_agent.utilities.text import unindent
+        from good_agent.core.text import unindent
 
         data = self.model_dump_render()
 
@@ -241,7 +241,7 @@ class RenderableCollection(
 
     @property
     def render_items(self):
-        from good_agent.utilities.text import unindent
+        from good_agent.core.text import unindent
 
         _render_type = self._template_config.get("render_type", "direct")
         _items = [unindent(item.render()) for item in self.items]

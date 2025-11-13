@@ -238,7 +238,7 @@ _LAZY_IMPORTS = {
     "BoundTool": "tools",
     "create_component_tool_decorator": "tools",
     # External
-    "EventContext": "good_agent.utilities.event_router",
+    "EventContext": "good_agent.core.event_router",
 }
 
 

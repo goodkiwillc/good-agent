@@ -297,7 +297,7 @@ class MDXL:
         Returns:
             Dictionary of attribute names to values
         """
-        from good_agent.types import URL
+        from good_agent.core.types import URL
 
         attributes: dict[str, Any] = dict(self._root.attrib)
         for k, v in attributes.items():

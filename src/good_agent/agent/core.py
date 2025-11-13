@@ -10,7 +10,6 @@ from collections.abc import (
     Iterator,
     Sequence,
 )
-from enum import IntEnum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -30,26 +29,32 @@ from typing import (
 import orjson
 from ulid import ULID
 
-from good_agent.types import URL
-from good_agent.utilities.event_router import EventContext, EventRouter, on
-from good_agent.utilities.ulid_monotonic import (
+from good_agent.core.types import URL
+from good_agent.core.event_router import EventContext, EventRouter, on
+from good_agent.core.ulid_monotonic import (
     create_monotonic_ulid,
 )
 
-from .config_types import AGENT_CONFIG_KEYS, AgentOnlyConfig, LLMCommonConfig
+from .components import ComponentRegistry
+from .context import ContextManager
+from .llm import LLMCoordinator
+from .messages import MessageManager
+from .state import AgentState, AgentStateMachine
+from .tools import ToolExecutor
+from .versioning import AgentVersioningManager
 
 if TYPE_CHECKING:
     from litellm.utils import Choices
 
-from .components import AgentComponent
-from .config import AgentConfigManager
-from .context import Context as AgentContext
-from .events import (  # Import typed event parameters
+from ..components import AgentComponent
+from ..config import AgentConfigManager
+from ..config_types import AGENT_CONFIG_KEYS, AgentOnlyConfig, LLMCommonConfig
+from ..context import Context as AgentContext
+from ..events import (  # Import typed event parameters
     AgentEvents,
     AgentInitializeParams,
-    ToolsGenerateSignature,
 )
-from .messages import (
+from ..messages import (
     Annotation,
     AssistantMessage,
     AssistantMessageStructuredOutput,
@@ -63,16 +68,16 @@ from .messages import (
     ToolMessage,
     UserMessage,
 )
-from .mock import AgentMockInterface
-from .model.llm import LanguageModel, ResponseWithUsage
-from .pool import AgentPool
-from .store import put_message
-from .templating import (
+from ..mock import AgentMockInterface
+from ..model.llm import LanguageModel
+from ..pool import AgentPool
+from ..store import put_message
+from ..templating import (
     Template,
     TemplateManager,
     global_context_provider,
 )
-from .tools import (
+from ..tools import (
     BoundTool,
     Tool,
     ToolCall,
@@ -81,11 +86,11 @@ from .tools import (
     ToolResponse,
     ToolSignature,
 )
-from .utilities import print_message
-from .validation import MessageSequenceValidator, ValidationError, ValidationMode
+from ..utilities import print_message
+from ..validation import MessageSequenceValidator, ValidationMode
 
 if TYPE_CHECKING:
-    from .conversation import Conversation
+    from ..conversation import Conversation
 
 logger = logging.getLogger(__name__)
 
@@ -118,29 +123,6 @@ def _is_choices_instance(obj: Any) -> TypeGuard["Choices"]:
     """
     # At runtime, check the class name since we can't import Choices directly
     return obj.__class__.__name__ == "Choices"
-
-
-class AgentState(IntEnum):
-    """Enumeration for agent states with numerical ordering for comparisons"""
-
-    INITIALIZING = 0
-    READY = 1
-    PENDING_RESPONSE = 2
-    PROCESSING = 3
-    PENDING_TOOLS = 4
-
-
-STATE_FLOWS = {
-    AgentState.INITIALIZING: {AgentState.READY},
-    AgentState.READY: {AgentState.PENDING_RESPONSE, AgentState.PENDING_TOOLS},
-    AgentState.PENDING_RESPONSE: {AgentState.PROCESSING, AgentState.READY},
-    AgentState.PENDING_TOOLS: {AgentState.PROCESSING, AgentState.READY},
-    AgentState.PROCESSING: {
-        AgentState.READY,
-        AgentState.PENDING_RESPONSE,
-        AgentState.PENDING_TOOLS,
-    },
-}
 
 
 # Legacy TypedDict kept for backward compatibility
@@ -228,74 +210,15 @@ def ensure_ready(func: Callable[P, Any]) -> Callable[P, Any]:
 class Agent(EventRouter):
     """AI conversational agent with tool integration and message management.
 
-    PURPOSE: Orchestrates LLM interactions with structured message handling, tool execution,
-    and extensible event-driven architecture for building AI applications.
+    Orchestrates LLM interactions with structured message handling, tool execution,
+    and extensible event-driven architecture.
 
-    ROLE: Central coordinator that manages the flow between:
-    - User input → Message validation → LLM API calls → Tool execution → Response
+    Example:
+        >>> async with Agent(model="gpt-4", tools=[search]) as agent:
+        ...     response = await agent.call("Hello!")
 
-    LIFECYCLE:
-    1. Creation: Agent() creates instance with default or provided components
-    2. Configuration: Set tools, templates, validation modes via constructor parameters
-    3. Initialization: Async component installation via AGENT_INIT_AFTER event
-    4. Execution: call() or execute() methods handle message processing
-    5. Cleanup: Automatic via weakref registry, explicit via __aexit__ if needed
-
-    THREAD SAFETY: NOT thread-safe. Use AgentPool for concurrent operations.
-    Each agent instance should be used by only one async task at a time.
-
-    TYPICAL USAGE:
-    ```python
-    # Basic usage
-    agent = Agent(model="gpt-4", tools=[search_tool])
-    response = await agent.call("Hello, how are you?")
-
-    # With tools and templates
-    agent = Agent(
-        model="gpt-4",
-        tools=[search_tool],
-        template_path="./templates",
-        message_validation_mode="strict",
-    )
-    response = await agent.execute()
-
-    # Context manager for cleanup
-    async with Agent(model="gpt-4") as agent:
-        response = await agent.call("Query here")
-    ```
-
-    EXTENSION POINTS:
-    - Add tools via constructor tools parameter or agent.tools.register_tool()
-    - Hook into events via agent.on(AgentEvents.EVENT_NAME)(handler)
-    - Custom message validation via validation_mode parameter
-    - Template customization via template_path and template_functions
-    - Component system via AgentComponent base class
-
-    STATE MANAGEMENT:
-    - Agent maintains internal state during execution (AgentState enum)
-    - Message history preserved in agent.messages with versioning support
-    - Tool context shared across tool calls within same execution
-    - Component state managed through dependency injection
-
-    ERROR HANDLING:
-    - LLM API failures: Automatic retry with exponential backoff
-    - Tool execution failures: Captured and sent to LLM as error messages
-    - Validation failures: Immediate ValidationError exception (mode dependent)
-    - Component failures: Logged as warnings, don't stop execution
-    - Resource failures: Cleanup via weakref registry and finalizers
-
-    RELATED CLASSES:
-    - LanguageModel: LLM abstraction layer
-    - MessageList: Thread-safe message collection with versioning
-    - ToolManager: Tool discovery and execution
-    - AgentComponent: Base for extensions
-    - TemplateManager: Template processing and rendering
-
-    PERFORMANCE CHARACTERISTICS:
-    - Memory: ~1-5MB base + message history (grows with conversation)
-    - Initialization: 10-50ms depending on components and MCP servers
-    - Execution: 500ms-3s typical, dominated by LLM API latency
-    - Concurrency: Single-threaded async, use AgentPool for parallel processing
+    Note:
+        Not thread-safe. Use AgentPool for concurrent operations.
     """
 
     __registry__: ClassVar[dict[ULID, weakref.ref["Agent"]]] = {}
@@ -330,9 +253,7 @@ class Agent(EventRouter):
     _conversation: "Conversation | None" = None
     _id: ULID
     _session_id: ULID
-    _version_id: ULID
     _name: str | None = None
-    _versions: list[list[ULID]] = []
     _extensions: dict[type[AgentComponent], AgentComponent]
     _extension_names: dict[str, AgentComponent]
     _agent_ref: "weakref.ref[Agent | None] | None" = None
@@ -344,10 +265,7 @@ class Agent(EventRouter):
     _template_manager: TemplateManager
     _mock: AgentMockInterface
     _pool: AgentPool | None = None
-
-    _state: AgentState = AgentState.INITIALIZING
-    _ready_event: asyncio.Event | None = None
-    _init_task: asyncio.Task | None = None
+    _state_machine: AgentStateMachine
 
     @staticmethod
     def context_providers(name: str):
@@ -409,111 +327,25 @@ class Agent(EventRouter):
     ):
         """Initialize agent with model, tools, and configuration.
 
-        PURPOSE: Creates a new agent instance with specified capabilities and behavior.
-
-        INITIALIZATION FLOW:
-        1. Component Setup: Create default components if not provided
-           - LanguageModel: LLM abstraction (creates default if None)
-           - ToolManager: Tool discovery and execution
-           - TemplateManager: Template processing and caching
-           - AgentMockInterface: Testing and mocking support
-
-        2. Core Infrastructure:
-           - Message list with versioning support
-           - Event router for component communication
-           - Context system for template variable resolution
-           - State machine for agent lifecycle management
-
-        3. Component Registration:
-           - Register provided extensions
-           - Validate component dependencies
-           - Set up dependency injection
-
-        4. Async Initialization:
-           - Fire AGENT_INIT_AFTER event (triggers component installation)
-           - Load MCP servers if configured
-           - Register tools from patterns and direct instances
-
-        5. Final Setup:
-           - Set system message if provided
-           - Register in global registry for cleanup
-           - Set initial state to INITIALIZING
-
-        DEPENDENCY INJECTION:
-        Components can request dependencies via:
-        - Agent instance (automatic injection)
-        - Other AgentComponent subclasses (type-based injection)
-        - Context values via ContextValue descriptors
-
-        SIDE EFFECTS:
-        - Emits AGENT_INIT_AFTER event (triggers async component installation)
-        - Registers agent in global weakref registry for cleanup
-        - May create default LanguageModel from environment if none provided
-        - Initializes message sequence validator
-        - Sets up signal handlers if enabled (opt-in via config)
+        Creates agent instance with components and configuration. Call await agent.ready()
+        or use async context manager for complete initialization.
 
         Args:
-            *system_prompt_parts: Content for initial system message.
-                Multiple parts will be concatenated with newlines.
-                Can include templates that will be rendered during execution.
-            config_manager: Configuration manager for agent settings.
-                If None, creates default from provided config parameters.
-            language_model: Language model for LLM interactions.
-                If None, creates default from environment configuration.
-                Must support async completion and tool calling.
-            tool_manager: Tool discovery and execution manager.
-                If None, creates default manager with no initial tools.
-            agent_context: Context system for template variable resolution.
-                If None, creates default context chainmap.
-            template_manager: Template processing and caching system.
-                If None, creates default with sandboxing enabled.
-            mock: Mock interface for testing and development.
-                If None, creates default mock implementation.
-            extensions: List of AgentComponent instances for custom functionality.
-                Components are automatically registered and dependencies validated.
-            _event_trace: Enable detailed event tracing for debugging.
-                If None, uses default from config or False.
-            **config: Additional agent configuration parameters.
-                See AgentConfigParameters for full list of options.
-                Common options include model, temperature, max_tokens, tools, etc.
+            *system_prompt_parts: Content for initial system message
+            config_manager: Configuration manager (creates default if None)
+            language_model: LLM instance (creates default if None)
+            tool_manager: Tool manager (creates default if None)
+            agent_context: Template context system (creates default if None)
+            template_manager: Template processor (creates default if None)
+            mock: Mock interface for testing (creates default if None)
+            extensions: List of AgentComponent instances
+            _event_trace: Enable event tracing for debugging
+            **config: Configuration parameters (model, temperature, tools, etc.)
 
-        PERFORMANCE NOTES:
-        - Constructor is synchronous and fast (~1-5ms)
-        - Async component installation happens after constructor returns
-        - Use await agent.ready() to wait for full initialization
-        - Component discovery and installation can take 10-50ms
-
-        COMMON PITFALLS:
-        - Don't share agent instances between async tasks (not thread-safe)
-        - Ensure model supports required operations before passing to agent
-        - Tool functions must be async if they perform I/O operations
-        - Components with circular dependencies will raise ValueError
-        - MCP server loading can hang - use timeouts in production
-
-        EXAMPLES:
-        ```python
-        # Basic agent with default model
-        agent = Agent()
-
-        # Agent with custom model and tools
-        agent = Agent(
-            model="gpt-4", tools=[search_tool, calculator_tool], temperature=0.7
-        )
-
-        # Agent with system message and extensions
-        agent = Agent(
-            "You are a helpful assistant.",
-            "Be concise and accurate.",
-            extensions=[custom_extension],
-            message_validation_mode="strict",
-        )
-        ```
-
-        RELATED:
-        - Use await agent.ready() to wait for complete initialization (or use with async context manager)
-        - See AgentComponent for creating custom extensions
-        - See AgentPool for managing multiple agents concurrently
-        - See ToolManager.register_tool() for adding tools after construction
+        Example:
+            >>> agent = Agent("You are helpful", model="gpt-4", tools=[search])
+            >>> async with agent:
+            ...     response = await agent.call("Hello")
         """
         extensions = extensions or []
         self.config = config_manager or AgentConfigManager(**config)
@@ -534,33 +366,38 @@ class Agent(EventRouter):
         self._session_id = (
             self._id
         )  # Session ID starts as agent ID, but can be overridden
-        self._version_id = create_monotonic_ulid()
         self._name: str | None = None
-        self._versions: list[list[ULID]] = []
 
         # Initialize versioning infrastructure
-        from .versioning import MessageRegistry, VersionManager
+        from ..versioning import MessageRegistry
 
         self._message_registry = MessageRegistry()
-        self._version_manager = VersionManager()
+
+        # Initialize AgentVersioningManager
+        self._versioning_manager = AgentVersioningManager(self)
 
         # Enable versioning for messages
         self._messages._init_versioning(
-            self._message_registry, self._version_manager, self
+            self._message_registry, self._versioning_manager._version_manager, self
         )
 
-        # Initialize extension storage
-        self._extensions: dict[type[AgentComponent], AgentComponent] = {}
-        self._extension_names: dict[str, AgentComponent] = {}
+        # Initialize MessageManager
+        self._message_manager = MessageManager(self)
 
         # Initialize state management
-        self._state = AgentState.INITIALIZING
-        self._ready_event = asyncio.Event()
-        self._init_task = None
-        # Track component initialization tasks
-        self._component_tasks: list[asyncio.Task] = []
-        # Track if components have been installed to prevent duplicate installation
-        self._components_installed = False
+        self._state_machine = AgentStateMachine(self)
+
+        # Initialize ToolExecutor
+        self._tool_executor = ToolExecutor(self)
+
+        # Initialize LLMCoordinator
+        self._llm_coordinator = LLMCoordinator(self)
+
+        # Initialize ComponentRegistry
+        self._component_registry = ComponentRegistry(self)
+
+        # Initialize ContextManager
+        self._context_manager = ContextManager(self)
 
         # Task management for Agent.create_task()
         self._managed_tasks: dict[asyncio.Task, dict[str, Any]] = {}
@@ -608,10 +445,10 @@ class Agent(EventRouter):
 
         # Register extensions after EventRouter initialization
         for extension in extensions:
-            self._register_extension(extension)
+            self._component_registry.register_extension(extension)
 
         # Validate component dependencies after all are registered
-        self._validate_component_dependencies()
+        self._component_registry.validate_component_dependencies()
 
         if system_prompt_parts:
             self.set_system_message(*system_prompt_parts)
@@ -630,7 +467,7 @@ class Agent(EventRouter):
     @property
     def state(self) -> AgentState:
         """Current state of the agent"""
-        return self._state
+        return self._state_machine.state
 
     @property
     def model(self) -> LanguageModel:
@@ -659,7 +496,7 @@ class Agent(EventRouter):
     @property
     def version_id(self) -> ULID:
         """Agent's version identifier (changes with modifications)"""
-        return self._version_id
+        return self._versioning_manager.version_id
 
     @property
     def name(self) -> str | None:
@@ -674,36 +511,32 @@ class Agent(EventRouter):
     @property
     def messages(self) -> MessageList[Message]:
         """All messages in the agent's conversation"""
-        return self._messages
+        return self._message_manager.messages
 
     @property
     def user(self) -> FilteredMessageList[UserMessage]:
         """Filter messages to only user messages"""
-        filtered = self.messages.filter(role="user")
-        return FilteredMessageList(self, "user", filtered)
+        return self._message_manager.user
 
     @property
     def assistant(self) -> FilteredMessageList[AssistantMessage]:
         """Filter messages to only assistant messages"""
-        filtered = self.messages.filter(role="assistant")
-        return FilteredMessageList(self, "assistant", filtered)
+        return self._message_manager.assistant
 
     @property
     def tool(self) -> FilteredMessageList[ToolMessage]:
         """Filter messages to only tool messages"""
-        filtered = self.messages.filter(role="tool")
-        return FilteredMessageList(self, "tool", filtered)
+        return self._message_manager.tool
 
     @property
     def system(self) -> FilteredMessageList[SystemMessage]:
         """Filter messages to only system messages"""
-        filtered = self.messages.filter(role="system")
-        return FilteredMessageList(self, "system", filtered)
+        return self._message_manager.system
 
     @property
     def extensions(self) -> dict[str, AgentComponent]:
         """Access extensions by name"""
-        return self._extension_names.copy()
+        return self._component_registry.extensions
 
     @property
     def current_version(self) -> list[ULID]:
@@ -712,7 +545,22 @@ class Agent(EventRouter):
         Returns:
             List of message IDs in the current version
         """
-        return self._version_manager.current_version
+        return self._versioning_manager.current_version
+
+    @property
+    def _version_manager(self):
+        """Backward compatibility: access to the underlying version manager."""
+        return self._versioning_manager._version_manager
+
+    @property
+    def _version_id(self):
+        """Backward compatibility: access to version ID."""
+        return self._versioning_manager._version_id
+
+    @property
+    def _versions(self):
+        """Backward compatibility: access to version history."""
+        return self._versioning_manager._versions
 
     def revert_to_version(self, version_index: int) -> None:
         """Revert the agent's messages to a specific version.
@@ -723,16 +571,7 @@ class Agent(EventRouter):
         Args:
             version_index: The version index to revert to
         """
-        # Revert the version manager
-        self._version_manager.revert_to(version_index)
-
-        # Sync the message list with the new version
-        self._messages._sync_from_version()
-
-        # Update version ID to indicate change
-        self._version_id = create_monotonic_ulid()
-
-        logger.debug(f"Agent {self._id} reverted to version {version_index}")
+        self._versioning_manager.revert_to_version(version_index)
 
     def fork_context(self, truncate_at: int | None = None, **fork_kwargs):
         """Create a fork context for isolated operations.
@@ -749,9 +588,7 @@ class Agent(EventRouter):
                 response = await forked.call("Summarize")
                 # Response only exists in fork
         """
-        from .thread_context import ForkContext
-
-        return ForkContext(self, truncate_at, **fork_kwargs)
+        return self._context_manager.fork_context(truncate_at, **fork_kwargs)
 
     def thread_context(self, truncate_at: int | None = None):
         """Create a thread context for temporary modifications.
@@ -767,9 +604,7 @@ class Agent(EventRouter):
                 response = await ctx_agent.call("Summarize")
                 # After context, agent has original messages + response
         """
-        from .thread_context import ThreadContext
-
-        return ThreadContext(self, truncate_at)
+        return self._context_manager.thread_context(truncate_at)
 
     async def ready(self) -> None:
         """
@@ -779,7 +614,7 @@ class Agent(EventRouter):
         is in a READY state or higher. If already ready, returns immediately.
         """
         # If already ready, return immediately
-        if self._state >= AgentState.READY:
+        if self._state_machine.is_ready:
             return
 
         # Track if we did any initialization
@@ -849,11 +684,14 @@ class Agent(EventRouter):
                     await self[ToolManager].register_tool(tool_instance)
 
         # Wait for all component initialization tasks to complete
-        if self._component_tasks:
+        if self._component_registry._component_tasks:
             try:
                 # Wait for all tasks with a reasonable timeout
                 await asyncio.wait_for(
-                    asyncio.gather(*self._component_tasks, return_exceptions=True),
+                    asyncio.gather(
+                        *self._component_registry._component_tasks,
+                        return_exceptions=True,
+                    ),
                     timeout=10.0,
                 )
                 did_initialization = True
@@ -865,21 +703,20 @@ class Agent(EventRouter):
                 logger.warning(f"Error waiting for component tasks: {e}")
             finally:
                 # Clear tasks list after awaiting
-                self._component_tasks.clear()
+                self._component_registry._component_tasks.clear()
 
         # Now we're ready if we got here from initialization
-        if self._state < AgentState.READY and did_initialization:
-            self.update_state(AgentState.READY)
+        if not self._state_machine.is_ready and did_initialization:
+            self._state_machine.update_state(AgentState.READY)
             return
 
         # Otherwise wait for ready event (shouldn't happen with new logic)
         try:
-            assert self._ready_event
-            await asyncio.wait_for(self._ready_event.wait(), timeout=10.0)
+            await self._state_machine.wait_for_ready(timeout=10.0)
         except TimeoutError as e:
             raise TimeoutError(
                 f"Agent did not become ready within 10 seconds. "
-                f"Current state: {self._state}"
+                f"Current state: {self._state_machine.state}"
             ) from e
 
         # Wait for managed tasks with wait_on_ready=True
@@ -900,9 +737,9 @@ class Agent(EventRouter):
                 # Don't fail ready() due to task timeouts, just warn
 
         # Final check
-        if self._state < AgentState.READY:
+        if not self._state_machine.is_ready:
             raise RuntimeError(
-                f"Agent ready event was set but state is still {self._state}"
+                f"Agent ready event was set but state is still {self._state_machine.state}"
             )
 
     @on(AgentEvents.AGENT_INIT_AFTER)
@@ -972,95 +809,20 @@ class Agent(EventRouter):
         self.update_state(AgentState.READY)
 
     async def _install_components(self) -> None:
-        """
-        Install all registered components asynchronously.
+        """Install all registered components asynchronously.
 
         This is called during AGENT_INIT_AFTER event, after all components
         have been registered and dependencies validated.
         """
-        # Skip if components have already been installed
-        if self._components_installed:
-            return
-
-        # Mark as installed to prevent duplicate calls
-        self._components_installed = True
-
-        # Get unique extensions (avoid installing the same instance twice)
-        installed = set()
-
-        for extension in self._extensions.values():
-            # Skip if already installed (handles duplicates from base class registration)
-            if id(extension) in installed:
-                continue
-            installed.add(id(extension))
-
-            # Get extension name for debugging
-            extension_name = (
-                extension.name
-                if hasattr(extension, "name")
-                else extension.__class__.__name__
-            )
-
-            # Emit extension:install event with extension name
-            self.do(
-                AgentEvents.EXTENSION_INSTALL,
-                extension=extension,
-                extension_name=extension_name,
-                agent=self,
-            )
-
-            # Call the extension's async install method
-            try:
-                await extension.install(self)
-
-                # Emit successful installation event with extension name
-                self.do(
-                    AgentEvents.EXTENSION_INSTALL_AFTER,
-                    extension=extension,
-                    extension_name=extension_name,
-                    agent=self,
-                )
-            except Exception as e:
-                # Emit extension:error event
-                self.do(
-                    AgentEvents.EXTENSION_ERROR,
-                    extension=extension,
-                    error=e,
-                    context="install",
-                    agent=self,
-                )
-                raise
+        await self._component_registry.install_components()
 
     def _validate_component_dependencies(self) -> None:
-        """
-        Validate that all component dependencies are satisfied.
+        """Validate that all component dependencies are satisfied.
 
         Raises:
             ValueError: If any component's dependencies are not met
         """
-        # Build set of available component class names from self._extensions
-        available = {ext.__class__.__name__ for ext in self._extensions.values()}
-
-        # Also include base class names for polymorphic dependencies
-        for ext in self._extensions.values():
-            for base in ext.__class__.__bases__:
-                if issubclass(base, AgentComponent) and base != AgentComponent:
-                    available.add(base.__name__)
-
-        # Check each component's dependencies
-        missing = []
-        for ext in self._extensions.values():
-            if hasattr(ext, "__depends__") and ext.__depends__:
-                for dep in ext.__depends__:
-                    if dep not in available:
-                        missing.append(f"  - {ext.__class__.__name__} requires {dep}")
-
-        if missing:
-            raise ValueError(
-                "Component dependency validation failed:\n"
-                + "\n".join(missing)
-                + f"\nAvailable components: {', '.join(sorted(available))}"
-            )
+        self._component_registry.validate_component_dependencies()
 
     def update_state(
         self,
@@ -1072,28 +834,7 @@ class Agent(EventRouter):
         Args:
             state: New state to set
         """
-        current_state = self._state
-        if state not in STATE_FLOWS[current_state]:
-            raise ValueError(
-                f"Invalid state transition from {current_state} to {state}"
-            )
-
-        self._state = state
-
-        # Set ready event when transitioning to READY or higher
-        if state >= AgentState.READY and current_state < AgentState.READY:
-            if self._ready_event:
-                self._ready_event.set()
-
-        # logger.debug(f"Agent {self.id} state changed from {current_state} to {state}")
-
-        # Emit state change event
-        self.do(
-            AgentEvents.AGENT_STATE_CHANGE,
-            agent=self,
-            new_state=state,
-            old_state=current_state,
-        )
+        self._state_machine.update_state(state)
 
     def validate_message_sequence(self, allow_pending_tools: bool = False) -> list[str]:
         """Validate the current message sequence.
@@ -1233,79 +974,33 @@ class Agent(EventRouter):
         Args:
             message: Message to append
         """
-        # Set agent reference on the message
-        message._set_agent(self)
-
-        # Add to message list
-        self._messages.append(message)
-
-        # Store in global message store
-        put_message(message)
-
-        # Update version
-        self._update_version()
-
-        # Emit consistent MESSAGE_APPEND_AFTER event
-        self.do(AgentEvents.MESSAGE_APPEND_AFTER, message=message, agent=self)
+        self._message_manager._append_message(message)
 
     def _register_extension(self, extension: AgentComponent) -> None:
         """Register an extension component (without installing it)."""
-        # Store by type for type-based access
-        ext_type = type(extension)
-        self._extensions[ext_type] = extension
-
-        # Also register under base classes for compatibility
-        # This allows agent[TemplateManager] to find TemplateManager
-        for base in ext_type.__bases__:
-            if issubclass(base, AgentComponent) and base != AgentComponent:
-                # Don't overwrite if a more specific implementation exists
-                if base not in self._extensions:
-                    self._extensions[base] = extension
-
-        # Store by name if available
-        if hasattr(extension, "name"):
-            self._extension_names[extension.name] = extension
-        else:
-            # Use class name as fallback
-            self._extension_names[ext_type.__name__] = extension
-
-        # Subscribe to agent events (so handlers are ready even before async install)
-        self.broadcast_to(extension)
-
-        # Call synchronous setup which sets the agent reference and allows early event handler registration
-        extension.setup(self)
+        self._component_registry.register_extension(extension)
 
     def _clone_extensions_for_config(
         self, target_config: dict[str, Any], skip: set[str] | None = None
     ) -> None:
-        skip = skip or set()
-        unique_extensions = list(
-            {id(ext): ext for ext in self._extensions.values()}.values()
-        )
-        core_types = (LanguageModel, AgentMockInterface, ToolManager, TemplateManager)
+        """Clone extensions for a forked agent configuration.
 
-        if "language_model" not in skip:
-            target_config["language_model"] = self.model.clone()
-        if "mock" not in skip:
-            target_config["mock"] = self.mock.clone()
-        if "tool_manager" not in skip:
-            target_config["tool_manager"] = self.tools.clone()
-        if "template_manager" not in skip:
-            target_config["template_manager"] = self.template.clone()
-
-        if "extensions" in skip:
-            return
-
-        additional_extensions = [
-            ext.clone() for ext in unique_extensions if not isinstance(ext, core_types)
-        ]
-        target_config["extensions"] = additional_extensions
+        Args:
+            target_config: Configuration dict to populate with cloned extensions
+            skip: Optional set of extension keys to skip cloning
+        """
+        self._component_registry.clone_extensions_for_config(target_config, skip)
 
     def _track_component_task(
         self, component: AgentComponent, task: asyncio.Task
     ) -> None:
-        """Track a component initialization task."""
-        self._component_tasks.append(task)
+        """Track a component initialization task.
+
+        Args:
+            component: Component that owns the task
+            task: Async task to track
+        """
+        self._component_registry.track_component_task(component, task)
 
     async def _fork_with_messages(self, messages: list[Message]) -> "Agent":
         """Helper method to fork with specific messages"""
@@ -1351,12 +1046,14 @@ class Agent(EventRouter):
             put_message(new_msg)  # Store in global store
 
         # Set version to match source (until modified)
-        new_agent._version_id = self._version_id
+        new_agent._versioning_manager._version_id = self._versioning_manager._version_id
         # Forked agents get their own session_id (already set to new_agent._id)
 
         # Initialize version history with current state
         if new_agent._messages:
-            new_agent._versions = [[msg.id for msg in new_agent._messages]]
+            new_agent._versioning_manager._versions = [
+                [msg.id for msg in new_agent._messages]
+            ]
 
         return new_agent
 
@@ -1371,38 +1068,7 @@ class Agent(EventRouter):
             index: Index of message to replace
             new_message: New message to insert
         """
-        if index < 0 or index >= len(self._messages):
-            raise IndexError(f"Message index {index} out of range")
-
-        # Set agent reference on new message
-        new_message._set_agent(self)
-
-        ctx = self.apply_sync(
-            AgentEvents.MESSAGE_REPLACE_BEFORE,
-            index=index,
-            output=new_message,
-            agent=self,
-        )
-
-        new_message = ctx.output or new_message
-
-        # Replace the message
-        self._messages[index] = new_message
-
-        # Store in global message store
-        put_message(new_message)
-
-        # Update version
-        self._update_version()
-
-        # Emit message:replace event
-        # @TODO: event naming
-        self.do(
-            AgentEvents.MESSAGE_REPLACE_AFTER,
-            index=index,
-            message=new_message,
-            agent=self,
-        )
+        self._message_manager.replace_message(index, new_message)
 
     def set_system_message(
         self,
@@ -1410,49 +1076,7 @@ class Agent(EventRouter):
         message: SystemMessage | None = None,
     ) -> None:
         """Set or update the system message"""
-
-        # Create system message
-
-        if content:
-            message = self.model.create_message(*content, role="system")
-
-        if not message:
-            raise ValueError("System message content is required")
-
-        message._set_agent(self)
-
-        ctx = self.typed(return_type=SystemMessage).apply_sync(
-            AgentEvents.MESSAGE_SET_SYSTEM_BEFORE, output=message, agent=self
-        )
-
-        if ctx.output is not None:
-            message = ctx.output
-
-        # Check if we already have a system message
-        if self._messages:
-            if isinstance(self._messages[0], SystemMessage):
-                # Replace existing system message using versioning-aware method
-                self._messages.replace_at(0, message)
-            else:
-                # Prepend system message using versioning-aware method
-                self._messages.prepend(message)
-        else:
-            # First message - use append (which is versioning-aware)
-            self._messages.append(message)
-
-        # Store in global message store (redundant if versioning is active, but kept for compatibility)
-        put_message(message)
-
-        # Fire the AFTER event so components can modify the system message
-        self.do(AgentEvents.MESSAGE_SET_SYSTEM_AFTER, message=message, agent=self)
-
-        # Update version
-        self._update_version()
-
-        if self.config.print_messages and message.role in (
-            self.config.print_messages_role or [message.role]
-        ):
-            self.print(message, mode=self.config.print_messages_mode)
+        self._message_manager.set_system_message(*content, message=message)
 
     @overload
     def append(self, content: Message) -> None: ...
@@ -1515,40 +1139,9 @@ class Agent(EventRouter):
             citations: List of citation URLs that correspond to [1], [2], etc. in content
             **kwargs: Additional message attributes
         """
-        # Validate we have at least one content part
-        if not content_parts:
-            raise ValueError("At least one content part is required")
-
-        if citations:
-            citations = [URL(url) for url in citations]
-
-        # Handle single Message object case
-        if len(content_parts) == 1 and isinstance(content_parts[0], Message):
-            message = content_parts[0]
-        else:
-            # Include citation_urls in the kwargs if provided
-            if citations:
-                kwargs["citation_urls"] = citations
-
-            # For tool messages, ensure required fields are provided
-            if role == "tool" and "tool_call_id" not in kwargs:
-                logger.warning(
-                    "Tool messages should include tool_call_id; using 'test_tool_call' as placeholder"
-                    f" for message: {content_parts}"
-                )
-                kwargs["tool_call_id"] = kwargs.get("tool_call_id", "test_tool_call")
-                kwargs["tool_name"] = kwargs.get("tool_name", "test_tool")
-
-            message = self.model.create_message(
-                *content_parts,
-                role=role,
-                context=context,
-                citations=citations,
-                **kwargs,
-            )
-
-        # Add to conversation using centralized method
-        self._append_message(message)
+        self._message_manager.append(
+            *content_parts, role=role, context=context, citations=citations, **kwargs
+        )
 
     def add_tool_response(
         self,
@@ -1558,21 +1151,9 @@ class Agent(EventRouter):
         **kwargs,
     ) -> None:
         """Add a tool response message to the conversation"""
-        # Create tool message
-        tool_msg = self.model.create_message(
-            content=content,
-            tool_call_id=tool_call_id,
-            tool_name=tool_name,
-            role="tool",
-            **kwargs,
+        self._message_manager.add_tool_response(
+            content, tool_call_id, tool_name=tool_name, **kwargs
         )
-
-        # Store message context if provided - @TODO - is this needed? why is this here?
-        if context := kwargs.get("context"):
-            tool_msg._context = context
-
-        # Add to message list using centralized method
-        self._append_message(tool_msg)
 
     @overload
     async def call(
@@ -1597,45 +1178,19 @@ class Agent(EventRouter):
     ) -> AssistantMessageStructuredOutput[T_Output]: ...
 
     async def _get_tool_definitions(self) -> list[ToolSignature] | None:
-        """Get tool definitions for the LLM call"""
-        tool_definitions: list[ToolSignature] = []
+        """Get tool definitions for the LLM call.
 
-        tools_ctx = await self.apply_typed(
-            AgentEvents.TOOLS_PROVIDE,
-            return_type=list[Tool],
-            output=self.tools.as_list(),
-            agent=self,
-        )
-
-        tools = tools_ctx.output
-
-        if tools and len(tools) > 0:
-            for tool in tools:
-                tool_ctx = await self.apply_typed(
-                    AgentEvents.TOOLS_GENERATE_SIGNATURE,
-                    params_type=ToolsGenerateSignature,
-                    return_type=ToolSignature,
-                    output=tool.signature,
-                    tool=tool,
-                    agent=self,
-                )
-
-                if signature := tool_ctx.output:
-                    tool_definitions.append(signature)
-                else:
-                    tool_definitions.append(tool.signature)
-
-        if tool_definitions:
-            return tool_definitions
-        return None
+        Returns:
+            List of tool signatures or None if no tools available
+        """
+        return await self._llm_coordinator.get_tool_definitions()
 
     async def _llm_call(
         self,
         response_model: type[T_Output] | None = None,
         **kwargs: Any,
     ) -> AssistantMessage | AssistantMessageStructuredOutput:
-        """
-        Internal method to make a single LLM call without tool execution.
+        """Make a single LLM call without tool execution.
 
         Args:
             response_model: Optional structured output model
@@ -1644,181 +1199,9 @@ class Agent(EventRouter):
         Returns:
             Assistant message response (may contain tool calls)
         """
-        # Prepare messages for LLM
-        # Update kwargs with tools if available
-        if tool_definitions := await self._get_tool_definitions():
-            kwargs["tools"] = tool_definitions
-            if "parallel_tool_calls" not in kwargs:
-                supports_parallel = getattr(
-                    self.model, "supports_parallel_function_calling", None
-                )
-                should_enable = False
-                if callable(supports_parallel):
-                    should_enable = supports_parallel()
-                elif isinstance(supports_parallel, bool):
-                    should_enable = supports_parallel
-
-                if should_enable:
-                    kwargs["parallel_tool_calls"] = True
-
-        # Prepare parameters for event
-        llm_params = {
-            "model": self.model.config.model,
-            **kwargs,
-        }
-
-        # Validate message sequence before LLM call
-        # When requesting structured output (response_model provided), allow pending tool calls
-        # since we may inject synthetic tool responses only in the outbound API payload.
-        try:
-            if response_model is not None:
-                self._sequence_validator.validate_partial_sequence(
-                    self.messages, allow_pending_tools=True
-                )
-            else:
-                self._sequence_validator.validate(self.messages)
-        except ValidationError as e:
-            logger.error(f"Message sequence validation failed: {e}")
-            raise
-
-        try:
-            output = None
-            response: AssistantMessage | AssistantMessageStructuredOutput
-            if response_model:
-                # Use extract for structured output
-                output = await self.model.extract(
-                    await self.model.format_message_list_for_llm(self.messages),
-                    response_model,
-                    **kwargs,
-                )
-
-                self.model.api_requests[-1]
-                llm_response = self.model.api_responses[-1]
-
-            else:
-                # Use complete for regular chat
-                _messages = await self.model.format_message_list_for_llm(self.messages)
-
-                llm_response = await self.model.complete(
-                    _messages,
-                    **kwargs,
-                )
-
-            choice = llm_response.choices[0]
-
-            assert _is_choices_instance(choice)
-
-            if isinstance(llm_response, ResponseWithUsage):
-                # Check if it's a real Pydantic model (not MagicMock)
-                # MagicMock will have __class__.__module__ starting with 'unittest.mock'
-                usage = llm_response.usage
-                if hasattr(usage, "__class__") and hasattr(
-                    usage.__class__, "__module__"
-                ):
-                    is_mock = usage.__class__.__module__.startswith("unittest.mock")
-                else:
-                    is_mock = False
-
-                if (
-                    not is_mock
-                    and usage
-                    and hasattr(usage, "model_dump")
-                    and callable(usage.model_dump)
-                ):
-                    # It's a real Pydantic model, use model_dump
-                    kwargs["usage"] = usage.model_dump()
-                else:
-                    # It's a mock or doesn't have model_dump, extract attributes
-                    kwargs["usage"] = {
-                        "prompt_tokens": getattr(usage, "prompt_tokens", 0),
-                        "completion_tokens": getattr(usage, "completion_tokens", 0),
-                        "total_tokens": getattr(usage, "total_tokens", 0),
-                    }
-
-            if choice.message.model_extra:
-                kwargs.update(choice.message.model_extra)
-
-            # Normalize provider-specific reasoning field to our schema
-            # OpenRouter may return `reasoning_content`; map it to `reasoning`
-            # Ensure the value is always a string to satisfy pydantic validators
-            def _normalize_reasoning(value: Any) -> str | None:
-                if value is None:
-                    return None
-                if isinstance(value, str):
-                    return value
-                # Some SDKs expose an object with a `content` attribute
-                try:
-                    content = getattr(value, "content", None)
-                except Exception:
-                    content = None
-                if isinstance(content, str):
-                    return content
-                # Fallback: string cast (handles Mocks cleanly)
-                try:
-                    return str(value)
-                except Exception:
-                    return None
-
-            reasoning_attr = None
-            try:
-                reasoning_attr = getattr(choice.message, "reasoning_content", None)
-            except Exception:
-                reasoning_attr = None
-            if reasoning_attr is not None and "reasoning" not in kwargs:
-                norm = _normalize_reasoning(reasoning_attr)
-                if norm:
-                    kwargs["reasoning"] = norm
-            # If model_extra included `reasoning_content`, map it too
-            if "reasoning" not in kwargs and "reasoning_content" in kwargs:
-                norm = _normalize_reasoning(kwargs.pop("reasoning_content"))
-                if norm:
-                    kwargs["reasoning"] = norm
-            # Check provider_specific_fields on both message and choice
-            psf = None
-            try:
-                psf = getattr(choice.message, "provider_specific_fields", None)
-            except Exception:
-                psf = None
-            if not psf:
-                psf = getattr(choice, "provider_specific_fields", None)
-            if (
-                isinstance(psf, dict)
-                and psf.get("reasoning_content")
-                and "reasoning" not in kwargs
-            ):
-                norm = _normalize_reasoning(psf.get("reasoning_content"))
-                if norm:
-                    kwargs["reasoning"] = norm
-
-            if output:
-                response = self.model.create_message(
-                    role="assistant",
-                    output=output,
-                    tool_calls=choice.message.tool_calls,
-                    provider_specific_fields=choice.provider_specific_fields,
-                    **kwargs,
-                )
-            else:
-                response = self.model.create_message(
-                    choice.message.content,
-                    output=None,
-                    role="assistant",
-                    tool_calls=choice.message.tool_calls,
-                    provider_specific_fields=choice.provider_specific_fields,
-                    **kwargs,
-                )
-
-            # Add to message list using centralized method
-            self._append_message(response)
-
-            return response
-
-        except (asyncio.CancelledError, KeyboardInterrupt):
-            # Propagate cancellations immediately so outer callers can stop
-            raise
-        except Exception as e:
-            self.do(AgentEvents.LLM_ERROR, error=e, parameters=llm_params, agent=self)
-            raise
+        return await self._llm_coordinator.llm_call(
+            response_model=response_model, **kwargs
+        )
 
     @ensure_ready
     async def call(
@@ -1830,149 +1213,24 @@ class Agent(EventRouter):
         auto_execute_tools: bool = True,
         **kwargs: Any,
     ) -> AssistantMessage | AssistantMessageStructuredOutput:
-        """Call the agent with optional input and get a response.
+        """Call the agent and get a response.
 
-        PURPOSE: High-level interface for single-turn agent interactions with automatic
-        tool execution and structured output support. Simplifies common use cases.
-
-        WHEN TO USE:
-        - Simple question-answer interactions
-        - Single message processing with automatic tool execution
-        - Structured data extraction via response_model
-        - When you want the final result, not intermediate steps
-
-        EXECUTION STRATEGY:
-        1. Input Processing: Append user message if provided
-        2. Tool Execution Decision:
-           - auto_execute_tools=True: Use execute() for full tool loop
-           - auto_execute_tools=False: Use single _llm_call() (raw LLM response)
-           - response_model provided: Always use single call with structured output
-        3. Response Collection: Return final assistant message or structured output
-
-        TOOL EXECUTION BEHAVIOR:
-        - When auto_execute_tools=True: Automatically executes all tool calls and
-          continues until LLM provides final response without tools
-        - When auto_execute_tools=False: Returns initial response even if it contains
-          tool calls (useful for manual tool execution control)
-        - Tool execution follows same patterns as execute() method
-
-        STRUCTURED OUTPUT:
-        When response_model is provided, forces single LLM call with structured output:
-        - Ignores auto_execute_tools parameter
-        - Uses model.extract() instead of model.complete()
-        - Returns AssistantMessageStructuredOutput[T_Output]
-        - Tool calls in structured output are not executed
-
-        STATE TRANSITIONS:
-        - READY → PENDING_RESPONSE → PROCESSING → COMPLETE
-        - If auto_execute_tools=True: May loop through PENDING_TOOLS state
-        - Agent state automatically managed during execution
-
-        SIDE EFFECTS:
-        - Appends input message to agent.messages if provided
-        - Appends assistant response and any tool messages to agent.messages
-        - Updates agent.version_id for each message added
-        - Emits agent execution events (same as execute() method)
-        - Increments usage statistics and token counts
-
-        ERROR HANDLING:
-        - Message validation failures: Immediate ValidationError (mode dependent)
-        - LLM API failures: Automatic retry with exponential backoff
-        - Tool execution failures: Error messages sent to LLM, execution continues
-        - Structured output failures: ValidationError if parsing fails
-        - Network timeouts: Propagated after retry exhaustion
-
-        PERFORMANCE:
-        - Latency: Single LLM call + tool execution time (if enabled)
-        - Throughput: Lower than execute() due to response collection overhead
-        - Memory: Message history grows with conversation length
-        - Optimal for: Short interactions, simple queries, structured extraction
+        Appends optional content, calls LLM, and automatically executes tools if enabled.
 
         Args:
-            *content_parts: Message content to append before calling.
-                Multiple parts concatenated with newlines. Can include templates.
-                If omitted, uses existing message history.
-            role: Role of the input message (default: "user").
-                Use "system" for system messages, "assistant" for few-shot examples,
-                "tool" for tool responses (rarely used manually).
-            response_model: Pydantic model for structured output extraction.
-                When provided, forces single LLM call with structured parsing.
-                Tool calls in structured output are not executed.
-                Type: BaseModel subclass
-            context: Additional context variables for template rendering.
-                Merged with agent context during message processing.
-                Useful for dynamic template variables.
-            auto_execute_tools: Whether to automatically execute tool calls.
-                True (default): Execute tools and return final response
-                False: Return initial response even with tool calls
-                Ignored when response_model is provided
-            **kwargs: Additional model parameters passed to LLM.
-                Common options: temperature, max_tokens, top_p, stop, etc.
-                See model documentation for provider-specific options.
+            *content_parts: Message content to append before calling
+            role: Message role (default: "user")
+            response_model: Pydantic model for structured output extraction
+            context: Template rendering context variables
+            auto_execute_tools: Auto-execute tool calls (default: True)
+            **kwargs: Additional model parameters (temperature, max_tokens, etc.)
 
         Returns:
-            AssistantMessage: Final response from the language model.
-                Contains text content and optionally tool call results.
-                Tool execution results are incorporated into response content.
+            AssistantMessage or AssistantMessageStructuredOutput[T_Output]
 
-            AssistantMessageStructuredOutput[T_Output]: When response_model provided.
-                Contains parsed structured output in .output field.
-                Tool calls in structured responses are not executed.
-
-        Raises:
-            ValidationError: Message sequence invalid or structured output parsing fails
-            LLMError: Language model API failures after retries
-            ToolError: Critical tool failures that prevent continuation
-            AgentStateError: Agent in invalid state for execution
-            RuntimeError: No assistant response received (internal error)
-
-        TYPICAL USAGE:
-        ```python
-        # Simple question answering
-        response = await agent.call("What's the weather like today?")
-        print(response.content)
-
-        # With manual tool control
-        response = await agent.call("Search for recent news", auto_execute_tools=False)
-        if response.tool_calls:
-            # Manually handle tool calls
-            await agent.execute_tools(response.tool_calls)
-
-        # Structured data extraction
-        from pydantic import BaseModel
-
-
-        class WeatherInfo(BaseModel):
-            temperature: float
-            conditions: str
-            location: str
-
-
-        weather = await agent.call(
-            "What's the weather in Tokyo?", response_model=WeatherInfo
-        )
-        print(f"Temperature: {weather.output.temperature}")
-
-        # With context and custom parameters
-        response = await agent.call(
-            "Summarize this for a {audience}",
-            context={"audience": "technical audience"},
-            temperature=0.1,  # More deterministic
-            max_tokens=500,
-        )
-        ```
-
-        PERFORMANCE TIPS:
-        - Use auto_execute_tools=False for manual tool control or debugging
-        - Set response_model for structured data extraction (more reliable than parsing)
-        - Use context parameter for dynamic template variables
-        - Monitor agent.usage for token consumption analysis
-
-        RELATED:
-        - execute(): Full execution loop with streaming support
-        - execute_stream(): Streaming version for real-time output
-        - append(): Add messages without execution
-        - ready(): Ensure agent is initialized before calling
+        Example:
+            >>> response = await agent.call("What's the weather?")
+            >>> weather = await agent.call("Weather?", response_model=WeatherInfo)
         """
         # Append input message if provided
         if content_parts:
@@ -2020,176 +1278,21 @@ class Agent(EventRouter):
     ) -> AsyncIterator[Message]:
         """Execute the agent and yield messages as they are generated.
 
-        PURPOSE: Core execution loop that handles multi-turn conversations with tool
-        execution, message streaming, and iterative LLM interactions.
-
-        WHEN TO USE:
-        - Complex multi-turn conversations requiring tool support
-        - When you need access to intermediate messages and tool responses
-        - For streaming real-time output to users
-        - When you want full control over the execution process
-        - Prefer call() for simple single-message interactions
-
-        EXECUTION FLOW:
-        1. INITIALIZATION: Check for pending tool calls from previous executions
-        2. ITERATION LOOP (while iterations < max_iterations):
-           a. LLM Call: Send current message history to language model
-           b. Response Processing: Parse tool calls from LLM response
-           c. Tool Execution: Execute tools concurrently if tool calls present
-           d. Message Yielding: Yield each generated message (LLM response + tool responses)
-           e. Continuation Decision: Continue if tools executed, else break
-        3. COMPLETION: Emit completion event with execution summary
-
-        STATE TRANSITIONS:
-        READY → PENDING_RESPONSE → PROCESSING → PENDING_TOOLS → PROCESSING → COMPLETE
-
-        Agent.state follows this pattern throughout execution:
-        - PENDING_RESPONSE: About to call LLM
-        - PROCESSING: LLM call in progress
-        - PENDING_TOOLS: Tool calls detected, about to execute
-        - READY: Execution complete or iteration limit reached
-
-        TOOL EXECUTION STRATEGY:
-        - Tools execute concurrently using asyncio.gather()
-        - Individual tool failures don't stop other tool execution
-        - Tool responses automatically added to message history
-        - Tool execution isolated with proper error handling
-        - Tool context shared across calls within same execution
-
-        ITERATION CONTROL:
-        - max_iterations prevents infinite loops (default: 10)
-        - Each iteration = one LLM call + optional tool execution
-        - Execution stops when LLM returns response without tool calls
-        - Use agent.events to monitor iteration progress
-
-        STREAMING SUPPORT:
-        - streaming parameter enables real-time message streaming
-        - Messages yielded as soon as they're generated
-        - Useful for chat interfaces and real-time updates
-        - Does not affect token usage or execution logic
-
-        SIDE EFFECTS:
-        - Appends assistant response to agent.messages
-        - Appends tool response messages for each tool execution
-        - Updates agent.state throughout execution process
-        - Emits events at each major step (see AgentEvents)
-        - May execute tools with external side effects
-        - Increments usage statistics and token counts
-        - Updates agent.version_id for each message added
-
-        ERROR HANDLING:
-        - LLM API failures: Automatic retry with exponential backoff (3 attempts)
-        - Tool execution failures: Continue execution, send error messages to LLM
-        - Validation failures: Immediate ValidationError (mode dependent)
-        - Network errors: Propagated after retries exhausted
-        - Timeout errors: Configurable via model.timeout parameter
-        - Iteration limit exceeded: Execution stops, returns last messages
-
-        CONCURRENCY AND PERFORMANCE:
-        - Method is NOT thread-safe - one execution per agent instance
-        - Tool calls within single iteration may run concurrently
-        - LLM calls are sequential (one per iteration)
-        - Memory usage grows with message history length
-        - Typical execution: 500ms-3s depending on LLM and tools
-        - Optimal iteration count: 3-5 for most use cases
-
-        RESOURCE MANAGEMENT:
-        - HTTP connections: Reused across LLM calls and tool execution
-        - Tool execution: Context managers ensure resource cleanup
-        - Message history: Versioned and persisted in global store
-        - Event handling: Non-blocking, handler failures don't stop execution
+        Handles multi-turn conversations with automatic tool execution up to max_iterations.
+        Yields AssistantMessage and ToolMessage instances as they're generated.
 
         Args:
-            streaming: Enable streaming mode for real-time message delivery.
-                When True, messages are yielded immediately as they're generated.
-                When False (default), behavior is the same but allows future optimization.
-                Does not affect the actual execution logic or message sequence.
-            max_iterations: Maximum number of LLM-tool cycles.
-                Prevents infinite loops when LLM keeps calling tools.
-                Default: 10 iterations (sufficient for most use cases).
-                Each iteration includes one LLM call and optional tool execution.
-            **kwargs: Additional model parameters passed to LLM.
-                Common options: temperature, max_tokens, top_p, stop, etc.
-                Provider-specific parameters also supported.
-                See model documentation for complete parameter list.
+            streaming: Enable streaming mode (default: False)
+            max_iterations: Max LLM-tool cycles to prevent infinite loops (default: 10)
+            **kwargs: Additional model parameters (temperature, max_tokens, etc.)
 
         Yields:
-            Message: Messages generated during execution in chronological order.
-                Sequence pattern: AssistantMessage → [ToolMessage]* → AssistantMessage → ...
-                Each message includes metadata like iteration index and execution timing.
-                Tool messages contain execution results and error information.
-                Assistant messages may contain tool calls for the next iteration.
+            Message: AssistantMessage and ToolMessage instances in sequence
 
-        Events Emitted:
-        - EXECUTE_BEFORE: Start of execution with max_iterations
-        - EXECUTE_ITERATION_BEFORE: Start of each iteration with iteration count
-        - MESSAGE_APPEND_AFTER: Each message added to conversation
-        - TOOL_CALL_BEFORE/AFTER: Individual tool execution lifecycle
-        - EXECUTE_AFTER: Execution completion with final summary
-        - AGENT_STATE_CHANGE: State transitions during execution
-
-        Raises:
-            ValidationError: Message sequence invalid (strict mode only)
-            LLMError: Language model API failures after retries
-            ToolError: Critical tool failures that prevent continuation
-            AgentStateError: Agent in invalid state for execution
-            RuntimeError: Internal errors during execution
-
-        TYPICAL USAGE:
-        ```python
-        # Basic execution with streaming
-        async for message in agent.execute(streaming=True):
-            if isinstance(message, AssistantMessage):
-                print(f"Assistant: {message.content}")
-            elif isinstance(message, ToolMessage):
-                print(f"Tool result: {message.content[:100]}...")
-
-        # Execute with custom iteration limit
-        async for message in agent.execute(max_iterations=5):
-            # Process each message
-            pass
-
-        # Execute with custom model parameters
-        async for message in agent.execute(temperature=0.1, max_tokens=1000):
-            # More deterministic responses
-            pass
-
-        # Collect all messages from execution
-        messages = []
-        async for message in agent.execute():
-            messages.append(message)
-
-
-        # Handle execution with event monitoring
-        def on_state_change(ctx):
-            print(f"State: {ctx.params['old_state']} → {ctx.params['new_state']}")
-
-
-        agent.on(AgentEvents.AGENT_STATE_CHANGE)(on_state_change)
-        async for message in agent.execute():
-            pass
-        ```
-
-        PERFORMANCE TIPS:
-        - Monitor agent.state to track execution progress
-        - Use max_iterations to prevent excessive loops
-        - Set appropriate timeouts for long-running tools
-        - Consider message truncation for long conversations
-        - Use agent.events for debugging and monitoring
-
-        DEBUGGING:
-        - Set agent.debug = True for detailed execution logging
-        - Monitor agent.messages to see full conversation history
-        - Use agent.events to track execution progress step-by-step
-        - Check agent.usage for token consumption analysis
-        - Use streaming=True for real-time debugging output
-
-        RELATED:
-        - call(): Simplified single-message interface
-        - call_stream(): Streaming version of call()
-        - execute_stream(): Alternative streaming interface
-        - ready(): Ensure agent is initialized before execution
-        - validate(): Run validation without execution
+        Example:
+            >>> async for message in agent.execute():
+            ...     if isinstance(message, AssistantMessage):
+            ...         print(f"Assistant: {message.content}")
         """
         # Emit execute:start event
         self.do(AgentEvents.EXECUTE_BEFORE, agent=self, max_iterations=max_iterations)
@@ -2305,86 +1408,7 @@ class Agent(EventRouter):
             include_messages: Whether to copy messages to the forked agent
             **kwargs: Configuration overrides for the new agent
         """
-        # Get current config and update with kwargs
-        config = self.config.as_dict()
-        config.update(kwargs)
-
-        # Filter config to only include valid AgentConfigParameters
-        valid_params = AGENT_CONFIG_KEYS
-        filtered_config = {k: v for k, v in config.items() if k in valid_params}
-
-        override_keys = {
-            key
-            for key in kwargs
-            if key
-            in {
-                "language_model",
-                "mock",
-                "tool_manager",
-                "template_manager",
-                "extensions",
-            }
-        }
-        self._clone_extensions_for_config(filtered_config, override_keys)
-
-        # Create new agent using the constructor
-        new_agent = Agent(**filtered_config)
-
-        # Copy messages if requested
-        if include_messages:
-            for msg in self._messages:
-                # Create new message with same content but new ID
-                # We need to create a new instance to get a new ID
-                msg_data = msg.model_dump(exclude={"id", "role"})
-
-                # Preserve content_parts directly to avoid triggering render
-                # which would cause event loop conflicts in async contexts
-                if hasattr(msg, "content_parts"):
-                    msg_data["content_parts"] = msg.content_parts
-
-                # Create new message of the same type and add via proper methods
-                match msg:
-                    case SystemMessage():
-                        # Use set_system_message for system messages
-                        new_msg = new_agent.model.create_message(
-                            **msg_data, role="system"
-                        )
-                        new_agent.set_system_message(new_msg)
-                    case UserMessage():
-                        new_msg = new_agent.model.create_message(
-                            **msg_data, role="user"
-                        )
-                        new_agent.append(new_msg)
-                    case AssistantMessage():
-                        new_msg = new_agent.model.create_message(
-                            **msg_data, role="assistant"
-                        )
-                        new_agent.append(new_msg)
-                    case ToolMessage():
-                        new_msg = new_agent.model.create_message(
-                            **msg_data, role="tool"
-                        )
-                        new_agent.append(new_msg)
-                    case _:
-                        raise ValueError(f"Unknown message type: {type(msg).__name__}")
-
-        # Set version to match source (until modified)
-        new_agent._version_id = self._version_id
-
-        # Initialize version history with current state
-        if new_agent._messages:
-            new_agent._versions = [[msg.id for msg in new_agent._messages]]
-
-        # Emit agent:fork event
-        # @TODO: event naming
-        self.do(
-            AgentEvents.AGENT_FORK_AFTER,
-            parent=self,
-            child=new_agent,
-            config_changes=kwargs,
-        )
-
-        return new_agent
+        return self._context_manager.fork(include_messages, **kwargs)
 
     @ensure_ready
     async def spawn(
@@ -3129,339 +2153,41 @@ class Agent(EventRouter):
         hide: list[str] | None = None,
         **parameters: Any,
     ) -> ToolResponse:
-        """
-        Directly invoke a tool and add both assistant message (with tool call) and tool response to conversation.
+        """Directly invoke a tool and add messages to conversation.
 
         Args:
-            tool: Tool instance or tool name string
-            tool_name: Optional name to override the inferred tool name (useful for Callable and Tool instances)
+            tool: Tool instance, callable, or tool name string
+            tool_name: Optional name override
             tool_call_id: Optional tool call ID (generated if not provided)
-            skip_assistant_message: If True, only add tool response (for when assistant message already exists)
-            hide: List of parameter names to hide from the tool definition when passing a callable
-            **parameters: Parameters to pass to the tool (can include Template instances)
+            skip_assistant_message: If True, only add tool response
+            hide: List of parameter names to hide from tool definition
+            **parameters: Parameters to pass to the tool
 
         Returns:
-            ToolResponse with the tool execution result
+            ToolResponse with execution result
         """
-
-        # Render any Template parameters with agent context
-        rendered_params = await self._render_template_parameters(parameters)
-
-        # Resolve tool if string name provided
-        resolved_tool, resolved_name = self._resolve_tool(tool_name, tool, hide)
-
-        logger.debug(f"Invoking tool: {resolved_name} with params: {rendered_params}")
-
-        # Generate tool call ID if not provided
-        tool_call_id = tool_call_id or f"call_{ULID()}"
-
-        # Separate visible and hidden parameters (use rendered params)
-        visible_params = dict(rendered_params)
-        # Check for hidden params on Tool instances
-        if isinstance(resolved_tool, Tool) and hasattr(resolved_tool, "_hidden_params"):
-            # Remove hidden params from visible params that will be recorded
-            for hidden_param in resolved_tool._hidden_params:
-                visible_params.pop(hidden_param, None)
-
-        # Create tool call with only visible parameters
-        tool_call = ToolCall(
-            id=tool_call_id,
-            type="function",
-            function=ToolCallFunction(
-                name=resolved_name,
-                arguments=orjson.dumps(visible_params).decode("utf-8"),
-            ),
-        )
-
-        # Emit tool:call event with visible parameters only - using apply for parameter modification
-        # @TODO: event naming - should use TOOL_CALL_BEFORE
-        ctx = await self.apply(
-            AgentEvents.TOOL_CALL_BEFORE,
-            tool_name=resolved_name,
-            parameters=visible_params,
-            tool_call_id=tool_call_id,
-        )
-
-        # Use potentially modified parameters from apply hook
-        # Check output first (transformed result from handlers), then parameters
-        modified_params = (
-            ctx.output
-            if ctx.output is not None
-            else ctx.parameters.get("parameters", visible_params)
-        )
-
-        ctx.parameters.get("tool_name", resolved_name)
-
-        # Merge modified visible params with hidden params for execution
-        execution_params = dict(
-            rendered_params
-        )  # Start with all params (including hidden)
-        execution_params.update(
-            modified_params
-        )  # Apply any modifications from handlers
-
-        # logger.debug(execution_params)
-
-        # Execute the tool
-        try:
-            # Execute tool with dependency injection support
-            # Pass context through special parameters that Tool.__call__ expects
-            # Coerce JSON-like strings to proper types based on tool schema
-            execution_params = self._coerce_tool_parameters(
-                resolved_tool, execution_params
-            )
-
-            result = await resolved_tool(
-                **execution_params, _agent=self, _tool_call=tool_call
-            )
-
-            # Handle different return types
-            if isinstance(result, ToolResponse):
-                # Tool returned a ToolResponse directly
-                # Create a new instance to avoid mutating the original
-                tool_response = ToolResponse(
-                    tool_name=resolved_name or result.tool_name,
-                    tool_call_id=tool_call_id or result.tool_call_id,
-                    response=result.response,
-                    parameters=result.parameters,
-                    success=result.success,
-                    error=result.error,
-                )
-            else:
-                # Create ToolResponse from return value
-                tool_response = ToolResponse(
-                    tool_name=resolved_name,
-                    tool_call_id=tool_call_id,
-                    response=result,
-                    parameters=rendered_params,
-                    success=True,
-                    error=None,
-                )
-
-        except Exception as e:
-            # Emit tool:error event
-            # @TODO: event naming
-            self.do(
-                AgentEvents.TOOL_CALL_ERROR,
-                tool_name=resolved_name,
-                tool_call_id=tool_call_id,
-                error=str(e),
-                parameters=rendered_params,
-            )
-
-            # Create error response
-            tool_response = ToolResponse(
-                tool_name=resolved_name,
-                tool_call_id=tool_call_id,
-                response=None,
-                parameters=rendered_params,
-                success=False,
-                error=str(e),
-            )
-
-        # Use add_tool_invocation to record the response (skip assistant message since we already added it)
-        self.add_tool_invocation(
-            tool=resolved_name,  # Use the resolved tool_name (which may be overridden)
-            response=tool_response,
-            parameters=visible_params,
+        return await self._tool_executor.invoke(
+            tool,
+            tool_name=tool_name,
             tool_call_id=tool_call_id,
             skip_assistant_message=skip_assistant_message,
+            hide=hide,
+            **parameters,
         )
-
-        return tool_response
 
     async def invoke_many(
         self,
         invocations: Sequence[tuple[Tool | str | Callable, dict[str, Any]]],
     ) -> list[ToolResponse]:
-        """
-        Execute multiple tools in parallel and add results to conversation.
+        """Execute multiple tools in parallel.
 
         Args:
-            invocations: Sequence of (tool, parameters) tuples where tool can be:
-                         - Tool instance
-                         - Tool name string
-                         - Callable function
-                         Parameters can include Template instances for templated values.
+            invocations: Sequence of (tool, parameters) tuples
 
         Returns:
-            List of ToolResponse objects in the same order as invocations
+            List of ToolResponse objects in invocation order
         """
-
-        if not invocations:
-            return []
-
-        # Build tool calls and prepare execution tasks
-        tool_calls = []
-        tasks = []
-        tool_infos = []
-
-        for tool_ref, params in invocations:
-            # Render any Template parameters
-            rendered_params = await self._render_template_parameters(params)
-
-            # Resolve tool - handle errors gracefully
-            tool = None
-            tool_error = None
-
-            # Use the helper method to resolve tool name
-            try:
-                tool_name = self._resolve_tool_name(tool_ref)
-            except ValueError as e:
-                tool_name = str(tool_ref)
-                tool_error = str(e)
-
-            if not tool_error:
-                if isinstance(tool_ref, str):
-                    # Look for tool by name in the tool manager
-                    if tool_ref in self.tools:
-                        tool = self.tools[tool_ref]
-                    else:
-                        tool_error = f"Tool '{tool_ref}' not found in agent's tools"
-                elif isinstance(tool_ref, Tool):
-                    # It's a Tool instance
-                    tool = tool_ref
-                elif callable(tool_ref):
-                    # Check if this is a bound function from invoke_func
-                    if getattr(tool_ref, "_is_invoke_func_bound", False):
-                        # This is a bound function from invoke_func
-                        # We'll treat it like a regular tool but pass a special flag
-                        tool = tool_ref  # Keep the bound function
-                        tool_name = getattr(tool_ref, "__name__", "bound_invoke")
-                    else:
-                        try:
-                            # It's a regular function - convert to Tool
-                            tool = Tool(tool_ref)
-                        except Exception as e:
-                            tool_error = f"Failed to convert function to tool: {e}"
-
-            # Check if this is a bound function (special handling needed)
-            callable(tool) and getattr(tool, "_is_invoke_func_bound", False)
-
-            # Create tool call - always create it for all tools
-            tool_call_id = f"call_{ULID()}"
-            tool_call = ToolCall(
-                id=tool_call_id,
-                type="function",
-                function=ToolCallFunction(
-                    name=tool_name,
-                    arguments=orjson.dumps(rendered_params).decode("utf-8"),
-                ),
-            )
-
-            # Add to tool_calls for ALL tools (including bound functions)
-            # We'll handle them uniformly now
-            tool_calls.append(tool_call)
-
-            # Store tool info for later
-            tool_infos.append((tool, tool_name, tool_call_id, tool_call, tool_error))
-
-            # Create execution task
-            async def execute_tool(
-                t=tool,
-                p=rendered_params,  # Use rendered params
-                tid=tool_call_id,
-                tn=tool_name,
-                tc=tool_call,
-                error=tool_error,
-            ):
-                # If there was an error resolving the tool, return error immediately
-                if error:
-                    return ToolResponse(
-                        tool_name=tn,
-                        tool_call_id=tid,
-                        response=None,
-                        parameters=p,
-                        success=False,
-                        error=error,
-                    )
-
-                try:
-                    if t is None:
-                        raise ValueError(f"Tool {tn} is None")
-
-                    # Check if this is a bound function from invoke_func
-                    if callable(t) and getattr(t, "_is_invoke_func_bound", False):
-                        # This is a bound function - pass the special flag
-                        # so it knows not to create messages
-                        # Coerce parameters before invoking bound function
-                        coerced_p = self._coerce_tool_parameters(t, p)
-                        result = await t(**coerced_p, _from_invoke_many=True)
-                        # Set the tool_call_id if not set
-                        if isinstance(result, ToolResponse) and not result.tool_call_id:
-                            result.tool_call_id = tid
-                        return result
-                    else:
-                        # Normal tool execution
-                        # Execute the tool
-                        # Coerce parameters based on schema
-                        coerced_p = self._coerce_tool_parameters(t, p)
-                        result = t(**coerced_p, _agent=self, _tool_call=tc)
-
-                        # Check if result is a coroutine (from async tools/Tool instances)
-                        if asyncio.iscoroutine(result):
-                            result = await result
-
-                        if isinstance(result, ToolResponse):
-                            # Create a new instance to avoid mutating the original
-                            return ToolResponse(
-                                tool_name=tn or result.tool_name,
-                                tool_call_id=tid or result.tool_call_id,
-                                response=result.response,
-                                parameters=result.parameters,
-                                success=result.success,
-                                error=result.error,
-                            )
-                        else:
-                            return ToolResponse(
-                                tool_name=tn,
-                                tool_call_id=tid,
-                                response=result,
-                                parameters=p,
-                                success=True,
-                                error=None,
-                            )
-                except Exception as e:
-                    return ToolResponse(
-                        tool_name=tn,
-                        tool_call_id=tid,
-                        response=None,
-                        parameters=p,
-                        success=False,
-                        error=str(e),
-                    )
-
-            # Create task with explicit coroutine
-            task = asyncio.create_task(execute_tool())
-            tasks.append(task)
-
-        # Add assistant message with all tool calls (only if there are any)
-        if tool_calls:
-            assistant_msg = self.model.create_message(
-                content="", tool_calls=tool_calls, role="assistant"
-            )
-            self.append(assistant_msg)
-
-        # Execute all tools in parallel
-        results = await asyncio.gather(*tasks)
-
-        # Add tool messages for ALL tools (including bound functions)
-        for i, tool_response in enumerate(results):
-            tool, tool_name, tool_call_id, _, _ = tool_infos[i]
-
-            # Create tool message for ALL tools
-            tool_msg = self.model.create_message(
-                content=str(tool_response.response)
-                if tool_response.success
-                else f"Error: {tool_response.error}",
-                tool_call_id=tool_call_id,
-                tool_name=tool_name,
-                tool_response=tool_response,
-                role="tool",
-            )
-            self.append(tool_msg)
-
-        return results
+        return await self._tool_executor.invoke_many(invocations)
 
     def invoke_func(
         self,
@@ -3569,141 +2295,29 @@ class Agent(EventRouter):
         return bound_invoke_many
 
     def get_pending_tool_calls(self) -> list[ToolCall]:
-        """
-        Get all tool calls from assistant messages that don't have corresponding tool responses.
+        """Get list of tool calls that don't have corresponding responses.
 
         Returns:
-            List of pending ToolCall objects
+            List of ToolCall objects that are pending execution
         """
-        # Track which tool calls have responses
-        responded_tool_calls: set[str] = set()
-        pending_tool_calls: list[ToolCall] = []
-
-        # First pass: collect all tool response IDs
-        for msg in self.messages:
-            match msg:
-                case ToolMessage(tool_call_id=tool_call_id):
-                    responded_tool_calls.add(tool_call_id)
-
-        # Second pass: find tool calls without responses
-        for msg in self.messages:
-            match msg:
-                case AssistantMessage(tool_calls=tool_calls) if tool_calls:
-                    # Check if this assistant message has tool calls
-                    for tool_call in tool_calls:
-                        if tool_call.id not in responded_tool_calls:
-                            # This tool call has no response yet, add to pending
-                            pending_tool_calls.append(tool_call)
-                case _:
-                    # Not an assistant message with tool calls, skip
-                    continue
-
-        return pending_tool_calls
+        return self._tool_executor.get_pending_tool_calls()
 
     def has_pending_tool_calls(self) -> bool:
-        """
-        Check if there are any pending tool calls in the conversation.
+        """Check if there are any pending tool calls.
 
         Returns:
-            True if there are pending tool calls, False otherwise
+            True if there are pending tool calls
         """
-        return len(self.get_pending_tool_calls()) > 0
+        return self._tool_executor.has_pending_tool_calls()
 
     async def resolve_pending_tool_calls(self) -> AsyncIterator[ToolMessage]:
-        pending = self.get_pending_tool_calls()
-        for tool_call in pending:
-            tool_name = tool_call.function.name
+        """Find and execute all pending tool calls in conversation.
 
-            if tool_name not in self.tools:
-                # Create error response for missing tool
-                # When and why would this occur???
-                logger.warning(
-                    f"Tool '{tool_name}' not found for pending tool call {tool_call.id}"
-                )
-
-                # Create error response
-                tool_response = ToolResponse(
-                    tool_name=tool_name,
-                    tool_call_id=tool_call.id,
-                    response=None,
-                    parameters=tool_call.parameters,  # Use the built-in parameters property
-                    success=False,
-                    error=f"Tool '{tool_name}' not found",
-                )
-
-                # Create and add tool message for the error
-                tool_message = self.model.create_message(
-                    content=f"Error: {tool_response.error}",
-                    tool_call_id=tool_call.id,
-                    tool_name=tool_name,
-                    tool_response=tool_response,
-                    role="tool",
-                )
-                self.append(tool_message)
-
-                # Emit error event for consistency
-                self.do(
-                    AgentEvents.TOOL_CALL_ERROR,
-                    tool_name=tool_name,
-                    tool_call_id=tool_call.id,
-                    error=tool_response.error,
-                    parameters=tool_call.parameters,
-                )
-                yield tool_message
-            else:
-                tool_response = await self.invoke(
-                    tool_name,
-                    tool_call_id=tool_call.id,
-                    skip_assistant_message=True,  # Assistant message with tool call already exists
-                    **tool_call.parameters,  # Use the built-in property that handles JSON parsing
-                )
-
-                tool_message = self.tool[-1]
-
-                assert tool_message.tool_call_id == tool_call.id
-
-                yield tool_message
-
-                # Check if the JSON arguments are valid before attempting to invoke
-                # try:
-                #     # Try to parse the arguments directly to detect invalid JSON
-                #     tool_call.parameters
-
-                #     # Use the centralized invoke method
-                #     # Use ToolCall's built-in parameters property instead of manual parsing
-                #     **tool_call.parameters  # Use the built-in property that handles JSON parsing
-                #     )
-                # except orjson.JSONDecodeError as e:
-                #     # Invalid JSON in tool arguments
-                #     logger.warning(f"Invalid JSON in tool arguments for {tool_name}: {e}")
-
-                #     # Create error response for invalid JSON
-                #     tool_response = ToolResponse(
-                #         tool_name=tool_name,
-                #         tool_call_id=tool_call.id,
-                #         response=None,
-                #         parameters={},
-                #         success=False,
-                #         error=f"Error parsing tool arguments: {str(e)}",
-                #     )
-
-                #     # Create and add tool message for the error
-                #     tool_message = self.model.create_message(
-                #         content=f"Error parsing tool arguments: {str(e)}",
-                #         tool_call_id=tool_call.id,
-                #         tool_name=tool_name,
-                #         tool_response=tool_response,
-                #         role="tool",
-                #     )
-                #     self.append(tool_message)
-                #     # Emit error event for consistency
-                #     self.do(
-                #         AgentEvents.TOOL_CALL_ERROR,
-                #         tool_name=tool_name,
-                #         tool_call_id=tool_call.id,
-                #         error=f"Error parsing tool arguments: {str(e)}",
-                #         parameters={},
-                #     )
+        Yields:
+            ToolMessage for each resolved tool call
+        """
+        async for msg in self._tool_executor.resolve_pending_tool_calls():
+            yield msg
 
     # async def resolve_pending_tool_calls(self) -> list[ToolResponse]:
     #     """
@@ -3886,7 +2500,7 @@ class Agent(EventRouter):
         else:
             # Component type access (e.g., agent[CitationIndex])
             if isinstance(key, type) and issubclass(key, AgentComponent):
-                extension = self._extensions.get(key)
+                extension = self._component_registry.get_extension_by_type(key)
                 if extension is None:
                     raise KeyError(f"Extension {key.__name__} not found in agent")
                 return extension
@@ -3997,7 +2611,7 @@ class Agent(EventRouter):
                 # Assistant messages from one agent become user messages in the other
                 agent_one.append(AssistantMessage("Hello"))
         """
-        from .conversation import Conversation
+        from ..conversation import Conversation
 
         return Conversation(self, other)
 
@@ -4021,10 +2635,10 @@ class Agent(EventRouter):
         preventing "Task was destroyed but it is pending!" warnings.
         """
         # Cancel init task if still running
-        if self._init_task and not self._init_task.done():
-            self._init_task.cancel()
+        if self._state_machine._init_task and not self._state_machine._init_task.done():
+            self._state_machine._init_task.cancel()
             try:
-                await self._init_task
+                await self._state_machine._init_task
             except asyncio.CancelledError:
                 pass
 
@@ -4061,7 +2675,7 @@ class Agent(EventRouter):
         Returns:
             Total token count across specified messages
         """
-        from .utilities.tokens import get_message_token_count
+        from ..utilities.tokens import get_message_token_count
 
         # Use provided messages or all agent messages
         msgs = messages if messages is not None else self.messages
@@ -4093,7 +2707,7 @@ class Agent(EventRouter):
         Returns:
             Dictionary mapping role to token count
         """
-        from .utilities.tokens import get_message_token_count
+        from ..utilities.tokens import get_message_token_count
 
         counts: dict[str, int] = {
             "system": 0,
@@ -4137,31 +2751,7 @@ class Agent(EventRouter):
 
     def _update_version(self) -> None:
         """Update the agent's version ID when state changes."""
-        old_version = self._version_id
-        # Use monotonic ULID generation to ensure strict ordering
-        # create_monotonic_ulid() ensures monotonic ordering even within the same millisecond
-        # by incrementing the random component when timestamps are identical
-        self._version_id = create_monotonic_ulid()
-
-        # Update version history
-        current_message_ids = [msg.id for msg in self._messages]
-        self._versions.append(current_message_ids)
-
-        # Emit agent:version:change event
-        changes = {
-            "messages": len(self._messages),
-            "last_version_messages": len(self._versions[-2])
-            if len(self._versions) > 1
-            else 0,
-        }
-        # @TODO: event naming
-        self.do(
-            AgentEvents.AGENT_VERSION_CHANGE,
-            agent=self,
-            old_version=old_version,
-            new_version=self._version_id,
-            changes=changes,
-        )
+        self._versioning_manager.update_version()
 
     def __bool__(self):
         """Agent is always truthy - avoids __len__ conflict."""

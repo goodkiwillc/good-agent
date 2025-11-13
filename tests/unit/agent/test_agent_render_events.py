@@ -1,7 +1,7 @@
 import pytest
 from good_agent import Agent, AgentEvents
 from good_agent.messages import RenderMode, UserMessage
-from good_agent.utilities.event_router import EventContext
+from good_agent.core.event_router import EventContext
 
 
 @pytest.mark.asyncio

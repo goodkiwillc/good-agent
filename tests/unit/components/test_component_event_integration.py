@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from good_agent import Agent, AgentComponent, AgentEvents, tool
-from good_agent.utilities.event_router import EventContext, on
+from good_agent.core.event_router import EventContext, on
 
 
 class DecoratorPatternComponent(AgentComponent):
@@ -501,7 +501,7 @@ class TestAgentComponentEventIntegration:
 @pytest.mark.asyncio
 async def test_eventrouter_inheritance_verification():
     """Verify that AgentComponent properly inherits from EventRouter."""
-    from good_agent.utilities.event_router import EventRouter
+    from good_agent.core.event_router import EventRouter
 
     component = DecoratorPatternComponent()
 

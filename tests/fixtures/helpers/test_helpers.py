@@ -32,7 +32,7 @@ class MockAgent(Any):
 
     async def apply_typed(self, event, params_type, return_type, **kwargs):
         """Mock apply_typed method for EventRouter compatibility."""
-        from good_agent.utilities.event_router import EventContext
+        from good_agent.core.event_router import EventContext
 
         # Extract output if provided (matching real EventRouter behavior)
         output = kwargs.get("output", None)
