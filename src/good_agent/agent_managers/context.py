@@ -125,11 +125,15 @@ class ContextManager:
                         raise ValueError(f"Unknown message type: {type(msg).__name__}")
 
         # Set version to match source (until modified)
-        new_agent._version_id = self.agent._version_id
+        new_agent._versioning_manager._version_id = (
+            self.agent._versioning_manager._version_id
+        )
 
         # Initialize version history with current state
         if new_agent._messages:
-            new_agent._versions = [[msg.id for msg in new_agent._messages]]
+            new_agent._versioning_manager._versions = [
+                [msg.id for msg in new_agent._messages]
+            ]
 
         # Emit agent:fork event
         # @TODO: event naming
