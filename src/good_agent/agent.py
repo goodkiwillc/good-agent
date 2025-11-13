@@ -35,6 +35,7 @@ from good_agent.core.ulid_monotonic import (
     create_monotonic_ulid,
 )
 
+from .agent_managers.llm import LLMCoordinator
 from .agent_managers.messages import MessageManager
 from .agent_managers.state import AgentState, AgentStateMachine
 from .agent_managers.tools import ToolExecutor
@@ -49,7 +50,6 @@ from .context import Context as AgentContext
 from .events import (  # Import typed event parameters
     AgentEvents,
     AgentInitializeParams,
-    ToolsGenerateSignature,
 )
 from .messages import (
     Annotation,
@@ -66,7 +66,7 @@ from .messages import (
     UserMessage,
 )
 from .mock import AgentMockInterface
-from .model.llm import LanguageModel, ResponseWithUsage
+from .model.llm import LanguageModel
 from .pool import AgentPool
 from .store import put_message
 from .templating import (
@@ -84,7 +84,7 @@ from .tools import (
     ToolSignature,
 )
 from .utilities import print_message
-from .validation import MessageSequenceValidator, ValidationError, ValidationMode
+from .validation import MessageSequenceValidator, ValidationMode
 
 if TYPE_CHECKING:
     from .conversation import Conversation
@@ -533,6 +533,9 @@ class Agent(EventRouter):
 
         # Initialize ToolExecutor
         self._tool_executor = ToolExecutor(self)
+
+        # Initialize LLMCoordinator
+        self._llm_coordinator = LLMCoordinator(self)
 
         # Initialize extension storage
         self._extensions: dict[type[AgentComponent], AgentComponent] = {}
@@ -1423,45 +1426,19 @@ class Agent(EventRouter):
     ) -> AssistantMessageStructuredOutput[T_Output]: ...
 
     async def _get_tool_definitions(self) -> list[ToolSignature] | None:
-        """Get tool definitions for the LLM call"""
-        tool_definitions: list[ToolSignature] = []
+        """Get tool definitions for the LLM call.
 
-        tools_ctx = await self.apply_typed(
-            AgentEvents.TOOLS_PROVIDE,
-            return_type=list[Tool],
-            output=self.tools.as_list(),
-            agent=self,
-        )
-
-        tools = tools_ctx.output
-
-        if tools and len(tools) > 0:
-            for tool in tools:
-                tool_ctx = await self.apply_typed(
-                    AgentEvents.TOOLS_GENERATE_SIGNATURE,
-                    params_type=ToolsGenerateSignature,
-                    return_type=ToolSignature,
-                    output=tool.signature,
-                    tool=tool,
-                    agent=self,
-                )
-
-                if signature := tool_ctx.output:
-                    tool_definitions.append(signature)
-                else:
-                    tool_definitions.append(tool.signature)
-
-        if tool_definitions:
-            return tool_definitions
-        return None
+        Returns:
+            List of tool signatures or None if no tools available
+        """
+        return await self._llm_coordinator.get_tool_definitions()
 
     async def _llm_call(
         self,
         response_model: type[T_Output] | None = None,
         **kwargs: Any,
     ) -> AssistantMessage | AssistantMessageStructuredOutput:
-        """
-        Internal method to make a single LLM call without tool execution.
+        """Make a single LLM call without tool execution.
 
         Args:
             response_model: Optional structured output model
@@ -1470,181 +1447,9 @@ class Agent(EventRouter):
         Returns:
             Assistant message response (may contain tool calls)
         """
-        # Prepare messages for LLM
-        # Update kwargs with tools if available
-        if tool_definitions := await self._get_tool_definitions():
-            kwargs["tools"] = tool_definitions
-            if "parallel_tool_calls" not in kwargs:
-                supports_parallel = getattr(
-                    self.model, "supports_parallel_function_calling", None
-                )
-                should_enable = False
-                if callable(supports_parallel):
-                    should_enable = supports_parallel()
-                elif isinstance(supports_parallel, bool):
-                    should_enable = supports_parallel
-
-                if should_enable:
-                    kwargs["parallel_tool_calls"] = True
-
-        # Prepare parameters for event
-        llm_params = {
-            "model": self.model.config.model,
-            **kwargs,
-        }
-
-        # Validate message sequence before LLM call
-        # When requesting structured output (response_model provided), allow pending tool calls
-        # since we may inject synthetic tool responses only in the outbound API payload.
-        try:
-            if response_model is not None:
-                self._sequence_validator.validate_partial_sequence(
-                    self.messages, allow_pending_tools=True
-                )
-            else:
-                self._sequence_validator.validate(self.messages)
-        except ValidationError as e:
-            logger.error(f"Message sequence validation failed: {e}")
-            raise
-
-        try:
-            output = None
-            response: AssistantMessage | AssistantMessageStructuredOutput
-            if response_model:
-                # Use extract for structured output
-                output = await self.model.extract(
-                    await self.model.format_message_list_for_llm(self.messages),
-                    response_model,
-                    **kwargs,
-                )
-
-                self.model.api_requests[-1]
-                llm_response = self.model.api_responses[-1]
-
-            else:
-                # Use complete for regular chat
-                _messages = await self.model.format_message_list_for_llm(self.messages)
-
-                llm_response = await self.model.complete(
-                    _messages,
-                    **kwargs,
-                )
-
-            choice = llm_response.choices[0]
-
-            assert _is_choices_instance(choice)
-
-            if isinstance(llm_response, ResponseWithUsage):
-                # Check if it's a real Pydantic model (not MagicMock)
-                # MagicMock will have __class__.__module__ starting with 'unittest.mock'
-                usage = llm_response.usage
-                if hasattr(usage, "__class__") and hasattr(
-                    usage.__class__, "__module__"
-                ):
-                    is_mock = usage.__class__.__module__.startswith("unittest.mock")
-                else:
-                    is_mock = False
-
-                if (
-                    not is_mock
-                    and usage
-                    and hasattr(usage, "model_dump")
-                    and callable(usage.model_dump)
-                ):
-                    # It's a real Pydantic model, use model_dump
-                    kwargs["usage"] = usage.model_dump()
-                else:
-                    # It's a mock or doesn't have model_dump, extract attributes
-                    kwargs["usage"] = {
-                        "prompt_tokens": getattr(usage, "prompt_tokens", 0),
-                        "completion_tokens": getattr(usage, "completion_tokens", 0),
-                        "total_tokens": getattr(usage, "total_tokens", 0),
-                    }
-
-            if choice.message.model_extra:
-                kwargs.update(choice.message.model_extra)
-
-            # Normalize provider-specific reasoning field to our schema
-            # OpenRouter may return `reasoning_content`; map it to `reasoning`
-            # Ensure the value is always a string to satisfy pydantic validators
-            def _normalize_reasoning(value: Any) -> str | None:
-                if value is None:
-                    return None
-                if isinstance(value, str):
-                    return value
-                # Some SDKs expose an object with a `content` attribute
-                try:
-                    content = getattr(value, "content", None)
-                except Exception:
-                    content = None
-                if isinstance(content, str):
-                    return content
-                # Fallback: string cast (handles Mocks cleanly)
-                try:
-                    return str(value)
-                except Exception:
-                    return None
-
-            reasoning_attr = None
-            try:
-                reasoning_attr = getattr(choice.message, "reasoning_content", None)
-            except Exception:
-                reasoning_attr = None
-            if reasoning_attr is not None and "reasoning" not in kwargs:
-                norm = _normalize_reasoning(reasoning_attr)
-                if norm:
-                    kwargs["reasoning"] = norm
-            # If model_extra included `reasoning_content`, map it too
-            if "reasoning" not in kwargs and "reasoning_content" in kwargs:
-                norm = _normalize_reasoning(kwargs.pop("reasoning_content"))
-                if norm:
-                    kwargs["reasoning"] = norm
-            # Check provider_specific_fields on both message and choice
-            psf = None
-            try:
-                psf = getattr(choice.message, "provider_specific_fields", None)
-            except Exception:
-                psf = None
-            if not psf:
-                psf = getattr(choice, "provider_specific_fields", None)
-            if (
-                isinstance(psf, dict)
-                and psf.get("reasoning_content")
-                and "reasoning" not in kwargs
-            ):
-                norm = _normalize_reasoning(psf.get("reasoning_content"))
-                if norm:
-                    kwargs["reasoning"] = norm
-
-            if output:
-                response = self.model.create_message(
-                    role="assistant",
-                    output=output,
-                    tool_calls=choice.message.tool_calls,
-                    provider_specific_fields=choice.provider_specific_fields,
-                    **kwargs,
-                )
-            else:
-                response = self.model.create_message(
-                    choice.message.content,
-                    output=None,
-                    role="assistant",
-                    tool_calls=choice.message.tool_calls,
-                    provider_specific_fields=choice.provider_specific_fields,
-                    **kwargs,
-                )
-
-            # Add to message list using centralized method
-            self._append_message(response)
-
-            return response
-
-        except (asyncio.CancelledError, KeyboardInterrupt):
-            # Propagate cancellations immediately so outer callers can stop
-            raise
-        except Exception as e:
-            self.do(AgentEvents.LLM_ERROR, error=e, parameters=llm_params, agent=self)
-            raise
+        return await self._llm_coordinator.llm_call(
+            response_model=response_model, **kwargs
+        )
 
     @ensure_ready
     async def call(
