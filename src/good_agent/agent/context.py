@@ -30,7 +30,7 @@ class ContextManager:
     - Thread context creation for temporary modifications
     """
 
-    def __init__(self, agent: "Agent") -> None:
+    def __init__(self, agent: Agent) -> None:
         """Initialize context manager.
 
         Args:
@@ -42,7 +42,7 @@ class ContextManager:
         self,
         include_messages: bool = True,
         **kwargs: Any,
-    ) -> "Agent":
+    ) -> Agent:
         """
         Fork the agent into a new agent with the same configuration (or modified).
 
@@ -148,7 +148,7 @@ class ContextManager:
 
     def fork_context(
         self, truncate_at: int | None = None, **fork_kwargs
-    ) -> "ForkContext":
+    ) -> ForkContext:
         """Create a fork context for isolated operations.
 
         Args:
@@ -167,7 +167,7 @@ class ContextManager:
 
         return ForkContext(self.agent, truncate_at, **fork_kwargs)
 
-    def thread_context(self, truncate_at: int | None = None) -> "ThreadContext":
+    def thread_context(self, truncate_at: int | None = None) -> ThreadContext:
         """Create a thread context for temporary modifications.
 
         Args:

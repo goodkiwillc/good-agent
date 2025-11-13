@@ -30,7 +30,7 @@ class ComponentRegistry:
     - Extension cloning for forked contexts
     """
 
-    def __init__(self, agent: "Agent") -> None:
+    def __init__(self, agent: Agent) -> None:
         """Initialize component registry.
 
         Args:
