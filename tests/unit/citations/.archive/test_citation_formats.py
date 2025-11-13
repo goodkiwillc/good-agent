@@ -1,10 +1,10 @@
+from good_agent.core.types import URL
 from good_agent.extensions.citations import (
     CitationExtractor,
     CitationFormat,
     CitationPatterns,
     CitationTransformer,
 )
-from goodintel_core.types import URL
 
 
 class TestCitationPatterns:
