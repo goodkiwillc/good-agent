@@ -541,7 +541,7 @@ class TestRobustness:
             pass
 
         # Agent should handle partial initialization gracefully
-        if agent._state >= AgentState.READY:
+        if agent._state_machine._state >= AgentState.READY:
             await agent.async_close()
         else:
             # Force cleanup even if not ready
