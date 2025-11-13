@@ -54,7 +54,7 @@ def _provide_today():
         # Return datetime at midnight for consistency
         return now.replace(hour=0, minute=0, second=0, microsecond=0)
     except ImportError:
-        # Fall back to UTC if goodintel_common is not available
+        # Fall back to UTC if good_common is not available
         from datetime import datetime, timezone
 
         now = datetime.now(timezone.utc)
@@ -75,7 +75,7 @@ def _provide_now():
 
         return now_pt()
     except ImportError:
-        # Fall back to UTC if goodintel_common is not available
+        # Fall back to UTC if good_common is not available
         from datetime import datetime, timezone
 
         return datetime.now(timezone.utc)
@@ -103,7 +103,7 @@ def find_prompts_directory() -> Path | None:
 
 def find_user_prompts_directory() -> Path | None:
     """Find user-level prompts directory."""
-    user_dir = Path.home() / ".goodintel" / "prompts"
+    user_dir = Path.home() / ".good-agent" / "prompts"
     if user_dir.exists():
         return user_dir
     return None
@@ -317,7 +317,7 @@ class TemplateManager(AgentComponent):
     Template sources are checked in priority order:
     1. Explicit Directory: User-specified prompts directory (highest priority)
     2. Project Directory: prompts/ in current project or parent directories
-    3. User Directory: ~/.goodintel/prompts (lowest priority)
+    3. User Directory: ~/.good-agent/prompts (lowest priority)
     4. Registry Templates: In-memory registered templates (fallback)
 
     CONTEXT RESOLUTION HIERARCHY:

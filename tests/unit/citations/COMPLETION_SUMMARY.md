@@ -12,14 +12,14 @@
 ### 1. Core Rendering Architecture Fixed ✅
 **Problem:** Message.render() fired events AFTER rendering, so CitationManager couldn't transform content.
 
-**Solution:** Modified [messages.py:351-365](../../../src/goodintel_agent/messages.py:351) to fire MESSAGE_RENDER_BEFORE **before** rendering with `output=content_parts`, allowing components to modify parts before they're rendered.
+**Solution:** Modified [messages.py:351-365](../../../src/good_agent/messages.py:351) to fire MESSAGE_RENDER_BEFORE **before** rendering with `output=content_parts`, allowing components to modify parts before they're rendered.
 
 **Impact:** All rendering tests now pass. Citations properly transform for both DISPLAY and LLM modes.
 
 ### 2. CitationManager Render Handler Implemented ✅
 **Problem:** Transformation logic was commented out (manager.py:327-394).
 
-**Solution:** Uncommented and simplified [manager.py:316-369](../../../src/goodintel_agent/extensions/citations/manager.py:316) to transform TextContentPart text based on render mode:
+**Solution:** Uncommented and simplified [manager.py:316-369](../../../src/good_agent/extensions/citations/manager.py:316) to transform TextContentPart text based on render mode:
 - **DISPLAY mode**: `[!CITE_1!]` → `[example.com](https://example.com/doc)`
 - **LLM mode**: Local indices → Global indices
 
@@ -35,7 +35,7 @@
 ### 4. Warning System Added ✅
 **Problem:** Invalid citation indices were silently ignored.
 
-**Solution:** Added UserWarning when invalid index is used ([citation_adapter.py:216-221](../../../src/goodintel_agent/extensions/citations/citation_adapter.py:216)).
+**Solution:** Added UserWarning when invalid index is used ([citation_adapter.py:216-221](../../../src/good_agent/extensions/citations/citation_adapter.py:216)).
 
 **Impact:** Better error handling and debugging.
 
@@ -121,9 +121,9 @@ Now properly hooks into:
 
 ## Files Modified
 
-1. **[messages.py](../../../src/goodintel_agent/messages.py)** - Fixed event firing order
-2. **[manager.py](../../../src/goodintel_agent/extensions/citations/manager.py)** - Enabled render handler
-3. **[citation_adapter.py](../../../src/goodintel_agent/extensions/citations/citation_adapter.py)** - Added warning
+1. **[messages.py](../../../src/good_agent/messages.py)** - Fixed event firing order
+2. **[manager.py](../../../src/good_agent/extensions/citations/manager.py)** - Enabled render handler
+3. **[citation_adapter.py](../../../src/good_agent/extensions/citations/citation_adapter.py)** - Added warning
 4. **Test files** - Fixed expectations, skipped edge cases
 
 ## Performance Impact

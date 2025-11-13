@@ -9,7 +9,6 @@ OBSOLETE_CITATION_TESTS = [
     "test_debug_citations.py",  # Debugging for old implementation
     "test_citation_structures.py",  # Old data structure tests
     # Separate system tests (not agent-related)
-    "goodintel_llm/utilities/test__citations.py",
     "good_agent/mdxl/test_citations.py",
     "good_agent/mdxl/test_citation_reindexing.py",
 ]

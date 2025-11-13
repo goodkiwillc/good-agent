@@ -15,12 +15,12 @@
 # from typing import TYPE_CHECKING, Any, Literal
 
 # from good_common.utilities import map_as_completed
-# try:  # optional dependency; allow import without goodintel_fetch
-#     from goodintel_fetch.web import ExtractedContent, fetch
+# try:  # optional dependency; allow import without good_agent_fetch
+#     from good_agent_fetch.web import ExtractedContent, fetch
 # except Exception:  # pragma: no cover - optional dependency
 #     ExtractedContent = object  # type: ignore
 #     def fetch(*args, **kwargs):  # type: ignore
-#         raise ImportError("goodintel_fetch is required for WebFetcher; install it to enable fetching")
+#         raise ImportError("good_agent_fetch is required for WebFetcher; install it to enable fetching")
 
 # from good_agent.components.component import AgentComponent
 # from good_agent.core.models import Renderable
@@ -29,7 +29,7 @@
 
 # if TYPE_CHECKING:
 #     try:
-#         from goodintel_fetch.web import Response
+#         from good_agent_fetch.web import Response
 #     except Exception:  # pragma: no cover
 #         from typing import Any as Response
 
@@ -387,7 +387,7 @@
 #         )
 
 #         # Lazy import to avoid circular dependency
-#         from goodintel_agent import Agent
+#         from good_agent import Agent
 
 #         # Use async context manager for proper initialization
 #         system_prompt = """You are an expert summarizer. Create concise, information-dense summaries.
@@ -513,7 +513,7 @@
 #         self, content: str, word_limit: int, summarization_prompt: str | None = None
 #     ) -> str:
 #         """Create bullet point summary."""
-#         from goodintel_agent import Agent
+#         from good_agent import Agent
 
 #         async with Agent(
 #             "You are an expert at creating concise bullet point summaries.",
@@ -544,7 +544,7 @@
 #         self, content: str, word_limit: int, summarization_prompt: str | None = None
 #     ) -> str:
 #         """Create TL;DR summary."""
-#         from goodintel_agent import Agent
+#         from good_agent import Agent
 
 #         async with Agent(
 #             "You are an expert at creating TL;DR summaries.",
@@ -576,7 +576,7 @@
 #         self, content: str, word_limit: int, summarization_prompt: str | None = None
 #     ) -> str:
 #         """Create basic summary."""
-#         from goodintel_agent import Agent
+#         from good_agent import Agent
 
 #         async with Agent(
 #             "You are an expert summarizer.", model=self.summarization_model

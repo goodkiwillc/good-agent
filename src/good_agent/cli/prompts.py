@@ -87,7 +87,7 @@ def init(
         "prompts_dir": "prompts",
         "search_paths": [
             {"path": "./prompts", "priority": 100},
-            {"path": "~/.goodintel/prompts", "priority": 50},
+            {"path": "~/.good-agent/prompts", "priority": 50},
         ],
         "aliases": {"default": "system/base"},
         "validation": {

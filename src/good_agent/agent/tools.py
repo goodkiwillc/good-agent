@@ -2,7 +2,7 @@
 
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
 import orjson
 from ulid import ULID
@@ -111,13 +111,18 @@ class ToolExecutor:
         tool_call_id = tool_call_id or f"call_{ULID()}"
 
         # Separate visible and hidden parameters
-        visible_params = dict(rendered_params)
-        # Remove special parameters that shouldn't be recorded
-        visible_params.pop("_agent", None)
-        visible_params.pop("_tool_call", None)
+        visible_params = {
+            key: value
+            for key, value in rendered_params.items()
+            if key not in {"_agent", "_tool_call"}
+        }
+        hidden_param_set: set[str] = set()
         if isinstance(resolved_tool, Tool) and hasattr(resolved_tool, "_hidden_params"):
-            for hidden_param in resolved_tool._hidden_params:
-                visible_params.pop(hidden_param, None)
+            hidden_param_set = set(resolved_tool._hidden_params)
+        if hide:
+            hidden_param_set = hidden_param_set.union(hide)
+        for hidden_param in hidden_param_set:
+            visible_params.pop(hidden_param, None)
 
         # Create tool call with only visible parameters
         tool_call = ToolCall(
@@ -169,7 +174,7 @@ class ToolExecutor:
                     tool_name=resolved_name,
                     tool_call_id=tool_call_id,
                     response=result.response,
-                    parameters=visible_params,
+                    parameters=result.parameters or visible_params,
                     success=result.success,
                     error=result.error,
                 )
@@ -301,6 +306,9 @@ class ToolExecutor:
             tool_calls.append(tool_call)
             tool_infos.append((tool, tool_name, tool_call_id, tool_call, tool_error))
 
+            # Determine whether we need to route through bound invoke_func
+            is_bound_invoke = getattr(tool_ref, "_is_invoke_func_bound", False)
+
             # Create execution task
             async def execute_tool(
                 t=tool,
@@ -334,27 +342,49 @@ class ToolExecutor:
                     # Coerce parameters
                     execution_params = self._coerce_tool_parameters(t, p)
 
-                    # Execute tool
-                    result = await t(
-                        **execution_params, _agent=self.agent, _tool_call=tc
-                    )
+                    if is_bound_invoke:
+                        # Route through bound invoke_func helper so hidden params merge properly
+                        bound_callable = cast(Callable[..., Awaitable[ToolResponse]], t)
+                        result = await bound_callable(
+                            **execution_params,
+                            _agent=self.agent,
+                            _from_invoke_many=True,
+                            _tool_call_id=tid,
+                            _tool_call=tc,
+                        )
+                    else:
+                        # Execute tool
+                        result = await t(
+                            **execution_params, _agent=self.agent, _tool_call=tc
+                        )
 
                     # Handle return types
                     if isinstance(result, ToolResponse):
+                        merged_params = result.parameters or execution_params
+                        merged_params = {
+                            k: v
+                            for k, v in merged_params.items()
+                            if k not in {"_agent", "_tool_call"}
+                        }
+                        if not result.tool_call_id:
+                            result.tool_call_id = tid
                         return ToolResponse(
                             tool_name=tn,
                             tool_call_id=tid,
                             response=result.response,
-                            parameters=p,
+                            parameters=merged_params,
                             success=result.success,
                             error=result.error,
                         )
                     else:
+                        visible_params = {
+                            k: v for k, v in execution_params.items() if k not in {"_agent", "_tool_call"}
+                        }
                         return ToolResponse(
                             tool_name=tn,
                             tool_call_id=tid,
                             response=result,
-                            parameters=p,
+                            parameters=visible_params,
                             success=True,
                             error=None,
                         )
@@ -385,13 +415,24 @@ class ToolExecutor:
 
         results = await asyncio.gather(*tasks)
 
-        # Add tool messages for all results
+        # Add tool messages for all results (preserve tool_call_id ordering)
+        pending_tool_call_ids = [tc.id for tc in tool_calls]
+
         for tool_response in results:
+            if tool_response.tool_call_id in (None, "") and pending_tool_call_ids:
+                tool_response.tool_call_id = pending_tool_call_ids.pop(0)
+            elif (
+                tool_response.tool_call_id
+                and tool_response.tool_call_id in pending_tool_call_ids
+            ):
+                pending_tool_call_ids.remove(tool_response.tool_call_id)
+
             tool_message = self.agent.model.create_message(
                 content=self._convert_to_tool_response(tool_response),
                 tool_call_id=tool_response.tool_call_id,
                 tool_name=tool_response.tool_name,
                 tool_response=tool_response,
+                parameters=tool_response.parameters,
                 role="tool",
             )
             self.agent.append(tool_message)

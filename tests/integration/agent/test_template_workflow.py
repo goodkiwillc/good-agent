@@ -29,7 +29,7 @@ class TestTemplateWorkflowIntegration:
                 "prompts_dir": "prompts",
                 "search_paths": [
                     {"path": "./prompts", "priority": 100},
-                    {"path": "~/.goodintel/prompts", "priority": 50},
+                    {"path": "~/.good-agent/prompts", "priority": 50},
                 ],
                 "default_extension": ".prompt",
                 "enable_hot_reload": False,
@@ -297,7 +297,7 @@ Limit results to {{ limit | default(10) }} items.""")
         project_dir = template_system["project_dir"]
 
         # Create user directory
-        user_dir = Path.home() / ".goodintel" / "prompts"
+        user_dir = Path.home() / ".good-agent" / "prompts"
         user_dir.mkdir(parents=True, exist_ok=True)
 
         try:

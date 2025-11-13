@@ -79,7 +79,7 @@ class LogfireExtension(AgentComponent):
     def __init__(
         self,
         *,
-        service_name: str = "goodintel-agent",
+        service_name: str = "good-agent",
         environment: str | None = None,
         api_key: str | None = None,
         base_url: str | None = None,

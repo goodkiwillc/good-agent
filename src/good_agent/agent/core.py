@@ -458,6 +458,8 @@ class Agent(EventRouter):
 
         # Track the component installation task
         self._component_install_task = None
+        # Mirror legacy attribute for tests/back-compat
+        self._component_tasks = self._component_registry._component_tasks
 
         # Fire the initialization event (this triggers async component installation)
         self.do(AgentEvents.AGENT_INIT_AFTER, agent=self, tools=tools)
@@ -2195,6 +2197,7 @@ class Agent(EventRouter):
         *,
         tool_name: str | None = None,
         hide: list[str] | None = None,
+        tool_call_id: str | None = None,
         **bound_parameters: Any,
     ) -> Callable[..., Awaitable[ToolResponse]]:
         """
@@ -2224,9 +2227,19 @@ class Agent(EventRouter):
         async def bound_invoke(**kwargs):
             # Check if we're being called from invoke_many (special parameter)
             from_invoke_many = kwargs.pop("_from_invoke_many", False)
+            # Allow invoke_many to pass through a pre-generated tool_call_id
+            runtime_tool_call_id = kwargs.pop("_tool_call_id", None)
+            tool_call = kwargs.pop("_tool_call", None)
 
-            # Merge bound parameters with call-time parameters
-            all_params = {**bound_parameters, **kwargs}
+            explicit_tool_call_id = runtime_tool_call_id or tool_call_id
+
+            # Merge bound parameters with call-time parameters, without overriding
+            # invoke_many-supplied internals
+            all_params = dict(bound_parameters)
+            for key, value in kwargs.items():
+                if key in {"_agent", "_tool_call"}:
+                    continue
+                all_params[key] = value
 
             if from_invoke_many:
                 # When called from invoke_many, just execute the tool directly
@@ -2243,7 +2256,11 @@ class Agent(EventRouter):
                 assert callable(actual_tool), "Resolved tool is not callable"
 
                 # Execute the tool directly
-                result = await actual_tool(**all_params, _agent=self)
+                result = await actual_tool(
+                    **all_params,
+                    _agent=self,
+                    _tool_call=tool_call,
+                )
 
                 # Convert to ToolResponse if needed
                 from good_agent.tools import ToolResponse as ToolResp
@@ -2252,17 +2269,25 @@ class Agent(EventRouter):
                     result = ToolResp(
                         tool_name=resolved_name
                         or getattr(actual_tool, "name", str(tool)),
-                        tool_call_id="",  # Will be set by invoke_many
+                        tool_call_id=explicit_tool_call_id or "",
                         response=result,
                         parameters=all_params,
                         success=True,
                         error=None,
                     )
+                else:
+                    # Ensure the response reflects the invoke_many-generated id
+                    if explicit_tool_call_id:
+                        result.tool_call_id = explicit_tool_call_id
                 return result
             else:
                 # Normal invoke - creates messages
                 return await self.invoke(
-                    tool, tool_name=resolved_name, hide=hide, **all_params
+                    tool,
+                    tool_name=resolved_name,
+                    hide=hide,
+                tool_call_id=explicit_tool_call_id,
+                    **all_params,
                 )
 
         # bound_invoke.__name__ = resolved_name
