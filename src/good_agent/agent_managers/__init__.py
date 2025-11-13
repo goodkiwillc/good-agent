@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-# Import will happen in agent.py to avoid circular imports
-# MessageManager is used internally by Agent
+from .messages import MessageManager
+from .state import AgentState, AgentStateMachine
 
-__all__: list[str] = []
+# Import will happen in agent.py to avoid circular imports
+# MessageManager and AgentStateMachine are used internally by Agent
+
+__all__: list[str] = ["MessageManager", "AgentStateMachine", "AgentState"]

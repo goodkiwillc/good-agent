@@ -10,7 +10,6 @@ from collections.abc import (
     Iterator,
     Sequence,
 )
-from enum import IntEnum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -36,6 +35,8 @@ from good_agent.core.ulid_monotonic import (
     create_monotonic_ulid,
 )
 
+from .agent_managers.messages import MessageManager
+from .agent_managers.state import AgentState, AgentStateMachine
 from .config_types import AGENT_CONFIG_KEYS, AgentOnlyConfig, LLMCommonConfig
 
 if TYPE_CHECKING:
@@ -118,29 +119,6 @@ def _is_choices_instance(obj: Any) -> TypeGuard["Choices"]:
     """
     # At runtime, check the class name since we can't import Choices directly
     return obj.__class__.__name__ == "Choices"
-
-
-class AgentState(IntEnum):
-    """Enumeration for agent states with numerical ordering for comparisons"""
-
-    INITIALIZING = 0
-    READY = 1
-    PENDING_RESPONSE = 2
-    PROCESSING = 3
-    PENDING_TOOLS = 4
-
-
-STATE_FLOWS = {
-    AgentState.INITIALIZING: {AgentState.READY},
-    AgentState.READY: {AgentState.PENDING_RESPONSE, AgentState.PENDING_TOOLS},
-    AgentState.PENDING_RESPONSE: {AgentState.PROCESSING, AgentState.READY},
-    AgentState.PENDING_TOOLS: {AgentState.PROCESSING, AgentState.READY},
-    AgentState.PROCESSING: {
-        AgentState.READY,
-        AgentState.PENDING_RESPONSE,
-        AgentState.PENDING_TOOLS,
-    },
-}
 
 
 # Legacy TypedDict kept for backward compatibility
@@ -344,10 +322,7 @@ class Agent(EventRouter):
     _template_manager: TemplateManager
     _mock: AgentMockInterface
     _pool: AgentPool | None = None
-
-    _state: AgentState = AgentState.INITIALIZING
-    _ready_event: asyncio.Event | None = None
-    _init_task: asyncio.Task | None = None
+    _state_machine: AgentStateMachine
 
     @staticmethod
     def context_providers(name: str):
@@ -550,18 +525,15 @@ class Agent(EventRouter):
         )
 
         # Initialize MessageManager
-        from .agent_managers.messages import MessageManager
-
         self._message_manager = MessageManager(self)
+
+        # Initialize state management
+        self._state_machine = AgentStateMachine(self)
 
         # Initialize extension storage
         self._extensions: dict[type[AgentComponent], AgentComponent] = {}
         self._extension_names: dict[str, AgentComponent] = {}
 
-        # Initialize state management
-        self._state = AgentState.INITIALIZING
-        self._ready_event = asyncio.Event()
-        self._init_task = None
         # Track component initialization tasks
         self._component_tasks: list[asyncio.Task] = []
         # Track if components have been installed to prevent duplicate installation
@@ -635,7 +607,7 @@ class Agent(EventRouter):
     @property
     def state(self) -> AgentState:
         """Current state of the agent"""
-        return self._state
+        return self._state_machine.state
 
     @property
     def model(self) -> LanguageModel:
@@ -780,7 +752,7 @@ class Agent(EventRouter):
         is in a READY state or higher. If already ready, returns immediately.
         """
         # If already ready, return immediately
-        if self._state >= AgentState.READY:
+        if self._state_machine.is_ready:
             return
 
         # Track if we did any initialization
@@ -869,18 +841,17 @@ class Agent(EventRouter):
                 self._component_tasks.clear()
 
         # Now we're ready if we got here from initialization
-        if self._state < AgentState.READY and did_initialization:
-            self.update_state(AgentState.READY)
+        if not self._state_machine.is_ready and did_initialization:
+            self._state_machine.update_state(AgentState.READY)
             return
 
         # Otherwise wait for ready event (shouldn't happen with new logic)
         try:
-            assert self._ready_event
-            await asyncio.wait_for(self._ready_event.wait(), timeout=10.0)
+            await self._state_machine.wait_for_ready(timeout=10.0)
         except TimeoutError as e:
             raise TimeoutError(
                 f"Agent did not become ready within 10 seconds. "
-                f"Current state: {self._state}"
+                f"Current state: {self._state_machine.state}"
             ) from e
 
         # Wait for managed tasks with wait_on_ready=True
@@ -901,9 +872,9 @@ class Agent(EventRouter):
                 # Don't fail ready() due to task timeouts, just warn
 
         # Final check
-        if self._state < AgentState.READY:
+        if not self._state_machine.is_ready:
             raise RuntimeError(
-                f"Agent ready event was set but state is still {self._state}"
+                f"Agent ready event was set but state is still {self._state_machine.state}"
             )
 
     @on(AgentEvents.AGENT_INIT_AFTER)
@@ -1073,28 +1044,7 @@ class Agent(EventRouter):
         Args:
             state: New state to set
         """
-        current_state = self._state
-        if state not in STATE_FLOWS[current_state]:
-            raise ValueError(
-                f"Invalid state transition from {current_state} to {state}"
-            )
-
-        self._state = state
-
-        # Set ready event when transitioning to READY or higher
-        if state >= AgentState.READY and current_state < AgentState.READY:
-            if self._ready_event:
-                self._ready_event.set()
-
-        # logger.debug(f"Agent {self.id} state changed from {current_state} to {state}")
-
-        # Emit state change event
-        self.do(
-            AgentEvents.AGENT_STATE_CHANGE,
-            agent=self,
-            new_state=state,
-            old_state=current_state,
-        )
+        self._state_machine.update_state(state)
 
     def validate_message_sequence(self, allow_pending_tools: bool = False) -> list[str]:
         """Validate the current message sequence.
@@ -3898,10 +3848,10 @@ class Agent(EventRouter):
         preventing "Task was destroyed but it is pending!" warnings.
         """
         # Cancel init task if still running
-        if self._init_task and not self._init_task.done():
-            self._init_task.cancel()
+        if self._state_machine._init_task and not self._state_machine._init_task.done():
+            self._state_machine._init_task.cancel()
             try:
-                await self._init_task
+                await self._state_machine._init_task
             except asyncio.CancelledError:
                 pass
 
