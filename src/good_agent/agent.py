@@ -35,6 +35,7 @@ from good_agent.core.ulid_monotonic import (
     create_monotonic_ulid,
 )
 
+from .agent_managers.components import ComponentRegistry
 from .agent_managers.llm import LLMCoordinator
 from .agent_managers.messages import MessageManager
 from .agent_managers.state import AgentState, AgentStateMachine
@@ -537,14 +538,8 @@ class Agent(EventRouter):
         # Initialize LLMCoordinator
         self._llm_coordinator = LLMCoordinator(self)
 
-        # Initialize extension storage
-        self._extensions: dict[type[AgentComponent], AgentComponent] = {}
-        self._extension_names: dict[str, AgentComponent] = {}
-
-        # Track component initialization tasks
-        self._component_tasks: list[asyncio.Task] = []
-        # Track if components have been installed to prevent duplicate installation
-        self._components_installed = False
+        # Initialize ComponentRegistry
+        self._component_registry = ComponentRegistry(self)
 
         # Task management for Agent.create_task()
         self._managed_tasks: dict[asyncio.Task, dict[str, Any]] = {}
@@ -592,10 +587,10 @@ class Agent(EventRouter):
 
         # Register extensions after EventRouter initialization
         for extension in extensions:
-            self._register_extension(extension)
+            self._component_registry.register_extension(extension)
 
         # Validate component dependencies after all are registered
-        self._validate_component_dependencies()
+        self._component_registry.validate_component_dependencies()
 
         if system_prompt_parts:
             self.set_system_message(*system_prompt_parts)
@@ -683,7 +678,7 @@ class Agent(EventRouter):
     @property
     def extensions(self) -> dict[str, AgentComponent]:
         """Access extensions by name"""
-        return self._extension_names.copy()
+        return self._component_registry.extensions
 
     @property
     def current_version(self) -> list[ULID]:
@@ -829,11 +824,14 @@ class Agent(EventRouter):
                     await self[ToolManager].register_tool(tool_instance)
 
         # Wait for all component initialization tasks to complete
-        if self._component_tasks:
+        if self._component_registry._component_tasks:
             try:
                 # Wait for all tasks with a reasonable timeout
                 await asyncio.wait_for(
-                    asyncio.gather(*self._component_tasks, return_exceptions=True),
+                    asyncio.gather(
+                        *self._component_registry._component_tasks,
+                        return_exceptions=True,
+                    ),
                     timeout=10.0,
                 )
                 did_initialization = True
@@ -845,7 +843,7 @@ class Agent(EventRouter):
                 logger.warning(f"Error waiting for component tasks: {e}")
             finally:
                 # Clear tasks list after awaiting
-                self._component_tasks.clear()
+                self._component_registry._component_tasks.clear()
 
         # Now we're ready if we got here from initialization
         if not self._state_machine.is_ready and did_initialization:
@@ -951,95 +949,20 @@ class Agent(EventRouter):
         self.update_state(AgentState.READY)
 
     async def _install_components(self) -> None:
-        """
-        Install all registered components asynchronously.
+        """Install all registered components asynchronously.
 
         This is called during AGENT_INIT_AFTER event, after all components
         have been registered and dependencies validated.
         """
-        # Skip if components have already been installed
-        if self._components_installed:
-            return
-
-        # Mark as installed to prevent duplicate calls
-        self._components_installed = True
-
-        # Get unique extensions (avoid installing the same instance twice)
-        installed = set()
-
-        for extension in self._extensions.values():
-            # Skip if already installed (handles duplicates from base class registration)
-            if id(extension) in installed:
-                continue
-            installed.add(id(extension))
-
-            # Get extension name for debugging
-            extension_name = (
-                extension.name
-                if hasattr(extension, "name")
-                else extension.__class__.__name__
-            )
-
-            # Emit extension:install event with extension name
-            self.do(
-                AgentEvents.EXTENSION_INSTALL,
-                extension=extension,
-                extension_name=extension_name,
-                agent=self,
-            )
-
-            # Call the extension's async install method
-            try:
-                await extension.install(self)
-
-                # Emit successful installation event with extension name
-                self.do(
-                    AgentEvents.EXTENSION_INSTALL_AFTER,
-                    extension=extension,
-                    extension_name=extension_name,
-                    agent=self,
-                )
-            except Exception as e:
-                # Emit extension:error event
-                self.do(
-                    AgentEvents.EXTENSION_ERROR,
-                    extension=extension,
-                    error=e,
-                    context="install",
-                    agent=self,
-                )
-                raise
+        await self._component_registry.install_components()
 
     def _validate_component_dependencies(self) -> None:
-        """
-        Validate that all component dependencies are satisfied.
+        """Validate that all component dependencies are satisfied.
 
         Raises:
             ValueError: If any component's dependencies are not met
         """
-        # Build set of available component class names from self._extensions
-        available = {ext.__class__.__name__ for ext in self._extensions.values()}
-
-        # Also include base class names for polymorphic dependencies
-        for ext in self._extensions.values():
-            for base in ext.__class__.__bases__:
-                if issubclass(base, AgentComponent) and base != AgentComponent:
-                    available.add(base.__name__)
-
-        # Check each component's dependencies
-        missing = []
-        for ext in self._extensions.values():
-            if hasattr(ext, "__depends__") and ext.__depends__:
-                for dep in ext.__depends__:
-                    if dep not in available:
-                        missing.append(f"  - {ext.__class__.__name__} requires {dep}")
-
-        if missing:
-            raise ValueError(
-                "Component dependency validation failed:\n"
-                + "\n".join(missing)
-                + f"\nAvailable components: {', '.join(sorted(available))}"
-            )
+        self._component_registry.validate_component_dependencies()
 
     def update_state(
         self,
@@ -1195,62 +1118,29 @@ class Agent(EventRouter):
 
     def _register_extension(self, extension: AgentComponent) -> None:
         """Register an extension component (without installing it)."""
-        # Store by type for type-based access
-        ext_type = type(extension)
-        self._extensions[ext_type] = extension
-
-        # Also register under base classes for compatibility
-        # This allows agent[TemplateManager] to find TemplateManager
-        for base in ext_type.__bases__:
-            if issubclass(base, AgentComponent) and base != AgentComponent:
-                # Don't overwrite if a more specific implementation exists
-                if base not in self._extensions:
-                    self._extensions[base] = extension
-
-        # Store by name if available
-        if hasattr(extension, "name"):
-            self._extension_names[extension.name] = extension
-        else:
-            # Use class name as fallback
-            self._extension_names[ext_type.__name__] = extension
-
-        # Subscribe to agent events (so handlers are ready even before async install)
-        self.broadcast_to(extension)
-
-        # Call synchronous setup which sets the agent reference and allows early event handler registration
-        extension.setup(self)
+        self._component_registry.register_extension(extension)
 
     def _clone_extensions_for_config(
         self, target_config: dict[str, Any], skip: set[str] | None = None
     ) -> None:
-        skip = skip or set()
-        unique_extensions = list(
-            {id(ext): ext for ext in self._extensions.values()}.values()
-        )
-        core_types = (LanguageModel, AgentMockInterface, ToolManager, TemplateManager)
+        """Clone extensions for a forked agent configuration.
 
-        if "language_model" not in skip:
-            target_config["language_model"] = self.model.clone()
-        if "mock" not in skip:
-            target_config["mock"] = self.mock.clone()
-        if "tool_manager" not in skip:
-            target_config["tool_manager"] = self.tools.clone()
-        if "template_manager" not in skip:
-            target_config["template_manager"] = self.template.clone()
-
-        if "extensions" in skip:
-            return
-
-        additional_extensions = [
-            ext.clone() for ext in unique_extensions if not isinstance(ext, core_types)
-        ]
-        target_config["extensions"] = additional_extensions
+        Args:
+            target_config: Configuration dict to populate with cloned extensions
+            skip: Optional set of extension keys to skip cloning
+        """
+        self._component_registry.clone_extensions_for_config(target_config, skip)
 
     def _track_component_task(
         self, component: AgentComponent, task: asyncio.Task
     ) -> None:
-        """Track a component initialization task."""
-        self._component_tasks.append(task)
+        """Track a component initialization task.
+
+        Args:
+            component: Component that owns the task
+            task: Async task to track
+        """
+        self._component_registry.track_component_task(component, task)
 
     async def _fork_with_messages(self, messages: list[Message]) -> "Agent":
         """Helper method to fork with specific messages"""
@@ -3107,7 +2997,7 @@ class Agent(EventRouter):
         else:
             # Component type access (e.g., agent[CitationIndex])
             if isinstance(key, type) and issubclass(key, AgentComponent):
-                extension = self._extensions.get(key)
+                extension = self._component_registry.get_extension_by_type(key)
                 if extension is None:
                     raise KeyError(f"Extension {key.__name__} not found in agent")
                 return extension
