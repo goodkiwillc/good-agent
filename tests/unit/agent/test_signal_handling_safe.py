@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pytest
 from good_agent import Agent, tool
 from good_agent.agent import AgentState
-from good_agent.utilities.signal_handler import SignalHandler, _global_handler
+from good_agent.core.signal_handler import SignalHandler, _global_handler
 
 # Mark all tests in this file as requiring signal handling
 pytestmark = pytest.mark.requires_signals

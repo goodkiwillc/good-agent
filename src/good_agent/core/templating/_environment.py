@@ -166,7 +166,7 @@ def add_named_template(
     replace: bool = False,
     append_newline: bool = False,
 ):
-    from good_agent.utilities.text import string
+    from good_agent.core.text import string
 
     """Add a named template to the global registry with optional newline and replace.
 

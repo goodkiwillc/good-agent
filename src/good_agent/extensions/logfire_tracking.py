@@ -9,7 +9,7 @@ from weakref import WeakKeyDictionary, ref
 import logging
 
 import logfire
-from good_agent.utilities.event_router import EventContext, on
+from good_agent.core.event_router import EventContext, on
 from logfire import ConsoleOptions
 from logfire._internal.config import GLOBAL_CONFIG
 

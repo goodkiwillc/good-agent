@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
-from good_agent.models import Renderable
-from good_agent.types import URL
+from good_agent.core.models import Renderable
+from good_agent.core.types import URL
 
 from ...base import Index
 

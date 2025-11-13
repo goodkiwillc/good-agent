@@ -1,6 +1,6 @@
 import pytest
 from good_agent import Agent, AgentComponent, AgentEvents
-from good_agent.utilities.event_router import EventContext, on
+from good_agent.core.event_router import EventContext, on
 
 
 class ProofOfConceptComponent(AgentComponent):
@@ -107,7 +107,7 @@ class TestComponentEventPatternsConfirmed:
         assert AgentEvents.MESSAGE_APPEND_AFTER in config["events"]
 
         # ✅ Verify EventRouter inheritance
-        from good_agent.utilities.event_router import EventRouter
+        from good_agent.core.event_router import EventRouter
 
         assert isinstance(component, EventRouter)
 
@@ -259,7 +259,7 @@ class TestComponentEventPatternsConfirmed:
 @pytest.mark.asyncio
 async def test_eventrouter_inheritance_final_proof():
     """✅ FINAL PROOF: AgentComponent is a fully functional EventRouter."""
-    from good_agent.utilities.event_router import EventRouter
+    from good_agent.core.event_router import EventRouter
 
     component = ProofOfConceptComponent()
 

@@ -3,8 +3,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Literal
 
-from good_agent.models import GoodBase
-from good_agent.types import URL
+from good_agent.core.models import GoodBase
+from good_agent.core.types import URL
 
 
 class OperationType(Enum):
