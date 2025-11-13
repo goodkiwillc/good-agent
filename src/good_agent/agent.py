@@ -549,6 +549,11 @@ class Agent(EventRouter):
             self._message_registry, self._version_manager, self
         )
 
+        # Initialize MessageManager
+        from .agent_managers.messages import MessageManager
+
+        self._message_manager = MessageManager(self)
+
         # Initialize extension storage
         self._extensions: dict[type[AgentComponent], AgentComponent] = {}
         self._extension_names: dict[str, AgentComponent] = {}
@@ -674,31 +679,27 @@ class Agent(EventRouter):
     @property
     def messages(self) -> MessageList[Message]:
         """All messages in the agent's conversation"""
-        return self._messages
+        return self._message_manager.messages
 
     @property
     def user(self) -> FilteredMessageList[UserMessage]:
         """Filter messages to only user messages"""
-        filtered = self.messages.filter(role="user")
-        return FilteredMessageList(self, "user", filtered)
+        return self._message_manager.user
 
     @property
     def assistant(self) -> FilteredMessageList[AssistantMessage]:
         """Filter messages to only assistant messages"""
-        filtered = self.messages.filter(role="assistant")
-        return FilteredMessageList(self, "assistant", filtered)
+        return self._message_manager.assistant
 
     @property
     def tool(self) -> FilteredMessageList[ToolMessage]:
         """Filter messages to only tool messages"""
-        filtered = self.messages.filter(role="tool")
-        return FilteredMessageList(self, "tool", filtered)
+        return self._message_manager.tool
 
     @property
     def system(self) -> FilteredMessageList[SystemMessage]:
         """Filter messages to only system messages"""
-        filtered = self.messages.filter(role="system")
-        return FilteredMessageList(self, "system", filtered)
+        return self._message_manager.system
 
     @property
     def extensions(self) -> dict[str, AgentComponent]:
@@ -1233,20 +1234,7 @@ class Agent(EventRouter):
         Args:
             message: Message to append
         """
-        # Set agent reference on the message
-        message._set_agent(self)
-
-        # Add to message list
-        self._messages.append(message)
-
-        # Store in global message store
-        put_message(message)
-
-        # Update version
-        self._update_version()
-
-        # Emit consistent MESSAGE_APPEND_AFTER event
-        self.do(AgentEvents.MESSAGE_APPEND_AFTER, message=message, agent=self)
+        self._message_manager._append_message(message)
 
     def _register_extension(self, extension: AgentComponent) -> None:
         """Register an extension component (without installing it)."""
@@ -1371,38 +1359,7 @@ class Agent(EventRouter):
             index: Index of message to replace
             new_message: New message to insert
         """
-        if index < 0 or index >= len(self._messages):
-            raise IndexError(f"Message index {index} out of range")
-
-        # Set agent reference on new message
-        new_message._set_agent(self)
-
-        ctx = self.apply_sync(
-            AgentEvents.MESSAGE_REPLACE_BEFORE,
-            index=index,
-            output=new_message,
-            agent=self,
-        )
-
-        new_message = ctx.output or new_message
-
-        # Replace the message
-        self._messages[index] = new_message
-
-        # Store in global message store
-        put_message(new_message)
-
-        # Update version
-        self._update_version()
-
-        # Emit message:replace event
-        # @TODO: event naming
-        self.do(
-            AgentEvents.MESSAGE_REPLACE_AFTER,
-            index=index,
-            message=new_message,
-            agent=self,
-        )
+        self._message_manager.replace_message(index, new_message)
 
     def set_system_message(
         self,
@@ -1410,49 +1367,7 @@ class Agent(EventRouter):
         message: SystemMessage | None = None,
     ) -> None:
         """Set or update the system message"""
-
-        # Create system message
-
-        if content:
-            message = self.model.create_message(*content, role="system")
-
-        if not message:
-            raise ValueError("System message content is required")
-
-        message._set_agent(self)
-
-        ctx = self.typed(return_type=SystemMessage).apply_sync(
-            AgentEvents.MESSAGE_SET_SYSTEM_BEFORE, output=message, agent=self
-        )
-
-        if ctx.output is not None:
-            message = ctx.output
-
-        # Check if we already have a system message
-        if self._messages:
-            if isinstance(self._messages[0], SystemMessage):
-                # Replace existing system message using versioning-aware method
-                self._messages.replace_at(0, message)
-            else:
-                # Prepend system message using versioning-aware method
-                self._messages.prepend(message)
-        else:
-            # First message - use append (which is versioning-aware)
-            self._messages.append(message)
-
-        # Store in global message store (redundant if versioning is active, but kept for compatibility)
-        put_message(message)
-
-        # Fire the AFTER event so components can modify the system message
-        self.do(AgentEvents.MESSAGE_SET_SYSTEM_AFTER, message=message, agent=self)
-
-        # Update version
-        self._update_version()
-
-        if self.config.print_messages and message.role in (
-            self.config.print_messages_role or [message.role]
-        ):
-            self.print(message, mode=self.config.print_messages_mode)
+        self._message_manager.set_system_message(*content, message=message)
 
     @overload
     def append(self, content: Message) -> None: ...
@@ -1515,40 +1430,9 @@ class Agent(EventRouter):
             citations: List of citation URLs that correspond to [1], [2], etc. in content
             **kwargs: Additional message attributes
         """
-        # Validate we have at least one content part
-        if not content_parts:
-            raise ValueError("At least one content part is required")
-
-        if citations:
-            citations = [URL(url) for url in citations]
-
-        # Handle single Message object case
-        if len(content_parts) == 1 and isinstance(content_parts[0], Message):
-            message = content_parts[0]
-        else:
-            # Include citation_urls in the kwargs if provided
-            if citations:
-                kwargs["citation_urls"] = citations
-
-            # For tool messages, ensure required fields are provided
-            if role == "tool" and "tool_call_id" not in kwargs:
-                logger.warning(
-                    "Tool messages should include tool_call_id; using 'test_tool_call' as placeholder"
-                    f" for message: {content_parts}"
-                )
-                kwargs["tool_call_id"] = kwargs.get("tool_call_id", "test_tool_call")
-                kwargs["tool_name"] = kwargs.get("tool_name", "test_tool")
-
-            message = self.model.create_message(
-                *content_parts,
-                role=role,
-                context=context,
-                citations=citations,
-                **kwargs,
-            )
-
-        # Add to conversation using centralized method
-        self._append_message(message)
+        self._message_manager.append(
+            *content_parts, role=role, context=context, citations=citations, **kwargs
+        )
 
     def add_tool_response(
         self,
@@ -1558,21 +1442,9 @@ class Agent(EventRouter):
         **kwargs,
     ) -> None:
         """Add a tool response message to the conversation"""
-        # Create tool message
-        tool_msg = self.model.create_message(
-            content=content,
-            tool_call_id=tool_call_id,
-            tool_name=tool_name,
-            role="tool",
-            **kwargs,
+        self._message_manager.add_tool_response(
+            content, tool_call_id, tool_name=tool_name, **kwargs
         )
-
-        # Store message context if provided - @TODO - is this needed? why is this here?
-        if context := kwargs.get("context"):
-            tool_msg._context = context
-
-        # Add to message list using centralized method
-        self._append_message(tool_msg)
 
     @overload
     async def call(
