@@ -3,8 +3,8 @@ import asyncio
 import pytest
 from good_agent import Agent, tool
 from good_agent.content import RenderMode
+from good_agent.core.types import URL
 from good_agent.extensions import CitationManager
-from goodintel_core.types import URL
 
 
 class TestCitationReferenceBlockProcessing:
