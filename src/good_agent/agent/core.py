@@ -210,74 +210,15 @@ def ensure_ready(func: Callable[P, Any]) -> Callable[P, Any]:
 class Agent(EventRouter):
     """AI conversational agent with tool integration and message management.
 
-    PURPOSE: Orchestrates LLM interactions with structured message handling, tool execution,
-    and extensible event-driven architecture for building AI applications.
+    Orchestrates LLM interactions with structured message handling, tool execution,
+    and extensible event-driven architecture.
 
-    ROLE: Central coordinator that manages the flow between:
-    - User input → Message validation → LLM API calls → Tool execution → Response
+    Example:
+        >>> async with Agent(model="gpt-4", tools=[search]) as agent:
+        ...     response = await agent.call("Hello!")
 
-    LIFECYCLE:
-    1. Creation: Agent() creates instance with default or provided components
-    2. Configuration: Set tools, templates, validation modes via constructor parameters
-    3. Initialization: Async component installation via AGENT_INIT_AFTER event
-    4. Execution: call() or execute() methods handle message processing
-    5. Cleanup: Automatic via weakref registry, explicit via __aexit__ if needed
-
-    THREAD SAFETY: NOT thread-safe. Use AgentPool for concurrent operations.
-    Each agent instance should be used by only one async task at a time.
-
-    TYPICAL USAGE:
-    ```python
-    # Basic usage
-    agent = Agent(model="gpt-4", tools=[search_tool])
-    response = await agent.call("Hello, how are you?")
-
-    # With tools and templates
-    agent = Agent(
-        model="gpt-4",
-        tools=[search_tool],
-        template_path="./templates",
-        message_validation_mode="strict",
-    )
-    response = await agent.execute()
-
-    # Context manager for cleanup
-    async with Agent(model="gpt-4") as agent:
-        response = await agent.call("Query here")
-    ```
-
-    EXTENSION POINTS:
-    - Add tools via constructor tools parameter or agent.tools.register_tool()
-    - Hook into events via agent.on(AgentEvents.EVENT_NAME)(handler)
-    - Custom message validation via validation_mode parameter
-    - Template customization via template_path and template_functions
-    - Component system via AgentComponent base class
-
-    STATE MANAGEMENT:
-    - Agent maintains internal state during execution (AgentState enum)
-    - Message history preserved in agent.messages with versioning support
-    - Tool context shared across tool calls within same execution
-    - Component state managed through dependency injection
-
-    ERROR HANDLING:
-    - LLM API failures: Automatic retry with exponential backoff
-    - Tool execution failures: Captured and sent to LLM as error messages
-    - Validation failures: Immediate ValidationError exception (mode dependent)
-    - Component failures: Logged as warnings, don't stop execution
-    - Resource failures: Cleanup via weakref registry and finalizers
-
-    RELATED CLASSES:
-    - LanguageModel: LLM abstraction layer
-    - MessageList: Thread-safe message collection with versioning
-    - ToolManager: Tool discovery and execution
-    - AgentComponent: Base for extensions
-    - TemplateManager: Template processing and rendering
-
-    PERFORMANCE CHARACTERISTICS:
-    - Memory: ~1-5MB base + message history (grows with conversation)
-    - Initialization: 10-50ms depending on components and MCP servers
-    - Execution: 500ms-3s typical, dominated by LLM API latency
-    - Concurrency: Single-threaded async, use AgentPool for parallel processing
+    Note:
+        Not thread-safe. Use AgentPool for concurrent operations.
     """
 
     __registry__: ClassVar[dict[ULID, weakref.ref["Agent"]]] = {}
@@ -386,111 +327,25 @@ class Agent(EventRouter):
     ):
         """Initialize agent with model, tools, and configuration.
 
-        PURPOSE: Creates a new agent instance with specified capabilities and behavior.
-
-        INITIALIZATION FLOW:
-        1. Component Setup: Create default components if not provided
-           - LanguageModel: LLM abstraction (creates default if None)
-           - ToolManager: Tool discovery and execution
-           - TemplateManager: Template processing and caching
-           - AgentMockInterface: Testing and mocking support
-
-        2. Core Infrastructure:
-           - Message list with versioning support
-           - Event router for component communication
-           - Context system for template variable resolution
-           - State machine for agent lifecycle management
-
-        3. Component Registration:
-           - Register provided extensions
-           - Validate component dependencies
-           - Set up dependency injection
-
-        4. Async Initialization:
-           - Fire AGENT_INIT_AFTER event (triggers component installation)
-           - Load MCP servers if configured
-           - Register tools from patterns and direct instances
-
-        5. Final Setup:
-           - Set system message if provided
-           - Register in global registry for cleanup
-           - Set initial state to INITIALIZING
-
-        DEPENDENCY INJECTION:
-        Components can request dependencies via:
-        - Agent instance (automatic injection)
-        - Other AgentComponent subclasses (type-based injection)
-        - Context values via ContextValue descriptors
-
-        SIDE EFFECTS:
-        - Emits AGENT_INIT_AFTER event (triggers async component installation)
-        - Registers agent in global weakref registry for cleanup
-        - May create default LanguageModel from environment if none provided
-        - Initializes message sequence validator
-        - Sets up signal handlers if enabled (opt-in via config)
+        Creates agent instance with components and configuration. Call await agent.ready()
+        or use async context manager for complete initialization.
 
         Args:
-            *system_prompt_parts: Content for initial system message.
-                Multiple parts will be concatenated with newlines.
-                Can include templates that will be rendered during execution.
-            config_manager: Configuration manager for agent settings.
-                If None, creates default from provided config parameters.
-            language_model: Language model for LLM interactions.
-                If None, creates default from environment configuration.
-                Must support async completion and tool calling.
-            tool_manager: Tool discovery and execution manager.
-                If None, creates default manager with no initial tools.
-            agent_context: Context system for template variable resolution.
-                If None, creates default context chainmap.
-            template_manager: Template processing and caching system.
-                If None, creates default with sandboxing enabled.
-            mock: Mock interface for testing and development.
-                If None, creates default mock implementation.
-            extensions: List of AgentComponent instances for custom functionality.
-                Components are automatically registered and dependencies validated.
-            _event_trace: Enable detailed event tracing for debugging.
-                If None, uses default from config or False.
-            **config: Additional agent configuration parameters.
-                See AgentConfigParameters for full list of options.
-                Common options include model, temperature, max_tokens, tools, etc.
+            *system_prompt_parts: Content for initial system message
+            config_manager: Configuration manager (creates default if None)
+            language_model: LLM instance (creates default if None)
+            tool_manager: Tool manager (creates default if None)
+            agent_context: Template context system (creates default if None)
+            template_manager: Template processor (creates default if None)
+            mock: Mock interface for testing (creates default if None)
+            extensions: List of AgentComponent instances
+            _event_trace: Enable event tracing for debugging
+            **config: Configuration parameters (model, temperature, tools, etc.)
 
-        PERFORMANCE NOTES:
-        - Constructor is synchronous and fast (~1-5ms)
-        - Async component installation happens after constructor returns
-        - Use await agent.ready() to wait for full initialization
-        - Component discovery and installation can take 10-50ms
-
-        COMMON PITFALLS:
-        - Don't share agent instances between async tasks (not thread-safe)
-        - Ensure model supports required operations before passing to agent
-        - Tool functions must be async if they perform I/O operations
-        - Components with circular dependencies will raise ValueError
-        - MCP server loading can hang - use timeouts in production
-
-        EXAMPLES:
-        ```python
-        # Basic agent with default model
-        agent = Agent()
-
-        # Agent with custom model and tools
-        agent = Agent(
-            model="gpt-4", tools=[search_tool, calculator_tool], temperature=0.7
-        )
-
-        # Agent with system message and extensions
-        agent = Agent(
-            "You are a helpful assistant.",
-            "Be concise and accurate.",
-            extensions=[custom_extension],
-            message_validation_mode="strict",
-        )
-        ```
-
-        RELATED:
-        - Use await agent.ready() to wait for complete initialization (or use with async context manager)
-        - See AgentComponent for creating custom extensions
-        - See AgentPool for managing multiple agents concurrently
-        - See ToolManager.register_tool() for adding tools after construction
+        Example:
+            >>> agent = Agent("You are helpful", model="gpt-4", tools=[search])
+            >>> async with agent:
+            ...     response = await agent.call("Hello")
         """
         extensions = extensions or []
         self.config = config_manager or AgentConfigManager(**config)
@@ -1358,149 +1213,24 @@ class Agent(EventRouter):
         auto_execute_tools: bool = True,
         **kwargs: Any,
     ) -> AssistantMessage | AssistantMessageStructuredOutput:
-        """Call the agent with optional input and get a response.
+        """Call the agent and get a response.
 
-        PURPOSE: High-level interface for single-turn agent interactions with automatic
-        tool execution and structured output support. Simplifies common use cases.
-
-        WHEN TO USE:
-        - Simple question-answer interactions
-        - Single message processing with automatic tool execution
-        - Structured data extraction via response_model
-        - When you want the final result, not intermediate steps
-
-        EXECUTION STRATEGY:
-        1. Input Processing: Append user message if provided
-        2. Tool Execution Decision:
-           - auto_execute_tools=True: Use execute() for full tool loop
-           - auto_execute_tools=False: Use single _llm_call() (raw LLM response)
-           - response_model provided: Always use single call with structured output
-        3. Response Collection: Return final assistant message or structured output
-
-        TOOL EXECUTION BEHAVIOR:
-        - When auto_execute_tools=True: Automatically executes all tool calls and
-          continues until LLM provides final response without tools
-        - When auto_execute_tools=False: Returns initial response even if it contains
-          tool calls (useful for manual tool execution control)
-        - Tool execution follows same patterns as execute() method
-
-        STRUCTURED OUTPUT:
-        When response_model is provided, forces single LLM call with structured output:
-        - Ignores auto_execute_tools parameter
-        - Uses model.extract() instead of model.complete()
-        - Returns AssistantMessageStructuredOutput[T_Output]
-        - Tool calls in structured output are not executed
-
-        STATE TRANSITIONS:
-        - READY → PENDING_RESPONSE → PROCESSING → COMPLETE
-        - If auto_execute_tools=True: May loop through PENDING_TOOLS state
-        - Agent state automatically managed during execution
-
-        SIDE EFFECTS:
-        - Appends input message to agent.messages if provided
-        - Appends assistant response and any tool messages to agent.messages
-        - Updates agent.version_id for each message added
-        - Emits agent execution events (same as execute() method)
-        - Increments usage statistics and token counts
-
-        ERROR HANDLING:
-        - Message validation failures: Immediate ValidationError (mode dependent)
-        - LLM API failures: Automatic retry with exponential backoff
-        - Tool execution failures: Error messages sent to LLM, execution continues
-        - Structured output failures: ValidationError if parsing fails
-        - Network timeouts: Propagated after retry exhaustion
-
-        PERFORMANCE:
-        - Latency: Single LLM call + tool execution time (if enabled)
-        - Throughput: Lower than execute() due to response collection overhead
-        - Memory: Message history grows with conversation length
-        - Optimal for: Short interactions, simple queries, structured extraction
+        Appends optional content, calls LLM, and automatically executes tools if enabled.
 
         Args:
-            *content_parts: Message content to append before calling.
-                Multiple parts concatenated with newlines. Can include templates.
-                If omitted, uses existing message history.
-            role: Role of the input message (default: "user").
-                Use "system" for system messages, "assistant" for few-shot examples,
-                "tool" for tool responses (rarely used manually).
-            response_model: Pydantic model for structured output extraction.
-                When provided, forces single LLM call with structured parsing.
-                Tool calls in structured output are not executed.
-                Type: BaseModel subclass
-            context: Additional context variables for template rendering.
-                Merged with agent context during message processing.
-                Useful for dynamic template variables.
-            auto_execute_tools: Whether to automatically execute tool calls.
-                True (default): Execute tools and return final response
-                False: Return initial response even with tool calls
-                Ignored when response_model is provided
-            **kwargs: Additional model parameters passed to LLM.
-                Common options: temperature, max_tokens, top_p, stop, etc.
-                See model documentation for provider-specific options.
+            *content_parts: Message content to append before calling
+            role: Message role (default: "user")
+            response_model: Pydantic model for structured output extraction
+            context: Template rendering context variables
+            auto_execute_tools: Auto-execute tool calls (default: True)
+            **kwargs: Additional model parameters (temperature, max_tokens, etc.)
 
         Returns:
-            AssistantMessage: Final response from the language model.
-                Contains text content and optionally tool call results.
-                Tool execution results are incorporated into response content.
+            AssistantMessage or AssistantMessageStructuredOutput[T_Output]
 
-            AssistantMessageStructuredOutput[T_Output]: When response_model provided.
-                Contains parsed structured output in .output field.
-                Tool calls in structured responses are not executed.
-
-        Raises:
-            ValidationError: Message sequence invalid or structured output parsing fails
-            LLMError: Language model API failures after retries
-            ToolError: Critical tool failures that prevent continuation
-            AgentStateError: Agent in invalid state for execution
-            RuntimeError: No assistant response received (internal error)
-
-        TYPICAL USAGE:
-        ```python
-        # Simple question answering
-        response = await agent.call("What's the weather like today?")
-        print(response.content)
-
-        # With manual tool control
-        response = await agent.call("Search for recent news", auto_execute_tools=False)
-        if response.tool_calls:
-            # Manually handle tool calls
-            await agent.execute_tools(response.tool_calls)
-
-        # Structured data extraction
-        from pydantic import BaseModel
-
-
-        class WeatherInfo(BaseModel):
-            temperature: float
-            conditions: str
-            location: str
-
-
-        weather = await agent.call(
-            "What's the weather in Tokyo?", response_model=WeatherInfo
-        )
-        print(f"Temperature: {weather.output.temperature}")
-
-        # With context and custom parameters
-        response = await agent.call(
-            "Summarize this for a {audience}",
-            context={"audience": "technical audience"},
-            temperature=0.1,  # More deterministic
-            max_tokens=500,
-        )
-        ```
-
-        PERFORMANCE TIPS:
-        - Use auto_execute_tools=False for manual tool control or debugging
-        - Set response_model for structured data extraction (more reliable than parsing)
-        - Use context parameter for dynamic template variables
-        - Monitor agent.usage for token consumption analysis
-
-        RELATED:
-        - execute(): Full execution loop with streaming support
-        - execute_stream(): Streaming version for real-time output
-        - append(): Add messages without execution
-        - ready(): Ensure agent is initialized before calling
+        Example:
+            >>> response = await agent.call("What's the weather?")
+            >>> weather = await agent.call("Weather?", response_model=WeatherInfo)
         """
         # Append input message if provided
         if content_parts:
@@ -1548,176 +1278,21 @@ class Agent(EventRouter):
     ) -> AsyncIterator[Message]:
         """Execute the agent and yield messages as they are generated.
 
-        PURPOSE: Core execution loop that handles multi-turn conversations with tool
-        execution, message streaming, and iterative LLM interactions.
-
-        WHEN TO USE:
-        - Complex multi-turn conversations requiring tool support
-        - When you need access to intermediate messages and tool responses
-        - For streaming real-time output to users
-        - When you want full control over the execution process
-        - Prefer call() for simple single-message interactions
-
-        EXECUTION FLOW:
-        1. INITIALIZATION: Check for pending tool calls from previous executions
-        2. ITERATION LOOP (while iterations < max_iterations):
-           a. LLM Call: Send current message history to language model
-           b. Response Processing: Parse tool calls from LLM response
-           c. Tool Execution: Execute tools concurrently if tool calls present
-           d. Message Yielding: Yield each generated message (LLM response + tool responses)
-           e. Continuation Decision: Continue if tools executed, else break
-        3. COMPLETION: Emit completion event with execution summary
-
-        STATE TRANSITIONS:
-        READY → PENDING_RESPONSE → PROCESSING → PENDING_TOOLS → PROCESSING → COMPLETE
-
-        Agent.state follows this pattern throughout execution:
-        - PENDING_RESPONSE: About to call LLM
-        - PROCESSING: LLM call in progress
-        - PENDING_TOOLS: Tool calls detected, about to execute
-        - READY: Execution complete or iteration limit reached
-
-        TOOL EXECUTION STRATEGY:
-        - Tools execute concurrently using asyncio.gather()
-        - Individual tool failures don't stop other tool execution
-        - Tool responses automatically added to message history
-        - Tool execution isolated with proper error handling
-        - Tool context shared across calls within same execution
-
-        ITERATION CONTROL:
-        - max_iterations prevents infinite loops (default: 10)
-        - Each iteration = one LLM call + optional tool execution
-        - Execution stops when LLM returns response without tool calls
-        - Use agent.events to monitor iteration progress
-
-        STREAMING SUPPORT:
-        - streaming parameter enables real-time message streaming
-        - Messages yielded as soon as they're generated
-        - Useful for chat interfaces and real-time updates
-        - Does not affect token usage or execution logic
-
-        SIDE EFFECTS:
-        - Appends assistant response to agent.messages
-        - Appends tool response messages for each tool execution
-        - Updates agent.state throughout execution process
-        - Emits events at each major step (see AgentEvents)
-        - May execute tools with external side effects
-        - Increments usage statistics and token counts
-        - Updates agent.version_id for each message added
-
-        ERROR HANDLING:
-        - LLM API failures: Automatic retry with exponential backoff (3 attempts)
-        - Tool execution failures: Continue execution, send error messages to LLM
-        - Validation failures: Immediate ValidationError (mode dependent)
-        - Network errors: Propagated after retries exhausted
-        - Timeout errors: Configurable via model.timeout parameter
-        - Iteration limit exceeded: Execution stops, returns last messages
-
-        CONCURRENCY AND PERFORMANCE:
-        - Method is NOT thread-safe - one execution per agent instance
-        - Tool calls within single iteration may run concurrently
-        - LLM calls are sequential (one per iteration)
-        - Memory usage grows with message history length
-        - Typical execution: 500ms-3s depending on LLM and tools
-        - Optimal iteration count: 3-5 for most use cases
-
-        RESOURCE MANAGEMENT:
-        - HTTP connections: Reused across LLM calls and tool execution
-        - Tool execution: Context managers ensure resource cleanup
-        - Message history: Versioned and persisted in global store
-        - Event handling: Non-blocking, handler failures don't stop execution
+        Handles multi-turn conversations with automatic tool execution up to max_iterations.
+        Yields AssistantMessage and ToolMessage instances as they're generated.
 
         Args:
-            streaming: Enable streaming mode for real-time message delivery.
-                When True, messages are yielded immediately as they're generated.
-                When False (default), behavior is the same but allows future optimization.
-                Does not affect the actual execution logic or message sequence.
-            max_iterations: Maximum number of LLM-tool cycles.
-                Prevents infinite loops when LLM keeps calling tools.
-                Default: 10 iterations (sufficient for most use cases).
-                Each iteration includes one LLM call and optional tool execution.
-            **kwargs: Additional model parameters passed to LLM.
-                Common options: temperature, max_tokens, top_p, stop, etc.
-                Provider-specific parameters also supported.
-                See model documentation for complete parameter list.
+            streaming: Enable streaming mode (default: False)
+            max_iterations: Max LLM-tool cycles to prevent infinite loops (default: 10)
+            **kwargs: Additional model parameters (temperature, max_tokens, etc.)
 
         Yields:
-            Message: Messages generated during execution in chronological order.
-                Sequence pattern: AssistantMessage → [ToolMessage]* → AssistantMessage → ...
-                Each message includes metadata like iteration index and execution timing.
-                Tool messages contain execution results and error information.
-                Assistant messages may contain tool calls for the next iteration.
+            Message: AssistantMessage and ToolMessage instances in sequence
 
-        Events Emitted:
-        - EXECUTE_BEFORE: Start of execution with max_iterations
-        - EXECUTE_ITERATION_BEFORE: Start of each iteration with iteration count
-        - MESSAGE_APPEND_AFTER: Each message added to conversation
-        - TOOL_CALL_BEFORE/AFTER: Individual tool execution lifecycle
-        - EXECUTE_AFTER: Execution completion with final summary
-        - AGENT_STATE_CHANGE: State transitions during execution
-
-        Raises:
-            ValidationError: Message sequence invalid (strict mode only)
-            LLMError: Language model API failures after retries
-            ToolError: Critical tool failures that prevent continuation
-            AgentStateError: Agent in invalid state for execution
-            RuntimeError: Internal errors during execution
-
-        TYPICAL USAGE:
-        ```python
-        # Basic execution with streaming
-        async for message in agent.execute(streaming=True):
-            if isinstance(message, AssistantMessage):
-                print(f"Assistant: {message.content}")
-            elif isinstance(message, ToolMessage):
-                print(f"Tool result: {message.content[:100]}...")
-
-        # Execute with custom iteration limit
-        async for message in agent.execute(max_iterations=5):
-            # Process each message
-            pass
-
-        # Execute with custom model parameters
-        async for message in agent.execute(temperature=0.1, max_tokens=1000):
-            # More deterministic responses
-            pass
-
-        # Collect all messages from execution
-        messages = []
-        async for message in agent.execute():
-            messages.append(message)
-
-
-        # Handle execution with event monitoring
-        def on_state_change(ctx):
-            print(f"State: {ctx.params['old_state']} → {ctx.params['new_state']}")
-
-
-        agent.on(AgentEvents.AGENT_STATE_CHANGE)(on_state_change)
-        async for message in agent.execute():
-            pass
-        ```
-
-        PERFORMANCE TIPS:
-        - Monitor agent.state to track execution progress
-        - Use max_iterations to prevent excessive loops
-        - Set appropriate timeouts for long-running tools
-        - Consider message truncation for long conversations
-        - Use agent.events for debugging and monitoring
-
-        DEBUGGING:
-        - Set agent.debug = True for detailed execution logging
-        - Monitor agent.messages to see full conversation history
-        - Use agent.events to track execution progress step-by-step
-        - Check agent.usage for token consumption analysis
-        - Use streaming=True for real-time debugging output
-
-        RELATED:
-        - call(): Simplified single-message interface
-        - call_stream(): Streaming version of call()
-        - execute_stream(): Alternative streaming interface
-        - ready(): Ensure agent is initialized before execution
-        - validate(): Run validation without execution
+        Example:
+            >>> async for message in agent.execute():
+            ...     if isinstance(message, AssistantMessage):
+            ...         print(f"Assistant: {message.content}")
         """
         # Emit execute:start event
         self.do(AgentEvents.EXECUTE_BEFORE, agent=self, max_iterations=max_iterations)

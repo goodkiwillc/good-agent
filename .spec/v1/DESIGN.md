@@ -359,8 +359,6 @@ async def search_web(
 
 ```
 
-
-
 ## Direct tool invocation (declarative)
 Call a tool like any other function, but the agent "remembers" the tool call as if it made the call itself.
 
@@ -380,7 +378,6 @@ async with Agent(
     </item>
     """
 ```
-
 
 
 ### Agent-driven tool calls (LLM decides when to use tools)
@@ -447,7 +444,6 @@ async with Agent(
 ```
 
 
-
 ## Streaming and iterative execution
 ```python
 from good_agent import Agent
@@ -462,8 +458,6 @@ async with Agent("Stream a very short story.") as agent:
 
 
 ```
-
-
 
 ## Multi‑agent conversations (pipe operator)
 ```python
@@ -498,12 +492,90 @@ async with (
 ```
 
 
-# Agent Modes
+## Rich templating and context providers
+```python
+from good_agent import Agent, Template, global_context_provider
 
+@global_context_provider("timestamp")
+def now():
+    import datetime; return datetime.datetime.utcnow().isoformat()
+
+tmpl = Template("You are {{ role }}; time={{ timestamp }}")
+async with Agent(tmpl.render(role="assistant")) as agent:
+    agent.append("Say hi with time")
+    await agent.call()
+```
+
+## Stateful Resources
 
 ```python
 
+from good_agent import Agent
+from good_agent.resources import EditableYAML
 
+file = EditableYAML('config.yaml')
+"""
+config.yaml
+---
+setting1: value1
+setting2: value2
+options:
+    - opt1
+    - opt2
+    - opt3
+"""
+
+async with Agent(
+    "system prompt",
+) as agent:
+
+    async with file(
+        agent,
+        context_mode='full', # 'full' = all tool calls, 'final' = only final state, 'delta' = only changes
+    ): # swaps in read/update/insert/delete tools
+        await agent.call(
+            '''
+            Update config.yaml to add setting3 with value3, and add opt4 to the options list.
+            '''
+        )
+        await file.save('config.yaml')
+
+
+###
+# as a tool that
+
+@tool
+async def modify_file(
+    path: str,
+    agent: Agent = Context()
+):
+    '''
+    Call this tool if you need to modify a specific file in any way. Calling this tool will make other tools for file manipulation available to you.
+    '''
+
+    file = EditableYAML.open(path)
+
+    async with file(
+        agent,
+        context_mode='final', # 'full' = all tool calls, 'final' = only final state, 'delta' = only changes
+    ): # swaps in read/update/insert/delete tools
+        await agent.call(
+            '''
+            Make desired changes to the file.
+            '''
+        )
+        await file.save(path)
+
+
+```
+
+State
+
+
+
+# Agent Modes
+
+```python
 agent = Agent(
     'system prompt',
     model='gpt-4',
