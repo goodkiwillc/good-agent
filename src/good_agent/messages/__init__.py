@@ -8,6 +8,7 @@ from .base import (
     Message,
     MessageContent,
     MessageRole,
+    _get_render_stack,
 )
 
 # Re-export content types for backward compatibility
@@ -45,6 +46,7 @@ __all__ = [
     "ImageDetail",
     "IMAGE",
     "MessageContent",
+    "_get_render_stack",
     # Role-specific messages
     "UserMessage",
     "SystemMessage",
