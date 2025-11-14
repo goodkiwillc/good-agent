@@ -27,7 +27,15 @@ class MessageFactory:
         Returns:
             Appropriate message instance based on role
         """
-        role = data.get("role")
+        # Handle legacy content format
+        if "content" in data and "content_parts" not in data:
+            # Legacy format - convert string content to new format
+            content = data.pop("content")
+            if isinstance(content, str):
+                data["content_parts"] = [{"type": "text", "text": content}]
+            elif isinstance(content, list):
+                # Already structured - assume it's content parts
+                data["content_parts"] = content
 
         # Parse content_parts if present
         if "content_parts" in data:
@@ -39,20 +47,23 @@ class MessageFactory:
                     content_parts.append(part_data)
             data["content_parts"] = content_parts
 
+        # Support both 'type' and 'role' field names
+        message_type = data.get("type") or data.get("role")
+
         # Create appropriate message type
-        if role == "user":
+        if message_type == "user":
             return UserMessage(**data)
-        elif role == "system":
+        elif message_type == "system":
             return SystemMessage(**data)
-        elif role == "assistant":
+        elif message_type == "assistant":
             # Check for structured output
             if "output" in data:
                 return AssistantMessageStructuredOutput(**data)
             return AssistantMessage(**data)
-        elif role == "tool":
+        elif message_type == "tool":
             return ToolMessage(**data)
         else:
-            raise ValueError(f"Unknown message role: {role}")
+            raise ValueError(f"Unknown message type: {message_type}")
 
 
 __all__ = ["MessageFactory"]

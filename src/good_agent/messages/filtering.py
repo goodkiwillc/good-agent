@@ -45,29 +45,13 @@ class FilteredMessageList(MessageList[T_Message], Generic[T_Message]):
             *content_parts: Content for the message
             **kwargs: Additional message fields
         """
-        # Import here to avoid circular dependency
-        from .roles import (
-            AssistantMessage,
-            SystemMessage,
-            ToolMessage,
-            UserMessage,
-        )
+        # Role-specific validation
+        if self._role == "tool" and "tool_call_id" not in kwargs:
+            raise ValueError("tool_call_id is required for tool messages")
 
-        # Create message of appropriate type based on role
-        message: Message
-        if self._role == "user":
-            message = UserMessage(*content_parts, **kwargs)
-        elif self._role == "assistant":
-            message = AssistantMessage(*content_parts, **kwargs)
-        elif self._role == "system":
-            message = SystemMessage(*content_parts, **kwargs)
-        elif self._role == "tool":
-            message = ToolMessage(*content_parts, **kwargs)
-        else:
-            raise ValueError(f"Unknown role: {self._role}")
-
-        # Append to agent's main message list
-        self._agent.messages.append(message)  # type: ignore[arg-type]
+        # Always delegate to agent's append method for consistent event handling
+        kwargs["role"] = self._role
+        self._agent.append(*content_parts, **kwargs)
 
     @property
     def content(self) -> str | None:
@@ -85,57 +69,48 @@ class FilteredMessageList(MessageList[T_Message], Generic[T_Message]):
         return None
 
     def set(self, *content_parts: MessageContent, **kwargs) -> None:
-        """Replace all messages of this role with a single new message.
+        """Set the system message (only available for system role).
 
-        For system messages, also updates agent config with any LLM parameters.
+        For system messages, updates both message content and agent config with
+        any LLM parameters.
 
         Args:
             *content_parts: Content for the new message
             **kwargs: Additional message fields and LLM config parameters
+
+        Raises:
+            ValueError: If called on non-system role
         """
+        if self._role != "system":
+            raise ValueError(
+                f"set() is only available for system messages, not {self._role}"
+            )
+
         # Import here to avoid circular dependency
-        from .roles import (
-            AssistantMessage,
-            SystemMessage,
-            ToolMessage,
-            UserMessage,
-        )
+        from .roles import SystemMessage
         from ..config_types import AGENT_CONFIG_KEYS
 
-        # For system messages, extract and apply config parameters
+        # Extract and apply config parameters
         message_kwargs = {}
-        if self._role == "system":
-            for key in list(kwargs.keys()):
-                if key in AGENT_CONFIG_KEYS:
-                    # Apply to agent config
-                    setattr(self._agent.config, key, kwargs.pop(key))
-                else:
-                    message_kwargs[key] = kwargs.pop(key)
-        else:
-            message_kwargs = kwargs
+        for key in list(kwargs.keys()):
+            if key in AGENT_CONFIG_KEYS:
+                # Apply to agent config
+                setattr(self._agent.config, key, kwargs.pop(key))
+            else:
+                message_kwargs[key] = kwargs.pop(key)
 
-        # Find and remove all messages with this role
+        # Find and remove all system messages
         indices_to_remove = []
         for i, msg in enumerate(self._agent.messages):
-            if msg.role == self._role:
+            if msg.role == "system":
                 indices_to_remove.append(i)
 
         # Remove in reverse order to maintain indices
         for i in reversed(indices_to_remove):
             del self._agent.messages[i]
 
-        # Create new message of appropriate type
-        message: Message
-        if self._role == "user":
-            message = UserMessage(*content_parts, **message_kwargs)
-        elif self._role == "assistant":
-            message = AssistantMessage(*content_parts, **message_kwargs)
-        elif self._role == "system":
-            message = SystemMessage(*content_parts, **message_kwargs)
-        elif self._role == "tool":
-            message = ToolMessage(*content_parts, **message_kwargs)
-        else:
-            raise ValueError(f"Unknown role: {self._role}")
+        # Create new system message
+        message = SystemMessage(*content_parts, **message_kwargs)
 
         # Add the new message
         self._agent.messages.append(message)  # type: ignore[arg-type]
