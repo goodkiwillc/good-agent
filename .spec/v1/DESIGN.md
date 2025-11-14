@@ -805,3 +805,49 @@ parent_agent = Agent(
 
 
 ```
+
+## Agent Components
+
+```python
+
+from good_agent import Agent, AgentComponent, tool
+
+
+class CitationManager(AgentComponent):
+    def __init__(self):
+        pass
+
+
+    async def before_tool_call(
+        self,
+        agent: Agent,
+        tool_name: str,
+        arguments: dict,
+    ):
+        pass
+
+    async def after_tool_call(
+        self,
+        agent: Agent,
+        tool_name: str,
+        arguments: dict,
+        tool_response: Any,
+    ):
+        pass
+
+    async def before_user_message(
+        self,
+        agent: Agent,
+        message: str,
+    ):
+        pass
+
+    async def after_assistant_message(
+        self,
+        agent: Agent,
+        message: str,
+    ):
+        pass
+
+
+```
