@@ -439,7 +439,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
         if self.agent is not None:
             model = self.agent.config.model
 
-        return get_message_token_count(message=self, model=model, include_tools=True)
+        return get_message_token_count(message=self, model=model, include_tools=True)  # type: ignore[arg-type]
 
     @property
     def content(self) -> str:
@@ -701,7 +701,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
             agent = self._agent_ref()
             if agent and hasattr(agent, "messages"):
                 try:
-                    return agent.messages.index(self)
+                    return agent.messages.index(self)  # type: ignore[arg-type]
                 except ValueError:
                     pass
         raise ValueError("Message not attached to agent or not found in message list")
