@@ -851,3 +851,20 @@ class CitationManager(AgentComponent):
 
 
 ```
+
+Concepts:
+
+## Typesafe Templates
+
+```python
+
+from good_agent import Template, Agent
+
+tmpl = Template(
+    'Hello, {{ name }}! Today is {{ day_of_week }}.',
+    parameters={
+        'name': str,
+        'day_of_week': str,
+        
+    }
+)
