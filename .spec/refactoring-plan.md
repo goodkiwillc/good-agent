@@ -2743,8 +2743,18 @@ No active blockers at start. Potential blockers:
     - Context managers: __aenter__, __aexit__, __enter__, __exit__
     - Rich output formatting for event traces
     - Full mypy validation passing
-  - All commits: 4773a22 (protocols+context), 4a4c9eb (registration), a6c7b61 (sync_bridge), 29373a7 (decorators), e6b7946 (core)
-  - Total extracted: 2,931 lines across 6 modules
+  - Step 8: Extracted advanced features to advanced.py (171 lines)
+    - TypedApply class for type-safe event application with cleaner syntax
+    - Generic[T_Parameters, T_Return] for full type safety
+    - async apply() and sync apply_sync() methods
+    - Delegates to EventRouter.apply_typed() and apply_typed_sync()
+    - Zero-overhead wrapper (single method call delegation)
+    - Comprehensive documentation with PURPOSE, ROLE, usage examples
+    - Deferred import handling to avoid circular dependencies
+    - Thread-safe (immutable router reference)
+    - Full mypy validation passing
+  - All commits: 4773a22 (protocols+context), 4a4c9eb (registration), a6c7b61 (sync_bridge), 29373a7 (decorators), e6b7946 (core), 460789d (advanced)
+  - Total extracted: 3,102 lines across 7 modules
   - Test suite: 454/455 passing (only 1 archived test failing)
 - **Decisions Made**:
   - Use Option B: Reorganize event router into 8-module package
