@@ -918,3 +918,22 @@ class LanguageModel(AgentComponent):
         assert self._streaming is not None
         async for chunk in self._streaming.stream(messages, **kwargs):
             yield chunk
+
+    def _ensure_tool_call_pairs_for_formatted_messages(
+        self, messages: Sequence[ChatCompletionMessageParam | dict[str, Any]]
+    ) -> list[ChatCompletionMessageParam | dict[str, Any]]:
+        """Backward compatibility: Forward to MessageFormatter.
+
+        This method was moved to MessageFormatter during the Phase 2 refactoring.
+        Kept here for backward compatibility with tests and any code accessing
+        this internal API.
+
+        Args:
+            messages: Formatted messages to validate
+
+        Returns:
+            Messages with tool call/response pairs ensured
+        """
+        self._ensure_helpers()
+        assert self._formatter is not None
+        return self._formatter.ensure_tool_call_pairs_for_formatted_messages(messages)
