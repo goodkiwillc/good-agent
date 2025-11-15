@@ -5,7 +5,7 @@ import pytest
 import pytest_asyncio
 import yaml
 from good_agent import Agent
-from good_agent.templating import TemplateManager
+from good_agent.components.template_manager import TemplateManager
 
 
 class TestFileTemplateIntegration:

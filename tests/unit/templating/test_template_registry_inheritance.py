@@ -1,6 +1,6 @@
 import pytest
 from good_agent import Agent
-from good_agent.templating import (
+from good_agent.core.templating import (
     TEMPLATE_REGISTRY,
     TemplateRegistry,
     add_named_template,

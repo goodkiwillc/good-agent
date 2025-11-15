@@ -7,11 +7,10 @@ from typing import TYPE_CHECKING, Any
 
 from jinja2 import ChoiceLoader
 
-# from good_agent.templating import render_template as core_render_template
+from good_agent.components import AgentComponent
 from good_agent.core import templating
+from good_agent.events import AgentEvents
 
-from ..components import AgentComponent
-from ..events import AgentEvents
 from .injection import (
     ContextResolver,
     _modify_function_for_injection,
@@ -48,7 +47,7 @@ def _provide_today():
     """
     try:
         # Try to import the now_pt function if available
-        from good_common.utilities import now_pt
+        from good_common.utilities import now_pt  # type: ignore[import-untyped]
 
         now = now_pt()
         # Return datetime at midnight for consistency
@@ -71,7 +70,7 @@ def _provide_now():
     """
     try:
         # Try to import the now_pt function if available
-        from good_common.utilities import now_pt
+        from good_common.utilities import now_pt  # type: ignore[import-untyped]
 
         return now_pt()
     except ImportError:
@@ -563,7 +562,6 @@ class TemplateManager(AgentComponent):
 
     def _setup_file_templates(self, prompts_dir: Path | None = None):
         """Set up file-based template loading."""
-        from .environment import create_template_environment
         from .storage import ChainedStorage, FileSystemStorage, StorageTemplateLoader
 
         # Build storage chain
@@ -607,10 +605,10 @@ class TemplateManager(AgentComponent):
             # Create new environment with combined loader. We rely on
             # good_agent.templating DEFAULT_CONFIG for extensions and
             # line statement/comment prefixes, overriding trim_blocks as needed.
-            self._env = create_template_environment(
-                use_sandbox=self.use_sandbox,
-                trim_blocks=False,
+            self._env = templating.create_environment(
+                config={"trim_blocks": False},
                 loader=combined_loader,
+                use_sandbox=self.use_sandbox,
             )
         else:
             # No file sources found, use basic environment
@@ -725,11 +723,9 @@ class TemplateManager(AgentComponent):
         """
         from jinja2 import meta
 
-        from .environment import create_simple_template_environment
-
         try:
             # Use a sandboxed environment for parsing (safe by default)
-            env = create_simple_template_environment(use_sandbox=True)
+            env = templating.create_environment(use_sandbox=True)
             ast = env.parse(template_str)
             variables = meta.find_undeclared_variables(ast)
             return list(variables)
@@ -761,7 +757,7 @@ class TemplateManager(AgentComponent):
         resolved_base = dict(combined)
 
         # Get all provider names
-        provider_keys = set()
+        provider_keys: set[str] = set()
         provider_keys.update(_GLOBAL_CONTEXT_PROVIDERS.keys())
         provider_keys.update(self._context_providers.keys())
 
