@@ -10,8 +10,11 @@ import typer
 import yaml
 
 # Agent templating components
-from good_agent.templating.index import TemplateIndex, TemplateVersionManager
-from good_agent.templating.storage import (
+from good_agent.components.template_manager.index import (
+    TemplateIndex,
+    TemplateVersionManager,
+)
+from good_agent.components.template_manager.storage import (
     FileSystemStorage,
     FileTemplateManager,
     TemplateValidator,

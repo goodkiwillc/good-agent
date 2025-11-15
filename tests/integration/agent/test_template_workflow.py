@@ -371,7 +371,7 @@ This is my personal template for {{ task }}.""")
     #     storage = template_system["storage"]
     #     manager = template_system["manager"]
 
-    #     from good_agent.templating.storage import TemplateValidator
+    #     from good_agent.components.template_manager.storage import TemplateValidator
     #     validator = TemplateValidator()
 
     #     # Get analyst template which has dependencies
