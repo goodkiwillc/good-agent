@@ -273,20 +273,49 @@ class EventRouter:
             handler(*args, **kwargs)
 ```
 
-### Open Questions for User
+### Final Decision
 
-1. **Do you agree with Option B (Reorganize + Minimal Fixes)?**
-   - Or prefer Option A (Simplify) or C (Defer)?
+**Date**: 2025-11-14
+**Status**: ✅ **APPROVED - Option B (Reorganize + Thread Safety Fixes)**
+**Decision Maker**: User (Chris Goddard)
 
-2. **Are there specific race condition scenarios you've encountered?**
-   - This would help prioritize which fixes are critical
+**Decision**: Proceed with Option B - Reorganize event router into package with comprehensive thread safety improvements
 
-3. **Any features you know are unused and can be deprecated?**
-   - Even if we don't remove them now, we can mark for future removal
+**Rationale from User**:
 
-4. **Timeline preferences?**
-   - Is 2 weeks for reorganization acceptable?
-   - Or should we do minimal fixes (Option C) for now?
+1. **Event router is foundational to extensibility**
+   - Core to the entire framework architecture
+   - Cannot risk breaking changes
+
+2. **Async/sync compatibility is critical for UX**
+   - Essential for Jupyter notebooks and interactive shells
+   - Users expect `print(message.content)` not `await message.get_content()`
+   - Even if features could be async-only, sync compatibility is a core UX feature
+   - **Do NOT remove or simplify the sync/async bridge**
+
+3. **Testing must be bulletproof**
+   - Event router is foundational - must be rock solid
+   - Need comprehensive testing for race conditions
+   - Test various failure scenarios
+   - Stress testing and memory leak detection
+
+**Implementation Approach**:
+- 8-module package structure (protocols, context, registration, sync_bridge, decorators, core, advanced, __init__)
+- Add threading.RLock to all critical sections
+- 100% backward compatibility via __init__.py re-exports
+- Preserve ALL features (all are actively used)
+- Comprehensive test suite with 7 test categories
+- 95%+ coverage requirement
+- 6-7 day estimated timeline
+
+**Next Steps**:
+1. ✅ Spec updated with detailed implementation plan
+2. 🚧 Begin Step 1: Create package structure
+3. Implement modules one by one with testing
+4. Comprehensive thread safety and race condition testing
+5. Documentation updates
+
+**See**: `.spec/refactoring-plan.md` Phase 3 for detailed implementation steps
 
 ---
 
