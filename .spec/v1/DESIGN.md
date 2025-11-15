@@ -130,7 +130,7 @@ async with Agent(
     message_validation_mode: Literal["strict", "warn", "silent"] = "warn",
     enable_signal_handling: bool = True,
 ) as agent:
-
+    ...
 ```
 
 
@@ -159,7 +159,6 @@ async with Agent("Return JSON matching the schema.") as agent:
     print(result2.content)
 
 ```
-
 
 
 ## Iterate on each LLM response
@@ -236,7 +235,6 @@ async with Agent(
 ```
 
 
-
 ### Manipulate Agent State During Iteration
 ```python
 async with Agent(
@@ -278,7 +276,7 @@ async with Agent(
     3: Tool get_weather output: In Palo Alto, It's sunny and 75 degrees.
     4: Assistant: The weather in Palo Alto today is sunny with a temperature of 75 degrees.
     """
-    ```
+```
 
 
 ## Tools
@@ -403,11 +401,17 @@ async with Agent(
 from good_agent import Agent, AgentComponent, tool
 
 class Math(AgentComponent):
+
+    async def append_system_prompt(self) -> str:
+        return (
+            "Always use mul tool to perform multiplication tasks."
+        )
+
     @tool
     def mul(self, x: int, y: int) -> int:
         return x * y
 
-async with Agent("Use mul for multiplication.", extensions=[Math()]) as agent:
+async with Agent("system prompt", extensions=[Math()]) as agent:
     agent.append("Multiply 6 by 7")
     await agent.call()
 ```
@@ -422,7 +426,12 @@ class Math(AgentComponent):
     def mul(self, x: int, y: int) -> int:
         return x * y
 
-async with Agent("Use mul for multiplication.", extensions=[Math()]) as agent:
+    async def append_system_prompt(self) -> str:
+        return (
+            "Always use mul tool to perform multiplication tasks."
+        )
+
+async with Agent("system prompt", extensions=[Math()]) as agent:
     agent.append("Multiply 6 by 7")
     await agent.call()
 ```
@@ -594,7 +603,7 @@ async def code_review(
     ]
 
     with agent.context(
-        system_message_suffix='''
+        append_system_prompt='''
         !# section mode type='code-review'
             Agent in code review mode.
             - Only read and analyze code.
@@ -611,20 +620,20 @@ async def code_review(
             '''
         )
 
-        async for message in agent.execute():
-            match message:
-                case Message(content=content, role=role):
-                    logger.info(f'[{role}] {content}')
+        # passes control back to the caller to manage the agent lifecycle
+        yield agent
 
+        # mandate final review write-up
         await agent.call(
             'Make sure you have written any of your findings to a file called REVIEW.md'
         )
 
-        return agent
+        # any cleanup logic can go here
+
 
 async with agent:
 
-    with agent.mode('code-review') as code_reviewer:
+    with agent.mode('code-review') as code_reviewer: # yielded from mode function
         pass
 
 ###
@@ -803,7 +812,6 @@ parent_agent = Agent(
 
 
 
-
 ```
 
 ## Agent Components
@@ -817,6 +825,9 @@ class CitationManager(AgentComponent):
     def __init__(self):
         pass
 
+
+    async def append_system_prompt(self) -> str:
+        ...
 
     async def before_tool_call(
         self,
@@ -839,20 +850,140 @@ class CitationManager(AgentComponent):
         self,
         agent: Agent,
         message: str,
+        context: dict,
+        response_model: type | None,
     ):
         pass
 
     async def after_assistant_message(
         self,
         agent: Agent,
-        message: str,
+        message: Message,
     ):
         pass
+
+    ... # other hooks as needed
 
 
 ```
 
-Concepts:
+# Launch Agent Interactively via CLI
+
+```python
+
+from good_agent import Agent, tool
+from good_agent.components import BashTool, FileReaderTool
+
+agent = Agent(
+    "You are an interactive assistant. Use tools as needed.",
+    tools=[
+        BashTool(),
+        FileReaderTool(),
+        # other tools...
+    ],
+    model='gpt-4',
+)
+
+# modes
+
+@agent.modes.add('code-review')
+async def code_review_mode(agent: Agent):
+    with agent.context(
+        append_system_prompt='''
+        !# section mode type='code-review'
+            Agent in code review mode.
+            - Only read and analyze code.
+            - Do not write or modify code.
+            - You may write markdown or reference files as needed.
+        !# section end
+        ''',
+        tools=[
+            BashTool(),
+            FileReaderTool(),
+            # other code review specific tools...
+        ]
+    ):
+
+        yield agent
+
+
+class FollowUpQuestions(Renderable):
+    __template__ = '''
+    Before we begin, please answer these questions:
+    {% for question in questions %}
+    - {{ question }}
+    {% endfor %}
+    '''
+    have_questions: bool
+    questions: list[str]
+
+@agent.modes.add('planner')
+async def planner_mode(agent: Agent):
+    with agent.context(
+        append_system_prompt='''
+        !# section mode type='planner'
+            Agent in planner mode.
+            - Focus on high-level task planning.
+            - Use tools to gather information as needed.
+        !# section end
+        ''',
+        tools=[
+            # planner specific tools...
+        ]
+    ):
+
+        async with agent.fork() as subagent:
+            response = await subagent.call(
+                f'''
+                Based on the user's request, do you have any follow-up questions to clarify the task before proceeding?
+                ''',
+                response_model=FollowUpQuestions
+            )
+
+            if response.output.have_questions:
+                # user input generates assistant message and blocks until answered (assuming interactive mode) - will raise if non-interactive
+                response = await agent.user_input(
+                    response.output # Renderable instance can be passed directly
+                )
+
+
+        yield agent
+
+
+
+agent.commands.add(
+    'pytester',
+    description='Run pytest',
+    prompt='''
+    Run pytest on {{directory}} and analyze the results.
+
+    Instructions:
+     - Run tests
+     - Analyze failures
+     - Fix code
+
+    {{input}}
+    ''',
+    parameters={
+        'directory': {
+            'type': 'string',
+            'description': 'Directory to run pytest in',
+            'default': '.',
+        },
+    }
+)
+
+```
+
+
+```bash
+good-agent run module.path:agent -i
+
+
+```
+
+
+WIP Concepts:
 
 ## Typesafe Templates
 
@@ -865,6 +996,6 @@ tmpl = Template(
     parameters={
         'name': str,
         'day_of_week': str,
-        
+
     }
 )

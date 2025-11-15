@@ -2,10 +2,9 @@ from typing import TYPE_CHECKING
 
 # For static type checking only - lazy load everything
 if TYPE_CHECKING:
-    from .llm import (
+    from .llm import LanguageModel, ModelConfig
+    from .protocols import (
         CompletionEvent,
-        LanguageModel,
-        ModelConfig,
         ModelResponseProtocol,
         ResponseWithHiddenParams,
         ResponseWithResponseHeaders,
@@ -31,13 +30,14 @@ if TYPE_CHECKING:
 _LAZY_IMPORTS = {
     # From llm.py
     "LanguageModel": "llm",
-    "CompletionEvent": "llm",
-    "StreamChunk": "llm",
     "ModelConfig": "llm",
-    "ModelResponseProtocol": "llm",
-    "ResponseWithUsage": "llm",
-    "ResponseWithHiddenParams": "llm",
-    "ResponseWithResponseHeaders": "llm",
+    # From protocols.py
+    "CompletionEvent": "protocols",
+    "StreamChunk": "protocols",
+    "ModelResponseProtocol": "protocols",
+    "ResponseWithUsage": "protocols",
+    "ResponseWithHiddenParams": "protocols",
+    "ResponseWithResponseHeaders": "protocols",
     # From manager.py
     "ManagedRouter": "manager",
     "ModelDefinition": "manager",
