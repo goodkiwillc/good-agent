@@ -136,10 +136,10 @@ class TemplateContentPart(BaseContentPart):
                 )
             else:
                 # Simple Jinja2 fallback with sandbox by default
-                from ..templating.environment import get_default_environment
+                from ..core import templating
 
-                # Get cached sandboxed environment for better performance
-                env = get_default_environment(use_sandbox=True)
+                # Create sandboxed environment
+                env = templating.create_environment(use_sandbox=True)
                 template = env.from_string(self.template)
                 rendered = template.render(**render_context)
         except Exception:

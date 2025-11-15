@@ -367,9 +367,9 @@ def _get_injection_params(
             # Robustly detect fast_depends.Depends without importing at module import time
             is_depends = False
             try:
-                from fast_depends import Depends as _FDDepends  # type: ignore
+                from fast_depends import Depends as _FDDepends  # type: ignore[import-untyped]
 
-                if isinstance(param.default, _FDDepends):
+                if isinstance(param.default, _FDDepends):  # type: ignore[arg-type]
                     is_depends = True
             except Exception:
                 pass

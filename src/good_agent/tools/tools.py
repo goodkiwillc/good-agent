@@ -43,7 +43,10 @@ from good_agent.core.models import Renderable
 
 from ..components import AgentComponent
 from ..config import AgentConfigManager
-from ..templating.injection import ContextValue, _ContextValueDescriptor
+from ..components.template_manager.injection import (
+    ContextValue,
+    _ContextValueDescriptor,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -1134,7 +1137,9 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
                         elif not context_value.required:
                             kwargs[param_name] = None
                         else:
-                            from ..templating.injection import MissingContextValueError
+                            from ..components.template_manager.injection import (
+                                MissingContextValueError,
+                            )
 
                             # Get available keys from context if possible
                             available_keys = []
@@ -1152,7 +1157,9 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
                         elif not context_value.required:
                             kwargs[param_name] = None
                         else:
-                            from ..templating.injection import MissingContextValueError
+                            from ..components.template_manager.injection import (
+                                MissingContextValueError,
+                            )
 
                             raise MissingContextValueError(context_value.name, [])
 

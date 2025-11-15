@@ -96,7 +96,7 @@ if TYPE_CHECKING:
         EditableYAML,
         StatefulResource,
     )
-    from .templating import (
+    from .components.template_manager import (
         CircularDependencyError,
         ContextInjectionError,
         ContextProviderError,
@@ -209,16 +209,16 @@ _LAZY_IMPORTS = {
     "EditableResource": "resources",
     "EditableMDXL": "resources",
     # Templates
-    "Template": "templating",
-    "TemplateManager": "templating",
-    "global_context_provider": "templating",
+    "Template": "components.template_manager",
+    "TemplateManager": "components.template_manager",
+    "global_context_provider": "components.template_manager",
     # Context dependency injection
-    "ContextValue": "templating",
-    "ContextResolver": "templating",
-    "ContextInjectionError": "templating",
-    "MissingContextValueError": "templating",
-    "ContextProviderError": "templating",
-    "CircularDependencyError": "templating",
+    "ContextValue": "components.template_manager",
+    "ContextResolver": "components.template_manager",
+    "ContextInjectionError": "components.template_manager",
+    "MissingContextValueError": "components.template_manager",
+    "ContextProviderError": "components.template_manager",
+    "CircularDependencyError": "components.template_manager",
     # Tools - Core
     "Tool": "tools",
     "ToolCall": "tools",

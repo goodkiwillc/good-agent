@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 from good_agent import Agent
-from good_agent.templating.injection import (
+from good_agent.components.template_manager.injection import (
     CircularDependencyError,
     ContextProviderError,
     ContextResolver,
@@ -142,7 +142,7 @@ class TestFunctionInjectionModification:
 
     def test_detect_context_value_parameters(self):
         """Test detection of ContextValue parameters in function signatures."""
-        from good_agent.templating.injection import _get_context_params
+        from good_agent.components.template_manager.injection import _get_context_params
 
         def test_func(
             regular: str,
@@ -159,7 +159,7 @@ class TestFunctionInjectionModification:
     def test_mixed_injection_types(self):
         """Test mixing ContextValue with Depends injection."""
         from fast_depends import Depends
-        from good_agent.templating.injection import _get_injection_params
+        from good_agent.components.template_manager.injection import _get_injection_params
 
         # Create a dummy dependency provider
         def agent_provider():

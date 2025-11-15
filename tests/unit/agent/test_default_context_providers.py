@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 import pytest
 from good_agent import Agent
-from good_agent.templating import _GLOBAL_CONTEXT_PROVIDERS, Template
+from good_agent.components.template_manager import _GLOBAL_CONTEXT_PROVIDERS, Template
 
 
 @pytest.mark.asyncio
