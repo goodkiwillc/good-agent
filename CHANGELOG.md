@@ -7,7 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Phase 3: Event Router Package Reorganization (In Progress)
+### Phase 1: Template Consolidation (Completed 2025-11-15)
+
+**Status**: ✅ Complete (Step 6 of refactoring plan)
+**Branch**: `refactor/phase-3-simplification`
+**Commit**: a3d6a2c
+
+#### Changed
+
+- **Template Package Consolidation** (Commit: a3d6a2c)
+  - Moved `templating/` package → `components/template_manager/`
+  - Organized into 4 focused modules (2,521 total lines):
+    - `core.py` (980 lines) - TemplateManager AgentComponent
+    - `injection.py` (465 lines) - Context dependency injection with ContextValue
+    - `storage.py` (705 lines) - FileSystemStorage, template versioning, git integration
+    - `index.py` (371 lines) - TemplateMetadata and indexing
+  - Deleted wrapper `templating/environment.py` (74 lines) - functionality moved to core.templating
+  - Updated all imports across 16 files (tests and source)
+  - All 91 template tests passing ✅
+
+- **Import Path Changes**:
+  - `good_agent.templating` → `good_agent.components.template_manager`
+  - Public API unchanged via lazy imports in `good_agent.__init__.py`
+  - Core template infrastructure remains at `good_agent.core.templating`
+
+#### Benefits
+
+- Single canonical location for agent-specific template functionality
+- Clear separation of concerns:
+  - `core/templating/`: Low-level Jinja2 infrastructure (AbstractTemplate, TemplateRegistry)
+  - `components/template_manager/`: High-level agent features (TemplateManager, storage, injection)
+- Eliminated environment.py wrapper duplication
+- Improved code discoverability and maintainability
+
+### Phase 3: Event Router Package Reorganization (Completed 2025-11-15)
 
 **Status**: Core extraction complete (as of 2025-11-15)
 **Branch**: `refactor/phase-3-simplification`
