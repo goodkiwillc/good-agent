@@ -130,7 +130,7 @@ async with Agent(
     message_validation_mode: Literal["strict", "warn", "silent"] = "warn",
     enable_signal_handling: bool = True,
 ) as agent:
-
+    ...
 ```
 
 
@@ -159,7 +159,6 @@ async with Agent("Return JSON matching the schema.") as agent:
     print(result2.content)
 
 ```
-
 
 
 ## Iterate on each LLM response
@@ -236,7 +235,6 @@ async with Agent(
 ```
 
 
-
 ### Manipulate Agent State During Iteration
 ```python
 async with Agent(
@@ -278,7 +276,7 @@ async with Agent(
     3: Tool get_weather output: In Palo Alto, It's sunny and 75 degrees.
     4: Assistant: The weather in Palo Alto today is sunny with a temperature of 75 degrees.
     """
-    ```
+```
 
 
 ## Tools
@@ -403,11 +401,17 @@ async with Agent(
 from good_agent import Agent, AgentComponent, tool
 
 class Math(AgentComponent):
+
+    async def append_system_prompt(self) -> str:
+        return (
+            "Always use mul tool to perform multiplication tasks."
+        )
+
     @tool
     def mul(self, x: int, y: int) -> int:
         return x * y
 
-async with Agent("Use mul for multiplication.", extensions=[Math()]) as agent:
+async with Agent("system prompt", extensions=[Math()]) as agent:
     agent.append("Multiply 6 by 7")
     await agent.call()
 ```
@@ -422,7 +426,12 @@ class Math(AgentComponent):
     def mul(self, x: int, y: int) -> int:
         return x * y
 
-async with Agent("Use mul for multiplication.", extensions=[Math()]) as agent:
+    async def append_system_prompt(self) -> str:
+        return (
+            "Always use mul tool to perform multiplication tasks."
+        )
+
+async with Agent("system prompt", extensions=[Math()]) as agent:
     agent.append("Multiply 6 by 7")
     await agent.call()
 ```
@@ -594,7 +603,7 @@ async def code_review(
     ]
 
     with agent.context(
-        system_message_suffix='''
+        append_system_prompt='''
         !# section mode type='code-review'
             Agent in code review mode.
             - Only read and analyze code.
@@ -611,20 +620,20 @@ async def code_review(
             '''
         )
 
-        async for message in agent.execute():
-            match message:
-                case Message(content=content, role=role):
-                    logger.info(f'[{role}] {content}')
+        # passes control back to the caller to manage the agent lifecycle
+        yield agent
 
+        # mandate final review write-up
         await agent.call(
             'Make sure you have written any of your findings to a file called REVIEW.md'
         )
 
-        return agent
+        # any cleanup logic can go here
+
 
 async with agent:
 
-    with agent.mode('code-review') as code_reviewer:
+    with agent.mode('code-review') as code_reviewer: # yielded from mode function
         pass
 
 ###
@@ -803,5 +812,297 @@ parent_agent = Agent(
 
 
 
+```
+
+## Agent Components
+
+```python
+
+from good_agent import Agent, AgentComponent, tool
+
+
+class CitationManager(AgentComponent):
+    def __init__(self):
+        pass
+
+
+    async def append_system_prompt(self) -> str:
+        ...
+
+    async def before_tool_call(
+        self,
+        agent: Agent,
+        tool_name: str,
+        arguments: dict,
+    ):
+        pass
+
+    async def after_tool_call(
+        self,
+        agent: Agent,
+        tool_name: str,
+        arguments: dict,
+        tool_response: Any,
+    ):
+        pass
+
+    async def before_user_message(
+        self,
+        agent: Agent,
+        message: str,
+        context: dict,
+        response_model: type | None,
+    ):
+        pass
+
+    async def after_assistant_message(
+        self,
+        agent: Agent,
+        message: Message,
+    ):
+        pass
+
+    ... # other hooks as needed
+
 
 ```
+
+# Launch Agent Interactively via CLI
+
+```python
+
+from good_agent import Agent, tool
+from good_agent.components import BashTool, FileReaderTool
+
+agent = Agent(
+    "You are an interactive assistant. Use tools as needed.",
+    tools=[
+        BashTool(),
+        FileReaderTool(),
+        # other tools...
+    ],
+    model='gpt-4',
+)
+
+# modes
+
+@agent.modes.add('code-review')
+async def code_review_mode(agent: Agent):
+    with agent.context(
+        append_system_prompt='''
+        !# section mode type='code-review'
+            Agent in code review mode.
+            - Only read and analyze code.
+            - Do not write or modify code.
+            - You may write markdown or reference files as needed.
+        !# section end
+        ''',
+        tools=[
+            BashTool(),
+            FileReaderTool(),
+            # other code review specific tools...
+        ]
+    ):
+
+        yield agent
+
+
+class FollowUpQuestions(Renderable):
+    __template__ = '''
+    Before we begin, please answer these questions:
+    {% for question in questions %}
+    - {{ question }}
+    {% endfor %}
+    '''
+    have_questions: bool
+    questions: list[str]
+
+@agent.modes.add('planner')
+async def planner_mode(agent: Agent):
+    with agent.context(
+        append_system_prompt='''
+        !# section mode type='planner'
+            Agent in planner mode.
+            - Focus on high-level task planning.
+            - Use tools to gather information as needed.
+        !# section end
+        ''',
+        tools=[
+            # planner specific tools...
+        ]
+    ):
+
+        async with agent.fork() as subagent:
+            response = await subagent.call(
+                f'''
+                Based on the user's request, do you have any follow-up questions to clarify the task before proceeding?
+                ''',
+                response_model=FollowUpQuestions
+            )
+
+            if response.output.have_questions:
+                # user input generates assistant message and blocks until answered (assuming interactive mode) - will raise if non-interactive
+                response = await agent.user_input(
+                    response.output # Renderable instance can be passed directly
+                )
+
+
+        yield agent
+
+
+
+agent.commands.add(
+    'pytester',
+    description='Run pytest',
+    prompt='''
+    Run pytest on {{directory}} and analyze the results.
+
+    Instructions:
+     - Run tests
+     - Analyze failures
+     - Fix code
+
+    {{input}}
+    ''',
+    parameters={
+        'directory': {
+            'type': 'string',
+            'description': 'Directory to run pytest in',
+            'default': '.',
+        },
+    }
+)
+
+```
+
+
+```bash
+good-agent run module.path:agent -i
+
+
+```
+
+
+## Human-in-the-loop interactions
+
+### Design goals
+
+- Support interactive pauses without assuming a local TTY; callers should be able to satisfy a prompt via CLI, UI, API callback, or another agent.
+- Provide deterministic orchestration semantics in multi-agent graphs: the requesting agent pauses, while the orchestrator decides whether the rest of the graph should continue.
+- Allow declarative policies (auto-continue, require explicit approval, custom validators) and rich payloads (Renderable prompts, schemas, metadata).
+- Ensure that every human step is auditable with structured records that can be replayed or stubbed for testing.
+
+### Interaction primitives
+
+```python
+class InteractionRequest(Renderable):
+    id: str
+    agent_name: str | None
+    prompt: Renderable | str
+    schema: BaseModel | type | None = None
+    metadata: dict[str, Any] = {}
+    blocking_policy: Literal["agent", "graph", "none"] = "agent"
+    timeout: float | None = None
+
+class InteractionResult(Renderable):
+    id: str
+    content: str | Renderable | None
+    data: Any | None  # typed response when schema provided
+    responder: Literal["user", "agent", "auto"]
+    metadata: dict[str, Any] = {}
+```
+
+- `blocking_policy="agent"` pauses only the requesting agent; other agents continue unless the orchestrator escalates.
+- `blocking_policy="graph"` signals the orchestrator to pause all linked agents (default for critical approvals).
+- `blocking_policy="none"` emits a notification but does not await a response; the agent can watch for an eventual `InteractionResult` via callbacks/futures.
+
+### Agent API
+
+```python
+class Agent:
+    async def user_input(
+        self,
+        prompt: str | Renderable | InteractionRequest,
+        *,
+        schema: type[BaseModel] | None = None,
+        blocking_policy: Literal["agent", "graph", "none"] | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> InteractionResult:
+        ...
+
+    @contextmanager
+    def interaction_policy(...):
+        """Override default blocking/approval behavior for a scope."""
+
+    async def submit_interaction_result(self, result: InteractionResult):
+        """Called by orchestrators/UI to resume a pending request."""
+```
+
+- Passing an `InteractionRequest` instance allows advanced callers to set IDs, metadata, or custom blocking policies.
+- `schema` enables typed responses; when provided, `result.data` contains parsed output while `result.content` retains the raw string.
+- `submit_interaction_result` lets non-interactive workflows inject answers (e.g., another agent mediating the request).
+
+### Interaction manager
+
+```python
+class InteractionManager:
+    async def request(self, agent: Agent, req: InteractionRequest) -> InteractionResult:
+        ...
+
+    async def resolve(self, result: InteractionResult) -> None:
+        ...
+
+    def subscribe(self, callback: Callable[[InteractionRequest], Awaitable[None]]):
+        ...
+```
+
+- Default implementation surfaces prompts to the CLI/GUI; advanced deployments can override to route through queues, Slack, or other agents.
+- Subscriptions make it easy to layer auditing/logging without coupling to presentation.
+
+### Multi-agent orchestration
+
+```python
+async with (researcher | writer) as convo:
+    async for message in convo.execute():
+        match message:
+            case InteractionRequest(agent=researcher, blocking_policy="agent"):
+                # only researcher paused; writer keeps going
+                await ui.present(message)
+            case InteractionRequest(blocking_policy="graph"):
+                convo.pause_all()
+                await escalate(message)
+```
+
+- The pipe/orchestrator receives `InteractionRequest` events in the same stream as messages; it decides whether to honor the requested blocking policy or override it.
+- Agents awaiting a response get a Future tied to the request ID; once `InteractionManager.resolve` fires, only that agent resumes.
+- Non-blocking requests (`blocking_policy="none"`) still produce a Future the agent can await later (e.g., `await agent.interactions.wait(id)`), allowing background approval flows.
+
+### Non-interactive + testing
+
+- `Agent(mock=AgentMockInterface(user_inputs=[...])))` or context-local `interaction_policy(auto_responder=...)` lets tests provide canned answers.
+- For batch jobs, attach an auto-responder that either raises (to fail fast when human input is required) or supplies deterministic defaults.
+- Interaction transcripts (`InteractionRequest` + `InteractionResult`) are appended to history as `role="user"`/`role="assistant"` pairs with an additional `source="human"` flag so retries/rewrites remain deterministic.
+
+### Error handling
+
+- Timeouts raise `InteractionTimeoutError(agent_name, request_id)`; orchestrators can catch and decide to retry, abort, or auto-resolve.
+- `InteractionValidationError` is raised when schema validation fails; the request is re-sent with validation messages appended via `metadata["errors"]`.
+- Cancellation (`agent.cancel_interaction(id)`) notifies the orchestrator/UI and unblocks the agent with `responder="auto"` and `data=None`.
+
+
+WIP Concepts:
+
+## Typesafe Templates
+
+```python
+
+from good_agent import Template, Agent
+
+tmpl = Template(
+    'Hello, {{ name }}! Today is {{ day_of_week }}.',
+    parameters={
+        'name': str,
+        'day_of_week': str,
+
+    }
+)
