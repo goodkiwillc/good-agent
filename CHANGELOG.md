@@ -7,9 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Phase 2: Break Up Large Files (In Progress)
+### Phase 3: Event Router Package Reorganization (In Progress)
 
-**Status**: Nearly Complete (as of 2025-11-14)
+**Status**: Core extraction complete (as of 2025-11-15)
+**Branch**: `refactor/phase-3-simplification`
+
+#### Changed
+
+- **Event Router Package Restructuring** (Commits: 4773a22 through fe356fc)
+  - Converted `event_router.py` monolith (2,035 lines) into modular `event_router/` package (3,192 lines)
+  - Created 8 focused modules with comprehensive documentation:
+    - `event_router/protocols.py` (170 lines) - Type definitions, Protocol classes, ApplyInterrupt exception
+    - `event_router/context.py` (173 lines) - EventContext[T_Parameters, T_Return] with contextvars support
+    - `event_router/registration.py` (295 lines) - HandlerRegistry with threading.RLock for thread safety
+    - `event_router/sync_bridge.py` (484 lines) - SyncBridge for async/sync interoperability (CRITICAL)
+    - `event_router/decorators.py` (404 lines) - @on, @emit, @typed_on decorators with lifecycle support
+    - `event_router/core.py` (1,405 lines) - Main EventRouter class with event dispatch logic
+    - `event_router/advanced.py` (171 lines) - TypedApply helper for type-safe event application
+    - `event_router/__init__.py` (90 lines) - Public API re-exports for backward compatibility
+  - **Thread Safety Improvements**:
+    - Added threading.RLock to HandlerRegistry for all handler access
+    - Added threading.RLock to SyncBridge for event loop operations
+    - Thread-safe handler registration, dispatch, and resource management
+  - **Documentation Enhancements**:
+    - Comprehensive PURPOSE, ROLE, LIFECYCLE documentation for all classes
+    - Thread safety notes for all modules
+    - Performance notes and integration points documented
+    - Usage examples with type hints
+  - All validation passing: pyupgrade ✅, ruff ✅, mypy ✅
+  - Test suite: 1382/1395 passing (99.1%)
+  - Full backward compatibility maintained via `__init__.py` re-exports
+  - Original `event_router.py` preserved as `event_router.py.bak`
+
+#### Technical Details
+
+- **Module Breakdown by Size**:
+  - core.py (1,405 lines) - EventRouter main class, event dispatch, lifecycle management
+  - sync_bridge.py (484 lines) - Background event loop, async/sync bridge
+  - decorators.py (404 lines) - Handler decorators with lifecycle phases
+  - registration.py (295 lines) - Thread-safe handler registry
+  - context.py (173 lines) - EventContext with type safety
+  - advanced.py (171 lines) - TypedApply for cleaner typed dispatch
+  - protocols.py (170 lines) - Type definitions and protocols
+  - __init__.py (90 lines) - Public API surface
+
+- **Key Features Preserved**:
+  - All async/sync compatibility features (SyncBridge)
+  - Observable-style lifecycle phases (BEFORE/AFTER/ERROR/FINALLY)
+  - Priority-based handler execution with predicates
+  - Event broadcasting to multiple routers
+  - Rich output formatting for event traces
+  - Fire-and-forget (do()) and blocking (apply_async/apply_sync) dispatch
+  - Type-safe event application with generics
+  - Background task and future tracking with cleanup
+
+- **Type Safety**:
+  - Full mypy validation passing for all modules
+  - Generic EventContext[T_Parameters, T_Return] for type-safe handlers
+  - TypedApply helper for cleaner typed event dispatch
+  - Protocol-based handler definitions
+  - Proper deferred imports to avoid circular dependencies
+
+### Phase 2: Break Up Large Files (Completed)
+
+**Status**: ✅ Complete (as of 2025-11-14)
 
 #### Changed
 
