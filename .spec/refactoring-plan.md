@@ -2730,7 +2730,21 @@ No active blockers at start. Potential blockers:
     - Thread-safe (decorators are stateless)
     - Full async/sync support with proper event context flow
     - Full mypy validation passing
-  - All commits: 4773a22 (protocols+context), 4a4c9eb (registration), a6c7b61 (sync_bridge), 29373a7 (decorators)
+  - Step 7: Extracted EventRouter core to core.py (1,405 lines) ⚠️ LARGEST MODULE
+    - EventRouter class with comprehensive lifecycle documentation
+    - Handler registration: on() decorator, _auto_register_handlers()
+    - Event dispatch methods: do(), apply_async(), apply_sync(), apply_typed()
+    - Type-safe dispatch: apply_typed(), apply_typed_sync(), typed()
+    - Event tracing: set_event_trace(), _format_event_trace(), _log_event()
+    - Broadcasting: broadcast_to(), consume_from()
+    - Handler execution: _get_sorted_handlers(), _should_run_handler()
+    - Resource management: join(), join_async(), close(), async_close()
+    - Event loop management: _start_event_loop()
+    - Context managers: __aenter__, __aexit__, __enter__, __exit__
+    - Rich output formatting for event traces
+    - Full mypy validation passing
+  - All commits: 4773a22 (protocols+context), 4a4c9eb (registration), a6c7b61 (sync_bridge), 29373a7 (decorators), e6b7946 (core)
+  - Total extracted: 2,931 lines across 6 modules
   - Test suite: 454/455 passing (only 1 archived test failing)
 - **Decisions Made**:
   - Use Option B: Reorganize event router into 8-module package
