@@ -2555,15 +2555,27 @@ No active blockers at start. Potential blockers:
 - [x] Run full test suite ✅
 - [ ] Performance benchmark comparison ❌ NOT DONE
 
-**Phase 3: Simplify Complexity (Weeks 6-7)**
-- [ ] Week 6: Audit event router (usage, race conditions, complexity)
-- [ ] Week 6: Decide event router approach (with user approval)
-- [ ] Week 6: Implement event router changes
-- [ ] Week 7: Create examples/ directory
-- [ ] Week 7: Reduce core docstrings
-- [ ] Week 7: Systematic docstring cleanup
-- [ ] Document Phase 3 changes
-- [ ] Run full test suite
+**Phase 3: Simplify Complexity (Weeks 6-7)** - IN PROGRESS ⚠️
+- [x] Week 6: Audit event router (usage, race conditions, complexity) ✅ (DECISIONS.md created)
+- [x] Week 6: Decide event router approach (with user approval) ✅ (Option B: Reorganize + Thread Safety)
+- [x] Week 6: Implement event router changes ⚠️ IN PROGRESS (4/12 steps complete)
+  - [x] Step 1: Create package structure ✅ (8 modules created)
+  - [x] Step 2: Extract protocols and types to protocols.py ✅ (commit 4773a22)
+  - [x] Step 3: Extract EventContext to context.py ✅ (commit 4773a22)
+  - [x] Step 4: Extract HandlerRegistration to registration.py with RLock ✅ (commit 4a4c9eb)
+  - [ ] Step 5: Extract sync bridge to sync_bridge.py (CRITICAL - async/sync compatibility)
+  - [ ] Step 6: Extract decorators to decorators.py
+  - [ ] Step 7: Extract EventRouter core to core.py
+  - [ ] Step 8: Extract advanced features to advanced.py
+  - [ ] Step 9: Create public API in __init__.py
+  - [ ] Step 10: Update imports across codebase
+  - [ ] Step 11: Thread safety testing
+  - [ ] Step 12: Comprehensive testing suite (7 categories, 95%+ coverage)
+- [ ] Week 7: Create examples/ directory ❌ NOT STARTED
+- [ ] Week 7: Reduce core docstrings ❌ NOT STARTED
+- [ ] Week 7: Systematic docstring cleanup ❌ NOT STARTED
+- [ ] Document Phase 3 changes ⚠️ (DECISIONS.md complete, need CHANGELOG.md)
+- [ ] Run full test suite ⚠️ (454/455 passing, 1 archived test failing)
 
 **Phase 4: API Improvements (Weeks 8-9)**
 - [ ] Week 8: Consolidate message operations
@@ -2675,6 +2687,51 @@ No active blockers at start. Potential blockers:
   - Reduce agent/core.py to <600 lines
   - Update CHANGELOG.md and MIGRATION.md
   - Update .spec/refactoring-plan.md with completed work
+
+#### Session 4 - 2025-11-15 - Phase 3 Event Router Reorganization (IN PROGRESS)
+- **Completed**:
+  - Created DECISIONS.md with comprehensive event router analysis
+  - Event router audit: usage patterns, complexity, race condition risks documented
+  - User decision: Option B - Reorganize + Thread Safety (APPROVED)
+  - Merged Phase 2 to main branch
+  - Created new branch `refactor/phase-3-simplification`
+  - Step 1: Created event_router/ package structure (8 modules)
+  - Step 2: Extracted protocols and types to protocols.py (170 lines)
+    - All type definitions, Protocol classes, ApplyInterrupt exception
+    - Thread-safe (no state, just types)
+    - Full mypy validation passing
+  - Step 3: Extracted EventContext to context.py (173 lines)
+    - EventContext[T_Parameters, T_Return] dataclass with full docs
+    - event_ctx contextvars.ContextVar for current context access
+    - Full mypy validation passing
+  - Step 4: Extracted HandlerRegistration to registration.py (295 lines)
+    - HandlerRegistration dataclass
+    - LifecyclePhase enum (BEFORE, AFTER, ERROR, FINALLY)
+    - HandlerRegistry class with threading.RLock for all operations
+    - Thread-safe register_handler(), get_sorted_handlers(), should_run_handler()
+    - Broadcast target support with add_broadcast_target()
+    - current_test_nodeid contextvars for pytest integration
+    - Full mypy validation passing
+  - All commits: 4773a22 (protocols+context), 4a4c9eb (registration)
+  - Test suite: 454/455 passing (only 1 archived test failing)
+- **Decisions Made**:
+  - Use Option B: Reorganize event router into 8-module package
+  - Preserve ALL async/sync compatibility features (user requirement)
+  - Add threading.RLock to all registration and handler access
+  - Full backward compatibility via __init__.py re-exports
+  - Comprehensive testing requirement: 95%+ coverage, 7 test categories
+- **Issues Found**:
+  - Initial TYPE_CHECKING import issues with forward references (fixed with string literals)
+  - pyupgrade warnings on forward references (cosmetic, non-blocking)
+  - All validation passing for completed modules
+- **Blockers**:
+  - None (continuing with Step 5)
+- **Next Steps**:
+  - Step 5: Extract sync bridge to sync_bridge.py (CRITICAL - async/sync compatibility)
+  - Step 6: Extract decorators to decorators.py
+  - Step 7: Extract EventRouter core to core.py
+  - Step 8: Extract advanced features to advanced.py
+  - Steps 9-12: Public API, imports update, testing, documentation
 
 ## References
 
