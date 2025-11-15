@@ -2712,7 +2712,25 @@ No active blockers at start. Potential blockers:
     - Broadcast target support with add_broadcast_target()
     - current_test_nodeid contextvars for pytest integration
     - Full mypy validation passing
-  - All commits: 4773a22 (protocols+context), 4a4c9eb (registration)
+  - Step 5: Extracted sync bridge to sync_bridge.py (484 lines) ⚠️ CRITICAL
+    - SyncBridge class with threading.RLock for all event loop operations
+    - Background event loop management in dedicated daemon thread
+    - run_coroutine_from_sync() for executing async handlers from sync context
+    - create_background_task() for fire-and-forget async execution
+    - Task and future tracking with proper cleanup
+    - join()/join_async() for waiting on background tasks
+    - close()/async_close() for proper resource cleanup
+    - Full mypy validation passing
+  - Step 6: Extracted decorators to decorators.py (404 lines)
+    - on(): Decorator for registering event handlers with metadata
+    - emit: Class-based decorator for lifecycle events (BEFORE/AFTER/ERROR/FINALLY)
+    - emit_event(): Backward-compatible function decorator
+    - typed_on(): Type-safe variant of @on decorator
+    - EventHandlerDecorator: Type alias for cleaner signatures
+    - Thread-safe (decorators are stateless)
+    - Full async/sync support with proper event context flow
+    - Full mypy validation passing
+  - All commits: 4773a22 (protocols+context), 4a4c9eb (registration), a6c7b61 (sync_bridge), 29373a7 (decorators)
   - Test suite: 454/455 passing (only 1 archived test failing)
 - **Decisions Made**:
   - Use Option B: Reorganize event router into 8-module package
@@ -2725,10 +2743,8 @@ No active blockers at start. Potential blockers:
   - pyupgrade warnings on forward references (cosmetic, non-blocking)
   - All validation passing for completed modules
 - **Blockers**:
-  - None (continuing with Step 5)
+  - None
 - **Next Steps**:
-  - Step 5: Extract sync bridge to sync_bridge.py (CRITICAL - async/sync compatibility)
-  - Step 6: Extract decorators to decorators.py
   - Step 7: Extract EventRouter core to core.py
   - Step 8: Extract advanced features to advanced.py
   - Steps 9-12: Public API, imports update, testing, documentation
