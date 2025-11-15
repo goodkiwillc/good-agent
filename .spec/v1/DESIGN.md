@@ -884,10 +884,13 @@ agent = Agent(
     model='gpt-4',
 )
 
-# modes
 
-@agent.modes.add('code-review')
-async def code_review_mode(agent: Agent):
+@agent.modes.add(
+    'code-review'
+)
+async def code_review_mode(
+    agent: Agent
+):
     with agent.context(
         append_system_prompt='''
         !# section mode type='code-review'
@@ -972,6 +975,77 @@ agent.commands.add(
         },
     }
 )
+
+```
+
+## With stateful resource integration.
+
+```python
+from good_agent import Agent
+from good_agent.resources import PlanningDocument
+
+# modes
+
+@agent.modes.add(
+    'with-plan',
+    create_isolated_context=True,
+    append_system_prompt='''
+    !# section mode type='with-plan'
+        You are operating in planning mode.
+        - Use the provided plan to guide your actions.
+        - Refer to the plan as needed.
+    !# section end
+    '''
+)
+async def planning_mode(
+    agent: Agent,
+    plan: PlanningDocument = Context('current_plan') # the plan doc is required - should already have been created - do we need some kind of state or predicate check?
+):
+    with agent.context(
+        ...
+    ):
+        # read plan
+        await agent.invoke(plan.read)
+
+        await agent.call(
+            'Based on the planning document, create a todo list of your immediate next steps.',
+            tools=[agent[ToDoManager].create_todo_list],
+            force_tool_use=True,
+        )
+
+        """
+        @TODO/Note:
+         - we have .invoke which calls a tool directly and records it in context
+         - we have .call which lets the LLM decide to use tools
+         - do we want a .execute which yields each message (like multi-agent) but within the same agent?
+         - do we have a method that forces the llm to call a tool (like force_tool_use above) but allows for the currying of specific tool arguments - the agent would either not see those parameters or the type signature would change to show single Literal values for those parameters (i.e. only one possible value)
+
+         what could this method be? (brainstorm ideas)
+            agent.execute_tool_call(tool_name: str, /, **curried_arguments) -> AsyncIterator[Message]:
+
+            agent.make_tool_call(tool_name: str, /, **curried_arguments) -> ToolResponse:
+
+            agent.run_tool_call(tool_name: str, /, **curried_arguments) -> ToolResponse:
+
+        """
+
+        await agent.call(
+            'Now, execute the next steps from your todo list.',
+        )
+
+        yield agent
+
+        # verify acceptance criteria met
+
+        async with plan(agent):
+            # plan as stateful resource, overrides toolset within context
+
+            await agent.call(
+                'Review the planning document and update it based on the work completed. Make sure the acceptance criteria have been met for each task before checking it off. If something is missing/incomplete, add notes/update the pan accordingly so that work can be completed in the next session.'
+            )
+
+
+
 
 ```
 

@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 from good_agent import Agent
-from good_agent.templating.injection import (
+from good_agent.components.template_manager.injection import (
     CircularDependencyError,
     ContextProviderError,
     ContextResolver,

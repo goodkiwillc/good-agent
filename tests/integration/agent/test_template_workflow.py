@@ -6,8 +6,11 @@ import pytest
 import pytest_asyncio
 import yaml
 from good_agent import Agent
-from good_agent.templating.index import TemplateIndex, TemplateVersionManager
-from good_agent.templating.storage import (
+from good_agent.components.template_manager.index import (
+    TemplateIndex,
+    TemplateVersionManager,
+)
+from good_agent.components.template_manager.storage import (
     ChainedStorage,
     FileSystemStorage,
     FileTemplateManager,

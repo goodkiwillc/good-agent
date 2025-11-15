@@ -7,12 +7,11 @@ from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 import logging
 
-import yaml
-from good_agent.templating import TemplateRegistry, create_environment
+import yaml  # type: ignore[import-untyped]
+from good_agent.core import templating
+from good_agent.core.templating import TemplateRegistry
 from jinja2 import BaseLoader, ChoiceLoader, Environment, TemplateNotFound
 from pydantic import BaseModel, Field
-
-from .environment import create_simple_template_environment
 
 logger = logging.getLogger(__name__)
 
@@ -402,6 +401,7 @@ class StorageTemplateLoader(BaseLoader):
     ) -> tuple[str, str | None, Any]:
         """Get template source for Jinja2."""
         # Check cache first
+        content: str | None
         if template in self._cache:
             content = self._cache[template]
         else:
@@ -413,8 +413,8 @@ class StorageTemplateLoader(BaseLoader):
                 # Use a thread to fetch the template
                 import threading
 
-                result = None
-                exception = None
+                result: str | None = None
+                exception: Exception | None = None
 
                 def fetch_in_thread():
                     nonlocal result, exception
@@ -483,7 +483,7 @@ class FileTemplateManager:
 
         # Create combined Jinja2 environment
         self.file_loader = StorageTemplateLoader(storage)
-        self.env = create_environment(
+        self.env = templating.create_environment(
             loader=ChoiceLoader(
                 [
                     self.file_loader,  # Check files first
@@ -555,7 +555,7 @@ class TemplateValidator:
     """Validates template syntax and structure."""
 
     def __init__(self, use_sandbox: bool = True):
-        self.env = create_simple_template_environment(use_sandbox=use_sandbox)
+        self.env = templating.create_environment(use_sandbox=use_sandbox)
 
     def validate(self, content: str) -> list[dict]:
         """Validate template content."""

@@ -72,7 +72,7 @@ from ..mock import AgentMockInterface
 from ..model.llm import LanguageModel
 from ..pool import AgentPool
 from ..store import put_message
-from ..templating import (
+from ..components.template_manager import (
     Template,
     TemplateManager,
     global_context_provider,
@@ -2286,7 +2286,7 @@ class Agent(EventRouter):
                     tool,
                     tool_name=resolved_name,
                     hide=hide,
-                tool_call_id=explicit_tool_call_id,
+                    tool_call_id=explicit_tool_call_id,
                     **all_params,
                 )
 
