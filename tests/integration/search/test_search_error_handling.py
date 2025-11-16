@@ -100,7 +100,7 @@ class TestErrorHandling:
         await agent.ready()
 
         # Should still get results from working provider
-        response = await agent.invoke("search", query="test")
+        response = await agent.tool_calls.invoke("search", query="test")
         results = response.response
 
         assert "working" in results
@@ -138,7 +138,7 @@ class TestErrorHandling:
 
         # Should return empty results for each provider
         print("Testing via agent.invoke...")
-        response = await agent.invoke("search", query="test")
+        response = await agent.tool_calls.invoke("search", query="test")
 
         # Debug output
         print(f"Response type: {type(response)}")
@@ -183,7 +183,7 @@ class TestErrorHandling:
         await agent.ready()
 
         # Search for SOCIAL_MEDIA which provider doesn't support
-        response = await agent.invoke(
+        response = await agent.tool_calls.invoke(
             "search",
             query="test",
             domains=["social_media"],
@@ -215,7 +215,7 @@ class TestErrorHandling:
         await agent.ready()
 
         # Search with invalid platform name
-        await agent.invoke(
+        await agent.tool_calls.invoke(
             "search",
             query="test",
             platforms=["invalid_platform", "google"],  # One invalid, one valid
@@ -247,7 +247,7 @@ class TestErrorHandling:
         await agent.ready()
 
         # Search with invalid domain name
-        await agent.invoke(
+        await agent.tool_calls.invoke(
             "search",
             query="test",
             domains=["invalid_domain", "web"],  # One invalid, one valid
@@ -279,7 +279,7 @@ class TestErrorHandling:
         await agent.ready()
 
         # Search with empty query
-        await agent.invoke("search", query="")
+        await agent.tool_calls.invoke("search", query="")
 
         # Should still call provider (provider decides how to handle empty query)
         provider.search.assert_called_once()
@@ -353,7 +353,7 @@ class TestEdgeCases:
         agent = Agent("Test", extensions=[search])
         await agent.ready()
 
-        response = await agent.invoke("search", query="test", limit=10)
+        response = await agent.tool_calls.invoke("search", query="test", limit=10)
         results = response.response
 
         # Provider returns 1000 but that's ok - component doesn't enforce limit
@@ -426,7 +426,7 @@ class TestEdgeCases:
         ]
 
         for query_text in special_queries:
-            response = await agent.invoke("search", query=query_text)
+            response = await agent.tool_calls.invoke("search", query=query_text)
             results = response.response
             assert provider.last_query == query_text
             assert len(results["echo"]) == 1
@@ -475,7 +475,7 @@ class TestEdgeCases:
         await agent.ready()
 
         # Launch multiple searches concurrently
-        tasks = [agent.invoke("search", query=f"query{i}") for i in range(5)]
+        tasks = [agent.tool_calls.invoke("search", query=f"query{i}") for i in range(5)]
 
         responses = await asyncio.gather(*tasks)
         results = [r.response for r in responses]
@@ -527,7 +527,7 @@ class TestEdgeCases:
         agent = Agent("Test", extensions=[search])
         await agent.ready()
 
-        response = await agent.invoke("search", query="test")
+        response = await agent.tool_calls.invoke("search", query="test")
         results = response.response
 
         assert len(results["minimal"]) == 1

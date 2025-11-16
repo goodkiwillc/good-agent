@@ -36,7 +36,7 @@ class TestInvokeFuncWithInvokeMany:
             today = datetime.now().date()
 
             # Create a bound function with preset parameters
-            search_tool = agent.invoke_func(
+            search_tool = agent.tool_calls.invoke_func(
                 search_web,
                 search_type="news",
                 since=today,
@@ -52,7 +52,7 @@ class TestInvokeFuncWithInvokeMany:
             ]
 
             # Use invoke_many with the bound function
-            results = await agent.invoke_many(
+            results = await agent.tool_calls.invoke_many(
                 invocations=[(search_tool, dict(query=q)) for q in queries]
             )
 
@@ -107,14 +107,14 @@ class TestInvokeFuncWithInvokeMany:
 
         async with Agent("You are a data processor", tools=[process_data]) as agent:
             # Create bound function
-            uppercase_processor = agent.invoke_func(process_data, transform="upper")
+            uppercase_processor = agent.tool_calls.invoke_func(process_data, transform="upper")
 
             # Process multiple items
             items = ["hello", "world", "test"]
 
             initial_message_count = len(agent)
 
-            results = await agent.invoke_many(
+            results = await agent.tool_calls.invoke_many(
                 [(uppercase_processor, {"data": item}) for item in items]
             )
 
@@ -168,12 +168,12 @@ class TestInvokeFuncWithInvokeMany:
 
         async with Agent("Test agent", tools=[complex_tool]) as agent:
             # Create bound function with some preset parameters
-            square_with_offset = agent.invoke_func(
+            square_with_offset = agent.tool_calls.invoke_func(
                 complex_tool, operation="square", offset=10, format_output=True
             )
 
             # Use in invoke_many with remaining parameters
-            results = await agent.invoke_many(
+            results = await agent.tool_calls.invoke_many(
                 [
                     (square_with_offset, {"value": 5, "multiplier": 2}),
                     (square_with_offset, {"value": 3, "multiplier": 3}),

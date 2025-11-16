@@ -137,18 +137,18 @@ async def test_bound_tools_work_with_agent():
     assert agent_tool is component.increment
 
     # Test calling through agent
-    result = await agent.invoke("increment", amount=7)
+    result = await agent.tool_calls.invoke("increment", amount=7)
     assert result.success
     assert result.response == 7
     assert component.state["counter"] == 7
 
     # Reset through agent
-    result = await agent.invoke("reset_counter")
+    result = await agent.tool_calls.invoke("reset_counter")
     assert result.success
     assert result.response == "Counter reset"
     assert component.state["counter"] == 0
 
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio

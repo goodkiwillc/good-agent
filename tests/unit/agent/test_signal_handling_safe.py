@@ -67,7 +67,7 @@ class TestSignalHandlerInstallation:
                 "Should be SignalHandler instance"
             )
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_signal_handlers_restored_after_cleanup(self):
@@ -86,7 +86,7 @@ class TestSignalHandlerInstallation:
         )
 
         # Clean up
-        await agent.async_close()
+        await agent.events.async_close()
         del agent
         gc.collect()
         await asyncio.sleep(0.1)
@@ -122,7 +122,7 @@ class TestSignalHandlerInstallation:
         assert during_count > initial_count, "Agent should be registered"
 
         # Clean up
-        await agent.async_close()
+        await agent.events.async_close()
         await asyncio.sleep(0.1)
 
         # Check unregistration
@@ -171,7 +171,7 @@ class TestSignalPropagation:
         except asyncio.CancelledError:
             pass
 
-        await agent.async_close()
+        await agent.events.async_close()
 
         # Verify cancellation happened
         assert len(tasks_cancelled) > 0, "Task should have been cancelled"
@@ -195,7 +195,7 @@ class TestSignalPropagation:
 
         # Reset for cleanup
         _global_handler._shutdown_initiated = False
-        await agent.async_close()
+        await agent.events.async_close()
 
 
 class TestMultiAgentCoordination:
@@ -232,7 +232,7 @@ class TestMultiAgentCoordination:
 
         # Clean up remaining agents
         for agent in agents[1:]:
-            await agent.async_close()
+            await agent.events.async_close()
 
         await asyncio.sleep(0.1)
 
@@ -287,7 +287,7 @@ class TestMultiAgentCoordination:
 
         # Clean up
         for agent in agents:
-            await agent.async_close()
+            await agent.events.async_close()
 
         # Verify all operations were cancelled
         assert cancellations["count"] == len(agents)
@@ -306,7 +306,7 @@ class TestWeakReferenceManagement:
             agent = Agent(f"Agent {i}")
             await agent.ready()
             agent_refs.append(weakref.ref(agent))
-            await agent.async_close()
+            await agent.events.async_close()
             del agent
 
         # Force garbage collection
@@ -377,7 +377,7 @@ class TestThreadSafety:
             assert registered >= len(agents)
 
         # Clean up concurrently
-        await asyncio.gather(*[agent.async_close() for agent in agents])
+        await asyncio.gather(*[agent.events.async_close() for agent in agents])
 
         await asyncio.sleep(0.2)
 
@@ -411,7 +411,7 @@ class TestThreadSafety:
         # All should see consistent state
         assert all(r == results[0] for r in results)
 
-        await agent.async_close()
+        await agent.events.async_close()
 
 
 class TestEdgeCases:
@@ -446,9 +446,9 @@ class TestEdgeCases:
 
         # Clean up
         if agent._state >= AgentState.READY:
-            await agent.async_close()
+            await agent.events.async_close()
         else:
-            agent.close()
+            agent.events.close()
 
     @pytest.mark.asyncio
     async def test_handler_with_no_agents(self):
@@ -469,7 +469,7 @@ class TestEdgeCases:
         for _ in range(10):
             agent = Agent("Rapid test")
             await agent.ready()
-            await agent.async_close()
+            await agent.events.async_close()
             del agent
 
         # Final cleanup

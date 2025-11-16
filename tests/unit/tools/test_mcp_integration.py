@@ -293,7 +293,7 @@ class TestAgentMCPIntegration:
         agent.tools["mcp_tool"] = mock_adapter
 
         # Invoke the tool
-        result = await agent.invoke("mcp_tool", question="What is the answer?")
+        result = await agent.tool_calls.invoke("mcp_tool", question="What is the answer?")
 
         # Check the result
         assert result.tool_name == "mcp_tool"
@@ -315,7 +315,7 @@ class TestAgentMCPIntegration:
             await agent.ready()
 
             # Clean up agent (should disconnect MCP)
-            await agent.async_close()
+            await agent.events.async_close()
 
             # Verify MCP servers were disconnected
             # Note: This might need adjustment based on actual cleanup implementation

@@ -43,17 +43,17 @@ async def test_resource_tools_edit_state_via_invoke():
         available = list(agent.tools.keys())
         assert "read" in available and "set" in available and "get" in available
 
-        r = await agent.invoke("set", path="a.c", value={"d": 2})
+        r = await agent.tool_calls.invoke("set", path="a.c", value={"d": 2})
         assert r.success and r.response == "ok"
 
         assert isinstance(res.state, Box)
         assert res.state.a.c.d == 2
 
-        g = await agent.invoke("get", path="a")
+        g = await agent.tool_calls.invoke("get", path="a")
         assert "b: 1" in g.response
         assert "c:\n  d: 2" in g.response or "c:\n    d: 2" in g.response
 
-        pr = await agent.invoke(
+        pr = await agent.tool_calls.invoke(
             "patch",
             ops=[{"op": "merge", "path": "a", "value": {"e": 3}}],
         )

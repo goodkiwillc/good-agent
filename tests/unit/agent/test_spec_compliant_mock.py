@@ -211,7 +211,7 @@ class TestSpecCompliantMockAPI:
                 assert messages[2].content == "The weather in NYC is 72°F and sunny!"
         finally:
             # Clean up Observable tasks
-            await agent.async_close()
+            await agent.events.async_close()
 
 
 class TestMockVsTestingFixtures:
@@ -235,7 +235,7 @@ class TestMockVsTestingFixtures:
                 assert isinstance(mock_agent.responses[0].content, str)
         finally:
             # Clean up Observable tasks
-            agent.join()
+            agent.events.join()
 
     def test_testing_fixtures_purpose(self):
         """Testing fixtures would be for mocking the LanguageModel/litellm layer"""

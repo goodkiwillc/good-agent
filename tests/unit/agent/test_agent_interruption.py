@@ -20,14 +20,14 @@ class TestAgentInterruption:
 
         # Track cleanup
         cleanup_called = False
-        original_close = agent.async_close
+        original_close = agent.events.async_close
 
         async def tracked_close():
             nonlocal cleanup_called
             cleanup_called = True
             await original_close()
 
-        agent.async_close = tracked_close
+        agent.events.async_close = tracked_close
 
         # Simulate some work
         task = asyncio.create_task(agent.call("Generate a long response"))
@@ -39,7 +39,7 @@ class TestAgentInterruption:
         try:
             await task
         except asyncio.CancelledError:
-            await agent.async_close()
+            await agent.events.async_close()
 
         assert cleanup_called
         assert len(agent._managed_tasks) == 0
@@ -370,7 +370,7 @@ class TestAgentInterruption:
 
         finally:
             # Always cleanup
-            await agent.async_close()
+            await agent.events.async_close()
 
 
 class TestSignalHandling:
@@ -448,7 +448,7 @@ class TestSignalHandling:
                 await asyncio.sleep(0.1)
 
                 # Clean up agent
-                await agent.async_close()
+                await agent.events.async_close()
 
                 # The exec_task should have been cancelled or completed with error
                 assert exec_task.done()
@@ -487,7 +487,7 @@ class TestMemoryLeaksAndDeadlocks:
             assert len(agent._managed_tasks) < 5  # Some tolerance for cleanup delay
 
         # Final cleanup
-        await agent.async_close()
+        await agent.events.async_close()
         assert len(agent._managed_tasks) == 0
 
     # REMOVED: test_eventrouter_thread_pool_cleanup
@@ -520,7 +520,7 @@ class TestRobustness:
         for result in results:
             assert isinstance(result, asyncio.CancelledError)
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_interruption_during_initialization(self):
@@ -542,7 +542,7 @@ class TestRobustness:
 
         # Agent should handle partial initialization gracefully
         if agent._state_machine._state >= AgentState.READY:
-            await agent.async_close()
+            await agent.events.async_close()
         else:
             # Force cleanup even if not ready
-            agent.close()
+            agent.events.close()

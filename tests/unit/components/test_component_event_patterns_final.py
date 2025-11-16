@@ -156,7 +156,7 @@ class TestComponentEventPatterns:
 
         # Execute and verify decorator handler fired
         component.events.clear()
-        result = await agent.invoke(test_tool, x="test")
+        result = await agent.tool_calls.invoke(test_tool, x="test")
 
         assert result.success
         tool_events = [e for e in component.events if "decorator_only:tool" in e]
@@ -216,7 +216,7 @@ class TestComponentEventPatterns:
         component.manual_events.clear()
         component.tool_events.clear()
 
-        result = await agent.invoke("test_tool", value="integration_test")
+        result = await agent.tool_calls.invoke("test_tool", value="integration_test")
 
         assert result.success
         assert result.response == "processed:integration_test"

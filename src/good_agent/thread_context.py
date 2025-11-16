@@ -24,7 +24,7 @@ class ForkContext:
         Args:
             agent: The agent to fork
             truncate_at: Optional index to truncate messages at
-            **fork_kwargs: Additional arguments to pass to agent.fork()
+            **fork_kwargs: Additional arguments to pass to agent.context_manager.fork()
         """
         self.agent = agent
         self.truncate_at = truncate_at
@@ -34,7 +34,7 @@ class ForkContext:
     async def __aenter__(self) -> Agent:
         """Create and return forked agent."""
         # Fork the agent with messages
-        self.forked_agent = self.agent.fork(include_messages=True, **self.fork_kwargs)
+        self.forked_agent = self.agent.context_manager.fork(include_messages=True, **self.fork_kwargs)
 
         # Wait for forked agent to be ready
         await self.forked_agent.ready()
@@ -195,7 +195,7 @@ def fork_context(
     Args:
         agent: The agent to fork
         truncate_at: Optional index to truncate messages at
-        **fork_kwargs: Additional arguments to pass to agent.fork()
+        **fork_kwargs: Additional arguments to pass to agent.context_manager.fork()
 
     Returns:
         ForkContext instance to use with async with

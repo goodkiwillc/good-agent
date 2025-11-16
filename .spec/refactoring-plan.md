@@ -1066,16 +1066,15 @@ Decision: Keep `add_tool_invocation()` and `add_tool_invocations()` as they serv
   - ✅ Test suites covering tools, templating, citations, and language models were migrated to the new manager properties. A new `_MockAgentEvents` shim keeps the language-model unit tests green without depending on the full Agent implementation.
   - ✅ Validators re-run after the refactor (`uv run ruff check`, `uv run pytest` → 1,316 passed / 36 skipped / 1 deselected). `uv run mypy src/good_agent` still reports the existing 147 repo-wide issues; none are new and the failure log was captured verbatim for future Phase 5 work.
 
-  Remaining work for Task 3 (target 2025-11-18): expose a public API guard test (≤30 attributes), finish migrating documentation (`MIGRATION.md`, `CHANGELOG.md`), and move remaining legacy aliases (`invoke*`, `context_provider*`, etc.) behind the new facades.
+  Remaining work for Task 3 (target 2025-11-18): finish polishing documentation (`MIGRATION.md`, `CHANGELOG.md`) and audit for any straggling legacy entry points before we drop the shims in v1.0.0.
 
-#### Current API Surface Snapshot (2025-11-16)
+#### Current API Surface Snapshot (2025-11-16, post-guard)
 
 | Kind | Count | Symbols |
 | --- | --- | --- |
-| Methods | 54 | add_tool_invocation, add_tool_invocations, add_tool_response, append, apply*, async_close, broadcast_to, call, chat, close, consume_from, context_provider(s), copy, create_task, do, execute, fork*, get*, has_pending_tool_calls, invoke*, join*, merge, on, print, ready, replace_message, resolve_pending_tool_calls, revert_to_version, set_event_trace/system_message, spawn, thread_context, typed, update_state, validate_message_sequence, wait_for_tasks |
-| Properties | 19 | assistant, ctx, current_version, event_trace_enabled, extensions, id, messages, mock, model, name, session_id, state, system, template, token_count, tool, tools, user, version_id |
-| Types/constants | 1 | EVENTS |
-| **Total** | **74** | — |
+| Public attributes (methods/properties/constants) | 30 | `EVENTS`, `append`, `assistant`, `call`, `config`, `context`, `context_manager`, `do`, `events`, `execute`, `extensions`, `id`, `messages`, `model`, `name`, `on`, `ready`, `session_id`, `state`, `system`, `task_count`, `tasks`, `token_count`, `tool`, `tool_calls`, `tools`, `user`, `validate_message_sequence`, `version_id`, `versioning` |
+
+Legacy shims (e.g., `invoke`, `apply`, `broadcast_to`, `context_provider`) remain callable but are omitted from `dir(agent)` and emit `DeprecationWarning` with guidance to transition to the respective manager facades.
 
 Observations:
 - 18 of the 54 methods are thin EventRouter forwards (`apply*`, `do`, `typed`, `broadcast_to`, `consume_from`, `set_event_trace`, `on`).
@@ -2224,7 +2223,7 @@ No active blockers at start. Potential blockers:
 **Phase 4: API Improvements (Weeks 8-9)** - IN PROGRESS 🚧
 - [x] Week 8: Consolidate message operations ✅ (commit debc772)
 - [x] Week 8: Clarify call() vs execute() ✅ (commit 0807ffb)
-- [ ] Week 8: Reduce Agent public API surface
+- [ ] Week 8: Reduce Agent public API surface (guard + facade routing done; docs pending)
 - [ ] Week 9: Standardize property vs method usage
 - [ ] Document Phase 4 changes
 - [x] Get user approval for API changes ✅ (Task 1 approved, Task 2 renaming declined)

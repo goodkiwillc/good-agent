@@ -82,7 +82,7 @@ class TestTemplateContext:
 
         counter = {"value": 0}
 
-        @agent.context_provider("counter")
+        @agent.context_manager.context_provider("counter")
         def provide_counter():
             counter["value"] += 1
             return counter["value"]
@@ -91,7 +91,7 @@ class TestTemplateContext:
         assert "counter" in agent.template._context_providers
 
         # Test async provider
-        @agent.context_provider("async_time")
+        @agent.context_manager.context_provider("async_time")
         async def provide_time():
             await asyncio.sleep(0.01)  # Simulate async work
             return "2024-01-01T12:00:00"
@@ -166,7 +166,7 @@ class TestTemplateContext:
                 "System prompt", context={"priority_test": "agent"}
             ) as agent:
                 # Set up instance provider
-                @agent.context_provider("priority_test")
+                @agent.context_manager.context_provider("priority_test")
                 def instance_provider():
                     return "instance"
 

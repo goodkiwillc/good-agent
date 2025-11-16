@@ -603,7 +603,7 @@ class TestFilteredMessageList:
         agent = Agent()
         await agent.ready()  # Wait for agent to be ready
         yield agent
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_filtered_list_creation(self, agent):
@@ -730,7 +730,7 @@ class TestMessageEventIntegration:
         agent = Agent()
         await agent.ready()  # Wait for agent to be ready
         yield agent
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_render_events_with_agent(self, agent):
@@ -775,7 +775,7 @@ class TestMessageEventIntegration:
         lm = LanguageModel()
         # Set up the component properly
         lm._agent = agent
-        agent.broadcast_to(lm)
+        agent.events.broadcast_to(lm)
         lm.setup(agent)
 
         # Format message for LLM (this fires events)
@@ -824,7 +824,7 @@ class TestMessageEventIntegration:
         lm = LanguageModel()
         # Set up the component properly
         lm._agent = agent
-        agent.broadcast_to(lm)
+        agent.events.broadcast_to(lm)
         lm.setup(agent)
 
         formatted = await lm.format_message_list_for_llm([msg])
@@ -879,7 +879,7 @@ class TestMessageEventIntegration:
         lm = LanguageModel()
         # Set up the component properly
         lm._agent = agent
-        agent.broadcast_to(lm)
+        agent.events.broadcast_to(lm)
         lm.setup(agent)
 
         await lm.format_message_list_for_llm([msg])
@@ -943,7 +943,7 @@ class TestRenderCaching:
         msg.render(RenderMode.DISPLAY)
         assert RenderMode.DISPLAY in msg._rendered_cache
 
-        await agent.async_close()
+        await agent.events.async_close()
 
 
 class TestMessageCompatibility:
@@ -1019,7 +1019,7 @@ class TestErrorHandling:
             with pytest.raises(ValueError, match="Message not attached to agent"):
                 _ = msg.index
         finally:
-            await agent.async_close()
+            await agent.events.async_close()
 
     def test_weak_reference_cleanup(self):
         """Test weak reference cleanup when agent is deleted."""
@@ -1121,7 +1121,7 @@ class TestRenderRecursionGuard:
             assert render_call_count <= 2  # Initial call + one recursive attempt
 
         finally:
-            await agent.async_close()
+            await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_render_guard_with_cached_content(self):
@@ -1170,7 +1170,7 @@ class TestRenderRecursionGuard:
             assert content == "Simple message"
 
         finally:
-            await agent.async_close()
+            await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_render_guard_fallback_rendering(self):
@@ -1218,7 +1218,7 @@ class TestRenderRecursionGuard:
             assert "Hello Test" in content
 
         finally:
-            await agent.async_close()
+            await agent.events.async_close()
 
     def test_render_guard_thread_local_isolation(self):
         """Test that render guard is isolated per thread."""

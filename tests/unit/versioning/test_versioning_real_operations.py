@@ -37,7 +37,7 @@ class TestVersioningWithRealOperations:
         for msg in agent.messages:
             assert agent._message_registry.get(msg.id) is not None
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_versioning_with_message_manipulation(self):
@@ -67,7 +67,7 @@ class TestVersioningWithRealOperations:
         assert len(agent.messages) == 0
         assert len(agent.current_version) == 0
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_versioning_with_tools_no_llm(self):
@@ -87,7 +87,7 @@ class TestVersioningWithRealOperations:
         assert agent._version_manager.version_count == 1
 
         # Manually invoke tool (simulating what LLM would do)
-        result = await agent.invoke("add_numbers", a=5, b=3)
+        result = await agent.tool_calls.invoke("add_numbers", a=5, b=3)
 
         # Tool invocation creates versions for tool request/response messages
         # The exact count depends on how the tool system handles messages
@@ -98,7 +98,7 @@ class TestVersioningWithRealOperations:
         agent.append(f"Result: {result}", role="assistant")
         assert agent._version_manager.version_count == version_before_append + 1
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_versioning_with_fork_operations(self):
@@ -145,7 +145,7 @@ class TestVersioningWithRealOperations:
         initial_versions = agent._version_manager.version_count
 
         # ThreadContext with truncation
-        async with agent.thread_context(truncate_at=2) as ctx:
+        async with agent.context_manager.thread_context(truncate_at=2) as ctx:
             # Truncation creates new version
             assert agent._version_manager.version_count > initial_versions
             assert len(ctx.messages) == 2
@@ -160,7 +160,7 @@ class TestVersioningWithRealOperations:
         assert final_versions > initial_versions
 
         # ForkContext
-        async with agent.fork_context() as forked:
+        async with agent.context_manager.fork_context() as forked:
             # Forked has separate version manager
             assert forked._version_manager is not agent._version_manager
 
@@ -170,7 +170,7 @@ class TestVersioningWithRealOperations:
         # Parent unchanged
         assert agent._version_manager.version_count == final_versions
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_versioning_with_revert_operations(self):
@@ -202,7 +202,7 @@ class TestVersioningWithRealOperations:
         assert len(agent.messages) == 3
         assert "v3" in str(agent.messages[-1])
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_versioning_with_simple_mock_llm(self):
@@ -258,7 +258,7 @@ class TestVersioningWithRealOperations:
             for msg in agent.messages[-2:]:
                 assert agent._message_registry.get(msg.id) is not None
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_versioning_preserves_message_identity(self):
@@ -296,7 +296,7 @@ class TestVersioningWithRealOperations:
         assert retrieved1 is not None
         assert retrieved2 is not None
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_versioning_with_mixed_operations(self):
@@ -333,4 +333,4 @@ class TestVersioningWithRealOperations:
         agent.revert_to_version(2)  # After first replacement
         assert len(agent.messages) == 2
 
-        await agent.async_close()
+        await agent.events.async_close()

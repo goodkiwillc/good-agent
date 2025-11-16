@@ -116,7 +116,7 @@ class TestComponentDecoratorPatterns:
         assert "manual:message_append" in component.events
 
         # Execute tool via agent to trigger decorator handlers
-        result = await agent.invoke("test_tool", value="test")
+        result = await agent.tool_calls.invoke("test_tool", value="test")
 
         # Verify tool executed
         assert result.success
@@ -260,7 +260,7 @@ class TestComponentDecoratorPatterns:
         await agent.ready()
 
         # Execute tool via agent to trigger async handlers
-        result = await agent.invoke("trigger_tool", value="async_test")
+        result = await agent.tool_calls.invoke("trigger_tool", value="async_test")
 
         assert result.success
         assert result.response == "triggered:async_test"

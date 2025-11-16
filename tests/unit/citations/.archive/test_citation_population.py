@@ -70,7 +70,7 @@ The research [1] shows interesting results.
     )
     print()
 
-    await agent.async_close()
+    await agent.events.async_close()
     print("✅ Test completed")
 
 

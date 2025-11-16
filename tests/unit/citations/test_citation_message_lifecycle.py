@@ -32,7 +32,7 @@ class TestMessageCreationWithCitations:
         rendered = message.render(RenderMode.DISPLAY)
         assert "[1]:" not in rendered  # Reference block removed
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_create_message_with_explicit_citations_list(self):
@@ -53,7 +53,7 @@ class TestMessageCreationWithCitations:
         assert message.citations == citations
         assert len(message.citations) == 2
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_create_message_with_inline_urls(self):
@@ -72,7 +72,7 @@ class TestMessageCreationWithCitations:
         assert len(message.citations) >= 1
         assert any("example.com/doc.pdf" in str(c) for c in message.citations)
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_create_tool_message_with_xml_urls(self):
@@ -99,7 +99,7 @@ class TestMessageCreationWithCitations:
         rendered = message.render(RenderMode.DISPLAY)
         assert 'idx="1"' in rendered or 'url="https://example.com/item1"' in rendered
 
-        await agent.async_close()
+        await agent.events.async_close()
 
 
 class TestLocalCitationStorage:
@@ -129,7 +129,7 @@ class TestLocalCitationStorage:
         assert str(message.citations[1]) == "https://example.com/doc3"
         assert str(message.citations[2]) == "https://example.com/doc5"
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_duplicate_urls_deduplicated_in_message(self):
@@ -151,7 +151,7 @@ class TestLocalCitationStorage:
         assert len(message.citations) == 1
         assert str(message.citations[0]) == "https://example.com/doc"
 
-        await agent.async_close()
+        await agent.events.async_close()
 
 
 class TestMessageRenderingForDisplay:
@@ -183,7 +183,7 @@ class TestMessageRenderingForDisplay:
         # Reference block should be removed
         assert "[1]:" not in rendered
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_render_display_tool_message_shows_urls(self):
@@ -208,7 +208,7 @@ class TestMessageRenderingForDisplay:
         # idx should convert to url for display
         assert 'url="https://example.com/item1"' in rendered or 'idx="1"' in rendered
 
-        await agent.async_close()
+        await agent.events.async_close()
 
 
 class TestMessageRenderingForLLM:
@@ -255,7 +255,7 @@ class TestMessageRenderingForLLM:
         assert f"[!CITE_{global_idx_1}!]" in msg1_llm
         assert f"[!CITE_{global_idx_2}!]" in msg2_llm
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_render_llm_reuses_global_index_for_same_url(self):
@@ -281,7 +281,7 @@ class TestMessageRenderingForLLM:
         assert f"[!CITE_{global_idx}!]" in msg1_llm
         assert f"[!CITE_{global_idx}!]" in msg2_llm
 
-        await agent.async_close()
+        await agent.events.async_close()
 
 
 class TestMixedFormatHandling:
@@ -311,7 +311,7 @@ class TestMixedFormatHandling:
         assert message.citations is not None
         assert len(message.citations) >= 2
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_xml_href_attributes_also_extracted(self):
@@ -333,4 +333,4 @@ class TestMixedFormatHandling:
         assert len(citations) >= 2
         assert any("link1" in str(c) for c in citations)
 
-        await agent.async_close()
+        await agent.events.async_close()

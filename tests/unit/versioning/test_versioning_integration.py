@@ -78,7 +78,7 @@ class TestVersioningWithAgentOperations:
         for msg in agent.messages:
             assert agent._message_registry.get(msg.id) is not None
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_versioning_with_multiple_calls(self, agent_with_mock_llm):
@@ -103,7 +103,7 @@ class TestVersioningWithAgentOperations:
         )  # After first Q&A (version 2 = system + user + assistant)
         assert len(agent.messages) == 3  # system + first Q&A
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_thread_context_with_call(self, agent_with_mock_llm):
@@ -117,7 +117,7 @@ class TestVersioningWithAgentOperations:
         original_count = len(agent.messages)
 
         # Use thread context to truncate and add new message
-        async with agent.thread_context(truncate_at=3) as ctx_agent:
+        async with agent.context_manager.thread_context(truncate_at=3) as ctx_agent:
             # Should only see system + first Q&A
             assert len(ctx_agent.messages) == 3
 
@@ -131,7 +131,7 @@ class TestVersioningWithAgentOperations:
         assert len(agent.messages) == original_count + 2
         assert "Summary question" in str(agent.messages[-2])
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_fork_context_with_call(self, agent_with_mock_llm):
@@ -144,7 +144,7 @@ class TestVersioningWithAgentOperations:
         original_version_count = agent._version_manager.version_count
 
         # Use fork context
-        async with agent.fork_context() as forked:
+        async with agent.context_manager.fork_context() as forked:
             # Forked agent should have same messages
             assert len(forked.messages) == original_count
 
@@ -159,7 +159,7 @@ class TestVersioningWithAgentOperations:
         assert len(agent.messages) == original_count
         assert agent._version_manager.version_count == original_version_count
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_versioning_with_tools(self):
@@ -239,7 +239,7 @@ class TestVersioningWithAgentOperations:
         # Tool messages are complex, just check they exist
         assert len(agent.messages) == 5
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_version_consistency_after_error(self, agent_with_mock_llm):
@@ -287,7 +287,7 @@ class TestVersioningWithAgentOperations:
         assert len(agent.messages) == initial_message_count + 3
         assert agent._version_manager.version_count == initial_version_count + 3
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_version_persistence_simulation(self):
@@ -351,7 +351,7 @@ class TestMemoryAndPerformance:
             for msg in agent.messages:
                 registry.register(msg, agent)
 
-            await agent.async_close()
+            await agent.events.async_close()
             return msg_ids
 
         msg_ids = await create_agent_and_messages()
@@ -400,7 +400,7 @@ class TestMemoryAndPerformance:
         assert agent._version_manager.current_version == []
         assert agent._version_manager.version_count == 101
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_large_message_handling(self):
@@ -428,7 +428,7 @@ class TestMemoryAndPerformance:
         assert len(version_ids) == 2  # system + user
         assert version_ids[1] == msg_id  # User message is at index 1
 
-        await agent.async_close()
+        await agent.events.async_close()
 
 
 class TestEdgeCases:
@@ -449,13 +449,13 @@ class TestEdgeCases:
             agent.revert_to_version(0)
 
         # Thread context should work
-        async with agent.thread_context() as ctx:
+        async with agent.context_manager.thread_context() as ctx:
             assert len(ctx.messages) == 0
             ctx.append("New message")
 
         assert len(agent.messages) == 1
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_concurrent_modifications(self):
@@ -485,7 +485,7 @@ class TestEdgeCases:
         for msg in agent.messages:
             assert agent._message_registry.get(msg.id) is not None
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_version_index_bounds(self):
@@ -511,7 +511,7 @@ class TestEdgeCases:
         with pytest.raises(IndexError):
             agent.revert_to_version(-100)
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_message_id_uniqueness(self):
@@ -545,4 +545,4 @@ class TestEdgeCases:
         # The same message ID can appear across versions (that's expected)
         # But within a version, each ID should be unique
 
-        await agent.async_close()
+        await agent.events.async_close()

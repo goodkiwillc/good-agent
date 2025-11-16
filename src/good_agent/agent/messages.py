@@ -170,7 +170,7 @@ class MessageManager:
 
         message._set_agent(self.agent)
 
-        ctx: EventContext[Any, SystemMessage] = self.agent.typed(
+        ctx: EventContext[Any, SystemMessage] = self.agent.events.typed(
             return_type=SystemMessage
         ).apply_sync(
             AgentEvents.MESSAGE_SET_SYSTEM_BEFORE, output=message, agent=self.agent

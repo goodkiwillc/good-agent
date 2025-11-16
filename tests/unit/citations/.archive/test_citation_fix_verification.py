@@ -94,7 +94,7 @@ async def test_citation_fix():
     else:
         print("❌ FAILURE: Some citations are not mapping correctly")
 
-    await agent.async_close()
+    await agent.events.async_close()
     return all_passed
 
 

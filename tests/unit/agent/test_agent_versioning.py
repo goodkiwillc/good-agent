@@ -21,7 +21,7 @@ class TestAgentVersioning:
     async def agent_cleanup(self, versioned_agent):
         """Cleanup fixture for agents."""
         yield versioned_agent
-        await versioned_agent.async_close()
+        await versioned_agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_agent_initializes_versioning(self):
@@ -39,7 +39,7 @@ class TestAgentVersioning:
         assert agent._messages._registry is not None
         assert agent._messages._version_manager is not None
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_agent_append_creates_version(self, versioned_agent):
@@ -63,7 +63,7 @@ class TestAgentVersioning:
         assert current_version[0] == versioned_agent.messages[0].id
         assert current_version[1] == versioned_agent.messages[1].id
 
-        await versioned_agent.async_close()
+        await versioned_agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_agent_message_replacement_preserves_old(self, versioned_agent):
@@ -84,7 +84,7 @@ class TestAgentVersioning:
         # New version created
         assert versioned_agent._version_manager.version_count == 2
 
-        await versioned_agent.async_close()
+        await versioned_agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_agent_revert_to_version(self, versioned_agent):
@@ -104,7 +104,7 @@ class TestAgentVersioning:
         assert len(versioned_agent.messages) == 2
         assert "Message 2" in str(versioned_agent.messages[-1])
 
-        await versioned_agent.async_close()
+        await versioned_agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_thread_context_manager(self, versioned_agent):
@@ -129,7 +129,7 @@ class TestAgentVersioning:
         assert "Message 3" in str(versioned_agent.messages[2])
         assert "Summary" in str(versioned_agent.messages[3])
 
-        await versioned_agent.async_close()
+        await versioned_agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_fork_context_manager(self, versioned_agent):
@@ -156,7 +156,7 @@ class TestAgentVersioning:
         assert len(versioned_agent.messages) == 3
         assert "Fork message" not in str(versioned_agent.messages)
 
-        await versioned_agent.async_close()
+        await versioned_agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_agent_context_methods(self, versioned_agent):
@@ -164,7 +164,7 @@ class TestAgentVersioning:
         versioned_agent.append("Test")
 
         # Test thread_context method
-        async with versioned_agent.thread_context(truncate_at=0) as ctx:
+        async with versioned_agent.context_manager.thread_context(truncate_at=0) as ctx:
             assert ctx is versioned_agent
             assert len(ctx.messages) == 0
             ctx.append("New")
@@ -172,11 +172,11 @@ class TestAgentVersioning:
         assert len(versioned_agent.messages) == 2
 
         # Test fork_context method
-        async with versioned_agent.fork_context(truncate_at=1) as fork:
+        async with versioned_agent.context_manager.fork_context(truncate_at=1) as fork:
             assert fork is not versioned_agent
             assert len(fork.messages) == 1
 
-        await versioned_agent.async_close()
+        await versioned_agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_current_version_property(self, versioned_agent):
@@ -194,7 +194,7 @@ class TestAgentVersioning:
         assert version_ids[0] == versioned_agent.messages[0].id
         assert version_ids[1] == versioned_agent.messages[1].id
 
-        await versioned_agent.async_close()
+        await versioned_agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_version_tracking_across_operations(self, versioned_agent):
@@ -221,7 +221,7 @@ class TestAgentVersioning:
         assert versioned_agent._version_manager.version_count == 4
         assert versioned_agent.current_version == []
 
-        await versioned_agent.async_close()
+        await versioned_agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_message_registry_tracks_ownership(self, versioned_agent):
@@ -245,8 +245,8 @@ class TestAgentVersioning:
         assert owner2 is other_agent
         assert owner2 is not versioned_agent
 
-        await versioned_agent.async_close()
-        await other_agent.async_close()
+        await versioned_agent.events.async_close()
+        await other_agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_fork_inherits_versioning(self, versioned_agent):
@@ -254,7 +254,7 @@ class TestAgentVersioning:
         versioned_agent.append("Original")
 
         # Fork the agent
-        forked = versioned_agent.fork(include_messages=True)
+        forked = versioned_agent.context_manager.fork(include_messages=True)
         await forked.ready()
 
         # Forked agent should have its own version manager
@@ -270,7 +270,7 @@ class TestAgentVersioning:
         assert len(forked.messages) == 2
         assert len(versioned_agent.messages) == 1
 
-        await versioned_agent.async_close()
+        await versioned_agent.events.async_close()
         await forked.async_close()
 
 
@@ -305,7 +305,7 @@ class TestBackwardCompatibility:
         assert len(agent.assistant) == 1
         assert len(agent.system) == 1
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_message_list_interface_preserved(self):
@@ -336,7 +336,7 @@ class TestBackwardCompatibility:
         for i, msg in enumerate(msgs):
             assert msg == msgs[i]
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_fork_still_works(self):
@@ -347,18 +347,18 @@ class TestBackwardCompatibility:
         agent.append("Message")
 
         # Fork without messages
-        fork1 = agent.fork(include_messages=False)
+        fork1 = agent.context_manager.fork(include_messages=False)
         await fork1.ready()
         assert len(fork1.messages) == 0
 
         # Fork with messages
-        fork2 = agent.fork(include_messages=True)
+        fork2 = agent.context_manager.fork(include_messages=True)
         await fork2.ready()
         assert len(fork2.messages) == 2  # System message + user message
         assert str(fork2.messages[-1]) == str(
             agent.messages[-1]
         )  # Last message matches
 
-        await agent.async_close()
+        await agent.events.async_close()
         await fork1.async_close()
         await fork2.async_close()

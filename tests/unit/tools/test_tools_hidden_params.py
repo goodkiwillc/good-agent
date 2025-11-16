@@ -80,7 +80,7 @@ class TestHiddenParameters:
         await agent.ready()  # Ensure agent is ready
 
         # Invoke tool with both visible and hidden parameters
-        response = await agent.invoke(
+        response = await agent.tool_calls.invoke(
             search_tool, query="test query", api_key="secret123"
         )
 
@@ -114,7 +114,7 @@ class TestHiddenParameters:
         await agent.ready()  # Ensure agent is ready
 
         # Invoke callable with hide parameter
-        response = await agent.invoke(
+        response = await agent.tool_calls.invoke(
             process_data,
             hide=["token", "debug"],
             data="test_data",
@@ -197,7 +197,7 @@ class TestHiddenParameters:
         await agent.ready()  # Ensure agent is ready
 
         # Create bound function with hidden params
-        bound_call = agent.invoke_func(
+        bound_call = agent.tool_calls.invoke_func(
             api_call,
             hide=["api_key", "timeout"],
             api_key="secret_key",  # Bind hidden param
@@ -259,7 +259,7 @@ class TestHiddenParameters:
         await agent.ready()  # Ensure agent is ready
 
         # Invoke with both params
-        response = await agent.invoke(
+        response = await agent.tool_calls.invoke(
             multiply,
             value=5,
             multiplier=3,  # Hidden but still functional

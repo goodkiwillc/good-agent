@@ -83,5 +83,5 @@ async def test_citation_display():
     print(f"Citations field: {msg2.citations}")
     print()
 
-    await agent.async_close()
+    await agent.events.async_close()
     print("✅ Test completed")
