@@ -2,86 +2,11 @@ from enum import StrEnum
 
 
 class AgentEvents(StrEnum):
-    """
-    PURPOSE: Comprehensive event type definitions for agent lifecycle and operations.
+    """Canonical event names emitted by Agent and its components.
 
-    PURPOSE: Defines all events that agents can emit during their lifecycle,
-    providing hooks for extensions, monitoring, debugging, and system integration.
-    Events follow a consistent naming convention and include comprehensive
-    coverage of agent operations from initialization to execution.
-
-    NAMING CONVENTION:
-    - Format: domain:action:phase where phase is before/after/error
-    - Examples: llm:complete:before, tool:call:after, execute:before
-    - State transitions may omit phase (agent:state:change)
-    - DEPRECATED events marked with replacement suggestions
-
-    EVENT FLOW PATTERNS:
-    1. BEFORE events: Allow modification of parameters before operation
-    2. MAIN events: Core operation execution (may not exist for all operations)
-    3. AFTER events: Notification of completion with results
-    4. ERROR events: Error handling with context and recovery information
-
-    USAGE GUIDELINES:
-    - Use apply() for events that can modify data (BEFORE events)
-    - Use do() for notification-only events (AFTER/ERROR events)
-    - Event handlers should be async and handle exceptions gracefully
-    - Parameter validation occurs at emission time
-    - Consider performance impact for frequently fired events
-
-    EVENT CATEGORIES:
-    - AGENT_*: Core agent lifecycle and state management
-    - EXTENSION_*: Extension installation and management
-    - MESSAGE_*: Message creation, rendering, and manipulation
-    - LLM_*: Language model interactions and completions
-    - TOOL_*: Tool execution and response handling
-    - EXECUTE_*: Main agent execution flow control
-    - CONTEXT_*: Context provider integration
-    - TEMPLATE_*: Template compilation and rendering
-    - STORAGE_*: Data persistence operations
-    - CACHE_*: Caching layer interactions
-    - VALIDATION_*: Input validation and schema checking
-    - CITATIONS_*: Citation extraction and management
-    - FETCH_*: Web content retrieval and processing
-    - SUMMARY_*: Content summarization operations
-
-    INTEGRATION EXAMPLES:
-    ```python
-    # Monitor LLM completions for logging
-    agent.on(AgentEvents.LLM_COMPLETE_AFTER)(log_completion_metrics)
-
-    # Modify messages before rendering
-    agent.on(AgentEvents.MESSAGE_RENDER_BEFORE).apply(add_security_headers)
-
-    # Handle tool errors with fallback logic
-    agent.on(AgentEvents.TOOL_CALL_ERROR)(handle_tool_failure)
-
-    # Track agent state changes
-    agent.on(AgentEvents.AGENT_STATE_CHANGE)(update_agent_status)
-
-    # Monitor cache performance
-    agent.on(AgentEvents.CACHE_HIT)(track_cache_hit)
-    agent.on(AgentEvents.CACHE_MISS)(track_cache_miss)
-    ```
-
-    PERFORMANCE CONSIDERATIONS:
-    - Event dispatch is designed to be non-blocking
-    - Handler failures are logged but don't interrupt agent flow
-    - Frequently fired events (like streaming chunks) should have lightweight handlers
-    - Use event filtering to reduce unnecessary handler execution
-    - Consider async handler patterns for I/O-intensive operations
-
-    DEPRECATION POLICY:
-    - Deprecated events marked with replacement suggestions
-    - Maintained for backward compatibility but may be removed in future versions
-    - New event names follow consistent naming conventions
-    - Migration path provided for all deprecated events
-
-    EXTENSION POINTS:
-    - All events are available for extension integration
-    - Use events to provide cross-cutting concerns (logging, monitoring, security)
-    - Events enable loose coupling between agent core and extensions
-    - Custom events can be added following the naming convention
+    Names follow ``domain:action[:phase]`` and cover lifecycle, LLM, tool, and
+    template operations. ``examples/events/basic_events.py`` shows how to attach
+    handlers using ``agent.on(AgentEvents.*)``.
     """
 
     # ===== Agent Lifecycle Events =====

@@ -4,6 +4,70 @@ from good_agent.components.component import AgentComponent
 from good_agent.config import AgentConfigManager
 
 
+class _MockAgentEvents:
+    """Lightweight facade that mimics :class:`Agent.events` for tests."""
+
+    def __init__(self, agent: "MockAgent") -> None:
+        self._agent = agent
+        self._event_trace_enabled = False
+
+    async def apply(self, event: str, **kwargs: Any):
+        return await self._agent.apply(event, **kwargs)
+
+    async def apply_async(self, event: str, **kwargs: Any):  # pragma: no cover - alias
+        return await self.apply(event, **kwargs)
+
+    def apply_sync(self, event: str, **kwargs: Any):
+        return self._agent.apply_sync(event, **kwargs)
+
+    async def apply_typed(
+        self, event: str, params_type: type | None, return_type: type | None, **kwargs: Any
+    ):
+        return await self._agent.apply_typed(event, params_type, return_type, **kwargs)
+
+    def apply_typed_sync(
+        self, event: str, params_type: type | None, return_type: type | None, **kwargs: Any
+    ):
+        return self._agent.apply_sync(event, **kwargs)
+
+    def typed(self, params_type: type | None = None, return_type: type | None = None):
+        async def _typed(event: str, **kwargs: Any):
+            return await self.apply_typed(event, params_type, return_type, **kwargs)
+
+        return _typed
+
+    def broadcast_to(self, component: AgentComponent):
+        return self._agent.broadcast_to(component)
+
+    def consume_from(self, _other: Any):  # pragma: no cover - no-op
+        return None
+
+    def set_event_trace(self, enabled: bool, *, verbosity: int = 1, use_rich: bool = True):
+        self._event_trace_enabled = enabled
+
+    @property
+    def event_trace_enabled(self) -> bool:
+        return self._event_trace_enabled
+
+    @property
+    def ctx(self):
+        from good_agent.core.event_router import EventContext
+
+        return EventContext(parameters={}, output=None)
+
+    def join(self, timeout: float = 5.0):  # pragma: no cover - no-op
+        return None
+
+    async def join_async(self, timeout: float = 5.0):  # pragma: no cover - no-op
+        return None
+
+    def close(self):  # pragma: no cover - no-op
+        return None
+
+    async def async_close(self):  # pragma: no cover - no-op
+        return None
+
+
 class MockAgent(Any):
     """Mock agent for testing AgentComponent subclasses.
 
@@ -16,10 +80,15 @@ class MockAgent(Any):
         self.config = AgentConfigManager(**config_kwargs)
         self._components = []
         self._broadcasts = []
+        self._events = _MockAgentEvents(self)
 
     def broadcast_to(self, component: AgentComponent):
         """Mock broadcast_to method."""
         self._broadcasts.append(component)
+
+    @property
+    def events(self) -> _MockAgentEvents:
+        return self._events
 
     def install_component(self, component: AgentComponent):
         """Install a component on this mock agent."""
@@ -30,6 +99,9 @@ class MockAgent(Any):
         self._components.append(component)
         return component
 
+    async def apply(self, event: str, **kwargs: Any):
+        return await self.apply_typed(event, None, None, **kwargs)
+
     async def apply_typed(self, event, params_type, return_type, **kwargs):
         """Mock apply_typed method for EventRouter compatibility."""
         from good_agent.core.event_router import EventContext
@@ -38,6 +110,12 @@ class MockAgent(Any):
         output = kwargs.get("output", None)
 
         # Return EventContext with parameters and preserved output
+        return EventContext(parameters=kwargs, output=output)
+
+    def apply_sync(self, event: str, **kwargs: Any):
+        from good_agent.core.event_router import EventContext
+
+        output = kwargs.get("output", None)
         return EventContext(parameters=kwargs, output=output)
 
 

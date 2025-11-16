@@ -68,7 +68,7 @@ class ForkContext:
         """Clean up forked agent."""
         if self.forked_agent:
             # Close the forked agent
-            await self.forked_agent.async_close()
+            await self.forked_agent.events.async_close()
             logger.debug(f"Closed forked agent {self.forked_agent._id}")
         self.forked_agent = None
 

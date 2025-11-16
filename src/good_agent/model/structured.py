@@ -39,33 +39,7 @@ class StructuredOutputExtractor:
         response_model: type[BaseModel],
         **kwargs: Unpack[ModelConfig],
     ) -> BaseModel:
-        """Extract structured data from LLM responses using instructor library.
-
-        Converts unstructured LLM responses into validated Pydantic models
-        with automatic retry logic, fallback model support, and comprehensive
-        error handling.
-
-        Args:
-            messages: Sequence of chat messages for extraction context
-            response_model: Pydantic BaseModel class for response validation
-            **kwargs: Additional model configuration parameters
-
-        Returns:
-            Validated instance of the response_model
-
-        Raises:
-            ValueError: If instructor returns None instead of BaseModel
-            ValidationError: If response cannot be validated against schema
-            Exception: When all extraction attempts fail across models
-
-        Example:
-            >>> from pydantic import BaseModel
-            >>> class UserInfo(BaseModel):
-            ...     name: str
-            ...     age: int
-            >>> messages = [{"role": "user", "content": "John is 25"}]
-            >>> user = await extractor.extract(messages, UserInfo)
-        """
+        """Run instructor against ``messages`` and return a validated ``response_model`` instance."""
         from .overrides import model_override_registry
 
         # Note: messages already have tool call pairs ensured by format_message_list_for_llm()
@@ -80,7 +54,7 @@ class StructuredOutputExtractor:
         from ..core.event_router import EventContext
 
         start_time = time.time()
-        ctx: EventContext[CompletionEvent, None] = await self.llm.agent.apply_typed(
+        ctx: EventContext[CompletionEvent, None] = await self.llm.agent.events.apply_typed(
             AgentEvents.LLM_EXTRACT_BEFORE,
             CompletionEvent,
             None,  # No specific return type expected for 'before' event

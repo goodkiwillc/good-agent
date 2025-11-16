@@ -173,34 +173,7 @@ class SyncBridge:
                 logger.debug(f"Started event loop in thread {self._loop_thread.name}")
 
     def run_coroutine_from_sync(self, coro: Any, timeout: float | None = None) -> Any:
-        """Run a coroutine from synchronous context.
-
-        This is the core method enabling sync->async calls. It ensures the
-        event loop is running and schedules the coroutine for execution.
-
-        Args:
-            coro: Coroutine to execute
-            timeout: Timeout in seconds (None = use default_timeout)
-
-        Returns:
-            Result from coroutine execution
-
-        Raises:
-            TimeoutError: If execution exceeds timeout
-            Exception: Any exception raised by the coroutine
-
-        THREAD SAFETY: Thread-safe via run_coroutine_threadsafe()
-
-        Example:
-            ```python
-            async def async_handler(ctx):
-                await asyncio.sleep(0.1)
-                return "done"
-
-            # From sync context:
-            result = bridge.run_coroutine_from_sync(async_handler(ctx))
-            ```
-        """
+        """Schedule ``coro`` on the bridge event loop and block until completion."""
         # Ensure event loop is running
         if not self._event_loop:
             self.start_event_loop()

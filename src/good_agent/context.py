@@ -4,113 +4,20 @@ from .config import ConfigStack
 
 
 class Context(ConfigStack):
-    """Agent context manager with hierarchical resolution and config integration.
+    """Layer local overrides on top of agent config data for template/tool use.
 
-    PURPOSE: Provides template variable access with fallback mechanisms, integrating
-    agent configuration context with local context modifications for template rendering.
-
-    ROLE: Manages context variable resolution for:
-    - Template rendering with variable substitution
-    - Agent configuration access and inheritance
-    - Local context overrides via context managers
-    - Hierarchical fallback mechanisms
-
-    CONTEXT RESOLUTION ORDER:
-    1. Local context overrides (highest priority)
-       - Context manager temporary modifications
-       - Direct assignments via context[key] = value
-    2. Agent configuration context
-       - Variables from agent.config.context
-       - Configuration-based default values
-    3. Base context from constructor
-       - Initial context values passed to constructor
-    4. Default fallback values
-       - Provided via get(key, default) method
-
-    PERFORMANCE CHARACTERISTICS:
-    - Lookups: O(1) for chainmap-based resolution
-    - Memory: ~1KB base + context variable storage
-    - Template rendering: ~1-5ms overhead for variable resolution
-    - Thread safety: Thread-safe for read operations
-
-    USAGE PATTERNS:
-    ```python
-    # Basic context usage
-    context = Context(name="AI Assistant", version="1.0")
-    template = "Hello, I'm {name} v{version}"
-    rendered = template.render(**context.as_dict())
-
-    # With agent config integration
-    context = Context(agent_config=agent.config)
-    # Accesses agent.config.context variables automatically
-
-    # Context manager for temporary modifications
-    with context({temp_var: "temporary value"}):
-        # temp_var available only in this block
-        pass
-    # temp_var automatically removed
-    ```
-
-    INTEGRATION POINTS:
-    - Agent.__init__: Context initialized with agent configuration
-    - Template rendering: Context provides variables for Jinja2 templates
-    - Tool execution: Context available for tool parameter injection
-    - Message rendering: Context used for message template processing
-
-    THREAD SAFETY:
-    - Read operations: Thread-safe (chainmap is immutable)
-    - Write operations: Not thread-safe (use context managers for isolation)
-    - Template rendering: Safe with read-only context access
+    Behaves like a hierarchical dict and supports scoped overrides via
+    ``with context(...)``; see ``examples/context/thread_context.py`` for a
+    runnable sample.
     """
 
     def __init__(self, agent_config=None, **kwargs):
-        """Initialize context with optional agent config integration.
-
-        PURPOSE: Create a new context instance with optional agent configuration
-        integration and initial context variables.
-
-        INITIALIZATION FLOW:
-        1. Initialize base ConfigStack with provided kwargs
-        2. Store agent config reference for context inheritance
-        3. Set up initial context from constructor parameters
-
-        Args:
-            agent_config: Agent configuration manager for context inheritance.
-                If provided, context variables from agent.config.context will be
-                available as fallback values for missing local context.
-            **kwargs: Initial context variables as keyword arguments.
-                These become the base context that can be overridden.
-
-        SIDE EFFECTS:
-        - Stores reference to agent config for context inheritance
-        - Initializes base ConfigStack with provided variables
-        - Sets up context resolution chain
-
-        EXAMPLES:
-        ```python
-        # Basic context initialization
-        context = Context(name="Assistant", role="helpful")
-
-        # With agent config integration
-        context = Context(agent_config=agent.config, local_var="local_value")
-
-        # Empty context with config integration
-        context = Context(agent_config=agent.config)
-        ```
-        """
+        """Seed the context with local data plus optional agent_config fallback."""
         super().__init__(**kwargs)
         self._agent_config = agent_config
 
     def _set_agent_config(self, agent_config):
-        """Set the agent config for this context
-
-        PURPOSE: Update the agent configuration reference after context creation.
-        Used by agent during initialization to provide config integration.
-
-        Args:
-            agent_config: Agent configuration manager instance
-                Used for context variable fallback and inheritance
-        """
+        """Set or update the backing agent config reference for inheritance."""
         self._agent_config = agent_config
 
     def _get_config_context(self) -> dict[str, Any]:

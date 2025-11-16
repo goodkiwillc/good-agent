@@ -99,102 +99,12 @@ def _get_message_provider():
 
 
 class ToolManager(AgentComponent):
-    """Manages tool discovery, registration, and execution for agent capabilities.
+    """Registers, discovers, and executes tools for an agent.
 
-    PURPOSE: Central tool management system that handles tool lifecycle,
-    discovery from multiple sources, and provides a unified interface for tool access.
-
-    ROLE: Orchestrates tool operations from:
-    - Local tool registration and management
-    - Global registry discovery and pattern-based loading
-    - MCP (Model Context Protocol) server integration
-    - Tool execution with dependency injection support
-    - Context management for temporary tool modifications
-
-    TOOL SOURCES:
-    1. Local Registration: Direct tool instances via register_tool()
-    2. Global Registry: Pattern-based discovery from global tool registry
-    3. MCP Servers: External tool servers with automatic integration
-    4. Component Methods: AgentComponent method-bound tools
-
-    DISCOVERY AND LOADING:
-    - Pattern-based selection with wildcards (e.g., "search:*", "api_*")
-    - Lazy loading to minimize initialization overhead
-    - Priority system: Local tools > Registry tools > MCP tools
-    - Automatic conflict resolution with configurable replacement policies
-
-    MCP INTEGRATION:
-    - Model Context Protocol server management
-    - Connection lifecycle and reconnection handling
-    - Tool schema translation and adaptation
-    - Error isolation and recovery
-    - Resource cleanup on server disconnection
-
-    EXECUTION SUPPORT:
-    - Tool execution delegated to individual Tool instances
-    - Dependency injection context management
-    - Error handling and response wrapping
-    - Usage statistics and performance monitoring
-
-    CONTEXT MANAGEMENT:
-    - Temporary tool modifications via context manager
-    - Supports replace, append, and filter modes
-    - Automatic restoration of original tool state
-    - Thread-safe for concurrent operations
-
-    PERFORMANCE CHARACTERISTICS:
-    - Initialization: ~10-50ms depending on MCP servers
-    - Tool discovery: ~5-20ms for pattern matching
-    - Registration: ~1-5ms per tool (schema generation)
-    - Memory: ~1KB base + tools + MCP client overhead
-    - Concurrency: Thread-safe for read operations
-
-    USAGE PATTERNS:
-    ```python
-    # Basic tool registration
-    tool_manager = ToolManager()
-    await tool_manager.register_tool(my_tool, name="search")
-
-    # Pattern-based loading from registry
-    await tool_manager.load_tools_from_patterns(["search:*", "api_*"])
-
-    # MCP server integration
-    await tool_manager.load_mcp_servers(["http://localhost:3000"])
-
-    # Context management for temporary modifications
-    async with tool_manager(mode="replace", tools=[new_tool]):
-        # Only new_tool available here
-        result = await agent.call("Use the new tool")
-    # Original tools restored automatically
-
-    # Direct tool access
-    search_tool = tool_manager["search"]
-    all_tools = tool_manager.as_list()
-    ```
-
-    ERROR HANDLING:
-    - MCP server failures: Logged, tools removed from collection
-    - Registry failures: Graceful degradation, local tools still available
-    - Tool registration failures: Detailed error messages with context
-    - Pattern loading failures: Partial success with warnings
-
-    LIFECYCLE MANAGEMENT:
-    1. Initialization: Set up empty tool collection and MCP client
-    2. Registration: Add tools from various sources
-    3. Execution: Tools executed through individual Tool instances
-    4. Cleanup: MCP disconnection and resource cleanup
-
-    RELATED CLASSES:
-    - Tool: Individual tool wrapper with execution logic
-    - ToolRegistry: Global tool discovery and registration
-    - MCPClientManager: External server integration
-    - AgentComponent: Base class for agent extensions
-
-    EXTENSION POINTS:
-    - Custom tool sources via register_tool() with custom loaders
-    - Tool execution monitoring via event system
-    - MCP protocol extensions for custom server types
-    - Tool filtering and selection algorithms
+    Provides a single surface for local registrations, registry/MCP discovery, and
+    dependency-injected execution with temporary override support. See
+    ``examples/tools/basic_tool.py`` for a runnable walkthrough of registration,
+    lookup, and execution patterns.
     """
 
     def __init__(self):
@@ -420,7 +330,7 @@ class ToolManager(AgentComponent):
             # Set up MCP client with agent if available
             if self.agent:
                 self._mcp_client._agent = self.agent
-                self.agent.broadcast_to(self._mcp_client)
+                self.agent.events.broadcast_to(self._mcp_client)
                 self._mcp_client.setup(self.agent)
 
         # Connect to servers
@@ -680,124 +590,12 @@ InstanceSelf = TypeVar("InstanceSelf")
 
 
 class Tool(BaseToolDefinition, Generic[P, FuncResp]):
-    """Enhanced tool class with Pydantic model generation, retry logic, and dependency injection.
+    """Wrap a callable in schema generation, DI, and retry-aware execution.
 
-    PURPOSE: Wraps callable functions into executable tools with schema generation,
-    parameter validation, dependency injection, and error handling for AI agent integration.
-
-    ROLE: Bridge between Python functions and LLM tool calling that provides:
-    - Automatic schema generation from function signatures
-    - Dependency injection for agent, context, and component access
-    - Parameter validation and type conversion
-    - Retry logic and error handling
-    - Usage tracking and performance monitoring
-
-    SCHEMA GENERATION:
-    - Pydantic models created from function type annotations
-    - Parameter descriptions from docstrings and Annotated types
-    - Automatic hiding of injected parameters from public schemas
-    - Custom JSON schema generation for LLM compatibility
-    - Type validation and conversion during execution
-
-    DEPENDENCY INJECTION:
-    Automatically injects based on parameter types and names:
-    - Agent: Current agent instance for conversation access
-    - ToolCall: Current tool execution context
-    - ToolContext: Combined agent and tool call information
-    - Message: Last message from agent conversation
-    - AgentComponent subclasses: Type-based component resolution
-    - ContextValue: Template variable access with validation
-
-    EXECUTION FLOW:
-    1. Parameter Resolution: Gather context and resolve dependencies
-    2. Dependency Injection: Set up provider overrides for this execution
-    3. Type Validation: Convert and validate parameters using Pydantic model
-    4. Function Execution: Call original function with resolved parameters
-    5. Response Wrapping: Wrap result in ToolResponse with metadata
-    6. Cleanup: Restore dependency provider overrides
-
-    ERROR HANDLING:
-    - Parameter validation failures: ToolResponse with validation errors
-    - Dependency injection failures: ToolResponse with injection errors
-    - Function execution failures: ToolResponse with exception details
-    - Retry logic: Optional exponential backoff for transient failures
-    - Error isolation: Single tool failures don't stop agent execution
-
-    PERFORMANCE CHARACTERISTICS:
-    - Creation: 1-5ms for function wrapping and schema generation
-    - Execution: Function call time + injection overhead (~1ms)
-    - Schema caching: Generated once, reused for subsequent calls
-    - Memory: ~1-5KB per tool + schema cache
-    - Concurrency: Thread-safe for concurrent execution
-
-    USAGE PATTERNS:
-    ```python
-    # Function decoration (recommended)
-    @tool(retry=True, hide=["api_key"])
-    async def search_web(query: str, api_key: str) -> str:
-        "Search the web for information"
-        # api_key injected automatically, hidden from schema
-        return await search_api(query, api_key)
-
-
-    # Manual wrapping
-    def calculate(x: int, y: int) -> int:
-        return x + y
-
-
-    calc_tool = Tool(
-        fn=calculate,
-        name="calculator",
-        description="Perform basic arithmetic",
-        retry=True,
-    )
-
-
-    # With dependency injection
-    @tool
-    async def get_context(query: str, agent: Agent) -> str:
-        # Agent automatically injected
-        context = agent.context.get("recent_context", "")
-        return f"Context: {context}\nQuery: {query}"
-    ```
-
-    ANNOTATION SUPPORT:
-    - Type hints: Used for schema generation and validation
-    - Annotated types: str descriptions for parameter documentation
-    - Docstrings: Used for tool and parameter descriptions
-    - Field defaults: Used for optional parameter handling
-
-    HIDDEN PARAMETERS:
-    Automatically hidden from public schemas:
-    - Agent injection parameters
-    - ToolCall and ToolContext parameters
-    - AgentComponent injection parameters
-    - Parameters explicitly marked via hide parameter
-    - Parameters with ContextValue defaults
-
-    RETRY LOGIC:
-    - Optional exponential backoff for transient failures
-    - Configurable retry count and backoff parameters
-    - Retry failures tracked in tool response history
-    - Retries apply to function execution, not validation or injection
-
-    RESPONSE TRACKING:
-    - All tool responses stored in execution history
-    - Success/failure status and error details preserved
-    - Performance metrics (duration, retry count) tracked
-    - Useful for debugging and performance analysis
-
-    RELATED CLASSES:
-    - ToolManager: Tool discovery and lifecycle management
-    - ToolCall: LLM tool execution request
-    - ToolResponse: Tool execution result wrapper
-    - BoundTool: Method-based tool descriptors
-
-    EXTENSION POINTS:
-    - Custom parameter injection via provider functions
-    - Custom schema generation via custom GenerateJsonSchema
-    - Custom retry logic via retry configuration
-    - Custom validation via Pydantic model customization
+    A Tool inspects type hints to build a Pydantic model, hides injectable
+    parameters, and produces a `ToolResponse` when awaited. See
+    ``examples/tools/basic_tool.py`` for both decorator and manual wrapping
+    patterns.
     """
 
     _tool_metadata: ToolMetadata
@@ -1449,36 +1247,10 @@ def tool(
     "BoundTool",  # Still returned for methods at runtime
     Callable[[Any], Union[Tool[P, FuncResp], "BoundTool"]],
 ]:
-    """
-    Decorator to mark a function as a tool.
+    """Decorator that turns a function or method into a Tool/BoundTool.
 
-    Args:
-        func: The function to decorate
-        name: Optional custom name for the tool
-        description: Optional custom description
-        register: Whether to register the tool globally
-        retry: Whether to add retry logic to the tool
-        hide: List of parameter names to hide from the tool definition
-        **kwargs: Additional configuration options
-
-    Usage:
-        @tool
-        async def my_tool(x: int) -> int:
-            '''Tool description'''
-            return x * 2
-
-        @tool(name="custom_name", register=True, retry=True, hide=["api_key"])
-        async def another_tool(query: str, api_key: str):
-            pass
-
-    Typing notes:
-    - For instance methods, we use an unconstrained `InstanceSelf` TypeVar with
-      Concatenate[InstanceSelf, P] so that type checkers correctly consume `self`
-      at the BoundTool descriptor and expose a Tool[P, FuncResp] to callers.
-    - Do not bind InstanceSelf to AgentComponent; resources and other classes also
-      define @tool methods. Constraining leads to Never inference and duplicate `self`.
-    - BoundTool.__get__ overloads are intentionally wide; keep them aligned with
-      these overloads to avoid inference issues.
+    Supports optional naming, retry, global registration, and hidden params. See
+    ``examples/tools/basic_tool.py`` for decorator usage.
     """
 
     def decorator(

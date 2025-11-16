@@ -1,40 +1,7 @@
-"""Template Manager - Agent component for template rendering with context injection.
+"""Exports the template manager component plus helpers.
 
-This package provides the TemplateManager component and supporting functionality
-for managing Jinja2 templates with agent-specific features.
-
-ORGANIZATION:
-- core.py: TemplateManager component, Template class, global context providers
-- injection.py: Context dependency injection for templates
-- storage.py: Template storage backends and caching
-- index.py: Template metadata and indexing
-
-PUBLIC API:
-Main exports for agent integration:
-- TemplateManager: Agent component for template management
-- Template: Template wrapper with context resolution
-- global_context_provider: Decorator for registering global context providers
-
-Context injection:
-- ContextValue: Descriptor for injecting context values
-- ContextResolver: Resolves context dependencies
-
-Storage and metadata:
-- FileSystemStorage: File-based template storage
-- TemplateMetadata: Template metadata model
-
-USAGE:
-    from good_agent.components.template_manager import (
-        TemplateManager,
-        Template,
-        global_context_provider,
-    )
-
-    # TemplateManager is automatically registered as an agent component
-    agent = Agent(template_manager=TemplateManager())
-
-    # Access via agent
-    result = agent.template.render("my_template", context={"key": "value"})
+See ``examples/templates/render_template.py`` for inline rendering patterns that
+use this package.
 """
 
 from __future__ import annotations

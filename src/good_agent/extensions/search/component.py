@@ -25,22 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class AgentSearch(AgentComponent):
-    """
-    AgentSearch component for discovery operations.
-
-    Features:
-    - Multi-provider search with automatic routing
-    - Cost-aware provider selection
-    - Result normalization and deduplication
-    - Automatic citation tracking via tool hooks
-    - Parallel search execution
-    - Fallback chains for reliability
-
-    Integration Notes:
-    - Citation tracking happens automatically via tool execution hooks
-    - No explicit CitationManager dependency needed
-    - Components can listen to tool events for integration
-    """
+    """Discovery component that routes search queries across registered providers."""
 
     def __init__(
         self,
@@ -106,47 +91,7 @@ class AgentSearch(AgentComponent):
         required_features: list[str] | None = None,
         optimize_for: Literal["cost", "quality", "speed", "balanced", "all"] = "all",
     ) -> dict[str, list[SearchResult]]:
-        """
-        Search across multiple platforms and domains.
-
-        This is the primary discovery tool for finding unknown content
-        based on search criteria.
-
-        Args:
-            query: Search query text
-            platforms: Specific platforms to search (e.g., ["twitter", "reddit"])
-            domains: Data domains to search (e.g., ["social_media", "news"])
-            limit: Maximum results per platform
-            content_type: Filter by content type
-            since: Start date (inclusive)
-            until: End date (inclusive)
-            timeframe: Relative time windows ('last_day', 'last_week', 'last_month')
-            sort_by: Result ordering
-
-            Provider Constraints (optional):
-            max_cost: Maximum cost per request in USD
-            min_quality: Minimum data completeness (0-1)
-            required_features: Features providers must support
-            optimize_for: Provider selection strategy:
-                - "all": Use all capable providers (default)
-                - "cost": Select cheapest provider per domain
-                - "quality": Select highest quality provider per domain
-                - "speed": Select fastest provider per domain
-                - "balanced": Balance cost/quality/speed
-
-        Returns:
-            Dictionary mapping platform/domain names to search results
-
-        Examples:
-            Search all platforms: search("climate change")
-            Search specific platforms: search("AI safety", platforms=["twitter", "reddit"])
-            Search by domain: search("tech news", domains=["news"])
-            Date-filtered search: search("election", since=date(2024, 1, 1))
-            Recent search: search("breaking news", timeframe="last_day")
-            Budget search: search("AI news", max_cost=0.01, optimize_for="cost")
-            Quality search: search("research", min_quality=0.9, optimize_for="quality")
-            Feature search: search("tweets", required_features=["threads"])
-        """
+        """Query registered providers with optional domain/platform/constraint filters."""
         limit = limit or self.default_limit
 
         # Calculate date range based on relative time windows

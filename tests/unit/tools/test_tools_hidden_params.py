@@ -140,8 +140,8 @@ class TestHiddenParameters:
         assert "token" not in recorded_params
         assert "debug" not in recorded_params
 
-    def test_add_tool_invocation_with_visible_params_only(self):
-        """Test add_tool_invocation records only visible parameters"""
+    def test_record_invocation_with_visible_params_only(self):
+        """Test tool_calls.record_invocation records only visible parameters"""
 
         agent = Agent("Test agent")
         # Note: This is a sync test, agent will initialize synchronously
@@ -158,7 +158,7 @@ class TestHiddenParameters:
         )
 
         # Add tool invocation, specifying only visible params
-        agent.add_tool_invocation(
+        agent.tool_calls.record_invocation(
             tool="search",
             response=response,
             parameters={"query": "test"},  # Only visible param

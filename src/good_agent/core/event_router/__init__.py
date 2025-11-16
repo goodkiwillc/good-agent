@@ -1,44 +1,4 @@
-"""Public API for the event_router package.
-
-This module re-exports all public symbols from the reorganized event_router
-package, maintaining full backward compatibility with the original monolithic
-event_router.py module.
-
-ORGANIZATION:
-- protocols.py: Type definitions, protocols, exceptions
-- context.py: EventContext and context variables
-- registration.py: HandlerRegistration, LifecyclePhase, and registry
-- sync_bridge.py: SyncBridge for async/sync interoperability
-- decorators.py: @on, @emit, @typed_on decorators
-- core.py: EventRouter main class
-- advanced.py: TypedApply helper for type-safe event dispatch
-
-BACKWARD COMPATIBILITY:
-All imports that previously worked with:
-    from good_agent.core.event_router import EventRouter, EventContext, on, emit
-
-...continue to work identically with the new package structure.
-
-USAGE:
-    from good_agent.core.event_router import (
-        EventRouter,     # Main event routing class
-        EventContext,    # Event context for handler chains
-        ApplyInterrupt,  # Exception for early termination
-        on,              # Decorator for event handlers
-        emit,            # Decorator for lifecycle events
-        typed_on,        # Type-safe @on variant
-        emit_event,      # Function-style emit decorator
-        TypedApply,      # Helper for typed event dispatch
-        LifecyclePhase,  # Enum for lifecycle phases
-    )
-
-THREAD SAFETY:
-All exported components are thread-safe:
-- EventRouter: Thread-safe via HandlerRegistry's RLock
-- EventContext: Thread-safe via contextvars propagation
-- Decorators: Stateless and thread-safe
-- TypedApply: Thread-safe (immutable router reference)
-"""
+"""Re-export the EventRouter package's public API under one import path."""
 
 from __future__ import annotations
 

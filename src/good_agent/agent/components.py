@@ -92,7 +92,7 @@ class ComponentRegistry:
             self._extension_names[ext_type.__name__] = extension
 
         # Subscribe to agent events (so handlers are ready even before async install)
-        self.agent.broadcast_to(extension)
+        self.agent.events.broadcast_to(extension)
 
         # Call synchronous setup which sets the agent reference and allows early event handler registration
         extension.setup(self.agent)

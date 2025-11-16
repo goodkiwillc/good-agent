@@ -34,39 +34,11 @@ if TYPE_CHECKING:
 
 
 class CitationManager(AgentComponent):
-    """
-    Manages citation transformation between local and global indices.
+    """Normalizes citations on message create/render and keeps a shared index.
 
-    The CitationManager coordinates between messages and the global index,
-    handling format transformations and runtime translation. It operates
-    through event handlers that intercept message creation and rendering.
-
-    Responsibilities:
-    - Intercept and standardize citations at message creation
-    - Transform citations based on render audience (LLM vs user)
-    - Maintain CitationIndex instance
-    - Handle multiple citation formats
-    - Extract citations from various sources (Perplexity, Claude, tools)
-
-    Key Features:
-    - Event-driven architecture using AgentEvents
-    - Support for first-order (tool URLs) and second-order (LLM citations) sources
-    - Automatic format detection and transformation
-    - Local per-message storage with global index coordination
-    - LLM-optimized [!CITE_X!] format for better attention
-
-    Example:
-        >>> manager = CitationManager()
-        >>> agent = Agent("Research assistant", extensions=[manager])
-        >>>
-        >>> # Citations are automatically handled through events
-        >>> agent.append(
-        ...     "According to the study [1], results show...",
-        ...     citations=["https://example.com/study.pdf"],
-        ... )
-        >>>
-        >>> # Global index tracks all citations
-        >>> print(f"Total citations: {len(manager.index)}")
+    Hooks into AgentEvents so appended/created messages automatically reuse
+    global numbering. See ``examples/extensions/citations_basic.py`` for a quick
+    integration demo.
     """
 
     def __init__(

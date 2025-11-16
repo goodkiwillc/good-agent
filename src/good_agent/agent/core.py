@@ -31,7 +31,7 @@ import orjson
 from ulid import ULID
 
 from good_agent.core.types import URL
-from good_agent.core.event_router import EventContext, EventRouter, on
+from good_agent.core.event_router import EventContext, EventRouter, EventName, TypedApply, on
 from good_agent.core.ulid_monotonic import (
     create_monotonic_ulid,
 )
@@ -41,8 +41,10 @@ from .context import ContextManager
 from .llm import LLMCoordinator
 from .messages import MessageManager
 from .state import AgentState, AgentStateMachine
+from .tasks import AgentTaskManager
 from .tools import ToolExecutor
 from .versioning import AgentVersioningManager
+from .events import AgentEventsFacade
 
 if TYPE_CHECKING:
     from litellm.utils import Choices
@@ -76,7 +78,6 @@ from ..store import put_message
 from ..components.template_manager import (
     Template,
     TemplateManager,
-    global_context_provider,
 )
 from ..tools import (
     BoundTool,
@@ -250,6 +251,13 @@ class Agent(EventRouter):
 
     EVENTS: ClassVar[type[AgentEvents]] = AgentEvents
 
+    def _warn_event_facade(self, method: str) -> None:
+        warnings.warn(
+            f"Agent.{method}() is deprecated. Use agent.events.{method}() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     _init_task: asyncio.Task | None = None
     _conversation: "Conversation | None" = None
     _id: ULID
@@ -271,7 +279,13 @@ class Agent(EventRouter):
     @staticmethod
     def context_providers(name: str):
         """Register a global context provider"""
-        return global_context_provider(name)
+
+        warnings.warn(
+            "Agent.context_providers() is deprecated. Use agent.context_manager.context_providers() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return ContextManager.context_providers(name)
 
     def print(
         self, message: int | Message | None = None, mode: str | None = None
@@ -400,14 +414,10 @@ class Agent(EventRouter):
         # Initialize ContextManager
         self._context_manager = ContextManager(self)
 
-        # Task management for Agent.create_task()
-        self._managed_tasks: dict[asyncio.Task, dict[str, Any]] = {}
-        self._task_stats = {
-            "total": 0,
-            "pending": 0,
-            "completed": 0,
-            "failed": 0,
-        }
+        # Initialize task management
+        self._task_manager = AgentTaskManager(self)
+        # Back-compat: legacy code inspects _managed_tasks directly
+        self._managed_tasks = self._task_manager._managed_tasks
 
         # Initialize message sequence validator
         validation_mode = config.get("message_validation_mode", "warn")
@@ -431,6 +441,8 @@ class Agent(EventRouter):
             enable_signal_handling=enable_signals,
             _event_trace=_event_trace or False,
         )
+
+        self._events_facade = AgentEventsFacade(self)
 
         # Get sandbox config, defaulting to True for security
         use_sandbox = config.get("use_template_sandbox", True)
@@ -492,6 +504,117 @@ class Agent(EventRouter):
         return self[ToolManager]
 
     @property
+    def tool_calls(self) -> ToolExecutor:
+        """Access the tool execution/runtime manager."""
+        return self._tool_executor
+
+    @property
+    def context_manager(self) -> ContextManager:
+        """Access the context lifecycle manager."""
+        return self._context_manager
+
+    @property
+    def events(self) -> AgentEventsFacade:
+        """Access advanced event router helpers via a facade."""
+        return self._events_facade
+
+    async def apply(self, *args: Any, **kwargs: Any) -> EventContext[Any, Any]:
+        """Deprecated wrapper delegating to :attr:`events`."""
+
+        self._warn_event_facade("apply")
+        return await self.events.apply(*args, **kwargs)
+
+    async def apply_async(self, event: EventName, **kwargs: Any) -> EventContext[Any, Any]:
+        """Deprecated wrapper delegating to :attr:`events`."""
+
+        self._warn_event_facade("apply_async")
+        return await self.events.apply_async(event, **kwargs)
+
+    def apply_sync(self, event: EventName, **kwargs: Any) -> EventContext[Any, Any]:
+        """Deprecated wrapper delegating to :attr:`events`."""
+
+        self._warn_event_facade("apply_sync")
+        return self.events.apply_sync(event, **kwargs)
+
+    async def apply_typed(
+        self,
+        event: EventName,
+        params_type: type[Any] | None = None,
+        return_type: type[Any] | None = None,
+        **kwargs: Any,
+    ) -> EventContext[Any, Any]:
+        self._warn_event_facade("apply_typed")
+        return await self.events.apply_typed(event, params_type, return_type, **kwargs)
+
+    def apply_typed_sync(
+        self,
+        event: EventName,
+        params_type: type[Any] | None = None,
+        return_type: type[Any] | None = None,
+        **kwargs: Any,
+    ) -> EventContext[Any, Any]:
+        self._warn_event_facade("apply_typed_sync")
+        return self.events.apply_typed_sync(event, params_type, return_type, **kwargs)
+
+    def typed(
+        self,
+        params_type: type[Any] | None = None,
+        return_type: type[Any] | None = None,
+    ) -> TypedApply[Any, Any]:
+        self._warn_event_facade("typed")
+        return self.events.typed(params_type, return_type)
+
+    def broadcast_to(self, obs: EventRouter) -> int:
+        self._warn_event_facade("broadcast_to")
+        return self.events.broadcast_to(obs)
+
+    def consume_from(self, obs: EventRouter) -> None:
+        self._warn_event_facade("consume_from")
+        self.events.consume_from(obs)
+
+    def set_event_trace(
+        self, enabled: bool, *, verbosity: int = 1, use_rich: bool = True
+    ) -> None:
+        self._warn_event_facade("set_event_trace")
+        self.events.set_event_trace(enabled, verbosity=verbosity, use_rich=use_rich)
+
+    @property
+    def event_trace_enabled(self) -> bool:
+        self._warn_event_facade("event_trace_enabled")
+        return self.events.event_trace_enabled
+
+    @property
+    def ctx(self) -> EventContext:
+        self._warn_event_facade("ctx")
+        return self.events.ctx
+
+    def join(self, timeout: float = 5.0):
+        self._warn_event_facade("join")
+        self.events.join(timeout=timeout)
+
+    async def join_async(self, timeout: float = 5.0):
+        self._warn_event_facade("join_async")
+        await self.events.join_async(timeout=timeout)
+
+    def close(self):
+        self._warn_event_facade("close")
+        self.events.close()
+
+    async def async_close(self):
+        self._warn_event_facade("async_close")
+        await self.events.async_close()
+
+    @property
+    def versioning(self) -> AgentVersioningManager:
+        """Access the versioning manager."""
+        return self._versioning_manager
+
+    @property
+    def tasks(self) -> AgentTaskManager:
+        """Access the task manager for background work."""
+        return self._task_manager
+
+    @property
     def id(self) -> ULID:
         """Agent's unique identifier"""
         return self._id
@@ -537,6 +660,11 @@ class Agent(EventRouter):
         return self._message_manager.system
 
     @property
+    def task_count(self) -> int:
+        """Number of active managed tasks."""
+        return self.tasks.count
+
+    @property
     def extensions(self) -> dict[str, AgentComponent]:
         """Access extensions by name"""
         return self._component_registry.extensions
@@ -574,7 +702,12 @@ class Agent(EventRouter):
         Args:
             version_index: The version index to revert to
         """
-        self._versioning_manager.revert_to_version(version_index)
+        warnings.warn(
+            "Agent.revert_to_version() is deprecated. Use agent.versioning.revert_to_version() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.versioning.revert_to_version(version_index)
 
     def fork_context(self, truncate_at: int | None = None, **fork_kwargs):
         """Create a fork context for isolated operations.
@@ -591,7 +724,12 @@ class Agent(EventRouter):
                 response = await forked.call("Summarize")
                 # Response only exists in fork
         """
-        return self._context_manager.fork_context(truncate_at, **fork_kwargs)
+        warnings.warn(
+            "Agent.fork_context() is deprecated. Use agent.context_manager.fork_context().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.context_manager.fork_context(truncate_at, **fork_kwargs)
 
     def thread_context(self, truncate_at: int | None = None):
         """Create a thread context for temporary modifications.
@@ -723,11 +861,7 @@ class Agent(EventRouter):
             ) from e
 
         # Wait for managed tasks with wait_on_ready=True
-        ready_tasks = [
-            task
-            for task, info in self._managed_tasks.items()
-            if info.get("wait_on_ready", True)
-        ]
+        ready_tasks = self.tasks.waitable_tasks()
         if ready_tasks:
             try:
                 await asyncio.wait_for(
@@ -861,93 +995,40 @@ class Agent(EventRouter):
         wait_on_ready: bool = True,
         cleanup_callback: Callable[[asyncio.Task], None] | None = None,
     ) -> asyncio.Task[T]:
-        """Drop-in replacement for asyncio.create_task() with automatic management.
+        """Deprecated shim that forwards to :meth:`Agent.tasks.create`."""
 
-        Args:
-            coro: The coroutine to execute
-            name: Optional task name for debugging
-            component: Component that created this task (for tracking)
-            wait_on_ready: Whether ready() should wait for this task
-            cleanup_callback: Optional callback when task completes
-
-        Returns:
-            Standard asyncio.Task that can be awaited
-        """
-        # Create the task
-        task = asyncio.create_task(coro, name=name)
-
-        # Track task metadata
-        component_name = None
-        if component is not None:
-            if hasattr(component, "__class__"):
-                component_name = component.__class__.__name__
-            else:
-                component_name = str(component)
-
-        task_info = {
-            "component": component_name,
-            "wait_on_ready": wait_on_ready,
-            "cleanup_callback": cleanup_callback,
-            "created_at": asyncio.get_event_loop().time(),
-        }
-        self._managed_tasks[task] = task_info
-
-        # Update stats
-        self._task_stats["total"] += 1
-        self._task_stats["pending"] += 1
-
-        # Set up cleanup callback
-        def _cleanup_task(t: asyncio.Task) -> None:
-            # Remove from tracking
-            if t in self._managed_tasks:
-                task_info = self._managed_tasks.pop(t)
-                self._task_stats["pending"] -= 1
-
-                # Update completion stats
-                if t.cancelled():
-                    pass  # Don't count cancelled tasks
-                elif t.exception():
-                    self._task_stats["failed"] += 1
-                    # Log the exception but don't raise
-                    logger.warning(f"Task {t.get_name()} failed: {t.exception()}")
-                else:
-                    self._task_stats["completed"] += 1
-
-                # Run custom cleanup callback if provided
-                if task_info.get("cleanup_callback"):
-                    try:
-                        task_info["cleanup_callback"](t)
-                    except Exception as e:
-                        logger.warning(f"Task cleanup callback failed: {e}")
-
-        task.add_done_callback(_cleanup_task)
-        return task
+        warnings.warn(
+            "Agent.create_task() is deprecated. Use agent.tasks.create(...) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.tasks.create(
+            coro,
+            name=name,
+            component=component,
+            wait_on_ready=wait_on_ready,
+            cleanup_callback=cleanup_callback,
+        )
 
     def get_task_count(self) -> int:
-        """Get the number of active managed tasks."""
-        return len(self._managed_tasks)
+        """Deprecated shim for :attr:`Agent.task_count`."""
+
+        warnings.warn(
+            "Agent.get_task_count() is deprecated. Use agent.task_count instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.task_count
 
     def get_task_stats(self) -> dict[str, Any]:
-        """Get detailed task statistics."""
-        stats = dict(self._task_stats)
+        """Deprecated shim for :meth:`Agent.tasks.stats`."""
 
-        # Add breakdown by component
-        by_component = {}
-        by_wait_on_ready = {"true": 0, "false": 0}
-
-        for task_info in self._managed_tasks.values():
-            # Count by component
-            component = task_info.get("component", "unknown")
-            by_component[component] = by_component.get(component, 0) + 1
-
-            # Count by wait_on_ready
-            wait_key = "true" if task_info.get("wait_on_ready", True) else "false"
-            by_wait_on_ready[wait_key] += 1
-
-        stats["by_component"] = by_component
-        stats["by_wait_on_ready"] = by_wait_on_ready
-
-        return stats
+        warnings.warn(
+            "Agent.get_task_stats() is deprecated. Use agent.tasks.stats() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.tasks.stats()
 
     async def wait_for_tasks(self, timeout: float | None = None) -> None:
         """Wait for all managed tasks to complete.
@@ -958,11 +1039,12 @@ class Agent(EventRouter):
         Raises:
             asyncio.TimeoutError: If timeout is exceeded
         """
-        if not self._managed_tasks:
-            return
-
-        tasks = list(self._managed_tasks.keys())
-        await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout)
+        warnings.warn(
+            "Agent.wait_for_tasks() is deprecated. Use agent.tasks.wait_for_all() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        await self.tasks.wait_for_all(timeout=timeout)
 
     def _append_message(self, message: Message) -> None:
         """
@@ -1247,62 +1329,12 @@ class Agent(EventRouter):
         auto_execute_tools: bool = True,
         **kwargs: Any,
     ) -> AssistantMessage | AssistantMessageStructuredOutput:
-        """Get a single response from the LLM with automatic tool execution.
+        """Run a single request/response cycle and optionally loop through tools.
 
-        This is the high-level convenience method for conversational interactions.
-        It adds your message (if provided), calls the LLM, automatically executes
-        any tool calls, and returns the final assistant response.
-
-        **Use call() when:**
-        - You want a simple request-response interaction
-        - You want automatic tool execution (default behavior)
-        - You don't need to see intermediate tool responses
-        - You want structured output extraction
-
-        **Use execute() instead when:**
-        - You need streaming or step-by-step control
-        - You want to see each message as it's generated
-        - You need custom tool execution logic
-        - You're building a chat UI that shows real-time updates
-
-        Args:
-            *content_parts: Message content to append before calling (optional).
-                If not provided, calls LLM with existing message history.
-            role: Message role (default: "user")
-            response_model: Pydantic model for structured output extraction.
-                When provided, disables auto_execute_tools.
-            context: Template rendering context variables for message content
-            auto_execute_tools: Automatically execute tool calls in a loop
-                until completion (default: True). Set to False for single
-                LLM call without tool execution.
-            **kwargs: Additional model parameters (temperature, max_tokens, etc.)
-
-        Returns:
-            Final AssistantMessage after all tool calls complete, or
-            AssistantMessageStructuredOutput[T_Output] if response_model provided
-
-        Example:
-            Simple conversation:
-            >>> response = await agent.call("What's the weather in Paris?")
-            >>> print(response.content)
-            "The weather in Paris is currently 72°F and sunny."
-
-            Structured output:
-            >>> from pydantic import BaseModel
-            >>> class WeatherInfo(BaseModel):
-            ...     temperature: float
-            ...     condition: str
-            >>> weather = await agent.call(
-            ...     "What's the weather?",
-            ...     response_model=WeatherInfo
-            ... )
-            >>> print(f"{weather.data.temperature}°F, {weather.data.condition}")
-
-            Continue existing conversation (no new message):
-            >>> response = await agent.call()  # Calls LLM with existing messages
-
-        See Also:
-            execute() - For streaming or custom tool execution control
+        Adds the provided message (if any), performs one LLM call, and optionally
+        iterates execute() internally until tools finish. For streaming or manual
+        control use ``execute`` instead. ``examples/agent/basic_chat.py`` shows both
+        entry points side-by-side.
         """
         # Append input message if provided
         if content_parts:
@@ -1348,70 +1380,11 @@ class Agent(EventRouter):
         max_iterations: int = 10,
         **kwargs: Any,
     ) -> AsyncIterator[Message]:
-        """Execute agent loop with full control over each step.
+        """Yield each Assistant/Tool message while the agent runs.
 
-        This is the low-level method that gives you step-by-step control over
-        the agent's execution. It yields each message (assistant and tool) as
-        it's created, allowing you to stream responses, implement custom tool
-        execution logic, or build interactive UIs.
-
-        **Use execute() when:**
-        - You need streaming or real-time message updates
-        - You want to see each message as it's generated
-        - You're building a chat UI that displays messages incrementally
-        - You need custom tool execution or approval logic
-        - You want to process intermediate tool responses
-
-        **Use call() instead when:**
-        - You want a simple request-response interaction
-        - You don't need to see intermediate messages
-        - You just want the final result
-
-        The method handles multi-turn conversations with automatic tool execution
-        up to max_iterations. Each yielded message has an iteration index (msg.i)
-        indicating when it was created during execution.
-
-        Args:
-            streaming: Enable streaming mode for token-by-token updates
-                (default: False). When True, assistant messages will stream
-                their content as it's generated.
-            max_iterations: Maximum number of LLM-tool cycles to prevent
-                infinite loops (default: 10). If reached, execution stops
-                and yields the last message.
-            **kwargs: Additional model parameters (temperature, max_tokens, etc.)
-
-        Yields:
-            Message: Each message as it's generated - AssistantMessage when
-                the LLM responds, ToolMessage after each tool execution.
-                Messages are yielded in chronological order.
-
-        Example:
-            Basic streaming:
-            >>> async for message in agent.execute():
-            ...     if isinstance(message, AssistantMessage):
-            ...         print(f"Assistant: {message.content}")
-            ...     elif isinstance(message, ToolMessage):
-            ...         print(f"Tool {message.tool_name}: {message.content}")
-
-            Building a chat UI:
-            >>> agent.append("What's the weather in Paris and London?")
-            >>> async for msg in agent.execute():
-            ...     match msg:
-            ...         case AssistantMessage():
-            ...             ui.add_message("assistant", msg.content)
-            ...         case ToolMessage():
-            ...             ui.show_tool_call(msg.tool_name, msg.content)
-
-            Custom tool approval:
-            >>> agent.append("Delete all my files")
-            >>> async for msg in agent.execute():
-            ...     if isinstance(msg, AssistantMessage) and msg.tool_calls:
-            ...         for tool_call in msg.tool_calls:
-            ...             if not await user.approve(tool_call):
-            ...                 raise ValueError("Tool execution cancelled")
-
-        See Also:
-            call() - For simple request-response interaction
+        Enables streaming UIs, custom tool approval, and iteration control; call
+        ``agent.call`` for the one-shot variant. Demonstrated in
+        ``examples/agent/basic_chat.py``.
         """
         # Emit execute:start event
         self.do(AgentEvents.EXECUTE_BEFORE, agent=self, max_iterations=max_iterations)
@@ -1483,19 +1456,12 @@ class Agent(EventRouter):
             self.print(ctx.output, mode=self.config.print_messages_mode)
 
     def copy(self, include_messages: bool = True, **config):
-        _copy = self.__class__(**config)
-
-        if len(self.system) > 0 and not include_messages:
-            _copy.set_system_message(self.system[0])
-
-        if include_messages:
-            for message in self._messages:
-                # Create a copy of each message
-                msg_copy = message.model_copy()  # does this work?
-                msg_copy._set_agent(_copy)
-                _copy.append(msg_copy)
-
-        return _copy
+        warnings.warn(
+            "Agent.copy() is deprecated. Use agent.context_manager.copy().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.context_manager.copy(include_messages=include_messages, **config)
 
     @ensure_ready
     async def chat(
@@ -1547,32 +1513,21 @@ class Agent(EventRouter):
         Returns:
             AgentPool containing spawned agents
         """
-        # Determine number of agents
-        if prompts:
-            num_agents = len(prompts)
-        elif n:
-            num_agents = n
-        else:
-            raise ValueError("Either 'n' or 'prompts' must be provided")
-
-        # Create agents
-        agents = []
-        for i in range(num_agents):
-            # Fork the agent with optional config overrides
-            agent = self.fork(**configuration)
-
-            # Add prompt if provided
-            if prompts and i < len(prompts):
-                agent.append(prompts[i])
-
-            agents.append(agent)
-
-        # Return as pool
-        return AgentPool(agents)
+        warnings.warn(
+            "Agent.spawn() is deprecated. Use agent.context_manager.spawn().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return await self.context_manager.spawn(n=n, prompts=prompts, **configuration)
 
     def context_provider(self, name: str):
         """Register an instance-specific context provider"""
-        return self.template.context_provider(name)
+        warnings.warn(
+            "Agent.context_provider() is deprecated. Use agent.context_manager.context_provider().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.context_manager.context_provider(name)
 
     @ensure_ready
     async def merge(
@@ -1591,178 +1546,12 @@ class Agent(EventRouter):
                 - "interleaved": Interleave all messages from source agents (not implemented)
             **kwargs: Additional merge options
         """
-        if not agents:
-            return
-
-        # Emit merge start event
-        # @TODO: event naming - should be AGENT_MERGE_START
-        self.do(
-            AgentEvents.AGENT_MERGE_AFTER,
-            target=self,
-            sources=list(agents),
-            strategy=method,
-            result=None,
+        warnings.warn(
+            "Agent.merge() is deprecated. Use agent.context_manager.merge().",
+            DeprecationWarning,
+            stacklevel=2,
         )
-
-        if method == "tool_call":
-            await self._merge_as_tool_calls(*agents, **kwargs)
-        elif method == "interleaved":
-            raise NotImplementedError("Interleaved merge strategy not yet implemented")
-        else:
-            raise ValueError(f"Unknown merge method: {method}")
-
-        # Update version after merge
-        self._update_version()
-
-        # Emit merge complete event
-        # @TODO: event naming - should be AGENT_MERGE_COMPLETE
-        self.do(
-            AgentEvents.AGENT_MERGE_AFTER,
-            target=self,
-            sources=list(agents),
-            strategy=method,
-            result="success",
-        )
-
-    async def _merge_as_tool_calls(self, *agents: Self, **kwargs: Any) -> None:
-        """
-        Merge agents by converting their last assistant messages to tool calls.
-
-        This creates a single assistant message with multiple tool calls, followed by
-        tool response messages for each merged agent.
-        """
-
-        tool_calls = []
-        tool_responses = []
-
-        for i, agent in enumerate(agents):
-            # Find the last assistant message in the source agent
-            last_assistant = None
-            for msg in reversed(agent.messages):
-                match msg:
-                    case AssistantMessage() as assistant_msg:
-                        last_assistant = assistant_msg
-                        break
-                    case _:
-                        continue
-
-            if last_assistant is None:
-                # Skip agents with no assistant messages
-                continue
-
-            # Create a virtualized tool call from the assistant message
-            tool_call_id = f"merge_{ULID()}"
-            tool_name = f"agent_merge_{i}"
-
-            # Use the assistant message content as the tool arguments
-            arguments = {
-                "agent_id": str(agent.id),
-                "content": last_assistant.content,
-                "reasoning": getattr(last_assistant, "reasoning", None),
-                "citations": getattr(last_assistant, "citations", None),
-            }
-
-            tool_call = ToolCall(
-                id=tool_call_id,
-                type="function",
-                function=ToolCallFunction(
-                    name=tool_name, arguments=orjson.dumps(arguments).decode("utf-8")
-                ),
-            )
-            tool_calls.append(tool_call)
-
-            # Create tool response
-            tool_response = ToolResponse(
-                tool_name=tool_name,
-                tool_call_id=tool_call_id,
-                response=last_assistant.content,
-                parameters=arguments,
-                success=True,
-                error=None,
-            )
-
-            tool_message = self.model.create_message(
-                # content=str(tool_response.response or ""),
-                tool_call_id=tool_call_id,
-                tool_name=tool_name,
-                response=tool_response,
-                role="tool",
-            )
-            tool_responses.append(tool_message)
-
-        if tool_calls:
-            # Add assistant message with tool calls
-            assistant_message = self.model.create_message(
-                content="Merging results from sub-agents",
-                tool_calls=tool_calls,
-                role="assistant",
-            )
-            self.append(assistant_message)
-
-            # Add tool response messages
-            for tool_message in tool_responses:
-                self.append(tool_message)
-
-    def _resolve_tool_name(self, tool: Tool | Callable | str) -> str:
-        """
-        Resolve tool to its name.
-
-        Args:
-            tool: Tool instance, callable, or tool name string
-
-        Returns:
-            str: The tool name
-        """
-        if isinstance(tool, str):
-            return tool
-        elif isinstance(tool, Tool):
-            return tool._tool_metadata.name
-        elif callable(tool):
-            return getattr(tool, "__name__", str(tool))
-        else:
-            raise ValueError(
-                f"Tool must be a string name, Tool instance, or callable function, got {type(tool)}"
-            )
-
-    def _convert_to_tool_response(
-        self,
-        response: ToolResponse | Any,
-        tool_name: str,
-        tool_call_id: str,
-        parameters: dict[str, Any] | None = None,
-    ) -> ToolResponse:
-        """
-        Convert response to ToolResponse if needed.
-
-        Args:
-            response: The response to convert
-            tool_name: Name of the tool
-            tool_call_id: Tool call ID
-            parameters: Parameters passed to the tool
-
-        Returns:
-            ToolResponse: Converted or original ToolResponse
-        """
-        if not isinstance(response, ToolResponse):
-            # Create ToolResponse from arbitrary response
-            return ToolResponse(
-                tool_name=tool_name,
-                tool_call_id=tool_call_id,
-                response=response,
-                parameters=parameters if parameters is not None else {},
-                success=True,
-                error=None,
-            )
-        else:
-            # Use existing ToolResponse, potentially updating fields
-            return ToolResponse(
-                tool_name=response.tool_name or tool_name,
-                tool_call_id=response.tool_call_id or tool_call_id,
-                response=response.response,
-                parameters=response.parameters if parameters is None else parameters,
-                success=response.success,
-                error=response.error,
-            )
+        await self.context_manager.merge(*agents, method=method, **kwargs)
 
     def get_rendering_context(
         self, additional_context: dict[str, Any] | None = None
@@ -1880,8 +1669,6 @@ class Agent(EventRouter):
         Returns:
             New parameters dict with JSON-like strings parsed where appropriate.
         """
-        import orjson  # Local import to avoid overhead on module import
-
         def _resolve_tool_for_schema(t: Any) -> Any:
             # Try to resolve to a Tool-like object that has a .model with JSON schema
             try:
@@ -1996,99 +1783,23 @@ class Agent(EventRouter):
         tool: Tool | Callable | str,
         response: ToolResponse | Any,
         parameters: dict[str, Any] | None = None,
+        *,
         tool_call_id: str | None = None,
         skip_assistant_message: bool = False,
     ) -> None:
-        """
-        Add a tool invocation record to the agent's message history.
+        """Record a tool invocation via the tool execution manager."""
 
-        This method records that a tool was invoked without actually executing it.
-        It's useful when you want to record tool usage that happened outside the agent.
-
-        Args:
-            tool: Tool instance, callable, or tool name string
-            response: The ToolResponse from the tool execution, or any response that will be converted to ToolResponse
-            parameters: Parameters that were passed to the tool (visible params only)
-            tool_call_id: Optional tool call ID (generated if not provided)
-            skip_assistant_message: If True, only add tool response (for when assistant message already exists)
-        """
-        # Resolve tool name
-        tool_name = self._resolve_tool_name(tool)
-
-        # Generate tool call ID if not provided
-        if tool_call_id is None:
-            tool_call_id = f"call_{ULID()}"
-
-        # Convert response to ToolResponse if needed
-        tool_response = self._convert_to_tool_response(
-            response, tool_name, tool_call_id, parameters
+        warnings.warn(
+            "Agent.add_tool_invocation() is deprecated. Use agent.tool_calls.record_invocation().",
+            DeprecationWarning,
+            stacklevel=2,
         )
-
-        # Use provided parameters or extract from response
-        if parameters is None:
-            parameters = tool_response.parameters
-
-        # Check if we need to add an assistant message with tool call
-        if not skip_assistant_message:
-            # Look for existing assistant message with this tool call
-            existing_tool_call = False
-            for msg in reversed(self._messages):
-                match msg:
-                    case AssistantMessage(tool_calls=tool_calls) if tool_calls:
-                        for tc in tool_calls:
-                            if tc.id == tool_call_id:
-                                existing_tool_call = True
-                                break
-                        if existing_tool_call:
-                            break
-                    case _:
-                        continue
-
-            # Only add assistant message if tool call doesn't exist
-            if not existing_tool_call:
-                # Create tool call
-                tool_call = ToolCall(
-                    id=tool_call_id,
-                    type="function",
-                    function=ToolCallFunction(
-                        name=tool_name,
-                        arguments=orjson.dumps(parameters).decode("utf-8"),
-                    ),
-                )
-
-                # Add assistant message with tool call
-                assistant_msg = self.model.create_message(
-                    content="",  # Empty content for tool-only message
-                    tool_calls=[tool_call],
-                    role="assistant",
-                )
-                self.append(assistant_msg)
-        tool_message_content = (
-            tool_response.response.render()
-            if hasattr(tool_response.response, "render")
-            else str(tool_response.response)
-        )
-
-        # Create tool message with response
-        tool_msg = self.model.create_message(
-            content=tool_message_content
-            if tool_response.success
-            else f"Error: {tool_response.error}",
+        self.tool_calls.record_invocation(
+            tool,
+            response,
+            parameters,
             tool_call_id=tool_call_id,
-            tool_name=tool_name,
-            tool_response=tool_response,
-            role="tool",
-        )
-        self.append(tool_msg)
-
-        # Emit tool:response event
-        # @TODO: event naming
-        self.do(
-            AgentEvents.TOOL_CALL_AFTER,
-            tool_name=tool_name,
-            tool_call_id=tool_call_id,
-            response=tool_response,
-            success=tool_response.success,
+            skip_assistant_message=skip_assistant_message,
         )
 
     def add_tool_invocations(
@@ -2097,137 +1808,18 @@ class Agent(EventRouter):
         invocations: Sequence[tuple[dict[str, Any], ToolResponse | Any]],
         skip_assistant_message: bool = False,
     ) -> None:
-        """
-        Add multiple tool invocation records to the agent's message history.
+        """Record multiple tool invocations via the tool execution manager."""
 
-        If the model supports parallel function calling, all invocations will be
-        consolidated into a single AssistantMessage with multiple tool calls.
-        Otherwise, falls back to individual messages per invocation.
-
-        Args:
-            tool: Tool instance, callable, or tool name string
-            invocations: Sequence of (parameters, response) tuples
-            skip_assistant_message: If True, only add tool responses (for when assistant message already exists)
-        """
-        if not invocations:
-            return
-
-        # Resolve tool name once for all invocations
-        tool_name = self._resolve_tool_name(tool)
-
-        # Check if model supports parallel function calling
-        supports_parallel = self.model.supports_parallel_function_calling()
-
-        # Prepare tool calls and their IDs
-        tool_call_ids = []
-        tool_calls = []
-
-        if not skip_assistant_message:
-            if supports_parallel:
-                # Build all tool calls for consolidation
-                for parameters, _ in invocations:
-                    tool_call_id = f"call_{ULID()}"
-                    tool_call_ids.append(tool_call_id)
-
-                    tool_call = ToolCall(
-                        id=tool_call_id,
-                        type="function",
-                        function=ToolCallFunction(
-                            name=tool_name,
-                            arguments=orjson.dumps(parameters).decode("utf-8"),
-                        ),
-                    )
-                    tool_calls.append(tool_call)
-
-                # Add single AssistantMessage with all tool calls
-                assistant_msg = self.model.create_message(
-                    content="",  # Tool calls typically have empty content
-                    tool_calls=tool_calls,
-                    role="assistant",
-                )
-                self.append(assistant_msg)
-            else:
-                # Fall back to individual messages per invocation
-                for parameters, response in invocations:
-                    self.add_tool_invocation(
-                        tool=tool,
-                        response=response,
-                        parameters=parameters,
-                        skip_assistant_message=False,
-                    )
-                return  # Exit early since add_tool_invocation handles everything
-        else:
-            # When skipping assistant message, still need to generate IDs
-            for _ in invocations:
-                tool_call_ids.append(f"call_{ULID()}")
-
-        # Add tool response messages
-        for i, (parameters, response) in enumerate(invocations):
-            # Use the corresponding tool call ID
-            tool_call_id = tool_call_ids[i] if tool_call_ids else f"call_{ULID()}"
-
-            # Convert response to ToolResponse if needed
-            tool_response = self._convert_to_tool_response(
-                response, tool_name, tool_call_id, parameters
-            )
-
-            # Create tool message
-            tool_msg = self.model.create_message(
-                content=str(tool_response.response)
-                if tool_response.success
-                else f"Error: {tool_response.error}",
-                tool_call_id=tool_call_id,
-                tool_name=tool_name,
-                tool_response=tool_response,
-                role="tool",
-            )
-            self.append(tool_msg)
-
-            # Emit tool:response event
-            # @TODO: event naming
-            self.do(
-                AgentEvents.TOOL_CALL_AFTER,
-                tool_name=tool_name,
-                tool_call_id=tool_call_id,
-                response=tool_response,
-                success=tool_response.success,
-            )
-
-    def _resolve_tool(
-        self,
-        tool_name: str | None,
-        tool: Tool | Callable | str,
-        hide: list[str] | None = None,
-    ):
-        if isinstance(tool, str):
-            if tool not in self.tools:
-                raise ValueError(f"Tool '{tool}' not found in agent's tools")
-            tool_instance = self.tools[tool]
-            if isinstance(tool_instance, Tool):
-                resolved_tool = tool_instance
-                resolved_name = tool_name if tool_name is not None else tool
-            else:
-                # Convert callable to Tool if needed
-                resolved_tool = Tool(tool_instance)
-                resolved_name = tool_name if tool_name is not None else tool
-        elif isinstance(tool, Tool):
-            # It's a Tool instance
-            resolved_tool = tool
-            resolved_name = (
-                tool_name
-                if tool_name is not None
-                else resolved_tool._tool_metadata.name
-            )
-        elif callable(tool):
-            # It's a function - convert to Tool with hide parameter
-            resolved_tool = Tool(tool, hide=hide)
-            resolved_name = tool_name if tool_name is not None else resolved_tool.name
-        else:
-            raise ValueError(
-                f"Tool must be a string name, Tool instance, or callable function, got {type(tool)}"
-            )
-
-        return resolved_tool, resolved_name
+        warnings.warn(
+            "Agent.add_tool_invocations() is deprecated. Use agent.tool_calls.record_invocations().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.tool_calls.record_invocations(
+            tool,
+            invocations,
+            skip_assistant_message=skip_assistant_message,
+        )
 
     @overload
     async def invoke(
@@ -2285,7 +1877,12 @@ class Agent(EventRouter):
         Returns:
             ToolResponse with execution result
         """
-        return await self._tool_executor.invoke(
+        warnings.warn(
+            "Agent.invoke() is deprecated. Use agent.tool_calls.invoke().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return await self.tool_calls.invoke(
             tool,
             tool_name=tool_name,
             tool_call_id=tool_call_id,
@@ -2306,7 +1903,12 @@ class Agent(EventRouter):
         Returns:
             List of ToolResponse objects in invocation order
         """
-        return await self._tool_executor.invoke_many(invocations)
+        warnings.warn(
+            "Agent.invoke_many() is deprecated. Use agent.tool_calls.invoke_many().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return await self.tool_calls.invoke_many(invocations)
 
     def invoke_func(
         self,
@@ -2317,124 +1919,33 @@ class Agent(EventRouter):
         tool_call_id: str | None = None,
         **bound_parameters: Any,
     ) -> Callable[..., Awaitable[ToolResponse]]:
-        """
-        Create a bound function that invokes a tool with pre-set parameters.
+        """Deprecated wrapper delegating to tool execution manager."""
 
-        Args:
-            tool: Tool instance, tool name, or callable
-            tool_name: Optional name to override the inferred tool name
-            hide: List of parameter names to hide from the tool definition
-            **bound_parameters: Parameters to bind to the tool
-
-        Returns:
-            Async function that accepts additional parameters and invokes the tool
-        """
-
-        resolved_name = tool_name
-
-        if not tool_name:
-            if isinstance(tool, str):
-                resolved_name = tool
-            elif isinstance(tool, Tool):
-                resolved_name = tool.name
-            elif callable(tool):
-                resolved_name = getattr(tool, "__name__", str(tool))
-            logger.debug(f"Resolved tool name: {resolved_name}")
-
-        async def bound_invoke(**kwargs):
-            # Check if we're being called from invoke_many (special parameter)
-            from_invoke_many = kwargs.pop("_from_invoke_many", False)
-            # Allow invoke_many to pass through a pre-generated tool_call_id
-            runtime_tool_call_id = kwargs.pop("_tool_call_id", None)
-            tool_call = kwargs.pop("_tool_call", None)
-
-            explicit_tool_call_id = runtime_tool_call_id or tool_call_id
-
-            # Merge bound parameters with call-time parameters, without overriding
-            # invoke_many-supplied internals
-            all_params = dict(bound_parameters)
-            for key, value in kwargs.items():
-                if key in {"_agent", "_tool_call"}:
-                    continue
-                all_params[key] = value
-
-            if from_invoke_many:
-                # When called from invoke_many, just execute the tool directly
-                # WITHOUT creating messages (invoke_many handles that)
-                actual_tool = tool
-                if isinstance(tool, str):
-                    try:
-                        actual_tool = self.tools[tool]
-                    except KeyError:
-                        raise ValueError(f"Tool '{tool}' not found") from None
-                elif not isinstance(tool, Tool):
-                    actual_tool = Tool(tool)
-
-                assert callable(actual_tool), "Resolved tool is not callable"
-
-                # Execute the tool directly
-                result = await actual_tool(
-                    **all_params,
-                    _agent=self,
-                    _tool_call=tool_call,
-                )
-
-                # Convert to ToolResponse if needed
-                from good_agent.tools import ToolResponse as ToolResp
-
-                if not isinstance(result, ToolResp):
-                    result = ToolResp(
-                        tool_name=resolved_name
-                        or getattr(actual_tool, "name", str(tool)),
-                        tool_call_id=explicit_tool_call_id or "",
-                        response=result,
-                        parameters=all_params,
-                        success=True,
-                        error=None,
-                    )
-                else:
-                    # Ensure the response reflects the invoke_many-generated id
-                    if explicit_tool_call_id:
-                        result.tool_call_id = explicit_tool_call_id
-                return result
-            else:
-                # Normal invoke - creates messages
-                return await self.invoke(
-                    tool,
-                    tool_name=resolved_name,
-                    hide=hide,
-                    tool_call_id=explicit_tool_call_id,
-                    **all_params,
-                )
-
-        # bound_invoke.__name__ = resolved_name
-        bound_invoke.__name__ = resolved_name
-        # Mark this as a bound function from invoke_func (custom attributes for runtime introspection)
-        bound_invoke._is_invoke_func_bound = True  # type: ignore[attr-defined]
-        bound_invoke._bound_tool = tool  # type: ignore[attr-defined]
-        bound_invoke._bound_parameters = bound_parameters  # type: ignore[attr-defined]
-        bound_invoke._hide_params = hide  # type: ignore[attr-defined]
-
-        return bound_invoke
+        warnings.warn(
+            "Agent.invoke_func() is deprecated. Use agent.tool_calls.invoke_func().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.tool_calls.invoke_func(
+            tool,
+            tool_name=tool_name,
+            hide=hide,
+            tool_call_id=tool_call_id,
+            **bound_parameters,
+        )
 
     def invoke_many_func(
         self,
         invocations: Sequence[tuple[Tool | str | Callable, dict[str, Any]]],
     ) -> Callable[[], Awaitable[list[ToolResponse]]]:
-        """
-        Create a bound function that executes a batch of tool invocations.
+        """Deprecated wrapper delegating to tool execution manager."""
 
-        Args:
-            invocations: Sequence of (tool, parameters) tuples
-
-        Returns:
-            Async function that executes the batch when called
-        """
-
-        async def bound_invoke_many():
-            return await self.invoke_many(invocations)
-
-        return bound_invoke_many
+        warnings.warn(
+            "Agent.invoke_many_func() is deprecated. Use agent.tool_calls.invoke_many_func().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.tool_calls.invoke_many_func(invocations)
 
     def get_pending_tool_calls(self) -> list[ToolCall]:
         """Get list of tool calls that don't have corresponding responses.
@@ -2442,7 +1953,12 @@ class Agent(EventRouter):
         Returns:
             List of ToolCall objects that are pending execution
         """
-        return self._tool_executor.get_pending_tool_calls()
+        warnings.warn(
+            "Agent.get_pending_tool_calls() is deprecated. Use agent.tool_calls.get_pending_tool_calls().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.tool_calls.get_pending_tool_calls()
 
     def has_pending_tool_calls(self) -> bool:
         """Check if there are any pending tool calls.
@@ -2450,7 +1966,12 @@ class Agent(EventRouter):
         Returns:
             True if there are pending tool calls
         """
-        return self._tool_executor.has_pending_tool_calls()
+        warnings.warn(
+            "Agent.has_pending_tool_calls() is deprecated. Use agent.tool_calls.has_pending_tool_calls().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.tool_calls.has_pending_tool_calls()
 
     async def resolve_pending_tool_calls(self) -> AsyncIterator[ToolMessage]:
         """Find and execute all pending tool calls in conversation.
@@ -2458,7 +1979,12 @@ class Agent(EventRouter):
         Yields:
             ToolMessage for each resolved tool call
         """
-        async for msg in self._tool_executor.resolve_pending_tool_calls():
+        warnings.warn(
+            "Agent.resolve_pending_tool_calls() is deprecated. Use agent.tool_calls.resolve_pending_tool_calls().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        async for msg in self.tool_calls.resolve_pending_tool_calls():
             yield msg
 
     @overload
@@ -2685,20 +2211,8 @@ class Agent(EventRouter):
             except asyncio.CancelledError:
                 pass
 
-        # Cancel all managed tasks
-        for task in list(self._managed_tasks.keys()):
-            if not task.done():
-                task.cancel()
-
-        # Give a moment for cancellations to process
-        if self._managed_tasks:
-            try:
-                await asyncio.wait_for(
-                    asyncio.gather(*self._managed_tasks.keys(), return_exceptions=True),
-                    timeout=1.0,
-                )
-            except TimeoutError:
-                logger.warning("Some managed tasks did not cancel within 1 second")
+        # Cancel managed tasks
+        await self.tasks.cancel_all()
 
         await self.join_async()
 

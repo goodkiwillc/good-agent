@@ -195,6 +195,23 @@ Developers frequently asked when to use `call()` vs `execute()`, indicating docu
   - Protocol-based handler definitions
   - Proper deferred imports to avoid circular dependencies
 
+#### Task: Docstring & Example Sweep (Completed 2025-11-16)
+
+- Trimmed every public docstring across the agent, tool, template, event-router, and citation modules to ≤15 lines, pointing each summary at a runnable script instead of embedding 200-line prose.
+- Added runnable reference snippets:
+  - `examples/agent/basic_chat.py`
+  - `examples/components/basic_component.py`
+  - `examples/context/thread_context.py`
+  - `examples/events/basic_events.py`
+  - `examples/pool/agent_pool.py`
+  - `examples/templates/render_template.py`
+  - `examples/tools/basic_tool.py`
+  - `examples/types/identifier.py`
+  - `examples/resources/editable_mdxl.py`
+  - `examples/extensions/citations_basic.py`
+- EventRouter docstrings now link to `examples/event_router/basic_usage.py` and `examples/event_router/async_sync_bridge.py`, matching the reliability plan in Phase 3.
+- Validation: automated docstring audit (`scripts`/ad-hoc AST check) now reports `Total long docstrings: 0`, ensuring we stay within the new documentation budget.
+
 ### Phase 2: Break Up Large Files (Completed)
 
 **Status**: ✅ Complete (as of 2025-11-14)

@@ -31,8 +31,8 @@ class TaskTrackingComponent(AgentComponent):
         self.tasks_created = 0
 
     async def create_background_task(self) -> int:
-        """Create a background task using agent.create_task()."""
-        task = self.agent.create_task(
+        """Create a background task using agent.tasks.create()."""
+        task = self.agent.tasks.create(
             simple_async_task(42),
             name="test_task",
             component=self,
@@ -44,13 +44,13 @@ class TaskTrackingComponent(AgentComponent):
 
 @pytest.mark.asyncio
 class TestAgentCreateTask:
-    """Test the Agent.create_task() utility method."""
+    """Test the Agent task management utilities."""
 
     async def test_create_task_basic(self):
         """Test basic task creation and execution."""
         async with Agent("Test") as agent:
             # Create a task
-            task = agent.create_task(simple_async_task(21))
+            task = agent.tasks.create(simple_async_task(21))
 
             # Verify it's an asyncio.Task
             assert isinstance(task, asyncio.Task)
@@ -62,7 +62,7 @@ class TestAgentCreateTask:
     async def test_create_task_with_name(self):
         """Test task creation with custom name."""
         async with Agent("Test") as agent:
-            task = agent.create_task(simple_async_task(10), name="custom_task")
+            task = agent.tasks.create(simple_async_task(10), name="custom_task")
 
             # Check task name
             assert task.get_name().startswith("custom_task")
@@ -93,11 +93,11 @@ class TestAgentCreateTask:
             completed[key] = True
 
         # Create tasks with wait_on_ready=True
-        agent.create_task(mark_complete("task1"), wait_on_ready=True)
-        agent.create_task(mark_complete("task2"), wait_on_ready=True)
+        agent.tasks.create(mark_complete("task1"), wait_on_ready=True)
+        agent.tasks.create(mark_complete("task2"), wait_on_ready=True)
 
         # Create task with wait_on_ready=False
-        agent.create_task(mark_complete("task3"), wait_on_ready=False)
+        agent.tasks.create(mark_complete("task3"), wait_on_ready=False)
 
         # Tasks should not be complete yet
         assert not completed["task1"]
@@ -105,7 +105,7 @@ class TestAgentCreateTask:
         assert not completed["task3"]
 
         # Wait for tasks using wait_for_tasks (better test)
-        await agent.wait_for_tasks(timeout=1.0)
+        await agent.tasks.wait_for_all(timeout=1.0)
 
         # All tasks should be complete
         assert completed["task1"]
@@ -116,13 +116,13 @@ class TestAgentCreateTask:
         """Test that completed tasks are cleaned up automatically."""
         async with Agent("Test") as agent:
             # Track active tasks before
-            initial_count = agent.get_task_count()
+            initial_count = agent.task_count
 
             # Create a task
-            task = agent.create_task(simple_async_task(5))
+            task = agent.tasks.create(simple_async_task(5))
 
             # Should have one more task
-            assert agent.get_task_count() == initial_count + 1
+            assert agent.task_count == initial_count + 1
 
             # Wait for completion
             await task
@@ -131,18 +131,18 @@ class TestAgentCreateTask:
             await asyncio.sleep(0.01)
 
             # Task should be cleaned up
-            assert agent.get_task_count() == initial_count
+            assert agent.task_count == initial_count
 
     async def test_task_cleanup_on_exception(self):
         """Test that tasks are cleaned up even when they fail."""
         async with Agent("Test") as agent:
-            initial_count = agent.get_task_count()
+            initial_count = agent.task_count
 
             # Create a failing task
-            task = agent.create_task(failing_async_task())
+            task = agent.tasks.create(failing_async_task())
 
             # Should have one more task
-            assert agent.get_task_count() == initial_count + 1
+            assert agent.task_count == initial_count + 1
 
             # Wait for failure
             with pytest.raises(ValueError, match="Task failed"):
@@ -152,13 +152,13 @@ class TestAgentCreateTask:
             await asyncio.sleep(0.01)
 
             # Task should be cleaned up
-            assert agent.get_task_count() == initial_count
+            assert agent.task_count == initial_count
 
     async def test_task_exception_logging(self):
         """Test that task exceptions are logged but don't crash the agent."""
         async with Agent("Test") as agent:
             # Create a failing task that we don't await
-            task = agent.create_task(
+            task = agent.tasks.create(
                 failing_async_task(),
                 wait_on_ready=False,  # Don't wait on ready
             )
@@ -181,7 +181,7 @@ class TestAgentCreateTask:
             cleanup_called["task"] = task
 
         async with Agent("Test") as agent:
-            task = agent.create_task(
+            task = agent.tasks.create(
                 simple_async_task(7), cleanup_callback=cleanup_callback
             )
 
@@ -199,15 +199,15 @@ class TestAgentCreateTask:
         """Test getting task statistics."""
         async with Agent("Test") as agent:
             # Create various tasks
-            task1 = agent.create_task(
+            task1 = agent.tasks.create(
                 simple_async_task(1), name="task1", wait_on_ready=True
             )
-            task2 = agent.create_task(
+            task2 = agent.tasks.create(
                 long_running_task(), name="task2", wait_on_ready=False
             )
 
             # Get stats before completion
-            stats = agent.get_task_stats()
+            stats = agent.tasks.stats()
             assert stats["total"] >= 2
             assert stats["pending"] >= 1
             assert "by_component" in stats
@@ -221,7 +221,7 @@ class TestAgentCreateTask:
             await asyncio.sleep(0.01)
 
             # Get stats after completion
-            stats_after = agent.get_task_stats()
+            stats_after = agent.tasks.stats()
             assert stats_after["total"] == stats["total"]  # Total is cumulative
             assert stats_after["completed"] > 0
             assert stats_after["pending"] < stats["pending"]  # Fewer pending tasks
@@ -236,12 +236,12 @@ class TestAgentCreateTask:
                 results.append(value)
 
             # Create multiple tasks
-            agent.create_task(append_result("a"))
-            agent.create_task(append_result("b"))
-            agent.create_task(append_result("c"))
+            agent.tasks.create(append_result("a"))
+            agent.tasks.create(append_result("b"))
+            agent.tasks.create(append_result("c"))
 
             # Wait for all tasks
-            await agent.wait_for_tasks()
+            await agent.tasks.wait_for_all()
 
             # All tasks should be complete
             assert len(results) == 3
@@ -251,23 +251,23 @@ class TestAgentCreateTask:
         """Test wait_for_tasks with timeout."""
         async with Agent("Test") as agent:
             # Create a long-running task
-            agent.create_task(long_running_task())
+            agent.tasks.create(long_running_task())
 
             # Wait with short timeout should raise
             with pytest.raises(asyncio.TimeoutError):
-                await agent.wait_for_tasks(timeout=0.01)
+                await agent.tasks.wait_for_all(timeout=0.01)
 
     async def test_component_specific_tasks(self):
         """Test tracking tasks by component."""
 
         class ComponentA(AgentComponent):
             async def create_tasks(self) -> None:
-                self.agent.create_task(simple_async_task(1), component=self)
-                self.agent.create_task(simple_async_task(2), component=self)
+                self.agent.tasks.create(simple_async_task(1), component=self)
+                self.agent.tasks.create(simple_async_task(2), component=self)
 
         class ComponentB(AgentComponent):
             async def create_tasks(self) -> None:
-                self.agent.create_task(simple_async_task(3), component=self)
+                self.agent.tasks.create(simple_async_task(3), component=self)
 
         async with Agent("Test", extensions=[ComponentA(), ComponentB()]) as agent:
             comp_a = agent[ComponentA]
@@ -278,14 +278,14 @@ class TestAgentCreateTask:
             await comp_b.create_tasks()
 
             # Check stats by component
-            stats = agent.get_task_stats()
+            stats = agent.tasks.stats()
             assert "ComponentA" in stats["by_component"]
             assert "ComponentB" in stats["by_component"]
             assert stats["by_component"]["ComponentA"] == 2
             assert stats["by_component"]["ComponentB"] == 1
 
             # Wait for all tasks
-            await agent.wait_for_tasks()
+            await agent.tasks.wait_for_all()
 
     async def test_create_task_without_wait_on_ready(self):
         """Test that tasks with wait_on_ready=False don't block ready()."""
@@ -297,7 +297,7 @@ class TestAgentCreateTask:
                 slow_task_done["done"] = True
 
             # Create slow task without wait_on_ready
-            task = agent.create_task(slow_task(), wait_on_ready=False)
+            task = agent.tasks.create(slow_task(), wait_on_ready=False)
 
             # ready() should return quickly
             await agent.ready()
@@ -324,7 +324,9 @@ class TestAgentCreateTask:
                     was_cancelled["value"] = True
                     raise
 
-            task_handle = agent.create_task(check_cancellation(), wait_on_ready=False)
+            task_handle = agent.tasks.create(
+                check_cancellation(), wait_on_ready=False
+            )
 
         # Task should be cancelled after context exit
         assert task_handle.cancelled() or was_cancelled["value"]

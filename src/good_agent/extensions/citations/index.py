@@ -15,34 +15,7 @@ from ...base import Index
 
 
 class CitationIndex(Index[URL, int, Renderable]):
-    """
-    Global citation registry maintaining URL-to-index mappings.
-
-    The CitationIndex is responsible for:
-    - Auto-incrementing global indices (1-based for human readability)
-    - URL deduplication and canonicalization
-    - Alias/redirect resolution
-    - Efficient lookup in both directions (URL->index, index->URL)
-    - Metadata and tagging support for citations
-
-    Features:
-    - O(1) URL to index lookup via hashmap
-    - O(1) index to URL lookup via array
-    - Automatic URL canonicalization for deduplication
-    - Support for 10,000+ unique citations
-    - Thread-safe operations
-
-    Example:
-        >>> index = CitationIndex()
-        >>> idx1 = index.add("https://example.com/page")
-        >>> idx1
-        1
-        >>> idx2 = index.add("https://example.com/page")  # Same URL
-        >>> idx2
-        1  # Returns same index (deduplication)
-        >>> index.get_url(1)
-        URL("https://example.com/page")
-    """
+    """Deduplicated URL↔index registry backing ``CitationManager``."""
 
     def __init__(self, index_offset: int = 1):
         """

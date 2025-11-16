@@ -15,18 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class EditableMDXL(StatefulResource[MDXL]):
-    """MDXL-specific editable resource - read everything, edit precisely.
-
-    🔧 TOOL SELECTION GUIDE:
-    - update(): Modify EXISTING elements only (text, attributes, data)
-    - append_child(): Add NEW child element inside a parent
-    - insert(): Add NEW sibling element before/after existing element
-    - delete(): Remove existing elements
-
-    ⚠️ COMMON MISTAKE: Using update() on non-existent paths
-    ❌ WRONG: update(xpath='//person/details') when details doesn't exist
-    ✅ RIGHT: append_child(parent_xpath='//person', element_tag='details')
-    """
+    """Resource wrapper that exposes read/update/append helpers for MDXL trees."""
 
     def __init__(self, mdxl: MDXL, name: str = "mdxl_document"):
         # Don't call super().__init__ with content - we'll store MDXL directly
@@ -402,32 +391,11 @@ class EditableMDXL(StatefulResource[MDXL]):
         ),
         cm: CitationManager | None = None,
     ) -> str:
-        """Insert a new SIBLING element before or after an existing element.
+        """Insert a sibling element relative to ``reference_xpath``.
 
-        Use this for adding elements at the SAME level as the reference.
-        For adding CHILD elements, use append_child instead.
-
-        Timeline Insertion Examples:
-            Insert after (chronological order):
-            - reference_xpath='//timeline/day[@date="2024-01-10"]'
-            - element_tag='day'
-            - position='after' (default)
-            - attributes={'date': '2024-01-15'}
-
-            Insert before (at beginning):
-            - reference_xpath='//timeline/day[@date="2024-01-10"]'
-            - element_tag='day'
-            - position='before'
-            - attributes={'date': '2024-01-05'}
-
-        Chronological Insertion Best Practice:
-            For timelines, always find the appropriate reference element:
-            - To insert chronologically: Find the preceding date, use position='after'
-            - To insert at beginning: Find the first element, use position='before'
-            - To add at end: Use append_child on the timeline element
-
-        Returns:
-            Description of what was inserted
+        Keeps citation markers consistent and returns a short description; prefer
+        ``append_child`` when targeting the parent's end. Demonstrated in
+        ``examples/resources/editable_mdxl.py``.
         """
         reference_xpath = self._clean_xpath(reference_xpath)
         logger.debug(f"Insert {position} {reference_xpath}: <{element_tag}>")
@@ -579,38 +547,11 @@ class EditableMDXL(StatefulResource[MDXL]):
         ),
         cm: CitationManager | None = None,
     ) -> str:
-        """Append a NEW child element to an EXISTING parent element.
+        """Append a new child element beneath ``parent_xpath``.
 
-        USE THIS to add new sub-elements that don't exist yet!
-
-        Examples:
-            - Add details to person: parent_xpath='//person[@name="John"]', element_tag='details'
-            - Add description: parent_xpath='//project[@id="123"]', element_tag='description'
-            - Add notes section: parent_xpath='//document', element_tag='notes'
-
-        Timeline Example (Adding to End):
-            To add a timeline entry at the end:
-            - parent_xpath='//timeline'
-            - element_tag='day'
-            - attributes={'date': '2024-01-20'}
-            - text_content='Important event occurred'
-
-        ⚠️ Timeline Best Practice:
-            append_child adds to the END of the timeline, which may not be chronological.
-            For proper chronological insertion:
-            1. Use insert() with the appropriate reference date
-            2. position='after' for inserting after a date
-            3. position='before' for inserting before a date
-            4. Only use append_child if you're certain it's the latest date
-
-        Entity Example:
-            To add a new person:
-            - parent_xpath='//entities'
-            - element_tag='person'
-            - attributes={'name': 'John Doe', 'role': 'candidate'}
-
-        Returns:
-            Description of what was appended
+        Use when the parent already exists but the child does not. Normalizes
+        citation markers in ``text_content`` and returns a short status string.
+        See ``examples/resources/editable_mdxl.py`` for a runnable workflow.
         """
         parent_xpath = self._clean_xpath(parent_xpath)
         logger.debug(f"Append child to {parent_xpath}: <{element_tag}>")
