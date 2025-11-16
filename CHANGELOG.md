@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Phase 4: API Improvements - Message API Consolidation (Started 2025-11-15)
+
+**Status**: 🚧 In Progress
+**Branch**: `refactor/phase-4-api-improvements`
+
+#### Deprecated
+
+- **`Agent.add_tool_response()` method** (Removal planned for v1.0.0)
+  - Use `agent.append(content, role="tool", tool_call_id=...)` instead
+  - Provides clearer, more consistent API with existing `append()` method
+  - Deprecation warning guides migration to new pattern
+
+- **`MessageManager.add_tool_response()` method** (Removal planned for v1.0.0)
+  - Internal method also deprecated for consistency
+  - Forwards to `append()` with deprecation warning
+
+#### Migration Guide
+
+**Old pattern:**
+```python
+# Deprecated - will be removed in v1.0.0
+agent.add_tool_response("result", tool_call_id="123", tool_name="search")
+```
+
+**New pattern:**
+```python
+# Recommended
+agent.append("result", role="tool", tool_call_id="123", tool_name="search")
+```
+
+#### Rationale
+
+This consolidation reduces the Agent API surface from 74 to 72 public methods (target: <30) and provides a clearer, more consistent interface:
+
+- **Before**: 5+ different ways to add messages (confusing for new users)
+- **After**: 2 clear patterns:
+  1. `append()` for 90% of use cases (all message types)
+  2. `messages.append()` for advanced control (10% of cases)
+
+#### Technical Details
+
+- **Breaking Changes**: None (backward compatible via deprecation)
+- **Test Coverage**: All tests updated to use new pattern
+- **Documentation**: Deprecation notices added with migration examples
+
 ### Phase 1: Template Consolidation (Completed 2025-11-15)
 
 **Status**: ✅ Complete (Step 6 of refactoring plan)

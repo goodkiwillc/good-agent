@@ -175,8 +175,11 @@ class TestAgentMessageStoreIntegration:
             # Add different message types
             agent.append("User message", role="user")
             agent.append("Assistant message", role="assistant")
-            agent.add_tool_response(
-                "Tool response", tool_call_id="test123", tool_name="test_tool"
+            agent.append(
+                "Tool response",
+                role="tool",
+                tool_call_id="test123",
+                tool_name="test_tool",
             )
 
             # Verify all are stored with correct types
