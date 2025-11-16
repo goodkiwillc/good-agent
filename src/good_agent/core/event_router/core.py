@@ -1,34 +1,10 @@
-"""EventRouter core implementation.
-
-This module contains the EventRouter class, the central hub for event management
-and dispatch. It orchestrates event flow across the platform with priority-based
-handler execution, type safety, and async/sync interoperability.
-
-CONTENTS:
-- EventRouter: Main event router class with dispatch methods
-- Handler registration: on() decorator and auto-registration
-- Event dispatch: do(), apply_async(), apply_sync(), apply_typed()
-- Resource management: Background task tracking and cleanup
-
-THREAD SAFETY: Router instance is NOT thread-safe for concurrent event dispatch.
-Use separate router instances per thread or implement external synchronization.
-Individual event dispatch is thread-safe via contextvars.
-
-CONCURRENCY PATTERNS:
-- Fire-and-forget (do()): Non-blocking, handlers run in background
-- Blocking async (apply_async()): Waits for all handlers, supports async handlers
-- Blocking sync (apply_sync()): Waits for sync handlers only, runs async in thread pool
-- Type-safe (apply_typed()): Same as apply_async but with explicit type annotations
-"""
+"""Priority-based EventRouter with thread-safe registration and sync/async bridging."""
 
 from __future__ import annotations
 
 import asyncio
-import collections
-import concurrent.futures
 import inspect
 import logging
-import threading
 import time
 from collections.abc import Callable
 from typing import Any, cast
@@ -40,7 +16,8 @@ from rich.text import Text
 
 from .context import EventContext, event_ctx
 from .protocols import ApplyInterrupt, EventName, F, T_Parameters, T_Return
-from .registration import HandlerRegistration
+from .registration import HandlerRegistration, HandlerRegistry
+from .sync_bridge import SyncBridge
 
 logger = logging.getLogger(__name__)
 
@@ -49,105 +26,10 @@ _console = Console(stderr=True)  # Use stderr to avoid interfering with stdout
 
 
 class EventRouter:
-    """
-    High-performance event router with fire-and-forget and blocking dispatch capabilities.
+    """Priority-aware dispatcher powering agents, components, and extensions.
 
-    PURPOSE: Central event management hub that provides publish/subscribe patterns with
-    priority-based handler execution, type safety, and seamless async/sync interoperability.
-
-    ROLE: Orchestrates event flow across the GoodIntel platform, enabling loose coupling
-    between components while maintaining high performance and predictable execution order.
-
-    LIFECYCLE:
-    1. Initialization: Router created with optional configuration and auto-registration
-    2. Handler Registration: Methods decorated with @on() or router.on() registered
-    3. Event Dispatch: Events fired via do(), apply_async(), or apply_sync()
-    4. Handler Execution: Priority-ordered execution with predicate filtering
-    5. Cleanup: Background tasks joined, resources released via close()/async_close()
-
-    THREAD SAFETY:
-    - Router instance is NOT thread-safe for concurrent event dispatch
-    - Individual event dispatch is thread-safe via contextvars
-    - Use separate router instances per thread or implement external synchronization
-    - Background task management is thread-safe
-
-    TYPICAL USAGE:
-    ```python
-    # Basic router setup
-    router = EventRouter(debug=True, enable_signal_handling=True)
-
-
-    # Handler registration
-    @router.on("process:data", priority=200)
-    async def handle_data(ctx: EventContext[dict, Any]) -> None:
-        data = ctx.parameters["data"]
-        result = await process(data)
-        ctx.output = result
-
-
-    # Fire-and-forget event
-    router.do("process:data", data={"value": 42})
-
-    # Blocking event with result
-    ctx = await router.apply_async("process:data", data={"value": 42})
-    result = ctx.output
-
-    # Type-safe event
-    ctx = await router.typed(ProcessParams, ProcessResult).apply(
-        "process:data", data={"value": 42}
-    )
-    ```
-
-    CONCURRENCY PATTERNS:
-    - Fire-and-forget (do()): Non-blocking, handlers run in background
-    - Blocking async (apply_async()): Waits for all handlers, supports async handlers
-    - Blocking sync (apply_sync()): Waits for sync handlers only, runs async in thread pool
-    - Type-safe (apply_typed()): Same as apply_async but with explicit type annotations
-
-    PERFORMANCE CHARACTERISTICS:
-    - Handler lookup: O(1) via dict mapping per event type
-    - Priority sorting: O(p log p) where p=unique priority levels (cached)
-    - Async dispatch: Minimal overhead for sync handlers, concurrent for async handlers
-    - Memory usage: O(h) where h=total registered handlers across all events
-    - Context creation: O(1) with slots optimization and minimal allocation
-
-    BROADCASTING AND COMPOSITION:
-    - Events can be broadcast to multiple routers for distributed systems
-    - Handler inheritance via broadcast_to() and consume_from()
-    - Event chaining supported via context manipulation
-    - Cross-router communication maintains priority and type safety
-
-    ERROR HANDLING:
-    - Handler exceptions captured but don't stop event flow (unless ApplyInterrupt)
-    - Debug mode provides detailed exception traces and handler diagnostics
-    - Error context preserved in EventContext for error handling workflows
-    - Separate error phase events via @emit decorator for lifecycle management
-
-    INTEGRATION FEATURES:
-    - Auto-registration of decorated methods during __post_init__()
-    - Signal handling integration for graceful shutdown
-    - Rich console output for event tracing and debugging
-    - Context variable support for accessing current event context
-    - Plugin system compatible architecture
-
-    CONFIGURATION OPTIONS:
-    - default_event_timeout: Timeout for async handlers in sync context
-    - debug: Enable detailed logging and exception traces
-    - _event_trace: Enable comprehensive event logging with timing
-    - enable_signal_handling: Automatic graceful shutdown on signals
-
-    EXTENSION POINTS:
-    - Custom handler predicates for conditional execution
-    - Typed event contexts for domain-specific data flow
-    - Custom event tracing and monitoring integrations
-    - Plugin system for router extensions and middleware
-
-    RELATED CLASSES:
-    - EventContext: Typed context flow through handler chains
-    - TypedApply: Helper for type-safe event dispatch
-    - @on decorator: Handler registration with metadata
-    - @emit decorator: Method lifecycle event generation
-    - ApplyInterrupt: Exception for early termination
+    Supports predicates, lifecycle hooks, broadcast chaining, and the
+    sync/async bridge showcased in ``examples/event_router/*.py``.
     """
 
     def __init__(
@@ -177,28 +59,16 @@ class EventRouter:
         self._event_trace_use_rich = True  # Use Rich formatting by default
         self._signal_handling_enabled = enable_signal_handling
 
-        # Event handler registry
-        self._events: dict[EventName, dict[int, list[HandlerRegistration]]] = (
-            collections.defaultdict(lambda: collections.defaultdict(list))
-        )
+        # Handler registry (thread-safe)
+        self._handler_registry = HandlerRegistry(debug=debug)
 
-        # Broadcasting support
+        # Maintain broadcast targets for backward compatibility
         self._broadcast_to: list[EventRouter] = []
 
-        # Task management
-        self._tasks: set[asyncio.Task] = set()
-        self._futures: set[concurrent.futures.Future] = (
-            set()
-        )  # Track futures from run_coroutine_threadsafe
-
-        # Thread pool for running async handlers from sync context
-        self._thread_pool: concurrent.futures.ThreadPoolExecutor | None = None
-        self._event_loop: asyncio.AbstractEventLoop | None = None
-        self._loop_thread: threading.Thread | None = None
-
-        # Queue-based sync->async bridge
-        self._sync_request_queue: asyncio.Queue | None = None
-        self._sync_worker_task: asyncio.Task | None = None
+        # Async/sync bridge for task tracking and event loop management
+        self._sync_bridge = SyncBridge(
+            debug=debug, default_timeout=default_event_timeout
+        )
 
         # Call __post_init__ to complete initialization
         # This will handle auto-registration and allow subclasses to override
@@ -248,6 +118,7 @@ class EventRouter:
         """Add another router to receive our events."""
         if obs not in self._broadcast_to:
             self._broadcast_to.append(obs)
+            self._handler_registry.add_broadcast_target(obs._handler_registry)
             return len(self._broadcast_to) - 1
         return self._broadcast_to.index(obs)
 
@@ -513,259 +384,49 @@ class EventRouter:
         priority: int = 100,
         predicate: Callable[..., bool] | None = None,
     ) -> Callable[[F], F]:
-        """
-        Decorator to register event handlers with priority and conditional execution.
+        """Register a handler for ``event`` with optional priority and predicate.
 
-        PURPOSE: Register functions or methods as event handlers with explicit priority
-        control and optional predicate-based conditional execution for fine-grained
-        event processing control.
-
-        WHEN TO USE:
-        - Dynamic handler registration after router instantiation
-        - Conditional handlers based on event context or parameters
-        - Priority-based handler ordering requirements
-        - Runtime handler registration based on configuration
-        - Handler registration outside class definitions
-
-        HANDLER REGISTRATION:
-        - Registers handler in router._events[event][priority] list
-        - Higher priority values execute before lower priority values
-        - Multiple handlers can have same priority (execution order undefined)
-        - Replaces existing predicate for handler if already registered
-        - Supports both function and method handlers
-
-        PRIORITY SYSTEM:
-        - Priority 1000: Critical system handlers (authentication, validation)
-        - Priority 500: High priority business logic (data transformation)
-        - Priority 200: Normal processing handlers (business logic)
-        - Priority 100: Default priority for standard handlers
-        - Priority 50: Low priority handlers (logging, monitoring)
-        - Priority 0: Cleanup and finalization handlers
-
-        PREDICATE EXECUTION:
-        - Predicate receives EventContext as parameter
-        - Return True to execute handler, False to skip
-        - Predicate exceptions logged and result in skipping handler
-        - Predicates evaluated for each handler before execution
-        - Useful for conditional processing based on parameters or state
-
-        EXECUTION FLOW:
-        1. Check existing registrations for same handler function
-        2. Update predicate if handler already registered
-        3. Create new HandlerRegistration with handler and predicate
-        4. Add to priority bucket in router._events dictionary
-        5. Return original function unchanged
-
-        SIDE EFFECTS:
-        - Modifies router._events internal state
-        - Affects subsequent event dispatch ordering
-        - No immediate execution occurs during registration
-        - Handler registration persists until router is destroyed
-
-        TYPE SAFETY:
-        - Preserves original function signature and type hints
-        - Compatible with both sync and async handlers
-        - IDE auto-completion maintained for decorated functions
-        - Runtime type checking via EventContext generics
-
-        Args:
-            event: Event name for handler registration and lookup
-            priority: Execution priority (higher values run first, default: 100)
-            predicate: Optional conditional function (EventContext -> bool)
-
-        Returns:
-            Callable[[F], F]: Decorator function that returns original handler
-
-        Examples:
-        ```python
-        # Basic handler registration
-        @router.on("data:process", priority=200)
-        async def process_data(ctx: EventContext[dict, Any]) -> None:
-            data = ctx.parameters["data"]
-            result = await processor.process(data)
-            ctx.output = result
-
-
-        # Conditional handler with predicate
-        @router.on(
-            "user:action",
-            priority=150,
-            predicate=lambda ctx: ctx.parameters.get("user_type") == "premium",
-        )
-        def premium_handler(ctx: EventContext) -> None:
-            # Only executes for premium users
-            user_id = ctx.parameters["user_id"]
-            grant_premium_features(user_id)
-
-
-        # High priority validation handler
-        @router.on("api:request", priority=1000)
-        def validate_request(ctx: EventContext) -> None:
-            request = ctx.parameters["request"]
-            if not is_valid(request):
-                ctx.stop_with_exception(ValidationError("Invalid request"))
-
-
-        # Monitoring handler (low priority)
-        @router.on("system:*", priority=10)
-        def log_event(ctx: EventContext) -> None:
-            logger.info(f"Event {ctx.event} executed with params: {ctx.parameters}")
-        ```
-
-        PERFORMANCE CONSIDERATIONS:
-        - Handler lookup: O(1) per event during dispatch
-        - Priority sorting: O(p log p) cached on first dispatch
-        - Predicate evaluation: O(1) per handler during execution
-        - Memory usage: O(1) per handler registration
-
-        THREAD SAFETY:
-        - Registration is not thread-safe with concurrent dispatch
-        - Ensure all handlers registered before event dispatch begins
-        - Use external synchronization if needed for dynamic registration
-
-        RELATED:
-        - @on decorator: Alternative syntax for class method registration
-        - _auto_register_handlers(): Automatic registration during initialization
-        - _get_sorted_handlers(): Priority-ordered handler lookup during dispatch
-        - _should_run_handler(): Predicate evaluation during execution
+        See ``examples/event_router/basic_usage.py`` for typical patterns.
         """
 
         def decorator(fn: F) -> F:
-            registrations = self._events[event][priority]
-            for registration in registrations:
-                if registration.handler is fn:
-                    registration.predicate = predicate
-                    break
-            else:
-                registrations.append(
-                    HandlerRegistration(handler=fn, predicate=predicate)
-                )
-
+            self._handler_registry.register_handler(
+                event=event,
+                handler=fn,
+                priority=priority,
+                predicate=predicate,
+            )
             return fn
 
         return decorator
 
     def _get_sorted_handlers(self, event: EventName) -> list[HandlerRegistration]:
-        """Get all handlers for an event, sorted by priority."""
-        handlers = []
-
-        # Get handlers from this router
-        if event in self._events:
-            priorities = sorted(self._events[event].keys(), reverse=True)
-            for priority in priorities:
-                handlers.extend(self._events[event][priority])
-
-        # Get handlers from broadcast targets
-        for target in self._broadcast_to:
-            handlers.extend(target._get_sorted_handlers(event))
-
-        return handlers
+        """Return handlers ordered by priority (includes broadcast targets)."""
+        return self._handler_registry.get_sorted_handlers(event)
 
     def _should_run_handler(
         self, registration: HandlerRegistration, ctx: EventContext
     ) -> bool:
-        """Check if handler should run based on predicate."""
-        predicate = registration.predicate
-        if predicate is None:
-            return True
+        """Check if handler should run based on predicate result."""
+        return self._handler_registry.should_run_handler(registration, ctx)
+
+    def _build_typed_parameters(
+        self,
+        params_type: type[T_Parameters] | None,
+        kwargs: dict[str, Any],
+    ) -> T_Parameters:
+        """Instantiate typed parameters when possible, falling back to raw kwargs."""
+
+        if params_type is None:
+            return cast(T_Parameters, kwargs)
+
         try:
-            return predicate(ctx)
-        except Exception as e:
-            if self._debug:
-                logger.warning(f"Predicate failed for {registration.handler}: {e}")
-            return False
+            return cast(T_Parameters, params_type(**kwargs))  # type: ignore[arg-type]
+        except Exception:
+            return cast(T_Parameters, kwargs)
 
     def do(self, event: EventName, **kwargs):
-        """
-        Fire-and-forget event dispatch with non-blocking background execution.
-
-        PURPOSE: Dispatch events without waiting for handler completion, ideal for
-        notifications, logging, and other fire-and-forget scenarios where response
-        timing is not critical.
-
-        WHEN TO USE:
-        - Event notifications where sender doesn't need response
-        - Logging and monitoring events
-        - Background processing initiation
-        - High-frequency events where blocking would impact performance
-        - Multi-cast scenarios with many independent handlers
-
-        EXECUTION FLOW:
-        1. Create EventContext with parameters and timestamp
-        2. Lookup handlers by priority (including broadcast targets)
-        3. Determine if async handlers present
-        4. If all sync: Execute immediately in current thread
-        5. If async present: Schedule in event loop or thread pool
-        6. Return immediately without waiting for completion
-
-        CONCURRENCY MODEL:
-        - All sync handlers execute sequentially in dispatch thread
-        - Async handlers execute concurrently via asyncio.gather()
-        - Mixed sync/async handlers run in separate thread pool
-        - Handler failures logged but don't affect other handlers
-        - Background task tracked for cleanup via join()/close()
-
-        SIDE EFFECTS:
-        - Creates background tasks that may continue after method returns
-        - Updates router._tasks set for task tracking
-        - Emits event trace logs if tracing enabled
-        - May modify external state via handler side effects
-        - Context propagation via contextvars for async handlers
-
-        ERROR HANDLING:
-        - Individual handler exceptions caught and logged
-        - Handler failures don't stop other handlers from executing
-        - Debug mode provides full exception traces
-        - No error reporting back to caller (fire-and-forget semantics)
-
-        PERFORMANCE NOTES:
-        - Minimal overhead for sync-only events (~microseconds)
-        - Thread pool overhead for mixed sync/async events (~milliseconds)
-        - Memory usage grows with pending background tasks
-        - Consider batch processing for high-frequency events
-
-        RESOURCE MANAGEMENT:
-        - Background tasks automatically tracked and cleaned up
-        - Thread pool created lazily and reused across calls
-        - Event loop started automatically if needed
-        - All resources released via close() or async_close()
-
-        Args:
-            event: Event name for handler lookup and routing
-            **kwargs: Event parameters passed to all handlers
-
-        Returns:
-            None: Method returns immediately after dispatching
-
-        Example:
-        ```python
-        # Simple notification
-        router.do("user:login", user_id=123, timestamp=time.time())
-
-        # With complex parameters
-        router.do(
-            "data:processed",
-            dataset_id="ds_123",
-            record_count=1000,
-            processing_time=5.2,
-        )
-
-        # Event will be processed asynchronously
-        # Method returns immediately, handlers run in background
-        ```
-
-        THREAD SAFETY:
-        - Method itself is thread-safe
-        - Handler execution context is isolated per event
-        - Context variables properly propagated across async boundaries
-        - Use separate routers for concurrent dispatch if needed
-
-        RELATED:
-        - apply_async(): Blocking version that waits for completion
-        - apply_sync(): Synchronous blocking version
-        - apply_typed(): Type-safe version with explicit annotations
-        - join(): Wait for background tasks to complete
-        """
+        """Dispatch event handlers without waiting for completion."""
 
         # Create context with timestamp
         ctx: EventContext = EventContext(
@@ -805,7 +466,6 @@ class EventRouter:
                         logger.exception(f"Handler {handler} failed")
                     ctx.exception = e
         else:
-            # Has async - need event loop
             async def run_handlers():
                 for registration in handlers:
                     if not self._should_run_handler(registration, ctx):
@@ -825,47 +485,16 @@ class EventRouter:
                             logger.exception(f"Handler {handler} failed")
                         ctx.exception = e
 
-            # Schedule in event loop
             try:
                 loop = asyncio.get_running_loop()
-                task = loop.create_task(run_handlers())
-                self._tasks.add(task)
-                task.add_done_callback(self._tasks.discard)
             except RuntimeError:
-                # No running loop - use thread pool
-                if not self._event_loop:
-                    self._start_event_loop()
+                loop = None
 
-                # We need to track this as a task in the event loop
-                # Create an event to signal task creation
-                task_created = threading.Event()
-
-                async def create_and_track_task():
-                    task = asyncio.create_task(run_handlers())
-                    self._tasks.add(task)
-                    task.add_done_callback(self._tasks.discard)
-                    # Signal that the task has been created
-                    task_created.set()
-                    try:
-                        await task
-                    except asyncio.CancelledError:
-                        # Propagate cancellation but ensure cleanup happens
-                        pass
-                    except Exception:
-                        # Log unexpected errors but don't crash the tracker
-                        pass
-
-                # Event loop is guaranteed to exist after _start_event_loop()
-                assert self._event_loop is not None
-                future = asyncio.run_coroutine_threadsafe(
-                    create_and_track_task(), self._event_loop
-                )
-                # Track the future for cleanup
-                self._futures.add(future)
-                future.add_done_callback(self._futures.discard)
-                # Wait briefly for the task to be created and tracked
-                # This ensures _tasks is updated shortly after do() returns
-                task_created.wait(timeout=0.01)
+            if loop and loop.is_running():
+                task = loop.create_task(run_handlers())
+                self._sync_bridge.track_task(task)
+            else:
+                self._sync_bridge.create_background_task(run_handlers())
 
     def apply_sync(
         self, event: EventName, **kwargs
@@ -890,16 +519,9 @@ class EventRouter:
                 handler = registration.handler
                 try:
                     if inspect.iscoroutinefunction(handler):
-                        # Run async handler in thread pool
-                        if not self._event_loop:
-                            self._start_event_loop()
-
-                        # Event loop is guaranteed to exist after _start_event_loop()
-                        assert self._event_loop is not None
-                        future = asyncio.run_coroutine_threadsafe(
-                            handler(ctx), self._event_loop
+                        result = self._sync_bridge.run_coroutine_from_sync(
+                            handler(ctx), timeout=self._default_event_timeout
                         )
-                        result = future.result(timeout=self._default_event_timeout)
                     else:
                         result = handler(ctx)
 
@@ -997,33 +619,10 @@ class EventRouter:
         return_type: type[T_Return] | None = None,
         **kwargs: Any,
     ) -> EventContext[T_Parameters, T_Return]:
-        """
-        Type-safe apply with explicit type annotations.
+        """Type-safe variant of ``apply_async``.
 
-        Args:
-            event: Event name to dispatch
-            params_type: Type/TypedDict describing the parameters (optional)
-            return_type: Expected return type (optional, for documentation)
-            **kwargs: Event parameters
-
-        Returns:
-            Typed EventContext with proper parameter and return types
-
-        Example:
-            from typing import TypedDict
-
-            class CompletionParams(TypedDict):
-                messages: list[dict]
-                config: dict[str, Any]
-
-            ctx = await router.apply_typed(
-                "llm:complete",
-                CompletionParams,
-                str,  # Expected return type
-                messages=messages,
-                config=config
-            )
-            # ctx is EventContext[CompletionParams, str]
+        Use when you want IDE/type-checker awareness of the event payload. See
+        ``examples/event_router/basic_usage.py`` for a complete sample.
         """
 
         start_time = time.perf_counter()
@@ -1031,19 +630,7 @@ class EventRouter:
         # Extract output if provided (don't remove from kwargs)
         initial_output = kwargs.get("output", None)
 
-        # Handle optional params_type
-        if params_type is None:
-            typed_params = cast(T_Parameters, kwargs)
-        # For TypedDict and similar types, we can't instantiate directly
-        elif hasattr(params_type, "__annotations__"):
-            # It's likely a TypedDict or similar - just cast
-            typed_params = cast(T_Parameters, kwargs)
-        else:
-            # Try to instantiate if it's a regular class
-            try:
-                typed_params = params_type(**kwargs)  # type: ignore
-            except TypeError:
-                typed_params = cast(T_Parameters, kwargs)
+        typed_params = self._build_typed_parameters(params_type, kwargs)
 
         # Create typed context
         ctx = EventContext[T_Parameters, T_Return](parameters=typed_params)
@@ -1107,60 +694,14 @@ class EventRouter:
         return_type: type[T_Return] | None = None,
         **kwargs: Any,
     ) -> EventContext[T_Parameters, T_Return]:
-        """
-        Type-safe synchronous apply with explicit type annotations.
-
-        Args:
-            event: Event name to dispatch
-            params_type: Type/TypedDict describing the parameters (optional)
-            return_type: Expected return type (optional, for documentation)
-            **kwargs: Event parameters
-
-        Returns:
-            Typed EventContext with proper parameter and return types
-
-        Example:
-            from typing import TypedDict
-
-            class InitParams(TypedDict):
-                config: dict[str, Any]
-                options: dict
-
-            ctx = router.apply_typed_sync(
-                "init:start",
-                InitParams,
-                bool,  # Expected return type
-                config=config,
-                options=options
-            )
-            # ctx is EventContext[InitParams, bool]
-
-            # Or just specify return type:
-            ctx = router.apply_typed_sync(
-                "init:complete",
-                return_type=bool,
-                status="success"
-            )
-        """
+        """Synchronous counterpart to ``apply_typed``."""
 
         start_time = time.perf_counter()
 
         # Extract output if provided (don't remove from kwargs)
         initial_output = kwargs.get("output", None)
 
-        # Handle optional params_type
-        if params_type is None:
-            typed_params = cast(T_Parameters, kwargs)
-        # For TypedDict and similar types, we can't instantiate directly
-        elif hasattr(params_type, "__annotations__"):
-            # It's likely a TypedDict or similar - just cast
-            typed_params = cast(T_Parameters, kwargs)
-        else:
-            # Try to instantiate if it's a regular class
-            try:
-                typed_params = params_type(**kwargs)  # type: ignore
-            except TypeError:
-                typed_params = cast(T_Parameters, kwargs)
+        typed_params = self._build_typed_parameters(params_type, kwargs)
 
         # Create typed context
         ctx = EventContext[T_Parameters, T_Return](parameters=typed_params)
@@ -1223,54 +764,11 @@ class EventRouter:
         params_type: type[T_Parameters] | None = None,
         return_type: type[T_Return] | None = None,
     ):
-        """
-        Create a typed apply helper for cleaner syntax.
-
-        Note: TypedApply is imported from advanced module to avoid circular dependencies.
-
-        Example:
-            # With both params and return type:
-            ctx = await router.typed(CompletionParams, str).apply(
-                "llm:complete",
-                messages=messages,
-                config=config
-            )
-
-            # With only return type:
-            ctx = await router.typed(return_type=str).apply(
-                "llm:complete",
-                messages=messages,
-                config=config
-            )
-
-            # Synchronous version:
-            ctx = router.typed(InitParams, bool).apply_sync(
-                "init:start",
-                config={...}
-            )
-        """
+        """Helper returning a fluent API wrapper for typed apply calls."""
         # Import here to avoid circular dependency
         from .advanced import TypedApply  # type: ignore[attr-defined]
 
         return TypedApply(self, params_type, return_type)
-
-    def _start_event_loop(self):
-        """Start background event loop for async handlers."""
-        if self._event_loop and not self._event_loop.is_closed():
-            return
-
-        def run_loop():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            self._event_loop = loop
-            loop.run_forever()
-
-        self._loop_thread = threading.Thread(target=run_loop, daemon=True)
-        self._loop_thread.start()
-
-        # Wait for loop to start
-        while not self._event_loop or not self._event_loop.is_running():
-            threading.Event().wait(0.01)
 
     def join(self, timeout: float = 5.0):
         """
@@ -1278,45 +776,11 @@ class EventRouter:
 
         This is the synchronous version - blocks until tasks complete or timeout.
         """
-        # Give a small delay to allow tasks to be registered
-        # This handles the race condition where join() is called immediately after do()
-
-        time.sleep(0.01)
-
-        if not self._tasks:
-            return
-
-        async def wait_for_tasks():
-            try:
-                # Create a copy of tasks to avoid set changing during iteration
-                tasks = list(self._tasks)
-                if tasks:
-                    await asyncio.wait_for(
-                        asyncio.gather(*tasks, return_exceptions=True),
-                        timeout=timeout,
-                    )
-            except TimeoutError:
-                if self._debug:
-                    logger.warning(f"Timeout waiting for {len(self._tasks)} tasks")
-
-        if self._event_loop:
-            future = asyncio.run_coroutine_threadsafe(
-                wait_for_tasks(), self._event_loop
-            )
-            future.result()
+        self._sync_bridge.join(timeout=timeout)
 
     async def join_async(self, timeout: float = 5.0):
         """Async version of join."""
-        if not self._tasks:
-            return
-
-        try:
-            await asyncio.wait_for(
-                asyncio.gather(*self._tasks, return_exceptions=True), timeout=timeout
-            )
-        except TimeoutError:
-            if self._debug:
-                logger.warning(f"Timeout waiting for {len(self._tasks)} tasks")
+        await self._sync_bridge.join_async(timeout=timeout)
 
     def close(self):
         """Clean up resources."""
@@ -1325,35 +789,7 @@ class EventRouter:
             from .signal_handler import unregister_from_signals  # type: ignore[import-not-found]
 
             unregister_from_signals(self)
-
-        # Wait for tasks
-        self.join(timeout=1.0)
-
-        # Cancel any remaining futures from run_coroutine_threadsafe
-        for future in list(self._futures):
-            if not future.done():
-                future.cancel()
-        self._futures.clear()
-
-        # Cancel any remaining tasks
-        if self._tasks and self._event_loop:
-
-            def cancel_tasks():
-                for task in list(self._tasks):
-                    if not task.done():
-                        task.cancel()
-
-            self._event_loop.call_soon_threadsafe(cancel_tasks)
-
-        # Stop event loop
-        if self._event_loop:
-            self._event_loop.call_soon_threadsafe(self._event_loop.stop)
-            if self._loop_thread:
-                self._loop_thread.join(timeout=1.0)
-
-        # Shutdown thread pool
-        if self._thread_pool:
-            self._thread_pool.shutdown(wait=False)
+        self._sync_bridge.close()
 
     async def async_close(self):
         """Async version of close - waits for tasks and cleans up."""
@@ -1363,30 +799,7 @@ class EventRouter:
 
             unregister_from_signals(self)
 
-        # Wait for all tasks to complete
-        await self.join_async(timeout=1.0)
-
-        # Cancel any remaining futures from run_coroutine_threadsafe
-        for future in list(self._futures):
-            if not future.done():
-                future.cancel()
-        self._futures.clear()
-
-        # Cancel any remaining tasks
-        if self._tasks:
-            for task in list(self._tasks):
-                if not task.done():
-                    task.cancel()
-            # Give tasks a chance to handle cancellation
-            await asyncio.sleep(0.1)
-
-        # Stop event loop if needed
-        if self._event_loop and self._event_loop != asyncio.get_running_loop():
-            self._event_loop.call_soon_threadsafe(self._event_loop.stop)
-
-        # Shutdown thread pool
-        if self._thread_pool:
-            self._thread_pool.shutdown(wait=False)
+        await self._sync_bridge.async_close()
 
     async def __aenter__(self):
         """Async context manager entry."""
@@ -1403,3 +816,8 @@ class EventRouter:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Sync context manager exit - waits for tasks."""
         self.close()
+
+    @property
+    def _events(self):
+        """Backward-compatible view of handler registrations (read-only)."""
+        return self._handler_registry._events

@@ -58,6 +58,11 @@ class TemplateIndex:
         self.templates: dict[str, TemplateMetadata] = {}
         self._load_index()
 
+    @staticmethod
+    def _normalize_name(value: str) -> str:
+        """Normalize template keys to a consistent POSIX-style format."""
+        return value.replace("\\", "/")
+
     def _load_index(self) -> None:
         """Load existing index from file."""
         if self.index_file.exists():
@@ -65,12 +70,17 @@ class TemplateIndex:
                 data = yaml.safe_load(self.index_file.read_text())
                 if data and "templates" in data:
                     for name, meta in data["templates"].items():
+                        meta_name = meta.get("name", name)
+                        meta["name"] = self._normalize_name(meta_name)
+                        if "path" in meta:
+                            meta["path"] = self._normalize_name(str(meta["path"]))
                         # Convert datetime strings back to datetime objects
                         if "last_modified" in meta:
                             meta["last_modified"] = datetime.fromisoformat(
                                 meta["last_modified"]
                             )
-                        self.templates[name] = TemplateMetadata(**meta)
+                        normalized_name = meta["name"]
+                        self.templates[normalized_name] = TemplateMetadata(**meta)
             except Exception as e:
                 logger.error(f"Failed to load index: {e}")
                 self.templates = {}
@@ -135,8 +145,9 @@ class TemplateIndex:
             if ".versions" in str(prompt_file):
                 continue
             relative_path = prompt_file.relative_to(self.prompts_dir)
-            # Remove extension for template name
-            template_name = str(relative_path)[:-7]  # Remove .prompt
+            relative_path_posix = relative_path.as_posix()
+            template_name = relative_path.with_suffix("").as_posix()
+            template_name = self._normalize_name(template_name)
             found_templates.add(template_name)
 
             # Read file content
@@ -195,7 +206,7 @@ class TemplateIndex:
                 changes[template_name] = "new"
 
                 metadata = TemplateMetadata(
-                    path=str(relative_path),
+                    path=relative_path_posix,
                     name=template_name,
                     content_hash=content_hash,
                     file_size=stats.st_size,
@@ -229,11 +240,12 @@ class TemplateIndex:
     def get_template_info(self, name: str) -> TemplateMetadata | None:
         """Get metadata for a specific template."""
         # Try exact match first
-        if name in self.templates:
-            return self.templates[name]
+        normalized = self._normalize_name(name)
+        if normalized in self.templates:
+            return self.templates[normalized]
 
         # Try case variations
-        for variant in [name.replace("-", "_"), name.replace("_", "-")]:
+        for variant in [normalized.replace("-", "_"), normalized.replace("_", "-")]:
             if variant in self.templates:
                 return self.templates[variant]
 
@@ -247,7 +259,8 @@ class TemplateIndex:
 
         # Filter by prefix if provided
         if prefix:
-            templates = [t for t in templates if t.name.startswith(prefix)]
+            normalized_prefix = self._normalize_name(prefix)
+            templates = [t for t in templates if t.name.startswith(normalized_prefix)]
 
         # Filter by tags if provided
         if tags:

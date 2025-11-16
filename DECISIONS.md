@@ -12,8 +12,8 @@ This document tracks major architectural decisions made during the good-agent li
 
 ## Phase 3: Event Router Analysis
 
-**Date**: 2025-11-14
-**Status**: Analysis Complete, Decision Pending
+**Date**: 2025-11-14 (decision) / 2025-11-16 (implementation)
+**Status**: ✅ Implemented 2025-11-16
 **Decision Maker**: User review required
 
 ### Context
@@ -316,6 +316,15 @@ class EventRouter:
 5. Documentation updates
 
 **See**: `.spec/refactoring-plan.md` Phase 3 for detailed implementation steps
+
+### Implementation Outcome (2025-11-16)
+
+- Legacy `core/event_router.py` monolith removed; package modules are the sole source of truth with backward-compatible re-exports.
+- EventRouter now uses `_handler_registry` + `SyncBridge` end-to-end, enforcing threading.RLock protection on registration, broadcast fan-out, and fire-and-forget execution.
+- Added read-only `_events` facade plus `track_task()` on SyncBridge to keep legacy diagnostics functional.
+- Trimmed EventRouter docstrings to concise summaries referencing `examples/event_router/basic_usage.py` and `examples/event_router/async_sync_bridge.py`.
+- Comprehensive reliability suite (`tests/unit/event_router/`) covers registration, error handling, sync bridge, thread safety, race conditions, stress, and backward compatibility; downstream `tests/unit/components` and `tests/unit/agent` also pass.
+- `pytest.ini` now registers the `slow` marker, eliminating warnings from stress tests.
 
 ---
 

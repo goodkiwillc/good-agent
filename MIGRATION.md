@@ -6,6 +6,7 @@ This guide helps you migrate your code to the refactored good-agent library.
 
 - [Phase 1: Import Path Changes](#phase-1-import-path-changes)
 - [Phase 2: Package Restructuring](#phase-2-package-restructuring)
+- [Phase 3: Event Router Reliability & Migration Completion](#phase-3-event-router-reliability--migration-completion)
 - [Automated Migration](#automated-migration)
 - [Troubleshooting](#troubleshooting)
 
@@ -192,6 +193,43 @@ from good_agent.model.llm import MessageFormatter  # ❌ Moved
 # Update to:
 from good_agent.model.formatting import MessageFormatter  # ✅
 ```
+
+---
+
+## Phase 3: Event Router Reliability & Migration Completion
+
+**Status**: Completed (2025-11-16, commits 4773a22 → latest)
+
+**Breaking Changes**: ❌ None – public API remains identical
+
+### What Changed
+
+- The legacy monolithic module `src/good_agent/core/event_router.py` has been removed. The `good_agent.core.event_router` **package** (and its `__init__.py` re-exports) is now the canonical import path.
+- `EventRouter` internally uses a dedicated `_handler_registry` (thread-safe `HandlerRegistry`) and `SyncBridge` for async/sync coordination. Private fields like `_events`, `_tasks`, `_thread_pool`, etc. are retained only for backward-compatible access.
+- Docstrings were trimmed and now point to executable samples in `examples/event_router/`.
+- New reliability-focused test suites cover registration, predicates, race conditions, concurrency, and sync bridge behavior.
+
+### Required Changes
+
+- **Most users do nothing.** Existing imports such as `from good_agent.core.event_router import EventRouter` continue to work.
+- **If you referenced `event_router.py` directly** (e.g., `import good_agent.core.event_router as er_module`): keep the import, but be aware it now resolves to the package, not a single file. No code changes are needed.
+- **If you were poking private internals**:
+  - `_events` is still available but read-only; treat it as diagnostic-only.
+  - The old `_registry` attribute no longer exists. Update any private tooling to use `_handler_registry` (new name) if absolutely necessary.
+  - Avoid reaching into `_sync_bridge` unless you are extending the router itself.
+- **Custom subclasses overriding `_registry`**: rename your attribute (e.g., `_template_registry`) to avoid clobbering the base class handler registry.
+
+### Verification Steps
+
+1. Ensure your code does not assign to `router._registry`. If it does, rename your attribute.
+2. Run your test suite; concurrency behavior should be more deterministic thanks to the new locking strategy.
+3. Optional sanity checks:
+   ```python
+   from good_agent.core.event_router import EventRouter
+
+   router = EventRouter()
+   assert router._events == router._handler_registry._events
+   ```
 
 ---
 
