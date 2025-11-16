@@ -38,7 +38,7 @@ class TestInvokeIntegration:
             agent.append("What's the weather like in Paris?")
 
             # Directly invoke tool - this creates assistant message AND tool response
-            weather_result = await agent.invoke(get_weather, location="Paris")
+            weather_result = await agent.tool_calls.invoke(get_weather, location="Paris")
 
             assert weather_result.success is True
             assert "Paris" in weather_result.response
@@ -79,7 +79,7 @@ class TestInvokeIntegration:
             )
 
             # Process the LLM's tool call - skip assistant message since it exists
-            time_result = await agent.invoke(
+            time_result = await agent.tool_calls.invoke(
                 get_time,
                 tool_call_id="llm_call_456",
                 skip_assistant_message=True,
@@ -121,7 +121,7 @@ class TestInvokeIntegration:
             agent.append("Give me an update on my portfolio: AAPL, GOOGL, and MSFT")
 
             # Gather all data in parallel
-            results = await agent.invoke_many(
+            results = await agent.tool_calls.invoke_many(
                 [
                     (fetch_stock_price, {"symbol": "AAPL"}),
                     (fetch_stock_price, {"symbol": "GOOGL"}),
@@ -167,7 +167,7 @@ class TestInvokeIntegration:
             tools=[translate],
         ) as agent:
             # Create a bound function for English to Spanish translation
-            to_spanish = agent.invoke_func(translate, from_lang="en", to_lang="es")
+            to_spanish = agent.tool_calls.invoke_func(translate, from_lang="en", to_lang="es")
 
             # Use it multiple times
             greetings = ["Hello", "Goodbye", "Thank you"]
@@ -231,17 +231,17 @@ class TestInvokeIntegration:
             )
 
             # Check pending calls
-            pending = agent.get_pending_tool_calls()
+            pending = agent.tool_calls.get_pending_tool_calls()
             assert len(pending) == 2
             assert pending[0].id == "search_001"
             assert pending[1].id == "search_002"
 
             tool_messages = []
-            async for tool_message in agent.resolve_pending_tool_calls():
+            async for tool_message in agent.tool_calls.resolve_pending_tool_calls():
                 tool_messages.append(tool_message)
 
             # Verify all calls were resolved
-            assert agent.has_pending_tool_calls() is False
+            assert agent.tool_calls.has_pending_tool_calls() is False
             assert len(tool_messages) == 2
 
             assert sorted([msg.tool_call_id for msg in tool_messages]) == [
@@ -291,13 +291,13 @@ class TestInvokeIntegration:
             tools=[validate_email],
         ) as agent:
             # Test valid email
-            valid_result = await agent.invoke(validate_email, email="user@example.com")
+            valid_result = await agent.tool_calls.invoke(validate_email, email="user@example.com")
             assert valid_result.success is True
             assert valid_result.response["valid"] is True
             assert valid_result.response["domain"] == "example.com"
 
             # Test invalid email
-            invalid_result = await agent.invoke(validate_email, email="not-an-email")
+            invalid_result = await agent.tool_calls.invoke(validate_email, email="not-an-email")
             assert invalid_result.success is False
             assert "Invalid email format" in invalid_result.error
 
@@ -328,7 +328,7 @@ class TestInvokeIntegration:
             tools=[process_image, upload_to_cdn],
         ) as agent:
             # Create a batch processing function
-            batch_processor = agent.invoke_many_func(
+            batch_processor = agent.tool_calls.invoke_many_func(
                 [
                     (
                         process_image,

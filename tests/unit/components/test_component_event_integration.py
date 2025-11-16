@@ -207,7 +207,7 @@ class TestAgentComponentEventIntegration:
 
         # Manually trigger tool events since direct tool calls don't fire them
         # (These events are fired during agent execution, not direct tool calls)
-        await agent.apply(
+        await agent.events.apply(
             AgentEvents.TOOL_CALL_BEFORE,
             tool_name="test_component_tool",
             parameters={"value": "test"},
@@ -218,7 +218,7 @@ class TestAgentComponentEventIntegration:
         result = await tool(_agent=agent, value="test")
 
         # Trigger after event with the result
-        await agent.apply(
+        await agent.events.apply(
             AgentEvents.TOOL_CALL_AFTER,
             tool_name="test_component_tool",
             response=result,
@@ -254,10 +254,10 @@ class TestAgentComponentEventIntegration:
         mock_response.content = "Test response"
 
         # Manually trigger execute events to test install handlers
-        await agent.apply(
+        await agent.events.apply(
             AgentEvents.EXECUTE_BEFORE, agent=agent, messages=agent.messages
         )
-        await agent.apply(
+        await agent.events.apply(
             AgentEvents.EXECUTE_AFTER, agent=agent, response=mock_response
         )
 
@@ -327,7 +327,7 @@ class TestAgentComponentEventIntegration:
             agent.tools["mock_tool"] = mock_tool
 
         # Trigger tool before event
-        await agent.apply(
+        await agent.events.apply(
             AgentEvents.TOOL_CALL_BEFORE, tool_name="mock_tool", parameters={}
         )
 
@@ -342,7 +342,7 @@ class TestAgentComponentEventIntegration:
         component_high.events.clear()
         component_low.events.clear()
 
-        await agent.apply(
+        await agent.events.apply(
             AgentEvents.TOOL_CALL_AFTER, tool_name="mock_tool", response=MagicMock()
         )
 
@@ -457,7 +457,7 @@ class TestAgentComponentEventIntegration:
         component.runtime_events.clear()
 
         # Manually trigger tool events (these are normally fired during agent execution)
-        await agent.apply(
+        await agent.events.apply(
             AgentEvents.TOOL_CALL_BEFORE,
             tool_name="test_component_tool",
             parameters={"value": "integration_test"},
@@ -468,7 +468,7 @@ class TestAgentComponentEventIntegration:
         result = await tool(_agent=agent, value="integration_test")
 
         # Trigger after event
-        await agent.apply(
+        await agent.events.apply(
             AgentEvents.TOOL_CALL_AFTER,
             tool_name="test_component_tool",
             response=result,

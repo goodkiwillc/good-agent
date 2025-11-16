@@ -130,7 +130,7 @@ class TestStatefulResourceBase:
         async with Agent("Original system prompt") as agent:
             # Track if thread_context was called
             context_called = False
-            original_thread_context = agent.thread_context
+            original_thread_context = agent.context_manager.thread_context
 
             from contextlib import asynccontextmanager
 
@@ -142,14 +142,14 @@ class TestStatefulResourceBase:
                     yield messages
 
             # Replace thread_context temporarily
-            agent.thread_context = mock_thread_context
+            agent.context_manager.thread_context = mock_thread_context
 
             async with resource(agent):
                 # thread_context should have been called
                 assert context_called
 
             # Restore original
-            agent.thread_context = original_thread_context
+            agent.context_manager.thread_context = original_thread_context
 
     @pytest.mark.asyncio
     async def test_stateful_resource_only_initializes_once(self):

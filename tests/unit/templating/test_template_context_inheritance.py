@@ -42,7 +42,7 @@ def test_context_priority_ordering():
         assert "agent_value" in rendered  # agent_only still accessible
         assert "message_value" in rendered  # message_only from message context
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     asyncio.run(run_test())
 
@@ -73,7 +73,7 @@ async def test_context_providers_in_messages():
     # Timestamp should be an ISO format datetime
     assert "T" in rendered  # ISO format contains 'T' between date and time
 
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio
@@ -126,7 +126,7 @@ async def test_tool_parameter_templates():
     assert "http://api.example.com/endpoint" in tool_msg.render()
     assert "secret123" in tool_msg.render()
 
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio
@@ -146,7 +146,7 @@ async def test_backward_compatibility():
     rendered_default = agent.messages[-1].render()
     assert rendered_default == rendered
 
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio
@@ -172,7 +172,7 @@ async def test_context_provider_override():
     assert "override_value" in rendered2
     assert "provider_value" not in rendered2
 
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio
@@ -199,7 +199,7 @@ async def test_template_content_part_with_snapshot():
     assert "overridden" in rendered  # Check override works
     assert "global_value" not in rendered  # Original value should not appear
 
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio
@@ -221,7 +221,7 @@ async def test_render_mode_in_context():
     rendered_storage = agent.messages[-1].render(mode=RenderMode.STORAGE)
     assert "storage" in rendered_storage
 
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio
@@ -236,7 +236,7 @@ async def test_empty_agent_context():
     rendered = agent.messages[-1].render()
     assert "Static text and literal" in rendered
 
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio
@@ -264,7 +264,7 @@ async def test_get_rendering_context_method():
     assert context2["new"] == "new_value"
     assert context2["provider"] == "provider_value"
 
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio
@@ -284,7 +284,7 @@ async def test_async_context_provider():
     context = await agent.get_rendering_context_async()
     assert context["async_value"] == "async_result"
 
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio
@@ -330,7 +330,7 @@ async def test_template_error_handling():
     # Check the error message contains helpful information
     assert "Error rendering template" in str(exc_info.value)
 
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio
@@ -375,7 +375,7 @@ async def test_system_prompt_with_template_variable():
     assert "{{today" not in rendered
     assert "}}" not in rendered
 
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio
@@ -426,4 +426,4 @@ async def test_system_prompt_template_with_citation_manager():
     assert "{{today" not in rendered
     assert "}}" not in rendered
 
-    await agent.async_close()
+    await agent.events.async_close()

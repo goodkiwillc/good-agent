@@ -58,7 +58,7 @@ async def test_agent_initialization_with_simple_tools():
     assert "async_tool" in agent.tools
 
     # Clean up
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio
@@ -94,7 +94,7 @@ async def test_agent_initialization_with_many_tools():
         assert f"tool_{i}" in agent.tools
 
     # Clean up
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio
@@ -118,7 +118,7 @@ async def test_agent_initialization_with_tool_patterns():
     assert len(agent.tools) == 0
 
     # Clean up
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio
@@ -152,7 +152,7 @@ async def test_agent_initialization_timeout_detection():
     # Verify the tool was registered
     assert "quick_tool" in agent.tools
 
-    await agent.async_close()
+    await agent.events.async_close()
 
     # Note: Testing the actual timeout behavior requires either:
     # 1. A component that genuinely hangs (hard to create reliably in tests)
@@ -206,7 +206,7 @@ async def test_agent_initialization_with_mixed_tool_types():
     assert "raw_function" in agent.tools
 
     # Clean up
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 @pytest.mark.asyncio
@@ -227,7 +227,7 @@ async def test_concurrent_agent_initialization():
         elapsed = time.time() - start
 
         # Clean up
-        await agent.async_close()
+        await agent.events.async_close()
 
         return idx, elapsed
 

@@ -68,7 +68,7 @@ async def test_debug_citations():
         print(f"\nMessage content: {result_msg.content_parts[0].text}")
     print(f"Message citations: {result_msg.citations}")
 
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 if __name__ == "__main__":

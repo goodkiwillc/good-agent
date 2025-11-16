@@ -123,7 +123,7 @@ class TestPerformance:
         await agent.ready()
 
         start = time.time()
-        response = await agent.invoke("search", query="test")
+        response = await agent.tool_calls.invoke("search", query="test")
         total_time = time.time() - start
 
         results = response.response
@@ -273,7 +273,7 @@ class TestConcurrency:
 
         # Launch 20 concurrent searches
         queries = [f"query_{i}" for i in range(20)]
-        tasks = [agent.invoke("search", query=q) for q in queries]
+        tasks = [agent.tool_calls.invoke("search", query=q) for q in queries]
 
         responses = await asyncio.gather(*tasks)
         results = [r.response for r in responses]
@@ -334,7 +334,7 @@ class TestConcurrency:
         await agent.ready()
 
         # Launch concurrent searches
-        tasks = [agent.invoke("search", query=f"concurrent_{i}") for i in range(50)]
+        tasks = [agent.tool_calls.invoke("search", query=f"concurrent_{i}") for i in range(50)]
 
         responses = await asyncio.gather(*tasks)
         results = [r.response for r in responses]
@@ -405,7 +405,7 @@ class TestConcurrency:
         empty_results = 0
 
         for i in range(15):
-            response = await agent.invoke("search", query=f"test_{i}")
+            response = await agent.tool_calls.invoke("search", query=f"test_{i}")
             results.append(response.response)
 
             # Check if we got actual results or empty due to rate limiting
@@ -460,7 +460,7 @@ class TestConcurrency:
         await agent.ready()
 
         # Start search and cancel it
-        task = asyncio.create_task(agent.invoke("search", query="test"))
+        task = asyncio.create_task(agent.tool_calls.invoke("search", query="test"))
 
         # Let it start
         await asyncio.sleep(0.1)
@@ -497,7 +497,7 @@ class TestScalability:
         await agent.ready()
 
         start = time.time()
-        response = await agent.invoke("search", query="test")
+        response = await agent.tool_calls.invoke("search", query="test")
         elapsed = time.time() - start
 
         results = response.response
@@ -552,7 +552,7 @@ class TestScalability:
         await agent.ready()
 
         start = time.time()
-        response = await agent.invoke("search", query="test")
+        response = await agent.tool_calls.invoke("search", query="test")
         elapsed = time.time() - start
 
         results = response.response

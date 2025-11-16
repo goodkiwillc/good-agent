@@ -251,6 +251,107 @@ class Agent(EventRouter):
 
     EVENTS: ClassVar[type[AgentEvents]] = AgentEvents
 
+    _PUBLIC_ATTRIBUTE_NAMES: ClassVar[tuple[str, ...]] = (
+        "EVENTS",
+        "append",
+        "assistant",
+        "call",
+        "config",
+        "context",
+        "context_manager",
+        "do",
+        "events",
+        "execute",
+        "extensions",
+        "id",
+        "messages",
+        "model",
+        "name",
+        "on",
+        "ready",
+        "session_id",
+        "state",
+        "system",
+        "task_count",
+        "tasks",
+        "token_count",
+        "tool",
+        "tool_calls",
+        "tools",
+        "user",
+        "validate_message_sequence",
+        "version_id",
+        "versioning",
+    )
+
+    _LEGACY_ATTRIBUTE_NAMES: ClassVar[frozenset[str]] = frozenset(
+        {
+            "add_tool_invocation",
+            "add_tool_invocations",
+            "add_tool_response",
+            "apply",
+            "apply_async",
+            "apply_sync",
+            "apply_typed",
+            "apply_typed_sync",
+            "async_close",
+            "broadcast_to",
+            "chat",
+            "close",
+            "consume_from",
+            "context_provider",
+            "context_providers",
+            "copy",
+            "create_task",
+            "ctx",
+            "current_version",
+            "event_trace_enabled",
+            "fork_context",
+            "get",
+            "get_by_name",
+            "get_pending_tool_calls",
+            "get_rendering_context",
+            "get_rendering_context_async",
+            "get_task_count",
+            "get_task_stats",
+            "get_token_count",
+            "get_token_count_by_role",
+            "has_pending_tool_calls",
+            "invoke",
+            "invoke_func",
+            "invoke_many",
+            "invoke_many_func",
+            "join",
+            "join_async",
+            "merge",
+            "print",
+            "replace_message",
+            "resolve_pending_tool_calls",
+            "revert_to_version",
+            "set_event_trace",
+            "set_system_message",
+            "spawn",
+            "thread_context",
+            "wait_for_tasks",
+        }
+    )
+
+    @classmethod
+    def public_attribute_names(cls) -> tuple[str, ...]:
+        """Names considered part of the supported public Agent API."""
+
+        return cls._PUBLIC_ATTRIBUTE_NAMES
+
+    def __dir__(self) -> list[str]:
+        base_dir = super().__dir__()
+        filtered = [
+            name for name in base_dir if name.startswith("_") or name in self._PUBLIC_ATTRIBUTE_NAMES
+        ]
+        for name in self._PUBLIC_ATTRIBUTE_NAMES:
+            if name not in filtered:
+                filtered.append(name)
+        return sorted(filtered)
+
     def _warn_event_facade(self, method: str) -> None:
         warnings.warn(
             f"Agent.{method}() is deprecated. Use agent.events.{method}() instead.",
@@ -720,7 +821,7 @@ class Agent(EventRouter):
             ForkContext instance to use with async with
 
         Example:
-            async with agent.fork_context(truncate_at=5) as forked:
+            async with agent.context_manager.fork_context(truncate_at=5) as forked:
                 response = await forked.call("Summarize")
                 # Response only exists in fork
         """
@@ -741,7 +842,7 @@ class Agent(EventRouter):
             ThreadContext instance to use with async with
 
         Example:
-            async with agent.thread_context(truncate_at=5) as ctx_agent:
+            async with agent.context_manager.thread_context(truncate_at=5) as ctx_agent:
                 response = await ctx_agent.call("Summarize")
                 # After context, agent has original messages + response
         """

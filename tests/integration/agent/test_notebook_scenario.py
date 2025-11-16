@@ -134,7 +134,7 @@ However, [!CITE_{more_indices[1]}!] supports [!CITE_2!].
         print(f"  [{idx}]: {url}")
     print()
 
-    await agent.async_close()
+    await agent.events.async_close()
 
 
 # if __name__ == "__main__":

@@ -36,7 +36,7 @@ class TestVersioningWithRealLLM:
         # Response should be reasonable
         assert "4" in response.content.lower() or "four" in response.content.lower()
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -74,7 +74,7 @@ class TestVersioningWithRealLLM:
             or "paris" in str(agent.messages[-1]).lower()
         )
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -119,7 +119,7 @@ class TestVersioningWithRealLLM:
         for msg in agent.messages[initial_count:]:
             assert agent._message_registry.get(msg.id) is not None
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -139,7 +139,7 @@ class TestVersioningWithRealLLM:
         original_last_msg = str(agent.messages[-1])
 
         # Use ThreadContext to branch the story
-        async with agent.thread_context(truncate_at=3) as ctx:
+        async with agent.context_manager.thread_context(truncate_at=3) as ctx:
             # Should have system + first Q&A only
             assert len(ctx.messages) == 3
 
@@ -170,7 +170,7 @@ class TestVersioningWithRealLLM:
         str(agent.messages[-1]).lower()
         assert len(agent.messages[-1].content) > 0  # Non-empty response
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -187,7 +187,7 @@ class TestVersioningWithRealLLM:
         original_count = len(agent.messages)
 
         # Fork for alternative conversation
-        async with agent.fork_context() as fork:
+        async with agent.context_manager.fork_context() as fork:
             # Fork has same initial state
             assert len(fork.messages) == original_count
 
@@ -203,7 +203,7 @@ class TestVersioningWithRealLLM:
         assert str(agent.messages[-1]) == original_response
         assert "javascript" not in str(agent.messages[-1]).lower()
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -219,7 +219,7 @@ class TestVersioningWithRealLLM:
         dog_response = str(agent.messages[-1])
 
         # Use ThreadContext to replace the topic
-        async with agent.thread_context() as ctx:
+        async with agent.context_manager.thread_context() as ctx:
             # Replace user's question
             from good_agent.content.parts import TextContentPart
 
@@ -247,7 +247,7 @@ class TestVersioningWithRealLLM:
         # New messages appended
         assert "characteristics" in str(agent.messages[-2]).lower()
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -293,7 +293,7 @@ class TestVersioningWithRealLLM:
                 if retrieved:
                     assert retrieved.id == msg.id
 
-        await agent.async_close()
+        await agent.events.async_close()
 
 
 class TestVersioningEdgeCasesWithVCR:
@@ -320,7 +320,7 @@ class TestVersioningEdgeCasesWithVCR:
         # LLM might not follow instruction perfectly, just check we got something
         assert len(response.content) >= 0
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -359,4 +359,4 @@ class TestVersioningEdgeCasesWithVCR:
         # Should have fewer messages than full conversation
         assert len(agent.messages) < 11
 
-        await agent.async_close()
+        await agent.events.async_close()

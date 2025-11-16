@@ -71,7 +71,7 @@ async def test_decorator_debug():
 
     # Manual trigger of the event to test if handlers work
     print("Manually triggering AGENT_INIT_AFTER...")
-    await agent.apply(AgentEvents.AGENT_INIT_AFTER, agent=agent)
+    await agent.events.apply(AgentEvents.AGENT_INIT_AFTER, agent=agent)
 
     print(f"Events after manual trigger: {component.events}")
 

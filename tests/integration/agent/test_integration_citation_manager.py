@@ -449,7 +449,7 @@ class TestRealWorldScenarios:
         # Invoke the tool through the agent's invoke method
         # This tests the internal message routing
         # No need to add_tool - just pass it directly to invoke
-        tool_response = await agent.invoke(
+        tool_response = await agent.tool_calls.invoke(
             tool=search_news, query="Xavier Becerra", max_results=10
         )
 

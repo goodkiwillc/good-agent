@@ -139,7 +139,7 @@ async def test_extension_forking():
         citations.add("Test content", source="Test")
 
         # Fork the agent
-        forked = agent.fork()
+        forked = agent.context_manager.fork()
 
         # Verify extension is preserved
         forked_citations = forked[CitationIndex]

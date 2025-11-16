@@ -120,7 +120,7 @@ class StatefulResource(ABC, Generic[T], metaclass=StatefulResourceMeta):
             self._initialized = True
 
         # Use thread context for message isolation
-        async with agent.thread_context() as messages:
+        async with agent.context_manager.thread_context() as messages:
             # Update system message with edit context
             if messages[0] is not None and messages[0].role == "system":
                 original_content = messages[0].content

@@ -63,7 +63,7 @@ class TestDateHandling:
         since_date = date(2024, 1, 1)
         until_date = date(2024, 1, 31)
 
-        await agent.invoke(
+        await agent.tool_calls.invoke(
             "search",
             query="test",
             since=since_date,
@@ -91,17 +91,17 @@ class TestDateHandling:
         agent.context["today"] = test_date
 
         # Test last_day
-        await agent.invoke("search", query="test", timeframe="last_day")
+        await agent.tool_calls.invoke("search", query="test", timeframe="last_day")
         assert provider.last_query.since.date() == date(2024, 6, 14)
         assert provider.last_query.until.date() == date(2024, 6, 15)
 
         # Test last_week
-        await agent.invoke("search", query="test", timeframe="last_week")
+        await agent.tool_calls.invoke("search", query="test", timeframe="last_week")
         assert provider.last_query.since.date() == date(2024, 6, 8)
         assert provider.last_query.until.date() == date(2024, 6, 15)
 
         # Test last_month
-        await agent.invoke("search", query="test", timeframe="last_month")
+        await agent.tool_calls.invoke("search", query="test", timeframe="last_month")
         assert provider.last_query.since.date() == date(2024, 5, 16)
         assert provider.last_query.until.date() == date(2024, 6, 15)
 
@@ -120,7 +120,7 @@ class TestDateHandling:
         agent.context["today"] = date(2024, 6, 15)
 
         # Provide both explicit dates and relative window
-        await agent.invoke(
+        await agent.tool_calls.invoke(
             "search",
             query="test",
             since=date(2024, 1, 1),
@@ -145,7 +145,7 @@ class TestDateHandling:
         await agent.ready()
 
         # Don't set context date
-        await agent.invoke("search", query="test", timeframe="last_day")
+        await agent.tool_calls.invoke("search", query="test", timeframe="last_day")
 
         # Should use actual today
         today = date.today()
@@ -171,7 +171,7 @@ class TestDateHandling:
         agent.context["today"] = past_date
 
         # Search last week from that past date
-        await agent.invoke("search", query="historical", timeframe="last_week")
+        await agent.tool_calls.invoke("search", query="historical", timeframe="last_week")
 
         # Should calculate from the past date
         assert provider.last_query.since.date() == date(2023, 3, 8)
@@ -193,7 +193,7 @@ class TestQueryBuilding:
         agent = Agent("Test", extensions=[search])
         await agent.ready()
 
-        await agent.invoke(
+        await agent.tool_calls.invoke(
             "search",
             query="test query",
             limit=50,
@@ -246,7 +246,7 @@ class TestQueryBuilding:
         await agent.ready()
 
         # Search with filters
-        await agent.invoke(
+        await agent.tool_calls.invoke(
             "search_entities",
             entity_type="person",
             name="John Smith",
@@ -306,7 +306,7 @@ class TestQueryBuilding:
         await agent.ready()
 
         # Search specific platforms
-        await agent.invoke(
+        await agent.tool_calls.invoke(
             "search",
             query="test",
             platforms=["google", "twitter"],
@@ -323,7 +323,7 @@ class TestQueryBuilding:
         news_provider.search.reset_mock()
 
         # Search specific domains
-        await agent.invoke(
+        await agent.tool_calls.invoke(
             "search",
             query="test",
             domains=["news", "social_media"],
@@ -349,12 +349,12 @@ class TestQueryBuilding:
         await agent.ready()
 
         # Search without specifying limit
-        await agent.invoke("search", query="test")
+        await agent.tool_calls.invoke("search", query="test")
 
         assert provider.last_query.limit == 25
 
         # Search with explicit limit
-        await agent.invoke("search", query="test", limit=100)
+        await agent.tool_calls.invoke("search", query="test", limit=100)
 
         assert provider.last_query.limit == 100
 
@@ -397,7 +397,7 @@ class TestQueryBuilding:
         agent = Agent("Test", extensions=[search])
         await agent.ready()
 
-        await agent.invoke(
+        await agent.tool_calls.invoke(
             "search",
             query="test query",
             limit=10,

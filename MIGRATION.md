@@ -7,6 +7,7 @@ This guide helps you migrate your code to the refactored good-agent library.
 - [Phase 1: Import Path Changes](#phase-1-import-path-changes)
 - [Phase 2: Package Restructuring](#phase-2-package-restructuring)
 - [Phase 3: Event Router Reliability & Migration Completion](#phase-3-event-router-reliability--migration-completion)
+- [Phase 4: Agent API Surface Reduction](#phase-4-agent-api-surface-reduction)
 - [Automated Migration](#automated-migration)
 - [Troubleshooting](#troubleshooting)
 
@@ -231,6 +232,63 @@ from good_agent.model.formatting import MessageFormatter  # ✅
    router = EventRouter()
    assert router._events == router._handler_registry._events
    ```
+
+---
+
+## Phase 4: Agent API Surface Reduction
+
+**Status**: In Progress (2025-11-16 and later)
+
+**Breaking Changes**: ❌ None – calls now forward with `DeprecationWarning`
+
+### What Changed
+
+- `Agent` exposes at most **30** public attributes. The canonical allow-list is available via `Agent.public_attribute_names()`.
+- Thick helper methods moved behind dedicated facades:
+  - **Tool execution** via `agent.tool_calls.*`
+  - **Event router** via `agent.events.*`
+  - **Context lifecycle** via `agent.context_manager.*`
+- Legacy methods remain callable but are hidden from `dir(agent)` and emit warnings when used directly.
+
+### Required Changes
+
+Update any direct calls to the legacy helpers to use the new facades:
+
+| Deprecated usage | Preferred replacement |
+| --- | --- |
+| `await agent.invoke(tool, **params)` | `await agent.tool_calls.invoke(tool, **params)` |
+| `agent.add_tool_invocation(...)` | `agent.tool_calls.record_invocation(...)` |
+| `agent.add_tool_invocations(...)` | `agent.tool_calls.record_invocations(...)` |
+| `agent.get_pending_tool_calls()` | `agent.tool_calls.get_pending_tool_calls()` |
+| `agent.has_pending_tool_calls()` | `agent.tool_calls.has_pending_tool_calls()` |
+| `async for msg in agent.resolve_pending_tool_calls()` | `async for msg in agent.tool_calls.resolve_pending_tool_calls()` |
+| `agent.broadcast_to(other_router)` | `agent.events.broadcast_to(other_router)` |
+| `agent.consume_from(other_router)` | `agent.events.consume_from(other_router)` |
+| `agent.apply(...)`, `agent.apply_sync(...)`, `agent.apply_async(...)` | `agent.events.apply(...)`, `agent.events.apply_sync(...)`, `agent.events.apply_async(...)` |
+| `agent.typed(...)`, `agent.apply_typed(...)` | `agent.events.typed(...)`, `agent.events.apply_typed(...)` |
+| `agent.ctx`, `agent.event_trace_enabled` | `agent.events.ctx`, `agent.events.event_trace_enabled` |
+| `agent.set_event_trace(...)` | `agent.events.set_event_trace(...)` |
+| `agent.join(...)`, `agent.join_async(...)`, `agent.close()`, `agent.async_close()` | `agent.events.join(...)`, `agent.events.join_async(...)`, etc. |
+| `agent.fork(...)` | `agent.context_manager.fork(...)` |
+| `agent.copy(...)` | `agent.context_manager.copy(...)` |
+| `agent.spawn(...)` | `await agent.context_manager.spawn(...)` |
+| `agent.merge(...)` | `await agent.context_manager.merge(...)` |
+| `agent.context_provider("name")` | `agent.context_manager.context_provider("name")` |
+| `Agent.context_providers("name")` | `ContextManager.context_providers("name")` or `agent.context_manager.context_providers("name")` |
+
+### Guardrail Test
+
+`tests/unit/agent/test_agent_public_api_surface.py` enforces the ≤30 attribute budget. If you must add a new public entry point, consider placing it on the appropriate facade first, then update the allow-list with strong rationale.
+
+### Migration Tips
+
+1. **Search for legacy calls**:
+   ```bash
+   rg "agent\\.(invoke|add_tool_invocation|apply|context_provider|broadcast_to)"
+   ```
+2. **Handle warnings**: Replace usages rather than silencing `DeprecationWarning`; the shims are removed in the v1.0.0 plan.
+3. **Discover the supported API**: Use `Agent.public_attribute_names()` programmatically in tooling or linters.
+4. **Remember to close agents**: When forking manually, call `await forked_agent.events.async_close()` or use `async with` to avoid background tasks leaking.
 
 ---
 

@@ -1027,7 +1027,7 @@
 
 #             # Use single batch_fetch tool call instead of multiple individual calls
 #             try:
-#                 batch_result = await self.agent.invoke(
+#                 batch_result = await self.agent.tool_calls.invoke(
 #                     self.batch_fetch,
 #                     urls=urls,
 #                     format=format,

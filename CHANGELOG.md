@@ -84,6 +84,32 @@ Developers frequently asked when to use `call()` vs `execute()`, indicating docu
 - **Test Coverage**: All 403 agent tests passing (100%)
 - **API Changes**: No behavioral changes, only improved documentation
 
+#### Task 3: Agent API Surface Reduction (In Progress 2025-11-16)
+
+##### Added
+
+- Introduced `Agent.public_attribute_names()` listing the 30 officially supported public attributes (properties, methods, constants).
+- Added `tests/unit/agent/test_agent_public_api_surface.py` guard to ensure the surface remains ≤30 entries.
+
+##### Changed
+
+- Routed all remaining legacy helpers through manager facades:
+  - Tool helpers now use `agent.tool_calls.*` (invoke, record_invocation, pending-call helpers, etc.).
+  - Event router helpers now live under `agent.events.*` (apply, broadcast_to, ctx, tracing, join/close).
+  - Context lifecycle helpers now route through `agent.context_manager.*` (fork, copy, spawn, merge, context providers).
+- Updated tests, fixtures, and examples to consume the manager facades instead of the deprecated Agent shortcuts.
+- Trimmed `dir(agent)` to hide legacy helpers while keeping them callable (with `DeprecationWarning`).
+
+##### Deprecated
+
+- Continued deprecation of legacy Agent helpers (`invoke`, `apply`, `broadcast_to`, `context_provider`, etc.) with guidance to use the respective facade accessors.
+
+##### Testing
+
+- `uv run ruff check .`
+- `uv run pytest`
+- `uv run mypy src/good_agent` (known repo-wide issues persist; no new errors introduced)
+
 ### Phase 1: Template Consolidation (Completed 2025-11-15)
 
 **Status**: ✅ Complete (Step 6 of refactoring plan)

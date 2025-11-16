@@ -33,7 +33,7 @@ class TestSimpleVersioning:
             assert retrieved is not None
             assert retrieved.id == msg.id
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_system_message_versioning(self):
@@ -68,7 +68,7 @@ class TestSimpleVersioning:
         version_ids = agent._version_manager.current_version
         assert len(version_ids) == 2  # Both messages versioned
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_message_replacement_versioning(self):
@@ -94,7 +94,7 @@ class TestSimpleVersioning:
         assert agent._message_registry.get(old_id) is not None
         assert agent._message_registry.get(new_id) is not None
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_revert_to_version(self):
@@ -125,7 +125,7 @@ class TestSimpleVersioning:
             for msg_id in version_ids:
                 assert agent._message_registry.get(msg_id) is not None
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_thread_context_basic(self):
@@ -139,7 +139,7 @@ class TestSimpleVersioning:
         agent.append("Message 3")
 
         # Use thread context to truncate
-        async with agent.thread_context(truncate_at=2) as ctx:
+        async with agent.context_manager.thread_context(truncate_at=2) as ctx:
             # Should only see first 2 messages
             assert len(ctx.messages) == 2
 
@@ -152,7 +152,7 @@ class TestSimpleVersioning:
         assert "Message 3" in str(agent.messages[2])
         assert "New message" in str(agent.messages[3])
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_fork_context_basic(self):
@@ -164,7 +164,7 @@ class TestSimpleVersioning:
         original_count = len(agent.messages)
 
         # Use fork context
-        async with agent.fork_context() as forked:
+        async with agent.context_manager.fork_context() as forked:
             assert forked is not agent
             assert len(forked.messages) == original_count
 
@@ -175,7 +175,7 @@ class TestSimpleVersioning:
         # Original unchanged
         assert len(agent.messages) == original_count
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_clear_messages(self):
@@ -196,7 +196,7 @@ class TestSimpleVersioning:
         assert agent._version_manager.current_version == []
         assert len(agent.messages) == 0
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_extend_messages(self):
@@ -223,4 +223,4 @@ class TestSimpleVersioning:
         for msg in agent.messages:
             assert agent._message_registry.get(msg.id) is not None
 
-        await agent.async_close()
+        await agent.events.async_close()

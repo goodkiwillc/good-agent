@@ -65,7 +65,7 @@ class TestMessageListVersioning:
         assert vm.current_version == [msg1.id, msg2.id]
 
         # Clean up
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_messagelist_setitem_creates_new_version(self):
@@ -95,7 +95,7 @@ class TestMessageListVersioning:
         assert registry.get(new_msg.id) is not None
 
         # Clean up
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_sync_from_version_rebuilds_list(self):
@@ -129,7 +129,7 @@ class TestMessageListVersioning:
         assert messages[1] == msg2
 
         # Clean up
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_extend_creates_single_version(self):
@@ -161,7 +161,7 @@ class TestMessageListVersioning:
         assert registry.get(msg3.id) == msg3
 
         # Clean up
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_clear_creates_empty_version(self):
@@ -196,7 +196,7 @@ class TestMessageListVersioning:
         assert registry.get(msg2.id) == msg2
 
         # Clean up
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_slice_assignment_creates_version(self):
@@ -233,7 +233,7 @@ class TestMessageListVersioning:
         assert registry.get(new_msg.id) == new_msg
 
         # Clean up
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_versioning_with_existing_messages(self):
@@ -261,7 +261,7 @@ class TestMessageListVersioning:
         assert registry.get(msg2.id) == msg2
 
         # Clean up
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_agent_reference_maintained(self):
@@ -286,7 +286,7 @@ class TestMessageListVersioning:
         assert registry.get_agent(msg.id) == agent
 
         # Clean up
-        await agent.async_close()
+        await agent.events.async_close()
 
     def test_filter_maintains_list_type(self):
         """filter() should return MessageList, not affect versioning."""

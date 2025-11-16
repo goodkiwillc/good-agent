@@ -205,7 +205,7 @@ class TestAgentInitialization:
         ) as agent:
             _mock_current_time = datetime.now()
 
-            @agent.context_provider("current_time")
+            @agent.context_manager.context_provider("current_time")
             def current_time_provider():
                 return str(
                     _mock_current_time

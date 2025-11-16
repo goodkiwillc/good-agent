@@ -27,7 +27,7 @@ async def test_full_integration_with_thread_context_and_tools():
     tools_replaced = False
 
     # Mock thread_context to track calls
-    original_thread_context = agent.thread_context
+    original_thread_context = agent.context_manager.thread_context
 
     from contextlib import asynccontextmanager
 
@@ -41,7 +41,7 @@ async def test_full_integration_with_thread_context_and_tools():
             if messages and messages[0].content != original_content:
                 messages_modified = True
 
-    agent.thread_context = tracking_thread_context
+    agent.context_manager.thread_context = tracking_thread_context
 
     # Use the resource
     async with resource(agent):
@@ -73,7 +73,7 @@ async def test_full_integration_with_thread_context_and_tools():
     assert resource.state == "Hello universe"
 
     # Restore original thread_context
-    agent.thread_context = original_thread_context
+    agent.context_manager.thread_context = original_thread_context
 
 
 @pytest.mark.asyncio

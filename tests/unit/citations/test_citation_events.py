@@ -32,7 +32,7 @@ class TestMessageCreateEvent:
         assert message.citations is not None
         assert len(message.citations) >= 1
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_create_event_provided_citations(self):
@@ -54,7 +54,7 @@ class TestMessageCreateEvent:
         # Citations should match provided ones
         assert message.citations == citations
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_create_event_normalizes_format(self):
@@ -80,7 +80,7 @@ class TestMessageCreateEvent:
         # Should have citation reference in LLM format
         assert "[!CITE_1!]" in content_text
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_create_event_adds_to_global_index(self):
@@ -104,7 +104,7 @@ class TestMessageCreateEvent:
 
         assert manager.index.lookup("https://example.com/doc") == 1
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_create_xml_tag_content(self):
@@ -137,7 +137,7 @@ class TestMessageCreateEvent:
         for idx, url in enumerate(message.citations, start=1):
             assert f'<item idx="{idx}"' in content_text
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_create_mixed_xml_markdown_content(self):
@@ -182,7 +182,7 @@ class TestMessageCreateEvent:
         for idx in range(1, len(message.citations) + 1):
             assert f'idx="{idx}"' in content_text or f"[!CITE_{idx}!]" in content_text
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_create_event_handles_no_citations(self):
@@ -198,7 +198,7 @@ class TestMessageCreateEvent:
         # Citations should be None or empty
         assert message.citations is None or len(message.citations) == 0
 
-        await agent.async_close()
+        await agent.events.async_close()
 
 
 class TestMessageRenderEvent:
@@ -233,7 +233,7 @@ class TestMessageRenderEvent:
         # Reference block should be removed
         assert "[1]:" not in rendered
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_render_event_transforms_for_llm(self):
@@ -259,7 +259,7 @@ class TestMessageRenderEvent:
         # Should have global index reference
         assert f"[!CITE_{global_idx}!]" in rendered_llm
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_render_event_ensure_global_index(self):
@@ -330,7 +330,7 @@ class TestMessageRenderEvent:
                 global_idx = manager.index.lookup(url)
                 assert f"[!CITE_{global_idx}!]" in rendered_llm
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_render_event_preserves_xml_structure(self):
@@ -368,7 +368,7 @@ class TestMessageRenderEvent:
         # Should reference global index (the same in this case)
         assert 'idx="1"' in rendered_llm
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_render_event_mixed_content_global_index(self):
@@ -461,7 +461,7 @@ class TestMessageRenderEvent:
         rendered_llm = message.render(RenderMode.LLM)
         assert "[1]" in rendered_llm
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_render_event_inline_citation_global_index_warning(self, recwarn):
@@ -494,7 +494,7 @@ class TestMessageRenderEvent:
 
         assert len(recwarn) == 0  # No warnings as global citations found
 
-        await agent.async_close()
+        await agent.events.async_close()
 
 
 """
@@ -526,7 +526,7 @@ class TestMessageRenderEvent:
 #         # Should have citations populated
 #         assert appended_msg.citations is not None
 
-#         await agent.async_close()
+#         await agent.events.async_close()
 
 #     @pytest.mark.asyncio
 #     async def test_append_event_skips_if_citations_present(self):
@@ -549,7 +549,7 @@ class TestMessageRenderEvent:
 #         # Global index should have new citation added
 #         assert manager.index.lookup("https://example.com/doc1") == 1
 
-#         await agent.async_close()
+#         await agent.events.async_close()
 
 #     @pytest.mark.asyncio
 #     async def test_append_event_handles_llm_cite_format(self):
@@ -572,7 +572,7 @@ class TestMessageRenderEvent:
 #         assert appended_msg.citations is not None
 #         assert len(appended_msg.citations) >= 1
 
-#         await agent.async_close()
+#         await agent.events.async_close()
 
 
 # class TestEventOrdering:
@@ -602,7 +602,7 @@ class TestMessageRenderEvent:
 #         # Create should fire before append
 #         assert event_order == ["create", "append"]
 
-#         await agent.async_close()
+#         await agent.events.async_close()
 
 #     @pytest.mark.asyncio
 #     async def test_render_event_fires_on_each_render(self):
@@ -629,7 +629,7 @@ class TestMessageRenderEvent:
 #         # Should fire for each render
 #         assert render_count[0] == 3
 
-#         await agent.async_close()
+#         await agent.events.async_close()
 
 
 class TestEventPriorities:
@@ -659,7 +659,7 @@ class TestEventPriorities:
         # Order should be: late (200), citation_manager (150), early (100)
         assert execution_order == ["late", "early"]
 
-        await agent.async_close()
+        await agent.events.async_close()
 
 
 class TestErrorHandling:
@@ -679,7 +679,7 @@ class TestErrorHandling:
         # Should not crash
         assert len(agent.messages) == 2
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_missing_citation_reference_handled(self):
@@ -702,7 +702,7 @@ class TestErrorHandling:
         # Should not crash, message created successfully
         assert message is not None
 
-        await agent.async_close()
+        await agent.events.async_close()
 
 
 class TestMultipleMessages:
@@ -722,7 +722,7 @@ class TestMultipleMessages:
         # Global index should have all three
         assert len(manager.index) == 3
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_cross_message_citation_consistency(self):
@@ -747,4 +747,4 @@ class TestMultipleMessages:
         assert f"[!CITE_{idx1}!]" in msg1_llm or "[1]" in msg1_llm
         assert f"[!CITE_{idx1}!]" in msg2_llm or "[1]" in msg2_llm
 
-        await agent.async_close()
+        await agent.events.async_close()

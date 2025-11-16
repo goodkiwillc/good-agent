@@ -200,7 +200,7 @@ class TestContextInjectionIntegration:
         agent.context["user_id"] = "123"
 
         # Invoke tool
-        result = await agent.invoke(search, query="python")
+        result = await agent.tool_calls.invoke(search, query="python")
         assert result.response == "Searching for python as user 123 in US"
 
     @pytest.mark.asyncio
@@ -208,11 +208,11 @@ class TestContextInjectionIntegration:
         """Test context providers can depend on other context values."""
         agent = Agent("Test")
 
-        @agent.context_provider("base_value")
+        @agent.context_manager.context_provider("base_value")
         async def base_provider():
             return 10
 
-        @agent.context_provider("derived_value")
+        @agent.context_manager.context_provider("derived_value")
         async def derived_provider(base: int = ContextValue("base_value")) -> int:
             return base * 2
 
@@ -226,7 +226,7 @@ class TestContextInjectionIntegration:
         agent = Agent("Test")
         agent.context["multiplier"] = 3
 
-        @agent.context_provider("computed")
+        @agent.context_manager.context_provider("computed")
         async def provider(agent: Agent, mult: int = ContextValue("multiplier")) -> str:
             return f"Agent {agent.id} with multiplier {mult}"
 
@@ -257,7 +257,7 @@ class TestErrorHandling:
         # Don't set the required context value
 
         # The tool should raise MissingContextValueError when invoked
-        result = await agent.invoke(requires_value)
+        result = await agent.tool_calls.invoke(requires_value)
 
         # Check if the error is in the response
         assert result.success is False
@@ -277,7 +277,7 @@ class TestErrorHandling:
             return f"Data: {data}"
 
         agent = Agent("Test")
-        result = await agent.invoke(optional_value)
+        result = await agent.tool_calls.invoke(optional_value)
         assert result.response == "Data: None"
 
     @pytest.mark.asyncio
@@ -298,6 +298,6 @@ class TestErrorHandling:
         # Don't set the value, so it falls back to factory
 
         # The factory should fail and propagate the error
-        result = await agent.invoke(uses_factory)
+        result = await agent.tool_calls.invoke(uses_factory)
         assert result.success is False
         assert "Factory failed" in str(result.error)

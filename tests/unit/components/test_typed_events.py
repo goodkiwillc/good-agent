@@ -77,14 +77,14 @@ class TestTypedEventParameters:
             after_events.append(ctx.parameters)
 
         # Dispatch tool events
-        await agent.apply(
+        await agent.events.apply(
             AgentEvents.TOOL_CALL_BEFORE,
             tool_name="test_tool",
             arguments={"original": "value"},
             agent=agent,
         )
 
-        await agent.apply(
+        await agent.events.apply(
             AgentEvents.TOOL_CALL_AFTER,
             tool_name="test_tool",
             success=True,
@@ -151,7 +151,7 @@ class TestApplyTypedMethod:
             return {"modified": True}
 
         # Use apply_typed for type-safe dispatch
-        ctx = await agent.apply_typed(
+        ctx = await agent.events.apply_typed(
             AgentEvents.MESSAGE_CREATE_AFTER,
             MessageCreateParams,
             dict,
@@ -172,7 +172,7 @@ class TestApplyTypedMethod:
         await agent.ready()
 
         # Create typed helper
-        typed = agent.typed(ExecuteIterationParams, None)
+        typed = agent.events.typed(ExecuteIterationParams, None)
 
         handler_called = False
 
@@ -206,7 +206,7 @@ class TestApplyTypedMethod:
             ctx.output = args
             return args
 
-        ctx = await agent.apply_typed(
+        ctx = await agent.events.apply_typed(
             AgentEvents.TOOL_CALL_BEFORE,
             ToolCallBeforeParams,
             dict,
@@ -249,7 +249,7 @@ class TestConvenienceDecorators:
         # Trigger events
         agent.append("Test message")
 
-        await agent.apply(
+        await agent.events.apply(
             AgentEvents.TOOL_CALL_AFTER, tool_name="test", success=True, agent=agent
         )
 
@@ -281,7 +281,7 @@ class TestConvenienceDecorators:
         from good_agent.messages import UserMessage
 
         test_message = UserMessage(content="Test")
-        await agent.apply(
+        await agent.events.apply(
             AgentEvents.MESSAGE_APPEND_AFTER, message=test_message, agent=agent
         )
 
@@ -308,7 +308,7 @@ class TestConvenienceDecorators:
 
         # Use apply() for synchronous execution with predicate evaluation
         for i in range(5):
-            await agent.apply(
+            await agent.events.apply(
                 AgentEvents.EXECUTE_ITERATION_BEFORE, agent=agent, iteration=i
             )
 
@@ -344,7 +344,7 @@ class TestTypedEventHandlersMixin:
         # Trigger events
         agent.append("Test message")
 
-        await agent.apply(
+        await agent.events.apply(
             AgentEvents.TOOL_CALL_AFTER,
             tool_name="calculator",
             success=True,
@@ -410,10 +410,10 @@ class TestTypedEventHandlersMixin:
         assert "message" in handlers_called
 
         # Test tool events
-        await agent.apply(AgentEvents.TOOL_CALL_BEFORE, agent=agent)
+        await agent.events.apply(AgentEvents.TOOL_CALL_BEFORE, agent=agent)
         assert "tool_before" in handlers_called
 
-        await agent.apply(AgentEvents.TOOL_CALL_AFTER, agent=agent)
+        await agent.events.apply(AgentEvents.TOOL_CALL_AFTER, agent=agent)
         assert "tool_after" in handlers_called
 
         # Test execution events
@@ -618,7 +618,7 @@ class TestTypeInference:
             ctx.output = result
             return result
 
-        ctx = await agent.apply_typed(
+        ctx = await agent.events.apply_typed(
             AgentEvents.TOOL_CALL_BEFORE,
             ToolCallBeforeParams,
             dict,

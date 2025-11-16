@@ -433,7 +433,7 @@ class TestEventIntegration:
         lm = LanguageModel()
         # Set up the component properly
         lm._agent = agent
-        agent.broadcast_to(lm)
+        agent.events.broadcast_to(lm)
         lm.setup(agent)
 
         await lm.format_message_list_for_llm([msg])
@@ -529,7 +529,7 @@ class TestMessageSerialization:
         lm = LanguageModel()
         # Set up the component properly
         lm._agent = agent
-        agent.broadcast_to(lm)
+        agent.events.broadcast_to(lm)
         lm.setup(agent)
 
         formatted = await lm.format_message_list_for_llm([msg])

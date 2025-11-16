@@ -162,7 +162,7 @@ class TestBasicUsage:
             logger.info("Original agent response:", response1.content)
 
             # Fork the agent
-            forked_agent = agent.fork()
+            forked_agent = agent.context_manager.fork()
             forked_agent.append("What is the capital of Germany?")
             response2 = await forked_agent.call()
             logger.info("Forked agent response:", response2.content)
@@ -179,9 +179,9 @@ class TestBasicUsage:
             logger.info("Original agent response:", response1.content)
 
             # Copy the agent
-            copied_agent = agent.copy()
+            copied_agent = agent.context_manager.copy()
 
-            # agent.copy(
+            # agent.context_manager.copy(
             # include_system=True,
             # include_tools=True,
             # components="persist", # initialize
@@ -320,7 +320,7 @@ class TestToolAdvancedFeatures:
             "You are a research agent. Search for information and write a report based on the results.",
             tools=[search_web],
         ) as agent:
-            hits = await agent.invoke(
+            hits = await agent.tool_calls.invoke(
                 search_web, query="python decorators", limit=5, fetch_pages=True
             )
 
@@ -356,7 +356,7 @@ class TestComponents:
             "Research with citations and todos.", extensions=[cites, tasks]
         ) as agent:
             # Use component tools directly via invoke
-            await agent.invoke(
+            await agent.tool_calls.invoke(
                 "create_list", name="plan", items=["search", "summarize"]
             )
             agent.append("Research Python pattern matching; cite sources.")
@@ -441,7 +441,7 @@ class TestResourceScopedEditing:
         async with Agent("Use provided tools to edit the doc.") as agent:
             res = EditableMDXL(doc)
             async with res(agent):  # swaps in read/update/insert/delete tools
-                await agent.invoke(
+                await agent.tool_calls.invoke(
                     "update_element", xpath="//summary", new_content="final"
                 )
         print(doc.llm_outer_text)
@@ -510,9 +510,9 @@ class TestAgentPipeline:
             if message.output.category == "a":
                 # do something
 
-                tool_response = await agent.invoke("tool_name", key="value", test=100)
+                tool_response = await agent.tool_calls.invoke("tool_name", key="value", test=100)
 
-                async with agent.fork(
+                async with agent.context_manager.fork(
                     "system message",  # system message not currently set this way
                     compact_convesation="",
                 ) as forked_subagent:

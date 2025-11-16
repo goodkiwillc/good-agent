@@ -94,7 +94,7 @@ class TestTaskBasedComponentInitialization:
         # Component should have agent reference
         assert component._agent is agent
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_component_tool_functionality(self):
@@ -117,7 +117,7 @@ class TestTaskBasedComponentInitialization:
         assert result.response == {"processed": "async_test", "async": True}
         assert component.tool_calls["async_mock_tool"] == 1
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_multiple_components_tool_registration(self):
@@ -137,7 +137,7 @@ class TestTaskBasedComponentInitialization:
         assert component1._agent is agent
         assert component2._agent is agent
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_component_without_super_call_fails(self):
@@ -153,7 +153,7 @@ class TestTaskBasedComponentInitialization:
         # Component still has agent reference (set manually)
         assert component._agent is agent
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_custom_initialization_tasks(self):
@@ -175,7 +175,7 @@ class TestTaskBasedComponentInitialization:
         assert result.success
         assert "Custom: test" == result.response
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_agent_ready_waits_for_component_tasks(self):
@@ -194,7 +194,7 @@ class TestTaskBasedComponentInitialization:
         assert elapsed >= 0.1
         assert component.custom_init_completed
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_component_tasks_cleared_after_ready(self):
@@ -208,7 +208,7 @@ class TestTaskBasedComponentInitialization:
         # Verify initialization completed
         assert component.custom_init_completed
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_agent_state_management_with_components(self):
@@ -226,7 +226,7 @@ class TestTaskBasedComponentInitialization:
         # Should transition to READY after initialization
         assert agent.state == AgentState.READY
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_no_event_loop_during_installation_fallback(self):
@@ -246,7 +246,7 @@ class TestTaskBasedComponentInitialization:
         assert "mock_tool" in agent.tools
         assert "async_mock_tool" in agent.tools
 
-        await agent.async_close()
+        await agent.events.async_close()
 
     # @pytest.mark.asyncio
     # async def test_component_tool_registration_integration_with_webfetcher(self):
@@ -269,7 +269,7 @@ class TestTaskBasedComponentInitialization:
     #     fetch_tool = agent.tools["fetch"]
     #     assert callable(fetch_tool)
 
-    #     await agent.async_close()
+    #     await agent.events.async_close()
 
     @pytest.mark.asyncio
     async def test_component_event_system_integration(self):
@@ -305,4 +305,4 @@ class TestTaskBasedComponentInitialization:
         assert result.success
         assert "Event component: test" == result.response
 
-        await agent.async_close()
+        await agent.events.async_close()
