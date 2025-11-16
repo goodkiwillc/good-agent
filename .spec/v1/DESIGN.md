@@ -24,6 +24,10 @@ async with Agent("You are a helpful assistant.") as agent:
 
 ```
 
+## Known Issues
+
+- LiteLLM's background logging worker binds an async queue to the event loop that created the router; under pytest's repeated loop creation this sometimes logs `Task exception was never retrieved ... Queue ... is bound to a different event loop`. The warnings are harmless but noisy; we should either upstream a fix to LiteLLM's logging worker or patch our router wrapper to recreate the queue per loop before release.
+
 Agent Configuration:
 
 ```python
