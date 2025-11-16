@@ -1,12 +1,37 @@
 import logging
 import os
+import warnings
 from pathlib import Path
 
 import pytest
 import pytest_asyncio
 import vcr
+from pydantic import PydanticDeprecatedSince20, PydanticDeprecatedSince211
 
 from good_agent.core.event_router import current_test_nodeid
+
+# ---------------------------------------------------------------------------
+# Warning controls
+# ---------------------------------------------------------------------------
+
+# LiteLLM relies on Pydantic's `model_dump(mode="json")` for cassette recording,
+# which emits noisy `PydanticSerializationUnexpectedValue` warnings that we can't
+# fix locally. Silence them so real regressions stay visible.
+warnings.filterwarnings(
+    "ignore",
+    message="Pydantic serializer warnings:",
+    category=UserWarning,
+    module="pydantic.main",
+)
+
+# LiteLLM's custom httpx cleanup uses the pre-3.11 event loop getter, which raises
+# a DeprecationWarning during teardown. Ignore it to keep the suite quiet.
+warnings.filterwarnings(
+    "ignore",
+    message="There is no current event loop",
+    category=DeprecationWarning,
+    module="litellm.llms.custom_httpx.async_client_cleanup",
+)
 
 
 # Monkey-patch VCR's httpx stub to fix _decoder assertion issue and compression
@@ -379,7 +404,43 @@ def llm_vcr(vcr_cassette_dir, vcr_cassette_name):
 
 # Register custom markers
 def pytest_configure(config):
-    """Register custom markers."""
+    """Register custom markers and silence known third-party warnings."""
+    warnings.filterwarnings(
+        "ignore",
+        message="Pydantic serializer warnings:",
+        category=UserWarning,
+        module="pydantic.main",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message="There is no current event loop",
+        category=DeprecationWarning,
+        module="litellm.llms.custom_httpx.async_client_cleanup",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message="enable_cleanup_closed ignored",
+        category=DeprecationWarning,
+        module="aiohttp.connector",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message="Accessing the 'model_fields' attribute",
+        category=PydanticDeprecatedSince211,
+        module="litellm",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message="Accessing the 'model_computed_fields' attribute",
+        category=PydanticDeprecatedSince211,
+        module="litellm",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message="The `dict` method is deprecated",
+        category=PydanticDeprecatedSince20,
+        module="litellm",
+    )
     config.addinivalue_line(
         "markers",
         "vcr: mark test to use VCR.py for recording/replaying HTTP interactions (including LLM API calls)",

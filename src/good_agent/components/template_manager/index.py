@@ -79,6 +79,17 @@ class TemplateIndex:
                             meta["last_modified"] = datetime.fromisoformat(
                                 meta["last_modified"]
                             )
+                        if meta.get("version_history"):
+                            for entry in meta["version_history"]:
+                                timestamp = entry.get("timestamp")
+                                if isinstance(timestamp, str):
+                                    try:
+                                        entry["timestamp"] = datetime.fromisoformat(
+                                            timestamp
+                                        )
+                                    except ValueError:
+                                        # Leave as string if parsing fails
+                                        entry["timestamp"] = timestamp
                         normalized_name = meta["name"]
                         self.templates[normalized_name] = TemplateMetadata(**meta)
             except Exception as e:
@@ -163,6 +174,8 @@ class TemplateIndex:
             # Check if template exists in index
             if template_name in self.templates:
                 existing = self.templates[template_name]
+                existing.path = relative_path_posix
+                existing.name = template_name
 
                 # Check for modifications
                 if existing.content_hash != content_hash:

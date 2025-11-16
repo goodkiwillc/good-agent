@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import copy
+import logging
 from typing import TYPE_CHECKING, Any
 
 from ...components import ToolAdapter
 from ...components.tool_adapter import AdapterMetadata
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from ...agent import Agent
@@ -242,12 +245,8 @@ class CitationAdapter(ToolAdapter["CitationManager"]):
                     adapted_params[url_key] = url
                 else:
                     # Invalid index - keep as is for error handling and emit warning
-                    import warnings
-
-                    warnings.warn(
-                        f"Citation index {idx} not found in global index.",
-                        UserWarning,
-                        stacklevel=2,
+                    logger.warning(
+                        "Citation index %s not found in global index.", idx
                     )
                     adapted_params[key] = idx
 

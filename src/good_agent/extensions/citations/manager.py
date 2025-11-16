@@ -785,12 +785,9 @@ class CitationManager(AgentComponent):
                     else:
                         # Invalid index - check if it exists in global index before warning
                         if original_idx not in self.index.as_dict():
-                            import warnings
-
-                            warnings.warn(
-                                f"Citation [{original_idx}] has no corresponding source",
-                                UserWarning,
-                                stacklevel=2,
+                            logger.warning(
+                                "Citation [%s] has no corresponding source",
+                                original_idx,
                             )
                         # Leave as-is for now - may be resolved from global index later
                         continue

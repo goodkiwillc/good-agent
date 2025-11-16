@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 import pytest
@@ -248,7 +249,7 @@ class TestParameterTranslation:
         await agent.async_close()
 
     @pytest.mark.asyncio
-    async def test_invalid_citation_idx_preserved(self):
+    async def test_invalid_citation_idx_preserved(self, caplog):
         """Invalid citation index is preserved for error handling."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
@@ -260,10 +261,15 @@ class TestParameterTranslation:
         # Use invalid index
         llm_params = {"citation_idx": 999}
 
-        with pytest.warns(
-            UserWarning, match="Citation index 999 not found in global index."
-        ):
+        logger_name = "good_agent.extensions.citations.citation_adapter"
+        with caplog.at_level(logging.WARNING, logger=logger_name):
             translated = adapter.adapt_parameters("fetch_url", llm_params, agent)
+
+        assert any(
+            "Citation index 999 not found in global index." in record.message
+            for record in caplog.records
+            if record.name == logger_name
+        )
 
         # Invalid index should be preserved
         assert "citation_idx" in translated

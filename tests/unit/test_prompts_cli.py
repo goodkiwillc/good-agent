@@ -12,9 +12,17 @@ class TestPromptsCLI:
     """Test the prompts CLI commands."""
 
     @pytest.fixture
-    def runner(self):
-        """Create a CLI test runner."""
-        return CliRunner()
+    def runner(self, capsys):  # type: ignore[override]
+        """Create a CLI test runner that disables pytest capture per invocation."""
+        cli_runner = CliRunner()
+        original_invoke = cli_runner.invoke
+
+        def invoke(*args, **kwargs):
+            with capsys.disabled():
+                return original_invoke(*args, **kwargs)
+
+        cli_runner.invoke = invoke  # type: ignore[assignment]
+        return cli_runner
 
     @pytest.fixture
     def temp_project(self):
