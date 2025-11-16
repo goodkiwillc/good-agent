@@ -169,15 +169,23 @@ class SignalHandler:
                             cancelled_count += 1
 
                 # Also cancel agent-managed tasks if present (Agent extends EventRouter)
-                if hasattr(router, "_managed_tasks"):
+                tasks_attr = None
+                task_manager = getattr(router, "tasks", None)
+                if task_manager is not None:
+                    managed = getattr(task_manager, "managed_tasks", None)
+                    if managed is not None:
+                        tasks_attr = list(managed.keys())
+                elif hasattr(router, "_managed_tasks"):
                     try:
-                        for task in list(router._managed_tasks.keys()):
-                            if not task.done():
-                                task.cancel()
-                                cancelled_count += 1
-                    except Exception:
-                        # Be defensive; managed task tracking is best-effort here
-                        pass
+                        tasks_attr = list(router._managed_tasks.keys())
+                    except Exception:  # pragma: no cover - defensive
+                        tasks_attr = None
+
+                if tasks_attr:
+                    for task in tasks_attr:
+                        if not task.done():
+                            task.cancel()
+                            cancelled_count += 1
 
                 # Stop event loop if running in thread
                 if hasattr(router, "_event_loop") and router._event_loop:

@@ -8,7 +8,7 @@ import orjson
 from ulid import ULID
 
 from good_agent.events import AgentEvents
-from good_agent.messages import ToolMessage
+from good_agent.messages import AssistantMessage, ToolMessage
 from good_agent.tools import (
     BoundTool,
     Tool,
@@ -135,7 +135,7 @@ class ToolExecutor:
         )
 
         # Emit tool:call event with visible parameters only
-        ctx = await self.agent.apply(
+        ctx = await self.agent.events.apply(
             AgentEvents.TOOL_CALL_BEFORE,
             tool_name=resolved_name,
             parameters=visible_params,
@@ -458,6 +458,100 @@ class ToolExecutor:
 
         return results
 
+    def invoke_func(
+        self,
+        tool: Tool | str | Callable,
+        *,
+        tool_name: str | None = None,
+        hide: list[str] | None = None,
+        tool_call_id: str | None = None,
+        **bound_parameters: Any,
+    ) -> Callable[..., Awaitable[ToolResponse]]:
+        """Create a bound function that invokes a tool with preset parameters."""
+
+        resolved_name = tool_name
+
+        if not resolved_name:
+            if isinstance(tool, str):
+                resolved_name = tool
+            elif isinstance(tool, Tool):
+                resolved_name = tool.name
+            elif callable(tool):
+                resolved_name = getattr(tool, "__name__", str(tool))
+            logger.debug("Resolved tool name: %s", resolved_name)
+
+        async def bound_invoke(**kwargs: Any) -> ToolResponse:
+            from_invoke_many = kwargs.pop("_from_invoke_many", False)
+            runtime_tool_call_id = kwargs.pop("_tool_call_id", None)
+            tool_call = kwargs.pop("_tool_call", None)
+
+            explicit_tool_call_id = runtime_tool_call_id or tool_call_id
+
+            all_params = dict(bound_parameters)
+            for key, value in kwargs.items():
+                if key in {"_agent", "_tool_call"}:
+                    continue
+                all_params[key] = value
+
+            if from_invoke_many:
+                actual_tool: Tool | Callable[..., Awaitable[Any]] | None = tool  # type: ignore[assignment]
+                if isinstance(tool, str):
+                    try:
+                        actual_tool = self.agent.tools[tool]
+                    except KeyError as exc:  # pragma: no cover - defensive
+                        raise ValueError(f"Tool '{tool}' not found") from exc
+                elif not isinstance(tool, Tool):
+                    actual_tool = Tool(tool)
+
+                assert callable(actual_tool), "Resolved tool is not callable"
+
+                result = await actual_tool(
+                    **all_params,
+                    _agent=self.agent,
+                    _tool_call=tool_call,
+                )
+
+                if isinstance(result, ToolResponse):
+                    if explicit_tool_call_id:
+                        result.tool_call_id = explicit_tool_call_id
+                    return result
+
+                return ToolResponse(
+                    tool_name=resolved_name or getattr(actual_tool, "name", str(tool)),
+                    tool_call_id=explicit_tool_call_id or "",
+                    response=result,
+                    parameters=all_params,
+                    success=True,
+                    error=None,
+                )
+
+            return await self.invoke(
+                tool,
+                tool_name=resolved_name,
+                tool_call_id=explicit_tool_call_id,
+                hide=hide,
+                **all_params,
+            )
+
+        bound_invoke.__name__ = resolved_name or getattr(tool, "__name__", str(tool))
+        bound_invoke._is_invoke_func_bound = True  # type: ignore[attr-defined]
+        bound_invoke._bound_tool = tool  # type: ignore[attr-defined]
+        bound_invoke._bound_parameters = bound_parameters  # type: ignore[attr-defined]
+        bound_invoke._hide_params = hide  # type: ignore[attr-defined]
+
+        return bound_invoke
+
+    def invoke_many_func(
+        self,
+        invocations: Sequence[tuple[Tool | str | Callable, dict[str, Any]]],
+    ) -> Callable[[], Awaitable[list[ToolResponse]]]:
+        """Create a bound coroutine that executes a batch of tool invocations."""
+
+        async def bound_invoke_many() -> list[ToolResponse]:
+            return await self.invoke_many(invocations)
+
+        return bound_invoke_many
+
     async def resolve_pending_tool_calls(self) -> AsyncIterator[ToolMessage]:
         """Find and execute all pending tool calls in conversation.
 
@@ -514,6 +608,153 @@ class ToolExecutor:
                 assert tool_message.tool_call_id == tool_call.id
                 yield tool_message
 
+    def record_invocation(
+        self,
+        tool: Tool | Callable | str,
+        response: ToolResponse | Any,
+        parameters: dict[str, Any] | None = None,
+        *,
+        tool_call_id: str | None = None,
+        skip_assistant_message: bool = False,
+    ) -> None:
+        """Record a single tool invocation without executing the tool."""
+
+        tool_name = self._resolve_tool_name(tool)
+        tool_call_id = tool_call_id or f"call_{ULID()}"
+        tool_response = self._coerce_tool_response(
+            response, tool_name, tool_call_id, parameters
+        )
+        visible_params = parameters or tool_response.parameters or {}
+
+        if not skip_assistant_message:
+            existing_tool_call = False
+            for msg in reversed(self.agent._messages):
+                match msg:
+                    case AssistantMessage(tool_calls=tool_calls) if tool_calls:
+                        for tc in tool_calls:
+                            if tc.id == tool_call_id:
+                                existing_tool_call = True
+                                break
+                        if existing_tool_call:
+                            break
+                    case _:
+                        continue
+
+            if not existing_tool_call:
+                tool_call = ToolCall(
+                    id=tool_call_id,
+                    type="function",
+                    function=ToolCallFunction(
+                        name=tool_name,
+                        arguments=orjson.dumps(visible_params).decode("utf-8"),
+                    ),
+                )
+                assistant_msg = self.agent.model.create_message(
+                    content="",
+                    tool_calls=[tool_call],
+                    role="assistant",
+                )
+                self.agent.append(assistant_msg)
+
+        content = (
+            tool_response.response.render()
+            if hasattr(tool_response.response, "render")
+            else str(tool_response.response)
+        )
+
+        tool_msg = self.agent.model.create_message(
+            content=content if tool_response.success else f"Error: {tool_response.error}",
+            tool_call_id=tool_call_id,
+            tool_name=tool_name,
+            tool_response=tool_response,
+            role="tool",
+        )
+        self.agent.append(tool_msg)
+
+        self.agent.do(
+            AgentEvents.TOOL_CALL_AFTER,
+            tool_name=tool_name,
+            tool_call_id=tool_call_id,
+            response=tool_response,
+            success=tool_response.success,
+        )
+
+    def record_invocations(
+        self,
+        tool: Tool | Callable | str,
+        invocations: Sequence[tuple[dict[str, Any], ToolResponse | Any]],
+        *,
+        skip_assistant_message: bool = False,
+    ) -> None:
+        """Record multiple tool invocations, consolidating when possible."""
+
+        if not invocations:
+            return
+
+        tool_name = self._resolve_tool_name(tool)
+        supports_parallel = self.agent.model.supports_parallel_function_calling()
+        tool_call_ids: list[str] = []
+        tool_calls: list[ToolCall] = []
+
+        if not skip_assistant_message:
+            if supports_parallel:
+                for parameters, _ in invocations:
+                    tool_call_id = f"call_{ULID()}"
+                    tool_call_ids.append(tool_call_id)
+                    tool_call = ToolCall(
+                        id=tool_call_id,
+                        type="function",
+                        function=ToolCallFunction(
+                            name=tool_name,
+                            arguments=orjson.dumps(parameters).decode("utf-8"),
+                        ),
+                    )
+                    tool_calls.append(tool_call)
+
+                assistant_msg = self.agent.model.create_message(
+                    content="",
+                    tool_calls=tool_calls,
+                    role="assistant",
+                )
+                self.agent.append(assistant_msg)
+            else:
+                for parameters, response in invocations:
+                    self.record_invocation(
+                        tool,
+                        response,
+                        parameters,
+                        skip_assistant_message=False,
+                    )
+                return
+        else:
+            for _ in invocations:
+                tool_call_ids.append(f"call_{ULID()}")
+
+        for index, (parameters, response) in enumerate(invocations):
+            tool_call_id = tool_call_ids[index] if tool_call_ids else f"call_{ULID()}"
+            tool_response = self._coerce_tool_response(
+                response, tool_name, tool_call_id, parameters
+            )
+
+            tool_msg = self.agent.model.create_message(
+                content=str(tool_response.response)
+                if tool_response.success
+                else f"Error: {tool_response.error}",
+                tool_call_id=tool_call_id,
+                tool_name=tool_name,
+                tool_response=tool_response,
+                role="tool",
+            )
+            self.agent.append(tool_msg)
+
+            self.agent.do(
+                AgentEvents.TOOL_CALL_AFTER,
+                tool_name=tool_name,
+                tool_call_id=tool_call_id,
+                response=tool_response,
+                success=tool_response.success,
+            )
+
     def get_pending_tool_calls(self) -> list[ToolCall]:
         """Get list of tool calls that don't have corresponding responses.
 
@@ -548,6 +789,34 @@ class ToolExecutor:
         return len(self.get_pending_tool_calls()) > 0
 
     # Helper methods
+
+    def _coerce_tool_response(
+        self,
+        response: ToolResponse | Any,
+        tool_name: str,
+        tool_call_id: str,
+        parameters: dict[str, Any] | None = None,
+    ) -> ToolResponse:
+        """Convert arbitrary responses into :class:`ToolResponse` objects."""
+
+        if not isinstance(response, ToolResponse):
+            return ToolResponse(
+                tool_name=tool_name,
+                tool_call_id=tool_call_id,
+                response=response,
+                parameters=parameters if parameters is not None else {},
+                success=True,
+                error=None,
+            )
+
+        return ToolResponse(
+            tool_name=response.tool_name or tool_name,
+            tool_call_id=response.tool_call_id or tool_call_id,
+            response=response.response,
+            parameters=response.parameters if parameters is None else parameters,
+            success=response.success,
+            error=response.error,
+        )
 
     def _resolve_tool_name(self, tool: Tool | Callable | str) -> str:
         """Resolve tool name from various input types.

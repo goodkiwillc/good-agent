@@ -496,7 +496,7 @@ class LanguageModel(AgentComponent):
                 tool_calls_list.append(tool_call_dict)
             kwargs["tool_calls"] = tool_calls_list
 
-        ctx = self.agent.apply_sync(
+        ctx = self.agent.events.apply_sync(
             AgentEvents.MESSAGE_CREATE_BEFORE,
             role=role,
             content=parts,
@@ -817,7 +817,7 @@ class LanguageModel(AgentComponent):
         start_time = time.time()
         from ..core.event_router import EventContext
 
-        ctx: EventContext[CompletionEvent, None] = await self.agent.apply_typed(
+        ctx: EventContext[CompletionEvent, None] = await self.agent.events.apply_typed(
             AgentEvents.LLM_COMPLETE_BEFORE,
             CompletionEvent,
             None,
@@ -843,7 +843,7 @@ class LanguageModel(AgentComponent):
 
             from litellm.types.utils import ModelResponse
 
-            ctx = await self.agent.apply_typed(
+            ctx = await self.agent.events.apply_typed(
                 AgentEvents.LLM_COMPLETE_AFTER,
                 CompletionEvent,
                 ModelResponse,  # type: ignore[arg-type]

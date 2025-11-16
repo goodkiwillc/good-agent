@@ -208,6 +208,7 @@ from good_agent.model.formatting import MessageFormatter  # ✅
 - `EventRouter` internally uses a dedicated `_handler_registry` (thread-safe `HandlerRegistry`) and `SyncBridge` for async/sync coordination. Private fields like `_events`, `_tasks`, `_thread_pool`, etc. are retained only for backward-compatible access.
 - Docstrings were trimmed and now point to executable samples in `examples/event_router/`.
 - New reliability-focused test suites cover registration, predicates, race conditions, concurrency, and sync bridge behavior.
+- Repository-wide docstrings were converted to short summaries and now link to runnable examples under `examples/` (agent, tools, pool, context, resources, citations, etc.) so the docs moved out of code live alongside verified scripts.
 
 ### Required Changes
 

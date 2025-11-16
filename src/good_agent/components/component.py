@@ -55,118 +55,12 @@ T_AgentComponent = TypeVar("T_AgentComponent", bound="AgentComponent")
 
 
 class AgentComponent(EventRouter, metaclass=AgentComponentType):
-    """Base class for agent extensions with tool registration and lifecycle management.
+    """Base class for extensibility via tools, events, and dependency injection.
 
-    PURPOSE: Foundation for creating agent extensions that can add tools, handle events,
-    and participate in the agent's dependency injection system.
-
-    ROLE: Enables agent extension development through:
-    - Tool method discovery and registration via @tool decorator
-    - Event handling for agent lifecycle integration
-    - Dependency injection for component composition
-    - Configuration access and customization
-    - Resource management and cleanup
-
-    ARCHITECTURE:
-    1. Tool Discovery: Metaclass automatically discovers @tool-decorated methods
-    2. Dependency Resolution: Automatic dependency injection based on __depends__
-    3. Event Integration: Inherits from EventRouter for agent event handling
-    4. Lifecycle Management: Setup/install phases for initialization
-    5. Resource Cleanup: Automatic cleanup when agent is destroyed
-
-    DEPENDENCY INJECTION:
-    Components can declare dependencies using class-level __depends__ attribute:
-    ```python
-    class MyComponent(AgentComponent):
-        __depends__ = ["LanguageModel", "ToolManager"]
-
-        def setup(self, agent):
-            # Dependencies automatically available
-            self.model = self.get_dependency("LanguageModel")
-            self.tool_manager = self.get_dependency("ToolManager")
-    ```
-
-    TOOL REGISTRATION:
-    Methods decorated with @tool automatically become available to the agent:
-    ```python
-    class SearchComponent(AgentComponent):
-        @tool
-        async def search_web(self, query: str) -> str:
-            # This tool is automatically registered with the agent
-            return await search_api(query)
-    ```
-
-    EVENT INTEGRATION:
-    Components can listen to agent events using the @component.on decorator:
-    ```python
-    class LoggingComponent(AgentComponent):
-        @component.on(AgentEvents.MESSAGE_APPEND_AFTER)
-        def log_message(self, ctx):
-            print(f"Message: {ctx.parameters['message'].content}")
-    ```
-
-    LIFECYCLE MANAGEMENT:
-    1. Class Creation: Metaclass discovers tools and validates dependencies
-    2. Instantiation: Component created, dependencies resolved later
-    3. Setup Phase: setup() called with agent reference for synchronous init
-    4. Install Phase: install() called for async initialization and tool registration
-    5. Runtime: Component actively handles events and provides tools
-    6. Cleanup: Automatic cleanup when agent is destroyed
-
-    THREAD SAFETY:
-    - Component instances should not be shared between agents
-    - Tool methods are thread-safe when called through agent
-    - Event handlers should be careful with shared state
-    - Dependency injection provides isolated instances
-
-    PERFORMANCE CONSIDERATIONS:
-    - Component initialization: ~1-5ms per component
-    - Tool discovery: ~1ms per tool method
-    - Event registration: ~1ms per event handler
-    - Memory: ~1-5KB per component base + tool instances
-
-    EXTENSION PATTERNS:
-    - Tool Components: Components that primarily add tools to the agent
-    - Event Components: Components that primarily handle agent events
-    - Service Components: Components that provide services to other components
-    - Monitoring Components: Components that track metrics and performance
-    - Configuration Components: Components that manage agent configuration
-
-    ERROR HANDLING:
-    - Missing dependencies: ComponentDependencyError during agent initialization
-    - Tool registration failures: Logged warnings, component continues to work
-    - Event handler exceptions: Logged warnings, don't stop agent execution
-    - Setup/install failures: Component marked as failed, agent may continue without it
-
-    EXAMPLES:
-    ```python
-    # Simple tool component
-    class WeatherComponent(AgentComponent):
-        @tool
-        async def get_weather(self, location: str) -> str:
-            return await weather_api.get_current(location)
-
-
-    # Component with dependencies
-    class AnalysisComponent(AgentComponent):
-        __depends__ = ["ToolManager", "LanguageModel"]
-
-        def setup(self, agent):
-            self.tool_manager = self.get_dependency("ToolManager")
-            self.model = self.get_dependency("LanguageModel")
-
-        async def install(self):
-            await self.tool_manager.register_tool(
-                Tool(self.analyze_text, name="analyze")
-            )
-
-
-    # Event handling component
-    class LoggingComponent(AgentComponent):
-        @component.on(AgentEvents.MESSAGE_APPEND_AFTER)
-        def log_message(self, ctx):
-            logger.info(f"Message: {ctx.parameters['message'].role}")
-    ```
+    Subclasses declare dependencies, register @tool methods, and subscribe to
+    AgentEvents while the metaclass wires everything into an Agent. See
+    ``examples/components/basic_component.py`` for a complete component that
+    installs a tool and logs appended messages.
     """
 
     _agent: Agent | None

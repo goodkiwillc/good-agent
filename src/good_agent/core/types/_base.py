@@ -6,81 +6,11 @@ type StringDict = dict[str, str]
 
 
 class Identifier(URL):
-    """
-    URL-based identifier system with standardized structure and domain handling.
+    """Normalize resource IDs onto the ``id://`` scheme for consistent routing.
 
-    PURPOSE: Provides a consistent, URL-based identifier format for resources across
-    the GoodIntel platform with built-in domain extraction and parameter filtering.
-
-    ROLE: Standardizes resource identification using URL structure while maintaining
-    compatibility with existing URL handling utilities and validation.
-
-    LIFECYCLE:
-    1. Creation: Converts input URL/string to standardized "id://" scheme format
-    2. Normalization: Lowercases domain, strips trailing slashes, preserves parameters
-    3. Access: Provides domain extraction and parameter filtering utilities
-    4. Serialization: Inherits URL serialization behavior
-
-    URL STRUCTURE:
-    - Scheme: Always "id" for consistent identification
-    - Host: Resource domain (lowercase normalized)
-    - Path: Resource identifier path (trailing slashes removed)
-    - Query: Resource parameters and metadata
-    - Special parameters: zz_* prefix for internal/system parameters
-
-    TYPICAL USAGE:
-    ```python
-    # From existing URL
-    url = URL("https://example.com/resource/123?version=1")
-    identifier = Identifier(url)
-    # Result: "id://example.com/resource/123?version=1"
-
-    # From string
-    identifier = Identifier("user:12345")
-    # Result: "id://user:12345"
-
-    # Domain extraction
-    domain = identifier.domain  # "example.com"
-
-    # Filter out system parameters
-    clean_id = identifier.root  # Removes zz_* parameters
-    ```
-
-    NORMALIZATION RULES:
-    - Scheme forced to "id" for consistency
-    - Host component converted to lowercase
-    - Path trailing slashes removed
-    - Query parameters preserved exactly as provided
-    - Username/password components preserved if present
-
-    DOMAIN EXTRACTION:
-    - Returns lowercase host component
-    - Useful for resource routing and categorization
-    - Compatible with standard domain handling
-
-    PARAMETER FILTERING:
-    - root property removes zz_* prefixed parameters
-    - Useful for cleaning identifiers for external use
-    - Preserves all standard parameters
-
-    Args:
-        url: Input URL or string to convert to identifier format
-        strict: Validation strictness (inherited from URL class)
-
-    Returns:
-        Identifier: Standardized identifier URL instance
-
-    Raises:
-        ValueError: If input URL/string is invalid and strict=True
-
-    Performance:
-    - Inherits URL parsing performance characteristics
-    - Domain extraction is O(1) property access
-    - Parameter filtering creates new URL instance (O(n) on parameter count)
-
-    Related:
-    - URL: Base class providing URL parsing and validation
-    - StringDict: Often used for storing identifier metadata
+    Hostnames are lowercased, trailing slashes trimmed, and query params preserved
+    so that identifiers remain comparable across systems. See
+    ``examples/types/identifier.py`` for basic creation and cleaning.
     """
 
     def __new__(cls, url: URL | str, strict: bool = False) -> Self:
@@ -117,22 +47,7 @@ class Identifier(URL):
 
     @property
     def root(self) -> URL:
-        """
-        Return ID without zz_* parameters
-
-        Removes internal/system parameters (zz_* prefix) from the identifier,
-        returning a clean identifier suitable for external use or comparison.
-
-        Returns:
-            URL: New identifier instance without system parameters
-
-        Example:
-        ```python
-        id_with_params = Identifier("resource:123?version=1&zz_internal=abc")
-        clean_id = id_with_params.root
-        # clean_id: "id://resource:123?version=1"
-        ```
-        """
+        """Return a copy stripped of internal ``zz_*`` parameters."""
 
         return URL(self).update(
             query={
@@ -144,21 +59,7 @@ class Identifier(URL):
 
     @property
     def domain(self) -> str:
-        """
-        Extract domain component from identifier.
-
-        Returns the lowercase host component of the identifier, useful for
-        categorization, routing, and domain-based processing.
-
-        Returns:
-            str: Domain name component of the identifier
-
-        Example:
-        ```python
-        identifier = Identifier("user:12345@domain.com")
-        domain = identifier.domain  # "domain.com"
-        ```
-        """
+        """Lowercase host component for quick routing keys."""
         return self.host
 
     def as_url(self) -> URL:

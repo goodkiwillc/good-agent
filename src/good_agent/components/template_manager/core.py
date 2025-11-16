@@ -109,133 +109,26 @@ def find_user_prompts_directory() -> Path | None:
 
 
 class Template:
-    """Wrapper class for deferred template rendering in tool parameters and method calls.
+    """Deferred Jinja snippet that renders once context becomes available.
 
-    PURPOSE: Enables lazy evaluation of template strings in contexts where immediate
-    rendering is not desirable or possible, such as tool parameter injection.
-
-    ROLE: Facilitates template usage in:
-    - Tool parameter injection with dynamic context resolution
-    - Deferred template rendering until context is available
-    - Strict vs. lenient template error handling
-    - Template caching for repeated usage patterns
-
-    USAGE PATTERNS:
-    ```python
-    # Tool parameter templates
-    agent.invoke(
-        search_tool,
-        query=Template("{{subject}} {{region}}"),
-        time_period=Template("{{time_period|default('last_day')}}"),
-    )
-
-    # Strict template validation
-    strict_template = Template("{{required_var}}", strict=True)
-
-    # Template reuse with caching
-    cached_template = Template("Hello {{name}} from {{location}}")
-    result1 = cached_template.render({"name": "Alice", "location": "NYC"})
-    result2 = cached_template.render({"name": "Bob", "location": "LA"})
-    ```
-
-    ERROR HANDLING:
-    - Strict mode (strict=True): Template errors raise exceptions immediately
-    - Lenient mode (strict=False): Template errors return original template string
-    - Missing variables: Handled according to strict mode setting
-    - Template syntax errors: Always raised regardless of strict mode
-
-    CACHING BEHAVIOR:
-    - Rendered results cached after first successful render
-    - Subsequent render() calls return cached result
-    - Cache cleared when template string changes
-    - Useful for repeated template usage with different contexts
-
-    PERFORMANCE:
-    - Template rendering: 1-10ms depending on complexity
-    - Cached render: <1ms (direct lookup)
-    - Memory: ~100 bytes per Template instance + rendered cache
+    Useful for tool parameters or message assembly where values are resolved later.
+    See ``examples/templates/render_template.py`` for inline and cached rendering
+    patterns.
     """
 
     def __init__(self, template: str, strict: bool = False):
-        """Initialize a Template wrapper with rendering configuration.
-
-        PURPOSE: Create a new template instance with specified error handling
-        behavior and initial template string.
-
-        Args:
-            template: The Jinja2 template string to render later
-            strict: If True, template errors raise exceptions immediately.
-                   If False, errors return original template string (default: False)
-
-        SIDE EFFECTS:
-        - Stores template string for later rendering
-        - Initializes render cache as None
-        - Sets error handling mode for subsequent operations
-
-        EXAMPLES:
-        ```python
-        # Lenient template (default)
-        template = Template("Hello {{name}}")
-
-        # Strict template with error handling
-        strict_template = Template("Hello {{missing_var}}", strict=True)
-
-        # Template with default filters
-        filtered_template = Template("{{value|default('N/A')}}")
-        ```
-        """
+        """Store a template string and error-handling preference."""
         self.template = template
         self.strict = strict
         self._rendered: str | None = None
 
     def render(self, context: dict[str, Any]) -> str:
-        """Render the template with the provided context variables.
+        """Render with the provided context, caching the last successful output.
 
-        PURPOSE: Execute template rendering with context variable substitution,
-        caching the result for subsequent calls.
-
-        RENDERING PROCESS:
-        1. Check cache: Return cached result if available
-        2. Template parsing: Parse Jinja2 syntax and variable references
-        3. Context substitution: Replace variables with provided context values
-        4. Filter execution: Apply Jinja2 filters and functions
-        5. Result caching: Store successful render for future calls
-        6. Error handling: Handle template errors according to strict mode
-
-        Args:
-            context: Dictionary mapping variable names to values for template
-                     substitution. Variables not found in context are handled
-                     according to strict mode setting.
-
-        Returns:
-            Rendered template string with all substitutions applied
-
-        Raises:
-            TemplateError: If strict=True and template rendering fails
-            TemplateSyntaxError: For invalid Jinja2 syntax (always raised)
-
-        PERFORMANCE:
-        - First render: 1-10ms depending on template complexity
-        - Cached render: <1ms (direct cache lookup)
-        - Complex templates: Additional time for filters and logic
-
-        EXAMPLES:
-        ```python
-        template = Template("Hello {{name}}, today is {{date}}")
-
-        # Basic rendering
-        result = template.render({"name": "Alice", "date": "Monday"})
-        # Returns: "Hello Alice, today is Monday"
-
-        # With missing variables (lenient mode)
-        result = template.render({"name": "Bob"})
-        # Returns: "Hello Bob, today is " (missing variable treated as empty)
-
-        # With default filters
-        template = Template("Value: {{value|default('N/A')}}")
-        result = template.render({})  # No 'value' key
-        # Returns: "Value: N/A"
-        ```
+        First renders go through the templating engine (~1-10ms) while cached
+        renders return immediately (<1ms). In non-strict mode missing variables
+        fall back to the original template string. See
+        ``examples/templates/render_template.py`` for full usage.
         """
         try:
             rendered = templating.render_template(self.template, context)
@@ -248,132 +141,19 @@ class Template:
             return self.template
 
     def __str__(self) -> str:
-        """String representation of the Template.
-
-        PURPOSE: Provide intuitive string conversion behavior that returns
-        the rendered result when available, falling back to the template string.
-
-        BEHAVIOR:
-        - If template has been rendered successfully: return cached result
-        - If template not yet rendered: return original template string
-        - Enables natural usage in string contexts and logging
-
-        USAGE:
-        ```python
-        template = Template("Hello {{name}}")
-        template.render({"name": "World"})
-        print(str(template))  # Prints: "Hello World"
-
-        # Before rendering
-        template = Template("Hello {{name}}")
-        print(str(template))  # Prints: "Hello {{name}}"
-        ```
-        """
-        return self._rendered if self._rendered is not None else self.template
+        """Return cached render if available, otherwise the template string."""
 
     def __repr__(self) -> str:
-        """Developer-friendly representation of the Template.
-
-        PURPOSE: Provide debugging and development information about the
-        Template instance, including strict mode and template content.
-
-        FORMAT:
-        Template(template_string, strict=True/False)
-
-        USAGE:
-        ```python
-        template = Template("Hello {{name}}", strict=True)
-        repr(template)  # Returns: "Template('Hello {{name}}', strict=True)"
-        ```
-        """
+        """Return a debug representation including template text and strict flag."""
         return f"Template({self.template!r}, strict={self.strict})"
 
 
 class TemplateManager(AgentComponent):
-    """Central template management system with hierarchical context resolution and caching.
+    """Agent component that renders inline, registry, or file templates.
 
-    PURPOSE: Provides comprehensive template rendering capabilities including
-    file-based templates, context providers, dependency injection, and performance
-    optimization through intelligent caching strategies.
-
-    ROLE: Manages the complete template lifecycle:
-    - Template discovery from multiple sources (files, registry, inline)
-    - Context resolution with hierarchical overrides and providers
-    - Template compilation and caching for performance optimization
-    - Security through sandboxed Jinja2 environments
-    - Event integration for template modification and monitoring
-    - Dependency injection for context providers and agent access
-
-    ARCHITECTURE COMPONENTS:
-    1. Template Loading: ChoiceLoader with file storage and registry fallback
-    2. Context Resolution: ChainMap-based hierarchical context with providers
-    3. Template Compilation: Jinja2 parsing with security sandboxing
-    4. Caching System: Multi-level caching for templates and rendered results
-    5. Event System: Template lifecycle events for modification and monitoring
-    6. Dependency Injection: Automatic provider parameter injection
-
-    FILE TEMPLATE DISCOVERY:
-    Template sources are checked in priority order:
-    1. Explicit Directory: User-specified prompts directory (highest priority)
-    2. Project Directory: prompts/ in current project or parent directories
-    3. User Directory: ~/.good-agent/prompts (lowest priority)
-    4. Registry Templates: In-memory registered templates (fallback)
-
-    CONTEXT RESOLUTION HIERARCHY:
-    1. Base Context: Direct parameters passed to render methods (highest priority)
-    2. Context Stack: Temporary overrides via context managers
-    3. Message Context: Context from specific message being rendered
-    4. Instance Providers: Agent-specific context providers
-    5. Global Providers: System-wide providers (today, now, etc.)
-    6. Default Values: Fallback values for missing variables
-
-    PERFORMANCE OPTIMIZATION:
-    - Template Compilation: Parsed templates cached indefinitely
-    - Context Resolution: Provider results cached when appropriate
-    - File Loading: Template files cached in memory after first access
-    - Render Caching: Results cached for static templates without dynamic context
-    - Async Preloading: File templates can be preloaded for synchronous access
-
-    SECURITY FEATURES:
-    - Sandboxed Jinja2 environment by default
-    - Restricted template syntax and built-in functions
-    - File access limited to designated template directories
-    - Input sanitization for template variables
-    - Template inheritance restricted to allowed directories
-
-    USAGE PATTERNS:
-    ```python
-    # Basic template rendering
-    result = agent.template.render("Hello {{name}}", {"name": "User"})
-
-    # File template with inheritance
-    result = agent.template.render_template("{% extends 'base' %}...")
-
-
-    # Context provider registration
-    @agent.template.context_provider("current_time")
-    def get_current_time():
-        return datetime.now()
-
-
-    # Template preloading for performance
-    await agent.template.preload_templates(["system/assistant", "tool/search"])
-    ```
-
-    LIFECYCLE MANAGEMENT:
-    1. Initialization: Set up file storage, environment, and context providers
-    2. Template Registration: Add templates to registry for later use
-    3. Context Provider Setup: Register dynamic context value providers
-    4. Template Rendering: Resolve context, compile templates, render results
-    5. Event Firing: Template lifecycle events for modification and monitoring
-    6. Caching: Store compiled templates and rendered results for performance
-
-    INTEGRATION POINTS:
-    - Agent Integration: Automatic registration during agent initialization
-    - Message Rendering: Context resolution for message template parts
-    - Tool Execution: Template rendering for tool parameters
-    - Component System: Event-based template modification by components
-    - Configuration System: Template directory and security configuration
+    It layers global/context-provider data, exposes sync helpers, and fires
+    AgentEvents around render operations. ``examples/templates/render_template.py``
+    shows basic inline usage without relying on file discovery.
     """
 
     def __init__(
@@ -382,57 +162,7 @@ class TemplateManager(AgentComponent):
         enable_file_templates: bool = True,
         use_sandbox: bool = True,
     ):
-        """Initialize TemplateManager with configurable template sources and security.
-
-        PURPOSE: Create a new template manager instance with specified template
-        discovery strategy and security configuration.
-
-        INITIALIZATION PROCESS:
-        1. Component Setup: Initialize AgentComponent base class and event router
-        2. Storage Configuration: Set up file-based template loading if enabled
-        3. Environment Creation: Create Jinja2 environment with security settings
-        4. Context System: Initialize context resolver and provider registry
-        5. Template Registry: Create local registry with global fallback
-        6. Cache Setup: Initialize caching systems for performance
-
-        Args:
-            prompts_dir: Optional explicit prompts directory path for template
-                         discovery. If provided, this directory takes highest
-                         priority in template loading.
-            enable_file_templates: Whether to enable file-based template loading
-                                  from multiple directories (default: True)
-            use_sandbox: Whether to use SandboxedEnvironment for security.
-                        Disabling may be necessary for advanced template features
-                        but reduces security (default: True)
-
-        SIDE EFFECTS:
-        - Initializes file storage chain if file templates enabled
-        - Creates Jinja2 environment with specified security settings
-        - Sets up context provider registry and resolver
-        - Initializes template registry with global fallback
-        - Configures caching systems for templates and context
-
-        PERFORMANCE IMPACT:
-        - File template discovery: 10-50ms during initialization
-        - Environment setup: 5-20ms for Jinja2 configuration
-        - Memory usage: ~1KB base + template cache storage
-        - Template compilation: 5-20ms per unique template (cached)
-
-        EXAMPLES:
-        ```python
-        # Default configuration (file templates + sandbox)
-        template_manager = TemplateManager()
-
-        # Custom template directory
-        template_manager = TemplateManager(prompts_dir=Path("/my/prompts"))
-
-        # Registry-only templates (no file access)
-        template_manager = TemplateManager(enable_file_templates=False)
-
-        # Advanced features with reduced security
-        template_manager = TemplateManager(use_sandbox=False)
-        ```
-        """
+        """Configure prompt directories, file access, and sandboxing behavior."""
         super().__init__()  # Initialize AgentComponent/EventRouter
         self._explicit_prompts_dir = prompts_dir
         self._context_providers: dict[str, Callable[[], Any]] = {}
@@ -807,7 +537,7 @@ class TemplateManager(AgentComponent):
 
         # Fire event if agent is available
         if hasattr(self, "_agent") and self._agent:
-            modified_result = self._agent.apply_sync(
+            modified_result = self._agent.events.apply_sync(
                 AgentEvents.TEMPLATE_COMPILE,
                 template=template,
                 context=resolved_context,
@@ -821,19 +551,7 @@ class TemplateManager(AgentComponent):
         return str(result)
 
     def render(self, template_str: str, context: dict[str, Any] | None = None) -> str:
-        """
-        Render a template string with the given context.
-
-        This is a convenience method that builds the full context
-        including dynamic providers.
-
-        Args:
-            template_str: Template string or reference
-            context: Template context variables
-
-        Returns:
-            Rendered template string
-        """
+        """Render a string template after layering provider context values."""
         context = context or {}
 
         # Add any dynamic context providers
@@ -960,7 +678,7 @@ class TemplateManager(AgentComponent):
 
                     # Emit context:provider:response event (modifiable)
                     if hasattr(self, "_agent") and self._agent:
-                        result = self._agent.apply_sync(
+                        result = self._agent.events.apply_sync(
                             AgentEvents.CONTEXT_PROVIDER_AFTER,
                             provider_name=key,
                             value=value,

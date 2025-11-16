@@ -53,7 +53,7 @@ class LLMCoordinator:
         """
         tool_definitions: list[ToolSignature] = []
 
-        tools_ctx: EventContext[Any, list[Tool]] = await self.agent.apply_typed(
+        tools_ctx: EventContext[Any, list[Tool]] = await self.agent.events.apply_typed(
             AgentEvents.TOOLS_PROVIDE,
             return_type=list,  # type: ignore[arg-type]
             output=self.agent.tools.as_list(),
@@ -64,7 +64,7 @@ class LLMCoordinator:
 
         if tools and len(tools) > 0:
             for tool in tools:
-                tool_ctx = await self.agent.apply_typed(
+                tool_ctx = await self.agent.events.apply_typed(
                     AgentEvents.TOOLS_GENERATE_SIGNATURE,
                     params_type=dict,  # type: ignore[arg-type]
                     return_type=ToolSignature,

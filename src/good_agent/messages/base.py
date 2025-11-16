@@ -348,7 +348,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
 
                 # Fire BEFORE event with content_parts (not yet rendered)
                 # Components can modify the parts before rendering
-                ctx = self.agent.apply_sync(
+                ctx = self.agent.events.apply_sync(
                     AgentEvents.MESSAGE_RENDER_BEFORE,
                     message=self,
                     mode=mode,

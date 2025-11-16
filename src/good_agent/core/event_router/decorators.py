@@ -41,35 +41,11 @@ def on(
     priority: int = 100,
     predicate: Callable[[EventContext], bool] | None = None,
 ) -> Callable[[F], F]:
-    """
-    Decorator to mark a method as an event handler for auto-registration.
+    """Attach event metadata used by EventRouter/Agent auto-registration.
 
-    This decorator doesn't create a wrapper - it just attaches metadata
-    to the original function for auto-registration during __post_init__.
-
-    IMPORTANT: All handlers MUST accept an EventContext as their first parameter
-    (after self for methods).
-
-    Args:
-        events: Event names to register for
-        priority: Handler priority (higher runs first)
-        predicate: Optional function to determine if handler should run
-
-    Example:
-        class MyRouter(EventRouter):
-            @on("process", priority=200)
-            def handler(self, ctx: EventContext) -> None:
-                return ctx.parameters["value"] * 2
-
-            @on("message:append")
-            async def async_handler(self, ctx: EventContext) -> None:
-                message = ctx.parameters.get('message')
-                await self.process_message(message)
-
-    Type Safety:
-        The decorator preserves the original method's type signature,
-        ensuring that type checkers can validate both the handler's
-        signature and its usage within the class.
+    Methods decorated with ``@on`` must accept an ``EventContext`` and will be
+    subscribed with the given priority/predicate. Usage is shown in
+    ``examples/events/basic_events.py``.
     """
 
     def decorator(fn: F) -> F:

@@ -16,11 +16,11 @@ class CustomResponse(BaseModel):
 
 
 class TestAddToolInvocationArbitraryResponse:
-    """Test add_tool_invocation with various response types."""
+    """Test tool_calls.record_invocation with various response types."""
 
     @pytest.mark.asyncio
-    async def test_add_tool_invocation_with_tool_response(self):
-        """Test add_tool_invocation with standard ToolResponse."""
+    async def test_record_invocation_with_tool_response(self):
+        """Test tool_calls.record_invocation with standard ToolResponse."""
         agent = Agent("Test agent")
         await agent.ready()  # Ensure agent is ready
 
@@ -33,7 +33,7 @@ class TestAddToolInvocationArbitraryResponse:
         )
 
         # Add tool invocation
-        agent.add_tool_invocation(
+        agent.tool_calls.record_invocation(
             tool="search", response=response, parameters={"query": "test"}
         )
 
@@ -55,12 +55,12 @@ class TestAddToolInvocationArbitraryResponse:
         assert tool_msg.tool_response and tool_msg.tool_response.success is True
 
     @pytest.mark.asyncio
-    async def test_add_tool_invocation_with_string_response(self):
-        """Test add_tool_invocation with a simple string response."""
+    async def test_record_invocation_with_string_response(self):
+        """Test tool_calls.record_invocation with a simple string response."""
         agent = Agent("Test agent")
 
         # Add tool invocation with string response
-        agent.add_tool_invocation(
+        agent.tool_calls.record_invocation(
             tool="calculator",
             response="42",  # Simple string response
             parameters={"expression": "40 + 2"},
@@ -78,14 +78,14 @@ class TestAddToolInvocationArbitraryResponse:
         assert tool_msg.tool_response and tool_msg.tool_response.error is None
 
     @pytest.mark.asyncio
-    async def test_add_tool_invocation_with_dict_response(self):
-        """Test add_tool_invocation with a dictionary response."""
+    async def test_record_invocation_with_dict_response(self):
+        """Test tool_calls.record_invocation with a dictionary response."""
         agent = Agent("Test agent")
 
         # Add tool invocation with dict response
         response_data = {"results": ["item1", "item2", "item3"], "total": 3, "page": 1}
 
-        agent.add_tool_invocation(
+        agent.tool_calls.record_invocation(
             tool="list_items",
             response=response_data,  # Dict response
             parameters={"page": 1, "limit": 10},
@@ -100,8 +100,8 @@ class TestAddToolInvocationArbitraryResponse:
         assert tool_msg.tool_response and tool_msg.tool_response.success is True
 
     @pytest.mark.asyncio
-    async def test_add_tool_invocation_with_pydantic_model_response(self):
-        """Test add_tool_invocation with a Pydantic model response."""
+    async def test_record_invocation_with_pydantic_model_response(self):
+        """Test tool_calls.record_invocation with a Pydantic model response."""
         agent = Agent("Test agent")
         await agent.ready()  # Ensure agent is ready
 
@@ -112,7 +112,7 @@ class TestAddToolInvocationArbitraryResponse:
             metadata={"timestamp": "2025-01-13T10:00:00Z"},
         )
 
-        agent.add_tool_invocation(
+        agent.tool_calls.record_invocation(
             tool="fetch_data",
             response=custom_response,  # Pydantic model response
             parameters={"source": "database"},
@@ -131,14 +131,14 @@ class TestAddToolInvocationArbitraryResponse:
         )
 
     @pytest.mark.asyncio
-    async def test_add_tool_invocation_with_list_response(self):
-        """Test add_tool_invocation with a list response."""
+    async def test_record_invocation_with_list_response(self):
+        """Test tool_calls.record_invocation with a list response."""
         agent = Agent("Test agent")
 
         # Add tool invocation with list response
         response_list = [1, 2, 3, 4, 5]
 
-        agent.add_tool_invocation(
+        agent.tool_calls.record_invocation(
             tool="get_numbers", response=response_list, parameters={"count": 5}
         )
 
@@ -149,12 +149,12 @@ class TestAddToolInvocationArbitraryResponse:
         assert "[1, 2, 3, 4, 5]" in tool_msg.content
 
     @pytest.mark.asyncio
-    async def test_add_tool_invocation_with_none_response(self):
-        """Test add_tool_invocation with None response."""
+    async def test_record_invocation_with_none_response(self):
+        """Test tool_calls.record_invocation with None response."""
         agent = Agent("Test agent")
 
         # Add tool invocation with None response
-        agent.add_tool_invocation(
+        agent.tool_calls.record_invocation(
             tool="void_function", response=None, parameters={"action": "delete"}
         )
 
@@ -166,8 +166,8 @@ class TestAddToolInvocationArbitraryResponse:
         assert "None" in tool_msg.content
 
     @pytest.mark.asyncio
-    async def test_add_tool_invocation_with_tool_instance(self):
-        """Test add_tool_invocation with Tool instance."""
+    async def test_record_invocation_with_tool_instance(self):
+        """Test tool_calls.record_invocation with Tool instance."""
 
         @tool
         def my_tool(input: str) -> str:
@@ -177,7 +177,7 @@ class TestAddToolInvocationArbitraryResponse:
         agent = Agent("Test agent")
 
         # Add tool invocation with Tool instance
-        agent.add_tool_invocation(
+        agent.tool_calls.record_invocation(
             tool=my_tool,  # Tool instance
             response="Processed: test",
             parameters={"input": "test"},
@@ -189,8 +189,8 @@ class TestAddToolInvocationArbitraryResponse:
         assert "Processed: test" in tool_msg.content
 
     @pytest.mark.asyncio
-    async def test_add_tool_invocation_with_callable(self):
-        """Test add_tool_invocation with regular callable."""
+    async def test_record_invocation_with_callable(self):
+        """Test tool_calls.record_invocation with regular callable."""
 
         def regular_function(x: int) -> int:
             """Double the input."""
@@ -199,7 +199,7 @@ class TestAddToolInvocationArbitraryResponse:
         agent = Agent("Test agent")
 
         # Add tool invocation with callable
-        agent.add_tool_invocation(
+        agent.tool_calls.record_invocation(
             tool=regular_function,  # Regular callable
             response=10,
             parameters={"x": 5},
@@ -211,8 +211,8 @@ class TestAddToolInvocationArbitraryResponse:
         assert "10" in tool_msg.content
 
     @pytest.mark.asyncio
-    async def test_add_tool_invocation_skip_assistant_message(self):
-        """Test add_tool_invocation with skip_assistant_message=True."""
+    async def test_record_invocation_skip_assistant_message(self):
+        """Test tool_calls.record_invocation with skip_assistant_message=True."""
         agent = Agent("Test agent")
 
         # First add an assistant message with tool call manually
@@ -229,7 +229,7 @@ class TestAddToolInvocationArbitraryResponse:
         agent.append(assistant_msg)
 
         # Now add tool invocation, skipping assistant message
-        agent.add_tool_invocation(
+        agent.tool_calls.record_invocation(
             tool="test_tool",
             response="Tool executed successfully",
             parameters={"param": "value"},
@@ -244,7 +244,7 @@ class TestAddToolInvocationArbitraryResponse:
         assert agent.tool[-1].tool_call_id == "test_call_123"
 
     @pytest.mark.asyncio
-    async def test_add_tool_invocation_preserves_tool_response_fields(self):
+    async def test_record_invocation_preserves_tool_response_fields(self):
         """Test that existing ToolResponse fields are preserved."""
         agent = Agent("Test agent")
 
@@ -259,7 +259,7 @@ class TestAddToolInvocationArbitraryResponse:
         )
 
         # Add with override tool name but preserve other fields
-        agent.add_tool_invocation(
+        agent.tool_calls.record_invocation(
             tool="override_tool",  # This should override tool_name
             response=original_response,
             tool_call_id="new_id",  # This should override tool_call_id
@@ -275,8 +275,8 @@ class TestAddToolInvocationArbitraryResponse:
         assert "Error: Original error" in tool_msg.content  # Error format preserved
 
     @pytest.mark.asyncio
-    async def test_add_tool_invocation_with_complex_object(self):
-        """Test add_tool_invocation with complex nested objects."""
+    async def test_record_invocation_with_complex_object(self):
+        """Test tool_calls.record_invocation with complex nested objects."""
         agent = Agent("Test agent")
 
         # Complex nested response
@@ -290,7 +290,7 @@ class TestAddToolInvocationArbitraryResponse:
             "metadata": {"timestamp": 1234567890, "version": "1.0.0"},
         }
 
-        agent.add_tool_invocation(
+        agent.tool_calls.record_invocation(
             tool="get_user_data", response=complex_response, parameters={"user_id": 123}
         )
 

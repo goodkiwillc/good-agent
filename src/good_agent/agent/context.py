@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+import orjson
+from typing import TYPE_CHECKING, Any, Literal
+
+from ulid import ULID
 
 from good_agent.config_types import AGENT_CONFIG_KEYS
 from good_agent.events import AgentEvents
@@ -13,6 +16,8 @@ from good_agent.messages import (
     ToolMessage,
     UserMessage,
 )
+from good_agent.pool import AgentPool
+from good_agent.tools import ToolCall, ToolCallFunction, ToolResponse
 
 if TYPE_CHECKING:
     from good_agent.agent import Agent
@@ -184,3 +189,160 @@ class ContextManager:
         from good_agent.thread_context import ThreadContext
 
         return ThreadContext(self.agent, truncate_at)
+
+    def copy(self, include_messages: bool = True, **config: Any) -> "Agent":
+        """Clone the underlying agent with optional configuration overrides."""
+
+        copied = self.agent.__class__(**config)
+
+        if len(self.agent.system) > 0 and not include_messages:
+            copied.set_system_message(self.agent.system[0])
+
+        if include_messages:
+            for message in self.agent._messages:
+                msg_copy = message.model_copy()
+                msg_copy._set_agent(copied)
+                copied.append(msg_copy)
+
+        return copied
+
+    async def spawn(
+        self,
+        n: int | None = None,
+        prompts: list[str] | None = None,
+        **configuration: Any,
+    ) -> AgentPool:
+        """Spawn multiple forks as an :class:`AgentPool`."""
+
+        if prompts:
+            num_agents = len(prompts)
+        elif n:
+            num_agents = n
+        else:
+            raise ValueError("Either 'n' or 'prompts' must be provided")
+
+        agents = []
+        for i in range(num_agents):
+            forked = self.fork(**configuration)
+
+            if prompts and i < len(prompts):
+                forked.append(prompts[i])
+
+            agents.append(forked)
+
+        return AgentPool(agents)
+
+    def context_provider(self, name: str):
+        """Register an instance-specific context provider via TemplateManager."""
+
+        return self.agent.template.context_provider(name)
+
+    @staticmethod
+    def context_providers(name: str):
+        """Register a global context provider."""
+
+        from good_agent.components.template_manager import global_context_provider
+
+        return global_context_provider(name)
+
+    async def merge(
+        self,
+        *agents: "Agent",
+        method: Literal["tool_call", "interleaved"] = "tool_call",
+        **kwargs: Any,
+    ) -> None:
+        """Merge multiple agents into the parent agent's thread."""
+
+        if not agents:
+            return
+
+        self.agent.do(
+            AgentEvents.AGENT_MERGE_AFTER,
+            target=self.agent,
+            sources=list(agents),
+            strategy=method,
+            result=None,
+        )
+
+        if method == "tool_call":
+            await self._merge_as_tool_calls(*agents, **kwargs)
+        elif method == "interleaved":
+            raise NotImplementedError("Interleaved merge strategy not yet implemented")
+        else:
+            raise ValueError(f"Unknown merge method: {method}")
+
+        self.agent._update_version()
+
+        self.agent.do(
+            AgentEvents.AGENT_MERGE_AFTER,
+            target=self.agent,
+            sources=list(agents),
+            strategy=method,
+            result="success",
+        )
+
+    async def _merge_as_tool_calls(self, *agents: "Agent", **kwargs: Any) -> None:
+        """Helper that converts child outputs into tool calls on the parent."""
+
+        tool_calls: list[ToolCall] = []
+        tool_messages = []
+
+        for i, agent in enumerate(agents):
+            last_assistant = None
+            for msg in reversed(agent.messages):
+                match msg:
+                    case AssistantMessage() as assistant_msg:
+                        last_assistant = assistant_msg
+                        break
+                    case _:
+                        continue
+
+            if last_assistant is None:
+                continue
+
+            tool_call_id = f"merge_{ULID()}"
+            tool_name = f"agent_merge_{i}"
+            arguments = {
+                "agent_id": str(agent.id),
+                "content": last_assistant.content,
+                "reasoning": getattr(last_assistant, "reasoning", None),
+                "citations": getattr(last_assistant, "citations", None),
+            }
+
+            tool_call = ToolCall(
+                id=tool_call_id,
+                type="function",
+                function=ToolCallFunction(
+                    name=tool_name,
+                    arguments=orjson.dumps(arguments).decode("utf-8"),
+                ),
+            )
+            tool_calls.append(tool_call)
+
+            tool_response = ToolResponse(
+                tool_name=tool_name,
+                tool_call_id=tool_call_id,
+                response=last_assistant.content,
+                parameters=arguments,
+                success=True,
+                error=None,
+            )
+
+            tool_message = self.agent.model.create_message(
+                tool_call_id=tool_call_id,
+                tool_name=tool_name,
+                tool_response=tool_response,
+                role="tool",
+            )
+            tool_messages.append(tool_message)
+
+        if tool_calls:
+            assistant_message = self.agent.model.create_message(
+                content="Merging results from sub-agents",
+                tool_calls=tool_calls,
+                role="assistant",
+            )
+            self.agent.append(assistant_message)
+
+            for tool_message in tool_messages:
+                self.agent.append(tool_message)
