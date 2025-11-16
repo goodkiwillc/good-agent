@@ -7,12 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Phase 4: API Improvements - Message API Consolidation (Started 2025-11-15)
+### Phase 4: API Improvements (Started 2025-11-15)
 
 **Status**: 🚧 In Progress
 **Branch**: `refactor/phase-4-api-improvements`
 
-#### Deprecated
+#### Task 1: Message API Consolidation (Completed 2025-11-15)
+
+##### Deprecated
 
 - **`Agent.add_tool_response()` method** (Removal planned for v1.0.0)
   - Use `agent.append(content, role="tool", tool_call_id=...)` instead
@@ -23,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Internal method also deprecated for consistency
   - Forwards to `append()` with deprecation warning
 
-#### Migration Guide
+##### Migration Guide
 
 **Old pattern:**
 ```python
@@ -37,7 +39,7 @@ agent.add_tool_response("result", tool_call_id="123", tool_name="search")
 agent.append("result", role="tool", tool_call_id="123", tool_name="search")
 ```
 
-#### Rationale
+##### Rationale
 
 This consolidation reduces the Agent API surface from 74 to 72 public methods (target: <30) and provides a clearer, more consistent interface:
 
@@ -46,11 +48,41 @@ This consolidation reduces the Agent API surface from 74 to 72 public methods (t
   1. `append()` for 90% of use cases (all message types)
   2. `messages.append()` for advanced control (10% of cases)
 
-#### Technical Details
+##### Technical Details
 
 - **Breaking Changes**: None (backward compatible via deprecation)
 - **Test Coverage**: All tests updated to use new pattern
 - **Documentation**: Deprecation notices added with migration examples
+
+#### Task 2: Clarified call() vs execute() Documentation (Completed 2025-11-15)
+
+##### Changed
+
+- **Improved `Agent.call()` docstring** (`src/good_agent/agent/core.py:1250`)
+  - Added clear "Use call() when" vs "Use execute() instead when" guidance
+  - Expanded examples showing simple conversation, structured output, and continuation
+  - Clarified automatic tool execution behavior and `auto_execute_tools` parameter
+  - Cross-referenced `execute()` method for streaming use cases
+
+- **Improved `Agent.execute()` docstring** (`src/good_agent/agent/core.py:1351`)
+  - Added clear "Use execute() when" vs "Use call() instead when" guidance
+  - Expanded examples showing basic streaming, chat UI building, and custom tool approval
+  - Clarified iteration behavior, message yielding order, and `max_iterations` limit
+  - Cross-referenced `call()` method for simple request-response cases
+
+##### Rationale
+
+Developers frequently asked when to use `call()` vs `execute()`, indicating documentation gap. These improvements provide:
+
+- **Clear decision criteria**: Explicit guidance on which method to use for different scenarios
+- **Practical examples**: Real-world use cases (chat UIs, tool approval, streaming)
+- **Bidirectional references**: Each method points to the other with clear context
+
+##### Technical Details
+
+- **Breaking Changes**: None (documentation-only changes)
+- **Test Coverage**: All 403 agent tests passing (100%)
+- **API Changes**: No behavioral changes, only improved documentation
 
 ### Phase 1: Template Consolidation (Completed 2025-11-15)
 
