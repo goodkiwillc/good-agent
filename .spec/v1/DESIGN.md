@@ -504,6 +504,39 @@ async with (
 
 ```
 
+## Concurrency: AgentPool
+```python
+from good_agent.pool import AgentPool
+from good_agent import Agent
+
+pool = AgentPool([Agent("You help.") for _ in range(3)])
+# Distribute work: pool[i].call(...)
+```
+
+## Components: hooks, suites, and shared state
+```python
+from good_agent import Agent, CitationManager, TaskManager
+
+# Components can modify messages/tool calls and maintain shared state
+cites = CitationManager()           # maps URLs -> indices; presents [!CITE_{x}!] to LLM
+tasks = TaskManager()               # exposes todo tools and renders task state into context
+
+async with Agent("Research with citations and todos.", extensions=[cites, tasks]) as agent:
+    # Use component tools directly via invoke
+    await agent.invoke("create_list", name="plan", items=["search", "summarize"])
+    agent.append("Research Python pattern matching; cite sources.")
+    await agent.call()
+```
+
+### Component “suites” of tools (e.g., AgentSearch)
+```python
+from good_agent import Agent, AgentSearch
+
+async with Agent("Use search tools where needed.", extensions=[AgentSearch()]) as agent:
+    await agent.tools["search"](_agent=agent, query="vector databases", limit=5)
+    await agent.tools["trending_topics"](_agent=agent)
+```
+
 
 ## Rich templating and context providers
 ```python
