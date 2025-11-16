@@ -1415,65 +1415,39 @@ Implementation details:
 
 Decision: Keep `add_tool_invocation()` and `add_tool_invocations()` as they serve a different purpose (recording external tool executions, creating both assistant + tool messages)
 
-### 2. [ ] **Clarify call() vs execute()** - LOW RISK
-- Files: `agent/core.py`
-- Details:
-  1. **Week 8, Day 3: Improve documentation**
-     ```python
-     async def call(self, prompt: str | None = None) -> AssistantMessage:
-         """Get single response from LLM.
+### 2. [x] **Clarify call() vs execute()** - COMPLETE ✅
+**COMPLETED: 2025-11-15 (Commit: 0807ffb)**
 
-         Adds prompt as user message (if provided), calls LLM, automatically
-         executes any tool calls, and returns final assistant response.
+- Files: `agent/core.py`, `CHANGELOG.md`
+- **Implementation Details**:
+  1. **Improved call() docstring** (`core.py:1250`)
+     - Added "Use call() when" vs "Use execute() instead when" decision criteria
+     - Expanded examples: simple conversation, structured output, continuation
+     - Clarified auto_execute_tools parameter behavior
+     - Cross-referenced execute() method
 
-         For step-by-step control over execution, use execute() instead.
+  2. **Improved execute() docstring** (`core.py:1351`)
+     - Added "Use execute() when" vs "Use call() instead when" decision criteria
+     - Expanded examples: streaming, chat UI building, custom tool approval
+     - Clarified iteration behavior, message order, max_iterations limit
+     - Cross-referenced call() method
 
-         Args:
-             prompt: User message to add before calling LLM. If None,
-                 calls LLM with existing messages.
+  3. **Decision on renaming: DECLINED**
+     - User chose to keep current method names (call/execute)
+     - Documentation improvements deemed sufficient for clarity
+     - Avoids breaking changes and migration overhead
+     - Conservative approach maintains backward compatibility
 
-         Returns:
-             Final assistant message after all tool calls complete.
+  4. **CHANGELOG.md updated**
+     - Added Task 2 section documenting improvements
+     - Rationale: Developers frequently confused about which method to use
+     - Technical details: No breaking changes, documentation-only
 
-         Example:
-             >>> response = await agent.call("What's the weather?")
-             >>> print(response.content)
-
-         See Also:
-             execute() - For streaming or custom tool execution
-         """
-
-     async def execute(self) -> AsyncIterator[Message]:
-         """Execute agent loop with full control over each step.
-
-         Yields each message (assistant, tool) as it's created. Use for
-         streaming or when you need custom tool execution logic.
-
-         Args:
-             None - operates on current message list
-
-         Yields:
-             Each message as it's created during execution.
-
-         Example:
-             >>> async for msg in agent.execute():
-             ...     print(f"{msg.role}: {msg.content}")
-
-         See Also:
-             call() - For simple single-response interaction
-         """
-     ```
-
-  2. **Optional: Consider renaming** (if user approves)
-     - `call()` → `chat()` (more conversational)
-     - `execute()` → `run()` or `stream()` (clearer intent)
-     - **Decision Point**: Breaking change, requires user approval
-
-  3. Update all examples and tests
-
+- **Test Results**: All 403 agent tests passing (100%)
+- **Breaking Changes**: None
 - Complexity: Low
-- Dependencies: Phase 2 complete
-- Success Criteria: Clear documentation, no confusion about use cases
+- Dependencies: Phase 2 complete ✅
+- Success Criteria: Clear documentation, no confusion about use cases ✅
 
 ### 3. [ ] **Reduce Agent Public API Surface** - MEDIUM RISK
 - Files: `agent/core.py`
@@ -2597,12 +2571,12 @@ No active blockers at start. Potential blockers:
 
 **Phase 4: API Improvements (Weeks 8-9)** - IN PROGRESS 🚧
 - [x] Week 8: Consolidate message operations ✅ (commit debc772)
-- [ ] Week 8: Clarify call() vs execute()
+- [x] Week 8: Clarify call() vs execute() ✅ (commit 0807ffb)
 - [ ] Week 8: Reduce Agent public API surface
 - [ ] Week 9: Standardize property vs method usage
 - [ ] Document Phase 4 changes
-- [x] Get user approval for API changes ✅ (Task 1 approved)
-- [x] Run full test suite ✅ (1382/1395 passing - 99.1%)
+- [x] Get user approval for API changes ✅ (Task 1 approved, Task 2 renaming declined)
+- [x] Run full test suite ✅ (403 agent tests passing - 100%)
 
 **Phase 5: Testing & Quality (Weeks 10-11)**
 - [ ] Week 10: Consolidate agent tests (32 → 10)
@@ -2837,6 +2811,40 @@ No active blockers at start. Potential blockers:
 - **Blockers**: None
 - **Next Steps**:
   - Phase 4 Task 2: Clarify call() vs execute() (LOW RISK, 1 day)
+  - Phase 4 Task 3: Reduce Agent Public API Surface (MEDIUM RISK, 2 days)
+  - Phase 4 Task 4: Standardize Property vs Method Usage (LOW RISK, 1 day)
+  - Phase 4 Task 5: Document Phase 4 Changes (LOW RISK, 1 day)
+
+#### Session 6 - 2025-11-15 - Phase 4 Task 2: call() vs execute() Documentation (COMPLETE)
+- **Completed**:
+  - **Phase 4 Task 2: Clarified call() vs execute() Documentation** ✅ COMPLETE
+    - Improved Agent.call() docstring (core.py:1250)
+      - Added "Use call() when" vs "Use execute() instead when" decision criteria
+      - Expanded examples: simple conversation, structured output, continuation
+      - Clarified auto_execute_tools parameter behavior
+      - Cross-referenced execute() method
+    - Improved Agent.execute() docstring (core.py:1351)
+      - Added "Use execute() when" vs "Use call() instead when" decision criteria
+      - Expanded examples: basic streaming, chat UI building, custom tool approval
+      - Clarified iteration behavior, message order, max_iterations limit
+      - Cross-referenced call() method
+    - Updated CHANGELOG.md with Task 2 completion
+    - Commit: 0807ffb
+    - Test suite: All 403 agent tests passing (100% pass rate)
+- **Decisions Made**:
+  - **Declined method renaming** (call → chat, execute → stream)
+    - User chose to keep current method names (call/execute)
+    - Documentation improvements deemed sufficient for clarity
+    - Avoids breaking changes and migration overhead
+    - Conservative approach maintains backward compatibility
+  - Documentation-only approach for Task 2 (no code changes beyond docstrings)
+- **API Changes**:
+  - No behavioral changes
+  - No API surface changes
+  - Documentation improvements only
+- **Issues Found**: None
+- **Blockers**: None
+- **Next Steps**:
   - Phase 4 Task 3: Reduce Agent Public API Surface (MEDIUM RISK, 2 days)
   - Phase 4 Task 4: Standardize Property vs Method Usage (LOW RISK, 1 day)
   - Phase 4 Task 5: Document Phase 4 Changes (LOW RISK, 1 day)
