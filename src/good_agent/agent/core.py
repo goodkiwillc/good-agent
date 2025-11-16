@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import logging
+import warnings
 import weakref
 from collections.abc import (
     AsyncIterator,
@@ -1152,9 +1153,40 @@ class Agent(EventRouter):
         tool_name: str | None = None,
         **kwargs,
     ) -> None:
-        """Add a tool response message to the conversation"""
-        self._message_manager.add_tool_response(
-            content, tool_call_id, tool_name=tool_name, **kwargs
+        """Add a tool response message to the conversation.
+
+        .. deprecated:: 0.3.0
+            Use ``append(content, role="tool", tool_call_id=...)`` instead.
+            This method will be removed in version 1.0.0.
+
+        Args:
+            content: Tool response content
+            tool_call_id: ID of the tool call this responds to
+            tool_name: Optional name of the tool
+            **kwargs: Additional message attributes
+
+        Example:
+            .. code-block:: python
+
+                # Deprecated
+                agent.add_tool_response("result", tool_call_id="123")
+
+                # Use instead
+                agent.append("result", role="tool", tool_call_id="123")
+        """
+        warnings.warn(
+            "add_tool_response() is deprecated. "
+            "Use append(content, role='tool', tool_call_id=...) instead. "
+            "This method will be removed in version 1.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.append(
+            content,
+            role="tool",
+            tool_call_id=tool_call_id,
+            tool_name=tool_name,
+            **kwargs,
         )
 
     @overload

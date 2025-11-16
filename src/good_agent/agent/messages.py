@@ -7,6 +7,7 @@ replacing, filtering, and system message management.
 from __future__ import annotations
 
 import logging
+import warnings
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from good_agent.core.event_router import EventContext
@@ -310,24 +311,28 @@ class MessageManager:
     ) -> None:
         """Add a tool response message to the conversation.
 
+        .. deprecated:: 0.3.0
+            Use ``append(content, role="tool", tool_call_id=...)`` instead.
+            This method will be removed in version 1.0.0.
+
         Args:
             content: The tool response content
             tool_call_id: ID of the tool call this responds to
             tool_name: Name of the tool (optional)
             **kwargs: Additional message attributes
         """
-        # Create tool message
-        tool_msg = self.agent.model.create_message(
-            content=content,
+        warnings.warn(
+            "add_tool_response() is deprecated. "
+            "Use append(content, role='tool', tool_call_id=...) instead. "
+            "This method will be removed in version 1.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        # Forward to append for consistency
+        self.append(
+            content,
+            role="tool",
             tool_call_id=tool_call_id,
             tool_name=tool_name,
-            role="tool",
             **kwargs,
         )
-
-        # Store message context if provided
-        if context := kwargs.get("context"):
-            tool_msg._context = context
-
-        # Add to message list using centralized method
-        self._append_message(tool_msg)
