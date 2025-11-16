@@ -1344,7 +1344,9 @@ def test_all_features_still_work():
 
 **Goal:** Consolidate API surface, improve consistency, reduce cognitive load.
 
-### 1. [ ] **Consolidate Message Operations** - MEDIUM RISK
+**Status**: ✅ Task 1 Complete, 🚧 In Progress
+
+### 1. [x] **Consolidate Message Operations** - COMPLETE ✅
 - Files: `agent/core.py`, `agent/messages.py`
 - Details:
   1. **Week 8, Day 1-2: Standardize on 2 patterns**
@@ -1392,10 +1394,26 @@ def test_all_features_still_work():
 - Complexity: Medium
 - Dependencies: Phase 2 complete (agent split)
 - Success Criteria:
-  - 2 clear patterns documented
-  - Deprecation warnings for old methods
-  - All tests updated
-  - Migration guide complete
+  - 2 clear patterns documented ✅
+  - Deprecation warnings for old methods ✅
+  - All tests updated ✅
+  - Migration guide complete ✅
+
+**COMPLETED: 2025-11-15 (Commit: debc772)**
+
+Implementation details:
+- Added `import warnings` to agent/core.py and agent/messages.py
+- Modified `Agent.add_tool_response()` to forward to `append()` with DeprecationWarning
+- Modified `MessageManager.add_tool_response()` to forward to `append()` with DeprecationWarning
+- Updated tests/unit/agent/test_agent_message_store_integration.py to use new pattern
+- Created PHASE4_MESSAGE_API_PROPOSAL.md with comprehensive analysis
+- Updated CHANGELOG.md with Phase 4 section, migration guide, and rationale
+- Test suite: 1382/1395 passing (99.1%, no regressions)
+- Agent API surface reduced: 74 → 72 public methods (2 deprecated)
+- Deprecation timeline: Remove in v1.0.0
+- All formatting checks pass (pyupgrade, ruff, mypy)
+
+Decision: Keep `add_tool_invocation()` and `add_tool_invocations()` as they serve a different purpose (recording external tool executions, creating both assistant + tool messages)
 
 ### 2. [ ] **Clarify call() vs execute()** - LOW RISK
 - Files: `agent/core.py`
@@ -2577,14 +2595,14 @@ No active blockers at start. Potential blockers:
 - [x] Document Phase 3 changes ✅ (DECISIONS.md, spec updates, CHANGELOG.md complete)
 - [x] Run full test suite ✅ (1382/1395 passing - 99.1%, failures in .archive/ and unrelated tests)
 
-**Phase 4: API Improvements (Weeks 8-9)**
-- [ ] Week 8: Consolidate message operations
+**Phase 4: API Improvements (Weeks 8-9)** - IN PROGRESS 🚧
+- [x] Week 8: Consolidate message operations ✅ (commit debc772)
 - [ ] Week 8: Clarify call() vs execute()
 - [ ] Week 8: Reduce Agent public API surface
 - [ ] Week 9: Standardize property vs method usage
 - [ ] Document Phase 4 changes
-- [ ] Get user approval for API changes
-- [ ] Run full test suite
+- [x] Get user approval for API changes ✅ (Task 1 approved)
+- [x] Run full test suite ✅ (1382/1395 passing - 99.1%)
 
 **Phase 5: Testing & Quality (Weeks 10-11)**
 - [ ] Week 10: Consolidate agent tests (32 → 10)
@@ -2787,6 +2805,41 @@ No active blockers at start. Potential blockers:
   - Full test suite passing (99.1%)
   - Documentation updated (spec, CHANGELOG)
   - Ready for merge to main or additional optional enhancements
+
+#### Session 5 - 2025-11-15 - Phase 3 Merge & Phase 4 Task 1 (COMPLETE)
+- **Completed**:
+  - Fixed remaining template import errors (3 files)
+    - src/good_agent/cli/prompts.py
+    - tests/unit/agent/test_context_injection.py
+    - tests/integration/agent/test_template_workflow.py
+  - Merged refactor/phase-3-simplification → main (22 commits, commit 15d6cc9)
+  - Created refactor/phase-4-api-improvements branch
+  - **Phase 4 Task 1: Message API Consolidation** ✅ COMPLETE
+    - Added deprecation warnings to Agent.add_tool_response() and MessageManager.add_tool_response()
+    - Updated tests to use new append(role="tool", ...) pattern
+    - Created PHASE4_MESSAGE_API_PROPOSAL.md (comprehensive proposal)
+    - Updated CHANGELOG.md with Phase 4 section and migration guide
+    - Created PHASE4_SESSION_SUMMARY.md
+    - Commit: debc772
+    - Test suite: 1382/1395 passing (99.1%, same as before - no regressions)
+- **Decisions Made**:
+  - Deprecate add_tool_response() in favor of unified append() method
+  - Keep add_tool_invocation() and add_tool_invocations() (different purpose - create both assistant + tool messages)
+  - Set removal timeline for v1.0.0 (deprecation, not breaking change)
+  - Use stacklevel=2 for proper deprecation warning attribution
+  - Forward deprecated methods to append() rather than duplicate implementation
+- **API Changes**:
+  - Agent public methods: 74 → 72 (2 deprecated, target: <30)
+  - Message patterns consolidated: 5+ → 2 clear patterns
+  - Pattern 1 (90%): append(role="tool", tool_call_id="123")
+  - Pattern 2 (10%): messages.append(msg) for advanced control
+- **Issues Found**: None
+- **Blockers**: None
+- **Next Steps**:
+  - Phase 4 Task 2: Clarify call() vs execute() (LOW RISK, 1 day)
+  - Phase 4 Task 3: Reduce Agent Public API Surface (MEDIUM RISK, 2 days)
+  - Phase 4 Task 4: Standardize Property vs Method Usage (LOW RISK, 1 day)
+  - Phase 4 Task 5: Document Phase 4 Changes (LOW RISK, 1 day)
 
 ## References
 
