@@ -46,7 +46,6 @@ if TYPE_CHECKING:
         CitationPatterns,
         CitationTransformer,
         # FetchStats,
-        # LogfireExtension,
         Paragraph,
         # SearchFetchResult,
         TaskManager,
@@ -160,7 +159,6 @@ _LAZY_IMPORTS = {
     "CitationPatterns": "extensions",
     "Paragraph": "extensions",
     # Extensions - Other
-    "LogfireExtension": "extensions",
     "AgentSearch": "extensions",
     "TaskManager": "extensions",
     "ToDoItem": "extensions",
@@ -313,7 +311,6 @@ __all__ = [
     "CitationPatterns",
     "Paragraph",
     # Extensions - Other
-    # "LogfireExtension",
     "AgentSearch",
     "TaskManager",
     "ToDoItem",

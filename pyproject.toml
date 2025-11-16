@@ -14,7 +14,6 @@ dependencies = [
     "lxml-html-clean>=0.4.3",
     "markdown>=3.9",
     "litellm>=1.50.0",
-    "logfire>=1.0.0",
     "mcp>=1.0.0",
     "rich>=13.7.0",
     "numpy>=2.3.4",
@@ -29,6 +28,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "coverage>=7.11.3",
     "good-dev>=0.1.1",
     "ipykernel>=7.1.0",
     "mypy>=1.18.2",
@@ -51,11 +51,11 @@ pythonpath = ["."]
 # Prevent conftest.py import conflicts by using importlib
 # Force namespace packages to avoid module name conflicts
 # Skip prefect_harness tests by default (use -m prefect_harness to run them)
-addopts = "--import-mode=importlib --strict-config --confcutdir=. -m 'not slow'"
+addopts = "--import-mode=importlib --strict-config --confcutdir=. --ignore-glob='**/.archive/**' -m 'not slow'"
 # Test discovery patterns
 python_files = ["test_*.py", "*_test.py"]
 # Directories to skip during collection
-norecursedirs = ["*.egg", ".eggs", "dist", "build", "docs", ".tox", ".git", "__pycache__", ".venv", "node_modules"]
+norecursedirs = ["*.egg", ".eggs", "dist", "build", "docs", ".tox", ".git", "__pycache__", ".venv", "node_modules", ".archive"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 log_cli = true

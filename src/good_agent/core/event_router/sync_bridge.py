@@ -123,6 +123,16 @@ class SyncBridge:
         self._sync_request_queue: asyncio.Queue | None = None
         self._sync_worker_task: asyncio.Task | None = None
 
+    def track_task(self, task: asyncio.Task) -> None:
+        """Track externally created asyncio tasks for coordinated cleanup."""
+        with self._lock:
+            self._tasks.add(task)
+
+        def _cleanup(done: asyncio.Task) -> None:
+            self._tasks.discard(done)
+
+        task.add_done_callback(_cleanup)
+
     def start_event_loop(self) -> None:
         """Start background event loop for async handlers.
 

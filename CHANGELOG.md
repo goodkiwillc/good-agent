@@ -171,6 +171,23 @@ Developers frequently asked when to use `call()` vs `execute()`, indicating docu
   - Type-safe event application with generics
   - Background task and future tracking with cleanup
 
+#### Task: Reliability + Migration Completion (Completed 2025-11-16)
+
+- **Removed the legacy monolith** – deleted `src/good_agent/core/event_router.py` and `.bak`; the package version is now the single source of truth for all imports.
+- **Production wiring of HandlerRegistry + SyncBridge** – EventRouter now instantiates a dedicated `_handler_registry` (RLock protected) and delegates sync/async bridging to `SyncBridge`, removing bespoke `_events`, `_tasks`, `_thread_pool`, and `_event_loop` state.
+- **Thread-safety guarantees now enforced** – handler registration, broadcast fan-out, fire-and-forget execution, and sync bridging are all protected by HandlerRegistry/SyncBridge locks. `_events` remains available as a read-only compatibility view of the registry.
+- **Docstrings + examples trimmed** – EventRouter docstrings are concise (≤15 lines) and link to the new `examples/event_router/basic_usage.py` and `examples/event_router/async_sync_bridge.py` snippets.
+- **Comprehensive reliability test suite** – added `tests/unit/event_router/` covering:
+  - Registration & lifecycle dispatch
+  - Error handling (`ApplyInterrupt`, predicate failures)
+  - Sync bridge (sync→async, contextvars, `do` cleanup)
+  - Thread-safety (concurrent registration/emit, mixed workloads)
+  - Race conditions (dynamic registration, nested emit)
+  - Stress/perf (fire-and-forget bursts)
+  - Backward compatibility (imports, auto-registration)
+- **Downstream regression verification** – full `tests/unit/components` and `tests/unit/agent` suites now run cleanly on top of the new router implementation (464 tests).
+- **Lint + tooling** – `uv run ruff check .` is clean; pytest marker configuration gained an explicit `slow` entry to avoid warnings.
+
 - **Type Safety**:
   - Full mypy validation passing for all modules
   - Generic EventContext[T_Parameters, T_Return] for type-safe handlers
