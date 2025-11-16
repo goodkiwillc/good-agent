@@ -1247,24 +1247,62 @@ class Agent(EventRouter):
         auto_execute_tools: bool = True,
         **kwargs: Any,
     ) -> AssistantMessage | AssistantMessageStructuredOutput:
-        """Call the agent and get a response.
+        """Get a single response from the LLM with automatic tool execution.
 
-        Appends optional content, calls LLM, and automatically executes tools if enabled.
+        This is the high-level convenience method for conversational interactions.
+        It adds your message (if provided), calls the LLM, automatically executes
+        any tool calls, and returns the final assistant response.
+
+        **Use call() when:**
+        - You want a simple request-response interaction
+        - You want automatic tool execution (default behavior)
+        - You don't need to see intermediate tool responses
+        - You want structured output extraction
+
+        **Use execute() instead when:**
+        - You need streaming or step-by-step control
+        - You want to see each message as it's generated
+        - You need custom tool execution logic
+        - You're building a chat UI that shows real-time updates
 
         Args:
-            *content_parts: Message content to append before calling
+            *content_parts: Message content to append before calling (optional).
+                If not provided, calls LLM with existing message history.
             role: Message role (default: "user")
-            response_model: Pydantic model for structured output extraction
-            context: Template rendering context variables
-            auto_execute_tools: Auto-execute tool calls (default: True)
+            response_model: Pydantic model for structured output extraction.
+                When provided, disables auto_execute_tools.
+            context: Template rendering context variables for message content
+            auto_execute_tools: Automatically execute tool calls in a loop
+                until completion (default: True). Set to False for single
+                LLM call without tool execution.
             **kwargs: Additional model parameters (temperature, max_tokens, etc.)
 
         Returns:
-            AssistantMessage or AssistantMessageStructuredOutput[T_Output]
+            Final AssistantMessage after all tool calls complete, or
+            AssistantMessageStructuredOutput[T_Output] if response_model provided
 
         Example:
-            >>> response = await agent.call("What's the weather?")
-            >>> weather = await agent.call("Weather?", response_model=WeatherInfo)
+            Simple conversation:
+            >>> response = await agent.call("What's the weather in Paris?")
+            >>> print(response.content)
+            "The weather in Paris is currently 72°F and sunny."
+
+            Structured output:
+            >>> from pydantic import BaseModel
+            >>> class WeatherInfo(BaseModel):
+            ...     temperature: float
+            ...     condition: str
+            >>> weather = await agent.call(
+            ...     "What's the weather?",
+            ...     response_model=WeatherInfo
+            ... )
+            >>> print(f"{weather.data.temperature}°F, {weather.data.condition}")
+
+            Continue existing conversation (no new message):
+            >>> response = await agent.call()  # Calls LLM with existing messages
+
+        See Also:
+            execute() - For streaming or custom tool execution control
         """
         # Append input message if provided
         if content_parts:
@@ -1310,23 +1348,70 @@ class Agent(EventRouter):
         max_iterations: int = 10,
         **kwargs: Any,
     ) -> AsyncIterator[Message]:
-        """Execute the agent and yield messages as they are generated.
+        """Execute agent loop with full control over each step.
 
-        Handles multi-turn conversations with automatic tool execution up to max_iterations.
-        Yields AssistantMessage and ToolMessage instances as they're generated.
+        This is the low-level method that gives you step-by-step control over
+        the agent's execution. It yields each message (assistant and tool) as
+        it's created, allowing you to stream responses, implement custom tool
+        execution logic, or build interactive UIs.
+
+        **Use execute() when:**
+        - You need streaming or real-time message updates
+        - You want to see each message as it's generated
+        - You're building a chat UI that displays messages incrementally
+        - You need custom tool execution or approval logic
+        - You want to process intermediate tool responses
+
+        **Use call() instead when:**
+        - You want a simple request-response interaction
+        - You don't need to see intermediate messages
+        - You just want the final result
+
+        The method handles multi-turn conversations with automatic tool execution
+        up to max_iterations. Each yielded message has an iteration index (msg.i)
+        indicating when it was created during execution.
 
         Args:
-            streaming: Enable streaming mode (default: False)
-            max_iterations: Max LLM-tool cycles to prevent infinite loops (default: 10)
+            streaming: Enable streaming mode for token-by-token updates
+                (default: False). When True, assistant messages will stream
+                their content as it's generated.
+            max_iterations: Maximum number of LLM-tool cycles to prevent
+                infinite loops (default: 10). If reached, execution stops
+                and yields the last message.
             **kwargs: Additional model parameters (temperature, max_tokens, etc.)
 
         Yields:
-            Message: AssistantMessage and ToolMessage instances in sequence
+            Message: Each message as it's generated - AssistantMessage when
+                the LLM responds, ToolMessage after each tool execution.
+                Messages are yielded in chronological order.
 
         Example:
+            Basic streaming:
             >>> async for message in agent.execute():
             ...     if isinstance(message, AssistantMessage):
             ...         print(f"Assistant: {message.content}")
+            ...     elif isinstance(message, ToolMessage):
+            ...         print(f"Tool {message.tool_name}: {message.content}")
+
+            Building a chat UI:
+            >>> agent.append("What's the weather in Paris and London?")
+            >>> async for msg in agent.execute():
+            ...     match msg:
+            ...         case AssistantMessage():
+            ...             ui.add_message("assistant", msg.content)
+            ...         case ToolMessage():
+            ...             ui.show_tool_call(msg.tool_name, msg.content)
+
+            Custom tool approval:
+            >>> agent.append("Delete all my files")
+            >>> async for msg in agent.execute():
+            ...     if isinstance(msg, AssistantMessage) and msg.tool_calls:
+            ...         for tool_call in msg.tool_calls:
+            ...             if not await user.approve(tool_call):
+            ...                 raise ValueError("Tool execution cancelled")
+
+        See Also:
+            call() - For simple request-response interaction
         """
         # Emit execute:start event
         self.do(AgentEvents.EXECUTE_BEFORE, agent=self, max_iterations=max_iterations)
