@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 from good_agent import Agent
 from good_agent.content import RenderMode
@@ -430,16 +432,21 @@ class TestMessageRenderEvent:
                 )
 
     @pytest.mark.asyncio
-    async def test_render_event_inline_citation_no_source_warning(self):
+    async def test_render_event_inline_citation_no_source_warning(self, caplog):
         """MESSAGE_RENDER_BEFORE handles inline citation without source."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
         await agent.ready()
 
-        with pytest.warns(
-            UserWarning, match=r"Citation \[1\] has no corresponding source"
-        ):
+        logger_name = "good_agent.extensions.citations.manager"
+        with caplog.at_level(logging.WARNING, logger=logger_name):
             agent.append("Text with inline citation [1] but no source.")
+
+        assert any(
+            "Citation [1] has no corresponding source" in record.message
+            for record in caplog.records
+            if record.name == logger_name
+        )
 
         message = agent.messages[-1]
 

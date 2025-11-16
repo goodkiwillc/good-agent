@@ -8,6 +8,7 @@ from pathlib import Path
 
 import typer
 import yaml
+from click.utils import get_text_stream
 
 # Agent templating components
 from good_agent.components.template_manager.index import (
@@ -19,14 +20,21 @@ from good_agent.components.template_manager.storage import (
     FileTemplateManager,
     TemplateValidator,
 )
-from rich import print as rprint
 from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.table import Table
 from rich.tree import Tree
 
-console = Console()
+
+def _get_console() -> Console:
+    """Return a Rich console bound to the current stdout stream."""
+    return Console(file=get_text_stream("stdout"))
+
+
+def rprint(*args, **kwargs):
+    """Proxy Rich print through a console tied to the active stdout."""
+    _get_console().print(*args, **kwargs)
 app = typer.Typer(help="Manage prompt templates")
 
 
@@ -299,6 +307,7 @@ def list_templates(
                 ", ".join(template.tags) if template.tags else "-",
                 template.last_modified.strftime("%Y-%m-%d %H:%M"),
             )
+        console = _get_console()
         console.print(table)
 
 
@@ -352,6 +361,7 @@ def scan(
             f"[/{status_colors.get(status, 'white')}]",
             version,
         )
+    console = _get_console()
     console.print(table)
 
     summary = {
@@ -473,6 +483,7 @@ def render(
         rprint(f"[green]✅ Rendered to {output}[/green]")
     else:
         syntax = Syntax(rendered, "markdown", theme="monokai", line_numbers=True)
+        console = _get_console()
         console.print(Panel(syntax, title=f"Rendered: {name}"))
 
 
@@ -549,6 +560,13 @@ def history(
     )
     snapshots = version_manager.list_snapshots(name)
 
+    def _format_timestamp(value: object) -> str:
+        if isinstance(value, datetime):
+            return value.strftime("%Y-%m-%d %H:%M")
+        if isinstance(value, str):
+            return value
+        return "-"
+
     rprint(
         Panel.fit(
             f"Template: [cyan]{name}[/cyan]\n"
@@ -567,19 +585,21 @@ def history(
         table.add_column("Reason")
 
         for entry in template.version_history[:limit]:
+            timestamp = _format_timestamp(entry.get("timestamp"))
             table.add_row(
                 entry.get("version", "-"),
                 entry.get("hash", "-")[:8],
-                entry.get("timestamp", "-"),
+                timestamp,
                 "-",
             )
         for snapshot in snapshots[:limit]:
             table.add_row(
                 "-",
                 snapshot["hash"][:8],
-                snapshot["timestamp"][:19],
+                _format_timestamp(snapshot.get("timestamp")),
                 snapshot.get("reason", "-"),
             )
+        console = _get_console()
         console.print(table)
     else:
         rprint("[yellow]No version history available.[/yellow]")

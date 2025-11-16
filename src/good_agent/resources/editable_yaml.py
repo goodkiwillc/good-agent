@@ -323,8 +323,8 @@ class EditableYAML(StatefulResource[Box]):
         except Exception as e:
             return f"ERROR: {e}"
 
-    @tool
-    async def set(
+    @tool(name="set")
+    async def _tool_set(
         self,
         path: str = Field(..., description="Dot-path to set"),
         value: Any = Field(
@@ -339,8 +339,12 @@ class EditableYAML(StatefulResource[Box]):
             None,
             description="Key used to merge array of objects when strategy=merge_array",
         ),
-        validate: bool = Field(
-            True, description="Run validator and rollback on failure"
+        run_validation: bool = Field(
+            True,
+            description="Run validator and rollback on failure",
+            alias="validate",
+            validation_alias="validate",
+            serialization_alias="validate",
         ),
         coerce_to_existing_type: bool = Field(
             True,
@@ -365,7 +369,7 @@ class EditableYAML(StatefulResource[Box]):
             ):
                 new_val = _coerce_like(current, new_val)
             _set_node(self.state, path, new_val, create_missing=create_missing)
-            if validate:
+            if run_validation:
                 ok, errors, extra = self._validate_data(self.state)
                 if not ok:
                     self.state = before
@@ -376,19 +380,45 @@ class EditableYAML(StatefulResource[Box]):
             self.state = before
             return f"ERROR: {e}"
 
+    async def set(
+        self,
+        path: str,
+        value: Any,
+        create_missing: bool = True,
+        strategy: str = "assign",
+        array_key: str | None = None,
+        validate: bool = True,
+        coerce_to_existing_type: bool = True,
+        reasoning: str | None = None,
+    ) -> str:
+        return await self._tool_set(
+            path=path,
+            value=value,
+            create_missing=create_missing,
+            strategy=strategy,
+            array_key=array_key,
+            run_validation=validate,
+            coerce_to_existing_type=coerce_to_existing_type,
+            reasoning=reasoning,
+        )
+
     @tool(name="delete")
-    async def delete(
+    async def _tool_delete(
         self,
         path: str = Field(..., description="Dot-path to delete"),
-        validate: bool = Field(
-            True, description="Run validator and rollback on failure"
+        run_validation: bool = Field(
+            True,
+            description="Run validator and rollback on failure",
+            alias="validate",
+            validation_alias="validate",
+            serialization_alias="validate",
         ),
         reasoning: str | None = None,
     ) -> str:
         before = copy.deepcopy(self.state)
         try:
             _del_node(self.state, path)
-            if validate:
+            if run_validation:
                 ok, errors, extra = self._validate_data(self.state)
                 if not ok:
                     self.state = before
@@ -399,14 +429,30 @@ class EditableYAML(StatefulResource[Box]):
             self.state = before
             return f"ERROR: {e}"
 
-    @tool
-    async def replace(
+    async def delete(
+        self,
+        path: str,
+        validate: bool = True,
+        reasoning: str | None = None,
+    ) -> str:
+        return await self._tool_delete(
+            path=path,
+            run_validation=validate,
+            reasoning=reasoning,
+        )
+
+    @tool(name="replace")
+    async def _tool_replace(
         self,
         pattern: str = Field(..., description="Regex pattern"),
         replacement: str = Field(..., description="Replacement text"),
         flags: str = Field("", description="Regex flags: i,m"),
-        validate: bool = Field(
-            True, description="Run validator and rollback on failure"
+        run_validation: bool = Field(
+            True,
+            description="Run validator and rollback on failure",
+            alias="validate",
+            validation_alias="validate",
+            serialization_alias="validate",
         ),
         reasoning: str | None = None,
     ) -> str:
@@ -420,7 +466,7 @@ class EditableYAML(StatefulResource[Box]):
                 fl |= re.MULTILINE
             candidate_text = re.sub(pattern, replacement, text, flags=fl)
             candidate_box = _parse_yaml_to_box(candidate_text)
-            if validate:
+            if run_validation:
                 ok, errors, extra = self._validate_data(candidate_box)
                 if not ok:
                     return "ERROR: " + "; ".join(errors)
@@ -431,8 +477,24 @@ class EditableYAML(StatefulResource[Box]):
             self.state = before
             return f"ERROR: {e}"
 
-    @tool
-    async def patch(
+    async def replace(
+        self,
+        pattern: str,
+        replacement: str,
+        flags: str = "",
+        validate: bool = True,
+        reasoning: str | None = None,
+    ) -> str:
+        return await self._tool_replace(
+            pattern=pattern,
+            replacement=replacement,
+            flags=flags,
+            run_validation=validate,
+            reasoning=reasoning,
+        )
+
+    @tool(name="patch")
+    async def _tool_patch(
         self,
         ops: list[dict[str, Any]] = Field(
             ...,
@@ -441,8 +503,12 @@ class EditableYAML(StatefulResource[Box]):
                 "merge_array, replace_array, move, copy, test. Fields: op, path, value?, strategy?, array_key?, from?"
             ),
         ),
-        validate: bool = Field(
-            True, description="Run validator and rollback on failure"
+        run_validation: bool = Field(
+            True,
+            description="Run validator and rollback on failure",
+            alias="validate",
+            validation_alias="validate",
+            serialization_alias="validate",
         ),
         coerce_to_existing_type: bool = Field(
             True,
@@ -541,7 +607,7 @@ class EditableYAML(StatefulResource[Box]):
                     }
                 applied.append({"index": i, "op": typ, "path": path})
 
-            if validate:
+            if run_validation:
                 ok, errors, extra = self._validate_data(working)
                 if not ok:
                     return {
@@ -561,6 +627,18 @@ class EditableYAML(StatefulResource[Box]):
         except Exception as e:
             self.state = before
             return {"ok": False, "errors": [str(e)], "yaml": _dump_box_to_yaml(before)}
+
+    async def patch(
+        self,
+        ops: list[dict[str, Any]],
+        validate: bool = True,
+        coerce_to_existing_type: bool = True,
+    ) -> dict:
+        return await self._tool_patch(
+            ops=ops,
+            run_validation=validate,
+            coerce_to_existing_type=coerce_to_existing_type,
+        )
 
     @tool
     async def validate(self) -> str:
