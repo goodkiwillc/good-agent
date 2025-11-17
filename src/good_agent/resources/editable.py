@@ -24,7 +24,6 @@ class EditableResource(StatefulResource[str]):
 
     def get_tools(self) -> dict[str, Any]:  # type: ignore[override]
         """Return editing tools as a dict (backwards compatibility)."""
-        from typing import Any
         from good_agent import tool
 
         @tool(name="read", description="Read the current content")  # type: ignore[arg-type,misc]

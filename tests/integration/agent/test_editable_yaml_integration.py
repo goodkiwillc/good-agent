@@ -37,7 +37,7 @@ async def test_resource_tools_edit_state_via_invoke():
 
     res = EditableYAML(initial, name="cfg")
     agent = Agent("You are a YAML editor")
-    await agent.ready()
+    await agent.initialize()
 
     async with res(agent):
         available = list(agent.tools.keys())
@@ -71,7 +71,7 @@ async def test_llm_tool_call_edits_resource_state():
 
     res = EditableYAML(initial, name="cfg")
     agent = Agent("You can edit YAML using tools.")
-    await agent.ready()
+    await agent.initialize()
 
     async with res(agent):
         mock_tool_call = MagicMock()

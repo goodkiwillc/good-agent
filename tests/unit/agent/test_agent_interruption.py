@@ -16,7 +16,7 @@ class TestAgentInterruption:
     async def test_agent_cleanup_on_keyboard_interrupt(self):
         """Test that Agent properly cleans up when interrupted."""
         agent = Agent("You are a test assistant")
-        await agent.ready()
+        await agent.initialize()
 
         # Track cleanup
         cleanup_called = False
@@ -48,7 +48,7 @@ class TestAgentInterruption:
     async def test_llm_streaming_interruption(self):
         """Test interruption during LLM streaming response."""
         agent = Agent("You are a test assistant")
-        await agent.ready()
+        await agent.initialize()
 
         chunks_received = []
 
@@ -102,7 +102,7 @@ class TestAgentInterruption:
                 raise
 
         agent = Agent("You are a test assistant", tools=[slow_tool])
-        await agent.ready()
+        await agent.initialize()
 
         # Mock LLM response with multiple tool calls
         from dataclasses import dataclass
@@ -209,7 +209,7 @@ class TestAgentInterruption:
                 raise
 
         agent = Agent("Test assistant", tools=[slow_nested_tool])
-        await agent.ready()
+        await agent.initialize()
 
         # Mock LLM to call the slow tool
         from dataclasses import dataclass
@@ -299,7 +299,7 @@ class TestAgentInterruption:
 
         # Create agent with the tool
         agent = Agent("Test assistant", tools=[slow_tool])
-        await agent.ready()
+        await agent.initialize()
 
         # Mock LLM to always call slow_tool
         from dataclasses import dataclass
@@ -383,7 +383,7 @@ class TestSignalHandling:
     async def test_sigint_during_agent_execution(self):
         """Test SIGINT handling during agent execution."""
         agent = Agent("Test assistant")
-        await agent.ready()
+        await agent.initialize()
 
         signal_received = asyncio.Event()
         task_cancelled = asyncio.Event()
@@ -468,7 +468,7 @@ class TestMemoryLeaksAndDeadlocks:
     async def test_no_task_leak_on_repeated_interruption(self):
         """Test that repeated interruptions don't leak tasks."""
         agent = Agent("Test assistant")
-        await agent.ready()
+        await agent.initialize()
 
         for i in range(10):
             # Start operation
@@ -502,7 +502,7 @@ class TestRobustness:
     async def test_multiple_rapid_interruptions(self):
         """Test handling of multiple rapid interruption attempts."""
         agent = Agent("Test assistant")
-        await agent.ready()
+        await agent.initialize()
 
         tasks = []
         for i in range(5):
@@ -529,7 +529,7 @@ class TestRobustness:
         agent = Agent("Test assistant")
 
         # Start ready in background
-        ready_task = asyncio.create_task(agent.ready())
+        ready_task = asyncio.create_task(agent.initialize())
 
         # Interrupt quickly
         await asyncio.sleep(0.01)

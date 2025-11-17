@@ -119,7 +119,7 @@ class TestComponentEventPatternsConfirmed:
 
         # ✅ Verify decorator handlers work with agent
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # ✅ Verify handlers were registered with the agent during setup
         assert AgentEvents.MESSAGE_APPEND_AFTER in agent._events
@@ -137,7 +137,7 @@ class TestComponentEventPatternsConfirmed:
         """✅ PROOF: Manual registration works correctly."""
         component = ManualTestComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # ✅ Test enabled state (default)
         assert component.enabled
@@ -159,7 +159,7 @@ class TestComponentEventPatternsConfirmed:
         """✅ PROOF: Both patterns work together seamlessly."""
         component = ProofOfConceptComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # ✅ Verify lifecycle methods called
         assert "setup_called" in component.lifecycle_events
@@ -183,7 +183,7 @@ class TestComponentEventPatternsConfirmed:
         """✅ PROOF: Component state properly integrates with event handlers."""
         component = ProofOfConceptComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Clear any initialization events
         component.decorator_events.clear()
@@ -242,7 +242,7 @@ class TestComponentEventPatternsConfirmed:
 
         component = PriorityTestComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Trigger event
         agent.append("Priority test")

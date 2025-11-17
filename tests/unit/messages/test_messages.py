@@ -601,7 +601,7 @@ class TestFilteredMessageList:
     async def agent(self):
         """Create test agent."""
         agent = Agent()
-        await agent.ready()  # Wait for agent to be ready
+        await agent.initialize()  # Wait for agent to be ready
         yield agent
         await agent.events.async_close()
 
@@ -728,7 +728,7 @@ class TestMessageEventIntegration:
     async def agent(self):
         """Create agent with event handling."""
         agent = Agent()
-        await agent.ready()  # Wait for agent to be ready
+        await agent.initialize()  # Wait for agent to be ready
         yield agent
         await agent.events.async_close()
 
@@ -930,7 +930,7 @@ class TestRenderCaching:
     async def test_no_llm_cache_with_agent(self):
         """Test that LLM context is not cached when agent exists."""
         agent = Agent()
-        await agent.ready()  # Wait for agent to be ready
+        await agent.initialize()  # Wait for agent to be ready
 
         msg = UserMessage("Test")
         msg._set_agent(agent)
@@ -1011,7 +1011,7 @@ class TestErrorHandling:
     async def test_message_not_in_agent_list(self):
         """Test index when message not in agent's list."""
         agent = Agent()
-        await agent.ready()  # Wait for agent to be ready
+        await agent.initialize()  # Wait for agent to be ready
         try:
             msg = UserMessage("Test")
             msg._set_agent(agent)
@@ -1058,7 +1058,7 @@ class TestRenderRecursionGuard:
     async def test_render_recursion_guard_prevents_infinite_loop(self):
         """Test that recursion guard prevents infinite loops when event subscribers call render."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         recursion_detected = False
         render_call_count = 0
@@ -1127,7 +1127,7 @@ class TestRenderRecursionGuard:
     async def test_render_guard_with_cached_content(self):
         """Test that recursion guard returns cached content when available."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         try:
             # Create a message without templates (so it can be cached)
@@ -1176,7 +1176,7 @@ class TestRenderRecursionGuard:
     async def test_render_guard_fallback_rendering(self):
         """Test that recursion guard uses fallback rendering when no cache exists."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         try:
             # Add context for template rendering

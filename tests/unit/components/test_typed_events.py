@@ -34,7 +34,7 @@ class TestTypedEventParameters:
     async def test_message_append_params(self):
         """Test MessageAppendParams structure."""
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         events_captured = []
 
@@ -57,7 +57,7 @@ class TestTypedEventParameters:
     async def test_tool_call_params(self):
         """Test ToolCallBeforeParams and ToolCallAfterParams."""
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         before_events = []
         after_events = []
@@ -111,7 +111,7 @@ class TestTypedEventParameters:
     async def test_state_change_params(self):
         """Test AgentStateChangeParams structure."""
         # Create agent with tools to ensure it starts in INITIALIZING state
-        # and transitions to READY during ready() call
+        # and transitions to READY during initialize() call
         agent = Agent("Test system", tools=["dummy_tool"])
         events_captured = []
 
@@ -122,7 +122,7 @@ class TestTypedEventParameters:
             assert "old_state" in ctx.parameters
             events_captured.append(ctx.parameters)
 
-        await agent.ready()  # Triggers state change from INITIALIZING to READY
+        await agent.initialize()  # Triggers state change from INITIALIZING to READY
 
         # Should have captured the state change
         assert len(events_captured) >= 1
@@ -138,7 +138,7 @@ class TestApplyTypedMethod:
     async def test_apply_typed_basic(self):
         """Test basic apply_typed functionality."""
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         handler_called = False
         received_params = None
@@ -169,7 +169,7 @@ class TestApplyTypedMethod:
     async def test_typed_apply_helper(self):
         """Test the TypedApply helper class."""
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         # Create typed helper
         typed = agent.events.typed(ExecuteIterationParams, None)
@@ -197,7 +197,7 @@ class TestApplyTypedMethod:
     async def test_apply_typed_with_output(self):
         """Test apply_typed with handler that returns output."""
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         @agent.on(AgentEvents.TOOL_CALL_BEFORE)
         def modify_args(ctx: EventContext[ToolCallBeforeParams, dict]):
@@ -226,7 +226,7 @@ class TestConvenienceDecorators:
     async def test_standalone_decorators(self):
         """Test standalone decorator functions."""
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         message_count = 0
         tool_count = 0
@@ -264,7 +264,7 @@ class TestConvenienceDecorators:
         Since append() uses do() internally, we test with apply() instead.
         """
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         call_order = []
 
@@ -295,7 +295,7 @@ class TestConvenienceDecorators:
         Using apply() to ensure predicates are evaluated properly.
         """
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         handled_iterations = []
 
@@ -327,7 +327,7 @@ class TestTypedEventHandlersMixin:
             pass
 
         agent = TypedAgent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         message_events = []
         tool_events = []
@@ -369,7 +369,7 @@ class TestTypedEventHandlersMixin:
             ):
                 handlers_called.add("init")
 
-        # Create agent with tools to ensure state change during ready()
+        # Create agent with tools to ensure state change during initialize()
         agent = TypedAgent("Test system", tools=["dummy_tool"])
 
         @agent.on_agent_state_change()
@@ -401,7 +401,7 @@ class TestTypedEventHandlersMixin:
             handlers_called.add("exec_after")
 
         # Ready triggers state change (init handler has timing issues)
-        await agent.ready()
+        await agent.initialize()
         # Note: Skip "init" check due to AGENT_INIT_AFTER timing issues
         assert "state" in handlers_called
 
@@ -428,7 +428,7 @@ class TestTypedEventHandlersMixin:
             pass
 
         agent = TypedAgent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         async_called = False
 
@@ -453,7 +453,7 @@ class TestBackwardCompatibility:
     async def test_old_style_handlers_still_work(self):
         """Test that handlers without type hints still work."""
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         handler_called = False
 
@@ -481,13 +481,13 @@ class TestBackwardCompatibility:
             assert "agent" in ctx.parameters
             assert "tools" in ctx.parameters
 
-        await agent.ready()
+        await agent.initialize()
 
     @pytest.mark.asyncio
     async def test_mixing_typed_and_untyped(self):
         """Test mixing typed and untyped handlers."""
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         typed_called = False
         untyped_called = False
@@ -515,7 +515,7 @@ class TestEventParameterValidation:
     async def test_llm_complete_params(self):
         """Test LLMCompleteParams matches actual LLM events."""
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         captured_params = None
 
@@ -557,7 +557,7 @@ class TestEventParameterValidation:
     async def test_message_create_params(self):
         """Test MessageCreateParams structure."""
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         captured_params = None
 
@@ -591,7 +591,7 @@ class TestTypeInference:
     async def test_parameter_type_inference(self):
         """Test that IDEs can infer parameter types correctly."""
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         @agent.on(AgentEvents.MESSAGE_APPEND_AFTER)
         def handler(ctx: EventContext[MessageAppendParams, None]):
@@ -609,7 +609,7 @@ class TestTypeInference:
     async def test_return_type_inference(self):
         """Test that return types are properly inferred."""
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         @agent.on(AgentEvents.TOOL_CALL_BEFORE)
         def handler(ctx: EventContext[ToolCallBeforeParams, dict]):

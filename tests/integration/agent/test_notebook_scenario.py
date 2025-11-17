@@ -20,7 +20,7 @@ async def test_notebook_citation_scenario():
         "Campaign analyst", extensions=[CitationManager()], model="gpt-4o-mini"
     )
 
-    await agent.ready()
+    await agent.initialize()
     citation_manager = agent[CitationManager]
 
     # Step 1: Ground truth citations (like from project.mdxl)

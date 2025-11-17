@@ -64,7 +64,7 @@ class TestSignalHandlerInstallation:
 
         # Create agent with signal handling explicitly enabled
         agent = Agent("Test assistant")
-        await agent.ready()
+        await agent.initialize()
 
         # Capture handlers after agent creation
         agent_handlers = capture_signal_handlers()
@@ -93,7 +93,7 @@ class TestSignalHandlerInstallation:
 
         # Create and destroy agent with signal handling enabled
         agent = Agent("Test assistant")
-        await agent.ready()
+        await agent.initialize()
         await agent.events.async_close()
 
         # Give time for cleanup
@@ -121,7 +121,7 @@ class TestSignalHandlerInstallation:
 
         # Create agent without signal handling (default behavior)
         agent = Agent("Test assistant")
-        await agent.ready()
+        await agent.initialize()
 
         # Capture handlers after agent creation
         agent_handlers = capture_signal_handlers()
@@ -159,7 +159,7 @@ class TestExternalSignalSimulation:
         with signal_handler_spy() as calls:
             # Enable signal handling explicitly for this test
             agent = Agent("Test assistant", tools=[long_operation])
-            await agent.ready()
+            await agent.initialize()
 
             # Start long operation
             task = asyncio.create_task(agent.call("Execute long_operation"))
@@ -194,7 +194,7 @@ class TestExternalSignalSimulation:
         """Test that second SIGINT forces exit."""
         with signal_handler_spy():
             agent = Agent("Test assistant")
-            await agent.ready()
+            await agent.initialize()
 
             # Mock sys.exit to prevent actual exit
             with patch("sys.exit") as mock_exit:
@@ -223,7 +223,7 @@ class TestMultiAgentSignalSharing:
         # Create multiple agents
         for i in range(3):
             agent = Agent(f"Assistant {i}")
-            await agent.ready()
+            await agent.initialize()
             agents.append(agent)
 
         # Check that signal handler is installed
@@ -270,7 +270,7 @@ class TestMultiAgentSignalSharing:
         # Create agents with tracking
         for i in range(3):
             agent = Agent(f"Assistant {i}", tools=[tracked_operation])
-            await agent.ready()
+            await agent.initialize()
             agents.append(agent)
 
         # Start operations on each agent
@@ -325,7 +325,7 @@ class TestSignalHandlerEdgeCases:
         agent = Agent("Test", extensions=[SlowComponent()])
 
         # Start initialization
-        init_task = asyncio.create_task(agent.ready())
+        init_task = asyncio.create_task(agent.initialize())
 
         # Send signal during initialization
         await asyncio.sleep(0.1)
@@ -352,7 +352,7 @@ class TestSignalHandlerEdgeCases:
         # Create agents and store weak refs
         for i in range(5):
             agent = Agent(f"Temp agent {i}")
-            await agent.ready()
+            await agent.initialize()
             agent_refs.append(weakref.ref(agent))
             await agent.events.async_close()
             del agent
@@ -380,7 +380,7 @@ class TestSignalHandlerEdgeCases:
 
         async def create_agent(idx):
             agent = Agent(f"Agent {idx}")
-            await agent.ready()
+            await agent.initialize()
             return agent
 
         # Create agents concurrently
@@ -414,7 +414,7 @@ class TestPlatformSpecific:
     async def test_windows_signal_limitations(self):
         """Test signal handling on Windows (limited to SIGINT)."""
         agent = Agent("Windows test")
-        await agent.ready()
+        await agent.initialize()
 
         # Windows only supports SIGINT, not SIGTERM
         sigint_handler = signal.getsignal(signal.SIGINT)
@@ -435,7 +435,7 @@ class TestPlatformSpecific:
 
         with signal_handler_spy() as calls:
             agent = Agent("Unix test")
-            await agent.ready()
+            await agent.initialize()
 
             # Send SIGTERM
             os.kill(os.getpid(), signal.SIGTERM)
@@ -466,7 +466,7 @@ class TestRealWorldScenarios:
                 await asyncio.sleep(0.01)
 
         agent = Agent("Test")
-        await agent.ready()
+        await agent.initialize()
 
         with patch.object(agent.model, "stream", mock_stream):
 
@@ -508,7 +508,7 @@ class TestRealWorldScenarios:
             return "Base"
 
         agent = Agent("Test", tools=[nested_tool])
-        await agent.ready()
+        await agent.initialize()
 
         task = asyncio.create_task(agent.call("Use nested_tool with depth 3"))
 

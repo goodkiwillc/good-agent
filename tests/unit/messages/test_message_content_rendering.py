@@ -397,7 +397,7 @@ class TestEventIntegration:
     async def test_render_events_fired(self):
         """Test that render events are fired during LLM formatting."""
         agent = Agent("Test agent")
-        await agent.ready()
+        await agent.initialize()
         events_fired = []
 
         def track_event(ctx):
@@ -445,7 +445,7 @@ class TestEventIntegration:
     async def test_content_part_render_events(self):
         """Test events for individual content part rendering - not currently implemented."""
         agent = Agent("Test agent")
-        await agent.ready()
+        await agent.initialize()
         part_events = []
 
         def track_part_event(ctx):
@@ -513,7 +513,7 @@ class TestMessageSerialization:
     async def test_message_llm_format(self):
         """Test converting message to LLM API format via LanguageModel."""
         agent = Agent("Test agent")
-        await agent.ready()
+        await agent.initialize()
 
         msg = UserMessage(
             content_parts=[

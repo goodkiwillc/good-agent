@@ -61,7 +61,7 @@ async def create_test_agent():
     )
 
     # Wait for agent to be ready (tools will be loaded)
-    await agent.ready()
+    await agent.initialize()
 
     return agent
 

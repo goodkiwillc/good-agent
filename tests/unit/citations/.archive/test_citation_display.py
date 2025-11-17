@@ -17,7 +17,7 @@ async def test_citation_display():
         model="gpt-4o-mini",
     )
 
-    await agent.ready()
+    await agent.initialize()
 
     # Simulate what happens in a real conversation
     # 1. Add a message with citations like an LLM would

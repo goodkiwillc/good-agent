@@ -11,7 +11,7 @@ async def test_citation_index_receives_message_append_event():
     agent = Agent("You are a helpful assistant", extensions=[citation_index])
 
     # Wait for agent to be ready
-    await agent.ready()
+    await agent.initialize()
 
     # Append a message with citations
     agent.append(
@@ -40,7 +40,7 @@ async def test_citation_index_receives_tool_response_event():
     agent = Agent("You are a helpful assistant", extensions=[citation_index])
 
     # Wait for agent to be ready
-    await agent.ready()
+    await agent.initialize()
 
     # Create a Paragraph with citation
     citation = Citation(

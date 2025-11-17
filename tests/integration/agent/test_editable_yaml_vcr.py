@@ -39,7 +39,7 @@ async def test_editable_yaml_real_llm_edits_with_tools(llm_vcr):
         " Use the 'set' tool to update values. Return a short confirmation when done.",
         # temperature=0,
     )
-    await agent.ready()
+    await agent.initialize()
 
     async with resource(agent):
         assert isinstance(resource.state, Box)

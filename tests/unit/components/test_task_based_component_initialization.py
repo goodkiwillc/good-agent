@@ -77,15 +77,15 @@ class TestTaskBasedComponentInitialization:
 
     @pytest.mark.asyncio
     async def test_basic_component_tool_registration(self):
-        """Test that component tools are registered after agent.ready()."""
+        """Test that component tools are registered after agent.initialize()."""
         component = MockComponent()
         agent = Agent("Test agent", extensions=[component])
 
         # Tools should not be available yet
         assert len(agent.tools._tools) == 0
 
-        # After ready(), tools should be registered
-        await agent.ready()
+        # After initialize(), tools should be registered
+        await agent.initialize()
 
         assert "mock_tool" in agent.tools
         assert "async_mock_tool" in agent.tools
@@ -101,7 +101,7 @@ class TestTaskBasedComponentInitialization:
         """Test that registered component tools work correctly."""
         component = MockComponent()
         agent = Agent("Test agent", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Test sync tool
         sync_tool = agent.tools["mock_tool"]
@@ -126,7 +126,7 @@ class TestTaskBasedComponentInitialization:
         component2 = MockComponent()
 
         agent = Agent("Test agent", extensions=[component1, component2])
-        await agent.ready()
+        await agent.initialize()
 
         # Both components should have tools registered
         # Since they have the same tool names, we expect the second to override
@@ -144,7 +144,7 @@ class TestTaskBasedComponentInitialization:
         """Test that components not calling super().install() don't register tools."""
         component = ComponentWithoutSuperCall()
         agent = Agent("Test agent", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Tools should NOT be registered
         assert "forgotten_tool" not in agent.tools
@@ -164,9 +164,9 @@ class TestTaskBasedComponentInitialization:
         # Custom initialization should not be completed yet
         assert not component.custom_init_completed
 
-        await agent.ready()
+        await agent.initialize()
 
-        # After ready(), custom initialization should be complete
+        # After initialize(), custom initialization should be complete
         assert component.custom_init_completed
 
         # Tool should work correctly now
@@ -179,15 +179,15 @@ class TestTaskBasedComponentInitialization:
 
     @pytest.mark.asyncio
     async def test_agent_ready_waits_for_component_tasks(self):
-        """Test that agent.ready() waits for all component initialization tasks."""
+        """Test that agent.initialize() waits for all component initialization tasks."""
         component = ComponentWithInitializationTask()
         agent = Agent("Test agent", extensions=[component])
 
-        # Measure time to ensure ready() actually waits
+        # Measure time to ensure initialize() actually waits
         import time
 
         start_time = time.time()
-        await agent.ready()
+        await agent.initialize()
         elapsed = time.time() - start_time
 
         # Should have waited at least the sleep time (0.1 seconds)
@@ -198,12 +198,12 @@ class TestTaskBasedComponentInitialization:
 
     @pytest.mark.asyncio
     async def test_component_tasks_cleared_after_ready(self):
-        """Test that component tasks are cleared after ready() completes."""
+        """Test that component tasks are cleared after initialize() completes."""
         component = ComponentWithInitializationTask()
         agent = Agent("Test agent", extensions=[component])
 
         # Component tasks are managed internally now
-        await agent.ready()
+        await agent.initialize()
 
         # Verify initialization completed
         assert component.custom_init_completed
@@ -221,7 +221,7 @@ class TestTaskBasedComponentInitialization:
         # Should start in INITIALIZING state
         assert agent.state == AgentState.INITIALIZING
 
-        await agent.ready()
+        await agent.initialize()
 
         # Should transition to READY after initialization
         assert agent.state == AgentState.READY
@@ -240,8 +240,8 @@ class TestTaskBasedComponentInitialization:
         # In practice, this is handled by the agent constructor logic
         agent = Agent("Test agent", extensions=[component])
 
-        # Even without event loop during install, ready() should work
-        await agent.ready()
+        # Even without event loop during install, initialize() should work
+        await agent.initialize()
 
         assert "mock_tool" in agent.tools
         assert "async_mock_tool" in agent.tools
@@ -258,7 +258,7 @@ class TestTaskBasedComponentInitialization:
     #     citation_manager = CitationManager()
     #     webfetcher = WebFetcher(default_ttl=3600)
     #     agent = Agent("Test agent", extensions=[citation_manager, webfetcher])
-    #     await agent.ready()
+    #     await agent.initialize()
 
     #     # WebFetcher should have its tools registered
     #     expected_tools = ["fetch", "fetch_many", "batch_fetch"]
@@ -292,7 +292,7 @@ class TestTaskBasedComponentInitialization:
 
         component = EventComponent()
         agent = Agent("Test agent", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Both event handling infrastructure and tool registration should work
         assert component.install_called  # Component was properly installed

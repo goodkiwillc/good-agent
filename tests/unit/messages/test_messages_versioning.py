@@ -41,7 +41,7 @@ class TestMessageListVersioning:
 
         # Create a real agent for proper testing
         agent = Agent("test")
-        await agent.ready()
+        await agent.initialize()
 
         # Initialize versioning
         messages._init_versioning(registry, vm, agent)
@@ -75,7 +75,7 @@ class TestMessageListVersioning:
         vm = VersionManager()
 
         agent = Agent("test")
-        await agent.ready()
+        await agent.initialize()
 
         messages._init_versioning(registry, vm, agent)
 
@@ -105,7 +105,7 @@ class TestMessageListVersioning:
         vm = VersionManager()
 
         agent = Agent("test")
-        await agent.ready()
+        await agent.initialize()
 
         # Setup: Add messages and create versions
         msg1 = SystemMessage(content_parts=[])
@@ -139,7 +139,7 @@ class TestMessageListVersioning:
         vm = VersionManager()
 
         agent = Agent("test")
-        await agent.ready()
+        await agent.initialize()
 
         messages._init_versioning(registry, vm, agent)
 
@@ -171,7 +171,7 @@ class TestMessageListVersioning:
         vm = VersionManager()
 
         agent = Agent("test")
-        await agent.ready()
+        await agent.initialize()
 
         # Start with some messages
         msg1 = SystemMessage(content_parts=[])
@@ -206,7 +206,7 @@ class TestMessageListVersioning:
         vm = VersionManager()
 
         agent = Agent("test")
-        await agent.ready()
+        await agent.initialize()
 
         # Start with some messages
         msg1 = SystemMessage(content_parts=[])
@@ -249,7 +249,7 @@ class TestMessageListVersioning:
         vm = VersionManager()
 
         agent = Agent("test")
-        await agent.ready()
+        await agent.initialize()
 
         # Initialize versioning with existing messages
         messages._init_versioning(registry, vm, agent)
@@ -271,7 +271,7 @@ class TestMessageListVersioning:
         vm = VersionManager()
 
         agent = Agent("test")
-        await agent.ready()
+        await agent.initialize()
 
         messages._init_versioning(registry, vm, agent)
 

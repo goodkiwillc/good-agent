@@ -52,7 +52,7 @@ class TestSignalHandlerInstallation:
 
         # Create agent with signal handling enabled (default)
         agent = Agent("Test assistant")
-        await agent.ready()
+        await agent.initialize()
 
         # Capture handler after agent creation
         agent_sigint = signal.getsignal(signal.SIGINT)
@@ -77,7 +77,7 @@ class TestSignalHandlerInstallation:
 
         # Create and destroy agent
         agent = Agent("Test assistant")
-        await agent.ready()
+        await agent.initialize()
 
         # Verify handler was changed
         during_sigint = signal.getsignal(signal.SIGINT)
@@ -111,7 +111,7 @@ class TestSignalHandlerInstallation:
 
         # Create agent
         agent = Agent("Test")
-        await agent.ready()
+        await agent.initialize()
 
         # Check registration
         with _global_handler._lock:
@@ -152,7 +152,7 @@ class TestSignalPropagation:
                 raise
 
         agent = Agent("Test", tools=[long_operation])
-        await agent.ready()
+        await agent.initialize()
 
         # Start operation
         task = asyncio.create_task(agent.call("Execute long_operation"))
@@ -180,7 +180,7 @@ class TestSignalPropagation:
     async def test_double_signal_force_exit(self):
         """Test that second signal forces exit."""
         agent = Agent("Test")
-        await agent.ready()
+        await agent.initialize()
 
         with patch("sys.exit") as mock_exit:
             # First signal - sets shutdown flag
@@ -209,7 +209,7 @@ class TestMultiAgentCoordination:
         # Create multiple agents
         for i in range(3):
             agent = Agent(f"Agent {i}")
-            await agent.ready()
+            await agent.initialize()
             agents.append(agent)
 
         # Check handler is installed once
@@ -261,7 +261,7 @@ class TestMultiAgentCoordination:
         # Create agents
         for i in range(3):
             agent = Agent(f"Agent {i}", tools=[tracked_operation])
-            await agent.ready()
+            await agent.initialize()
             agents.append(agent)
 
         # Start operations
@@ -304,7 +304,7 @@ class TestWeakReferenceManagement:
         # Create and destroy agents
         for i in range(5):
             agent = Agent(f"Agent {i}")
-            await agent.ready()
+            await agent.initialize()
             agent_refs.append(weakref.ref(agent))
             await agent.events.async_close()
             del agent
@@ -330,7 +330,7 @@ class TestWeakReferenceManagement:
         """Test that weak references are cleaned when agents are deleted."""
         # Create agent
         agent = Agent("Test")
-        await agent.ready()
+        await agent.initialize()
 
         # Verify registration
         with _global_handler._lock:
@@ -363,7 +363,7 @@ class TestThreadSafety:
 
         async def create_agent(idx):
             agent = Agent(f"Agent {idx}")
-            await agent.ready()
+            await agent.initialize()
             return agent
 
         # Create agents concurrently
@@ -392,7 +392,7 @@ class TestThreadSafety:
     async def test_signal_handler_lock_safety(self):
         """Test that signal handler operations are thread-safe."""
         agent = Agent("Test")
-        await agent.ready()
+        await agent.initialize()
 
         # Simulate concurrent access to handler
         def access_handler():
@@ -429,7 +429,7 @@ class TestEdgeCases:
                 await asyncio.sleep(0.5)
 
         agent = Agent("Test", extensions=[SlowComponent()])
-        init_task = asyncio.create_task(agent.ready())
+        init_task = asyncio.create_task(agent.initialize())
 
         # Cancel during init
         await asyncio.sleep(0.1)
@@ -468,7 +468,7 @@ class TestEdgeCases:
         """Test rapid registration and unregistration cycles."""
         for _ in range(10):
             agent = Agent("Rapid test")
-            await agent.ready()
+            await agent.initialize()
             await agent.events.async_close()
             del agent
 

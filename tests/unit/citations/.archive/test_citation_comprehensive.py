@@ -19,7 +19,7 @@ async def test_all_citation_scenarios():
     print("TEST 1: Markdown reference extraction")
     print("-" * 40)
     agent1 = Agent("Test", extensions=[CitationManager()])
-    await agent1.ready()
+    await agent1.initialize()
 
     agent1.append("""
     Here's some content [1] with citations [2].
@@ -41,7 +41,7 @@ async def test_all_citation_scenarios():
     print("TEST 2: Non-sequential citation ordering")
     print("-" * 40)
     agent2 = Agent("Test", extensions=[CitationManager()])
-    await agent2.ready()
+    await agent2.initialize()
 
     agent2.append("""
     References in weird order:
@@ -70,7 +70,7 @@ async def test_all_citation_scenarios():
     print("TEST 3: Mixed citation formats")
     print("-" * 40)
     agent3 = Agent("Test", extensions=[CitationManager()])
-    await agent3.ready()
+    await agent3.initialize()
 
     # First establish some citations
     agent3.append("[1]: https://source1.com")
@@ -94,7 +94,7 @@ async def test_all_citation_scenarios():
     print("TEST 4: Citation lookup from existing index")
     print("-" * 40)
     agent4 = Agent("Test", extensions=[CitationManager()])
-    await agent4.ready()
+    await agent4.initialize()
     cm4 = agent4[CitationManager]
 
     # Pre-populate index
@@ -118,7 +118,7 @@ async def test_all_citation_scenarios():
     print("TEST 5: Citation rendering modes")
     print("-" * 40)
     agent5 = Agent("Test", extensions=[CitationManager()])
-    await agent5.ready()
+    await agent5.initialize()
 
     # Create message with citations
     msg5 = AssistantMessage(
@@ -138,7 +138,7 @@ async def test_all_citation_scenarios():
     print("TEST 6: Tool-added citations scenario")
     print("-" * 40)
     agent6 = Agent("Test", extensions=[CitationManager()])
-    await agent6.ready()
+    await agent6.initialize()
     cm6 = agent6[CitationManager]
 
     # Simulate tool adding citations to index
@@ -160,7 +160,7 @@ async def test_all_citation_scenarios():
     print("TEST 7: Index order preservation")
     print("-" * 40)
     agent7 = Agent("Test", extensions=[CitationManager()])
-    await agent7.ready()
+    await agent7.initialize()
     cm7 = agent7[CitationManager]
 
     # Add citations in specific order

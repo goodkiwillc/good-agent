@@ -263,7 +263,7 @@ class TestAgentMCPIntegration:
                 "You are helpful",
                 mcp_servers=["test://server1", "test://server2"],
             )
-            await agent.ready()
+            await agent.initialize()
 
             # Verify MCP servers were loaded
             mock_load.assert_called_once_with(["test://server1", "test://server2"])
@@ -287,7 +287,7 @@ class TestAgentMCPIntegration:
 
         # Create agent and manually add the MCP tool
         agent = Agent("You are helpful")
-        await agent.ready()
+        await agent.initialize()
 
         # Add the MCP tool to the agent's tools
         agent.tools["mcp_tool"] = mock_adapter
@@ -312,7 +312,7 @@ class TestAgentMCPIntegration:
                 "You are helpful",
                 mcp_servers=["test://server"],
             )
-            await agent.ready()
+            await agent.initialize()
 
             # Clean up agent (should disconnect MCP)
             await agent.events.async_close()

@@ -77,7 +77,7 @@ class TestHiddenParameters:
             return f"Results for {query} using key {api_key}"
 
         agent = Agent("Test agent")
-        await agent.ready()  # Ensure agent is ready
+        await agent.initialize()  # Ensure agent is ready
 
         # Invoke tool with both visible and hidden parameters
         response = await agent.tool_calls.invoke(
@@ -111,7 +111,7 @@ class TestHiddenParameters:
             return f"Processed {data} with token {token}, debug={debug}"
 
         agent = Agent("Test agent")
-        await agent.ready()  # Ensure agent is ready
+        await agent.initialize()  # Ensure agent is ready
 
         # Invoke callable with hide parameter
         response = await agent.tool_calls.invoke(
@@ -194,7 +194,7 @@ class TestHiddenParameters:
             return f"Called {endpoint} with key {api_key}, timeout={timeout}"
 
         agent = Agent("Test agent")
-        await agent.ready()  # Ensure agent is ready
+        await agent.initialize()  # Ensure agent is ready
 
         # Create bound function with hidden params
         bound_call = agent.tool_calls.invoke_func(
@@ -256,7 +256,7 @@ class TestHiddenParameters:
             return value * multiplier
 
         agent = Agent("Test agent")
-        await agent.ready()  # Ensure agent is ready
+        await agent.initialize()  # Ensure agent is ready
 
         # Invoke with both params
         response = await agent.tool_calls.invoke(

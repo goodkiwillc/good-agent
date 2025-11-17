@@ -284,7 +284,7 @@ class TestCitationAdapterIntegration:
 
         # Create agent
         agent = Agent("Test agent", tools=[fetch_url, fetch_urls], extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         # Add some citations
         idx1 = manager.index.add("https://example.com", value="Example Site")
@@ -335,7 +335,7 @@ async def test_end_to_end_citation_flow():
         tools=[fetch_url, fetch_urls],
         extensions=[manager],
     )
-    await agent.ready()
+    await agent.initialize()
 
     # Verify tools are registered
     assert "fetch_url" in agent.tools

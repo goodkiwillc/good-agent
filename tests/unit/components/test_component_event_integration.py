@@ -194,7 +194,7 @@ class TestAgentComponentEventIntegration:
 
         # Create agent and verify handlers are registered
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Give async event handlers time to complete
         await asyncio.sleep(0.01)
@@ -237,7 +237,7 @@ class TestAgentComponentEventIntegration:
         """Test that manual registration works in setup and install phases."""
         component = DecoratorPatternComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Add a message to trigger setup handlers
         agent.append("Test user message")
@@ -278,7 +278,7 @@ class TestAgentComponentEventIntegration:
         """Test that handlers respect component enabled/disabled state."""
         component = DecoratorPatternComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Test with component enabled (default)
         assert component.enabled
@@ -309,7 +309,7 @@ class TestAgentComponentEventIntegration:
         component_low = ManualRegistrationComponent(custom_priority=50)
 
         agent = Agent("Test system", extensions=[component_high, component_low])
-        await agent.ready()
+        await agent.initialize()
 
         # Both components should register handlers
         assert component_high.handler_count == 3
@@ -361,7 +361,7 @@ class TestAgentComponentEventIntegration:
         """Test that static and dynamic handlers execute in correct priority order."""
         component = HybridPatternComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Give async handlers time to complete
         await asyncio.sleep(0.01)
@@ -390,7 +390,7 @@ class TestAgentComponentEventIntegration:
             extensions=[component],
             context={"test_key": "test_value"},
         )
-        await agent.ready()
+        await agent.initialize()
 
         # System message handler should have access to agent.messages
         system_events = [e for e in component.events if "system_set" in e]
@@ -429,7 +429,7 @@ class TestAgentComponentEventIntegration:
 
         # Agent initialization should still succeed despite handler errors
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Give async handlers time to complete
         await asyncio.sleep(0.01)
@@ -447,7 +447,7 @@ class TestAgentComponentEventIntegration:
         """Test that component tools work correctly with event handlers."""
         component = DecoratorPatternComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Give async handlers time to complete
         await asyncio.sleep(0.01)

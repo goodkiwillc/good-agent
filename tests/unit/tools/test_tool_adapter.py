@@ -426,7 +426,7 @@ class TestAgentComponentIntegration:
 
         component = TestComponent()
         agent = Agent("Test agent", tools=[fetch_url], extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Verify adapter was registered
         assert len(component._tool_adapter_registry._adapters) == 1
@@ -442,7 +442,7 @@ class TestAgentComponentIntegration:
 
         component = TestComponent()
         agent = Agent("Test agent", tools=[fetch_url], extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Register adapter after installation
         component.register_tool_adapter(component.adapter)
@@ -469,7 +469,7 @@ class TestAgentComponentIntegration:
 
         component = TestComponent()
         agent = Agent("Test agent", tools=[fetch_url], extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Disable component
         component.enabled = False
@@ -494,7 +494,7 @@ async def test_end_to_end_adapter_flow():
 
     component = IndexComponent()
     agent = Agent("Test agent", tools=[fetch_url], extensions=[component])
-    await agent.ready()
+    await agent.initialize()
 
     # What the LLM sees: fetch_url(url_idx: int, timeout: int)
     # LLM calls with: {"url_idx": 0, "timeout": 5}

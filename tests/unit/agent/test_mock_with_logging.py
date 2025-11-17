@@ -13,7 +13,7 @@ async def test_mock_logging_and_helpers(caplog):
     caplog.set_level(logging.INFO)
 
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     responses = [
         mock_message("First answer", role="assistant"),
@@ -68,7 +68,7 @@ async def test_mock_logging_and_helpers(caplog):
 async def test_mock_partial_consumption_logged():
     """Test that partial consumption of mocks is logged."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     responses = [
         mock_message("Used", role="assistant"),
@@ -94,7 +94,7 @@ async def test_mock_partial_consumption_logged():
 async def test_clear_mock_indicator_in_logs():
     """Demonstrate the clear mock indicator in logs."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     mock_response = mock_message(
         "I'm a mock response, not from a real LLM!", role="assistant"

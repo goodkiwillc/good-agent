@@ -154,8 +154,8 @@ def ensure_ready(func: Callable[P, Any]) -> Callable[P, Any]:
     """
     Decorator that ensures the agent is ready before executing the async method.
 
-    This decorator automatically calls await self.ready() before executing
-    the decorated method, eliminating the need for repetitive ready() calls
+    This decorator automatically calls await self.initialize() before executing
+    the decorated method, eliminating the need for repetitive initialize() calls
     at the start of each public async method.
 
     The decorator preserves the original function's metadata through functools.wraps,
@@ -168,12 +168,12 @@ def ensure_ready(func: Callable[P, Any]) -> Callable[P, Any]:
     Examples:
         @ensure_ready
         async def call(self, ...) -> Message:
-            # No need for await self.ready()
+            # No need for await self.initialize()
             ...
 
         @ensure_ready
         async def execute(self, ...) -> AsyncIterator[Message]:
-            # No need for await self.ready()
+            # No need for await self.initialize()
             yield message
     """
     import inspect
@@ -186,7 +186,7 @@ def ensure_ready(func: Callable[P, Any]) -> Callable[P, Any]:
             self: "Agent", *args: Any, **kwargs: Any
         ) -> AsyncIterator[Any]:
             # Ensure agent is ready before proceeding
-            await self.ready()
+            await self.initialize()
             # Yield from the generator
             # Use getattr to bypass type checker's argument analysis
             method = getattr(func, "__call__", func)  # noqa: B004
@@ -199,7 +199,7 @@ def ensure_ready(func: Callable[P, Any]) -> Callable[P, Any]:
         @functools.wraps(func)
         async def async_wrapper(self: "Agent", *args: Any, **kwargs: Any) -> Any:
             # Ensure agent is ready before proceeding
-            await self.ready()
+            await self.initialize()
             # Await and return the result
             # Use getattr to bypass type checker's argument analysis
             method = getattr(func, "__call__", func)  # noqa: B004
@@ -267,13 +267,13 @@ class Agent(EventRouter):
         "model",
         "name",
         "on",
-        "ready",
+        "initialize",
+        "is_ready",
         "session_id",
         "state",
         "system",
         "task_count",
         "tasks",
-        "token_count",
         "tool",
         "tool_calls",
         "tools",
@@ -326,6 +326,7 @@ class Agent(EventRouter):
             "print",
             "replace_message",
             "resolve_pending_tool_calls",
+            "ready",
             "revert_to_version",
             "set_event_trace",
             "set_system_message",
@@ -442,7 +443,7 @@ class Agent(EventRouter):
     ):
         """Initialize agent with model, tools, and configuration.
 
-        Creates agent instance with components and configuration. Call await agent.ready()
+        Creates agent instance with components and configuration. Call await agent.initialize()
         or use async context manager for complete initialization.
 
         Args:
@@ -760,6 +761,11 @@ class Agent(EventRouter):
         return self._message_manager.system
 
     @property
+    def is_ready(self) -> bool:
+        """Whether initialization completed."""
+        return self._state_machine.is_ready
+
+    @property
     def task_count(self) -> int:
         """Number of active managed tasks."""
         return self.tasks.count
@@ -847,13 +853,8 @@ class Agent(EventRouter):
         """
         return self._context_manager.thread_context(truncate_at)
 
-    async def ready(self) -> None:
-        """
-        Wait for the agent to be ready for operations.
-
-        This method blocks until the agent has completed initialization and
-        is in a READY state or higher. If already ready, returns immediately.
-        """
+    async def initialize(self) -> None:
+        """Perform initialization and wait until the agent is ready."""
         # If already ready, return immediately
         if self._state_machine.is_ready:
             return
@@ -971,13 +972,23 @@ class Agent(EventRouter):
                 logger.warning(
                     f"Timeout waiting for {len(ready_tasks)} managed tasks to complete"
                 )
-                # Don't fail ready() due to task timeouts, just warn
+                # Don't fail initialize() due to task timeouts, just warn
 
         # Final check
         if not self._state_machine.is_ready:
             raise RuntimeError(
                 f"Agent ready event was set but state is still {self._state_machine.state}"
             )
+
+    async def ready(self) -> None:
+        """Deprecated shim for :meth:`Agent.initialize`."""
+
+        warnings.warn(
+            "Agent.ready() is deprecated. Use agent.initialize() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        await self.initialize()
 
     @on(AgentEvents.AGENT_INIT_AFTER)
     async def _agent_init(self, ctx: EventContext[AgentInitializeParams, None]) -> None:
@@ -987,15 +998,15 @@ class Agent(EventRouter):
         - ctx.parameters has type AgentInitializeParams (TypedDict)
         - ctx.output should be None (no return value expected)
         """
-        # Track this task so ready() can wait for it
+        # Track this task so initialize() can wait for it
         try:
             loop = asyncio.get_running_loop()
             self._component_install_task = loop.create_task(self._install_components())
         except RuntimeError:
-            # No event loop, will be called from ready() instead
+            # No event loop, will be called from initialize() instead
             pass
 
-        # Skip if tools will be handled by ready() method
+        # Skip if tools will be handled by initialize()
         # This happens when tools are provided directly in constructor
         if hasattr(self, "_pending_tools") and self._pending_tools:
             return
@@ -2293,7 +2304,7 @@ class Agent(EventRouter):
                 agent.append("Test message")
                 # Tasks will be automatically cleaned up on exit
         """
-        await self.ready()
+        await self.initialize()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:

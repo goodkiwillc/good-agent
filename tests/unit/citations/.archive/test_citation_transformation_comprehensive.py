@@ -33,7 +33,7 @@ Another source [!CITE_2!] confirms this.
             extensions=[CitationManager()],
             tools=[get_ground_truth],
         )
-        await agent.ready()
+        await agent.initialize()
 
         # Call the tool
         result = await agent.tool_calls.invoke(get_ground_truth)
@@ -76,7 +76,7 @@ class TestCitationFormatRoundTrips:
     async def test_markdown_to_llm_and_back(self):
         """Test markdown citations can be converted to LLM format and back."""
         agent = Agent("Test", extensions=[CitationManager()])
-        await agent.ready()
+        await agent.initialize()
 
         # Start with markdown citations
         content = "Research [1] shows that [2] confirms the hypothesis."
@@ -104,7 +104,7 @@ class TestCitationFormatRoundTrips:
     async def test_xml_url_to_idx_transformation(self):
         """Test XML URLs are converted to idx attributes."""
         agent = Agent("Test", extensions=[CitationManager()])
-        await agent.ready()
+        await agent.initialize()
 
         # Tool response with XML URLs
         xml_content = """
@@ -135,7 +135,7 @@ class TestCitationFormatRoundTrips:
     async def test_inline_urls_extraction(self):
         """Test inline URLs are extracted and converted to citations."""
         agent = Agent("Test", extensions=[CitationManager()])
-        await agent.ready()
+        await agent.initialize()
 
         # Content with inline URLs
         content = "Check https://example.com for details and https://docs.org for documentation."
@@ -169,7 +169,7 @@ class TestMixedCitationFormats:
     async def test_markdown_refs_with_inline_citations(self):
         """Test content with both markdown reference blocks and inline citations."""
         agent = Agent("Test", extensions=[CitationManager()])
-        await agent.ready()
+        await agent.initialize()
 
         # Complex content with multiple citation styles
         content = """Research shows [1] that the findings are significant.
@@ -207,7 +207,7 @@ Additionally, see [2] for more context.
     async def test_llm_citations_with_new_urls(self):
         """Test LLM-format citations mixed with new inline URLs."""
         agent = Agent("Test", extensions=[CitationManager()])
-        await agent.ready()
+        await agent.initialize()
 
         # First add some citations to the index
         agent.append("Initial source https://initial.com")
@@ -241,7 +241,7 @@ class TestCitationConsistency:
     async def test_citation_index_persistence(self):
         """Test that citation indices remain consistent across messages."""
         agent = Agent("Test", extensions=[CitationManager()])
-        await agent.ready()
+        await agent.initialize()
 
         # Add citations across multiple messages
         agent.append("First source: https://first.com")
@@ -272,7 +272,7 @@ class TestCitationConsistency:
     async def test_duplicate_url_handling(self):
         """Test that duplicate URLs map to the same citation index."""
         agent = Agent("Test", extensions=[CitationManager()])
-        await agent.ready()
+        await agent.initialize()
 
         # Add same URL multiple times
         agent.append("First mention: https://example.com")

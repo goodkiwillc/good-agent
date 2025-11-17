@@ -25,7 +25,7 @@ async def test_markdown_reference_block_takes_precedence():
     """
 
     agent = Agent("Test", extensions=[citation_manager])
-    await agent.ready()
+    await agent.initialize()
 
     agent.append(content_with_refs)
 

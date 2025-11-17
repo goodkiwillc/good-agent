@@ -10,7 +10,7 @@ class TestSystemMessageVersioningFix:
     async def test_system_message_creates_initial_version(self):
         """System message from constructor should create version."""
         agent = Agent("You are helpful")
-        await agent.ready()
+        await agent.initialize()
 
         # Should have one version for the system message
         assert agent._version_manager.version_count == 1, (
@@ -33,7 +33,7 @@ class TestSystemMessageVersioningFix:
     async def test_replace_system_message_creates_version(self):
         """Replacing system message should create new version."""
         agent = Agent("Original prompt")
-        await agent.ready()
+        await agent.initialize()
 
         # Add a user message to establish versioning
         agent.append("Hello")
@@ -71,7 +71,7 @@ class TestSystemMessageVersioningFix:
     async def test_add_system_message_to_empty_agent(self):
         """Adding system message to empty agent should version."""
         agent = Agent()  # No system message
-        await agent.ready()
+        await agent.initialize()
 
         # Verify empty state
         assert len(agent.messages) == 0
@@ -100,7 +100,7 @@ class TestSystemMessageVersioningFix:
     async def test_revert_preserves_system_message(self):
         """Reverting should maintain system message in version."""
         agent = Agent("System prompt")
-        await agent.ready()
+        await agent.initialize()
 
         # Add messages to establish versioning
         agent.append("Message 1")
@@ -134,7 +134,7 @@ class TestSystemMessageVersioningFix:
     async def test_multiple_system_message_updates_tracked(self):
         """Multiple system message updates should all be versioned."""
         agent = Agent("Initial prompt")
-        await agent.ready()
+        await agent.initialize()
 
         # Add a user message
         agent.append("User message")
@@ -167,7 +167,7 @@ class TestSystemMessageVersioningFix:
     async def test_system_message_versioning_with_thread_context(self):
         """ThreadContext should work with system message versioning."""
         agent = Agent("Original system")
-        await agent.ready()
+        await agent.initialize()
 
         agent.append("Message 1")
         agent.append("Message 2")
@@ -198,13 +198,13 @@ class TestSystemMessageVersioningFix:
     async def test_system_message_versioning_with_fork(self):
         """Forked agents should properly version system messages."""
         agent = Agent("Original system")
-        await agent.ready()
+        await agent.initialize()
 
         agent.append("Original message")
 
         # Fork the agent
         forked = agent.context_manager.fork(include_messages=True)
-        await forked.ready()
+        await forked.initialize()
 
         # Modify system message in fork
         forked.set_system_message("Forked system")

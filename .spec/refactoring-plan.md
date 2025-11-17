@@ -22,19 +22,19 @@ This specification provides a comprehensive, phased refactoring plan for the goo
 **Approach:**
 This is a 12-week, 7-phase refactoring following the audit recommendations. We accept breaking changes as this is a pre-1.0 library (currently v0.2.0). Each phase is designed to be independently testable with clear acceptance criteria and rollback plans.
 
-## Current Handoff Snapshot (2025-11-16)
+## Current Handoff Snapshot (2025-11-17)
 
 - **Branch**: `refactor/phase3-5-cleanup`
-- **Latest Completed Work**: Docstring cleanup hotfix in `TemplateManager`/`Context`, spec examples inventory table, and full validator run (`uv run ruff check .`, `uv run pytest` → 1316 passed, 36 skipped).
+- **Latest Completed Work**: Phase 4 Task 4 landed (`Agent.initialize()`/`Agent.is_ready`, public API budget still 30), docstring cleanup hotfix in `TemplateManager`/`Context`, spec examples inventory table, and validator baseline (`uv run ruff check .`, `uv run pytest` → 1317 passed / 36 skipped / 1 deselected).
 - **Open Work Items**:
-  1. Phase 4 Task 3 (in progress): Finish API surface reduction by landing the guard test (≤30 public attrs), documenting the new `agent.events/tool_calls/context_manager` facades in MIGRATION.md/CHANGELOG.md, and cleaning up remaining alias shims.
-  2. Phase 4 Task 4: Normalize property vs method naming (e.g., `ready`→`initialize`, `get_task_count`→`task_count`).
-  3. Phase 4 Task 5: Expand API docs & migration guidance after the API reshaping.
-  4. Wire the new `examples/` inventory into automated smoke tests (`tests/test_examples.py`) once Phase 4 API stabilizes.
+  1. Phase 4 Task 5: Expand API docs & migration guidance after the API reshaping.
+  2. Wire the new `examples/` inventory into automated smoke tests (`tests/test_examples.py`) once Phase 4 API stabilizes.
+  3. Audit for any remaining legacy entry points before retiring shims in v1.0.0.
 - **Notes for Next Session**:
-  - Docstring audit script still reports `Total long docstrings: 0`; keep rerunning after any new documentation work
-  - Examples now catalogued in spec with owners/follow-ups; next step is pytest wiring + README references
-  - Validator baseline captured post-docstring fix; reuse results to catch regressions after API pruning work
+  - Capture the `ready()`→`initialize()` migration plus facade usage guidance in `MIGRATION.md`/`CHANGELOG.md` (Task 5)
+  - Docstring audit script still reports `Total long docstrings: 0`; rerun after documentation edits
+  - Examples now catalogued in spec with owners/follow-ups; next step is pytest wiring + README references once docs updated
+  - Legacy shim warnings remain active—note any straggling usages for eventual v1.0 removal
 
 ## Requirements
 
@@ -1131,6 +1131,8 @@ Observations:
   3. Update all code and tests
   4. Document conventions in contribution guide
 
+  **Status 2025-11-17:** Completed—`Agent.initialize()` replaces `Agent.ready()` with a DeprecationWarning shim, `Agent.is_ready` exposes readiness state, and the 30-attribute budget now lists `initialize`/`is_ready` while dropping `token_count`.
+
 - Complexity: Low
 - Dependencies: None
 - Success Criteria: Consistent property vs method usage throughout codebase
@@ -2223,8 +2225,8 @@ No active blockers at start. Potential blockers:
 **Phase 4: API Improvements (Weeks 8-9)** - IN PROGRESS 🚧
 - [x] Week 8: Consolidate message operations ✅ (commit debc772)
 - [x] Week 8: Clarify call() vs execute() ✅ (commit 0807ffb)
-- [ ] Week 8: Reduce Agent public API surface (guard + facade routing done; docs pending)
-- [ ] Week 9: Standardize property vs method usage
+- [x] Week 8: Reduce Agent public API surface (guard + facade routing landed; docs follow-up pending)
+- [x] Week 9: Standardize property vs method usage (agent.initialize(), agent.is_ready property)
 - [ ] Document Phase 4 changes
 - [x] Get user approval for API changes ✅ (Task 1 approved, Task 2 renaming declined)
 - [x] Run full test suite ✅ (403 agent tests passing - 100%)
@@ -2616,3 +2618,18 @@ No active blockers at start. Potential blockers:
   2. Wire the new API surface into `MIGRATION.md` + CHANGELOG with a find/replace table for the deprecated methods.
   3. Add an automated API surface guard (`tests/unit/agent/test_agent_api_surface.py`) that enforces `<30` exported attributes once the rest of the shims land.
   4. Promote examples and internal modules to the new manager properties before flipping any warnings to errors.
+
+#### Session 10 - 2025-11-17 - Phase 4 Task 4 (Initialize & Readiness API ✅)
+- **Completed**:
+  - Introduced `Agent.initialize()` with `Agent.ready()` retained as a DeprecationWarning shim; added `Agent.is_ready` property exposing state machine readiness.
+  - Updated `_PUBLIC_ATTRIBUTE_NAMES` (swap `ready` → `initialize`, add `is_ready`, drop `token_count`) while keeping the 30-attribute budget enforced by the guard test.
+  - Migrated all source/tests from `await agent.ready()` to `await agent.initialize()`; updated thread/fork contexts and helper fixtures accordingly.
+  - Adjusted citation adapter typing alias, MCP adapter lint, and editable resource tools to keep `ruff` clean after the rename.
+- **Testing**:
+  - `uv run ruff check .` ✅
+  - `uv run mypy src/good_agent` ❌ (same external stub gaps as prior runs; no new regressions captured in log)
+  - `uv run pytest` ✅ (1317 passed / 36 skipped / 1 deselected; warnings unchanged, legacy shims still active)
+- **Follow-ups / Next Steps**:
+  1. Document the `ready()` → `initialize()` migration in `MIGRATION.md`/`CHANGELOG.md` with usage examples.
+  2. Update any public tutorials/examples referencing `await agent.ready()` once documentation sweep begins (Phase 4 Task 5).
+  3. Monitor deprecation warnings to ensure no remaining internal call sites rely on the legacy method before v1.0 removal.

@@ -70,7 +70,7 @@ class TestPerformance:
         )
 
         agent_parallel = Agent("Parallel", extensions=[search_parallel])
-        await agent_parallel.ready()
+        await agent_parallel.initialize()
 
         start = time.time()
         response = await agent_parallel.invoke("search", query="test")
@@ -89,7 +89,7 @@ class TestPerformance:
         )
 
         agent_sequential = Agent("Sequential", extensions=[search_sequential])
-        await agent_sequential.ready()
+        await agent_sequential.initialize()
 
         start = time.time()
         response = await agent_sequential.invoke("search", query="test")
@@ -120,7 +120,7 @@ class TestPerformance:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         start = time.time()
         response = await agent.tool_calls.invoke("search", query="test")
@@ -185,7 +185,7 @@ class TestPerformance:
         )
 
         agent_dedup = Agent("Dedup", extensions=[search_dedup])
-        await agent_dedup.ready()
+        await agent_dedup.initialize()
 
         # Warm-up to eliminate first-run overhead
         await agent_dedup.invoke("search", query="warmup")
@@ -204,7 +204,7 @@ class TestPerformance:
         )
 
         agent_no_dedup = Agent("NoDedup", extensions=[search_no_dedup])
-        await agent_no_dedup.ready()
+        await agent_no_dedup.initialize()
 
         # Warm-up to eliminate first-run overhead
         await agent_no_dedup.invoke("search", query="warmup")
@@ -269,7 +269,7 @@ class TestConcurrency:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Launch 20 concurrent searches
         queries = [f"query_{i}" for i in range(20)]
@@ -331,7 +331,7 @@ class TestConcurrency:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Launch concurrent searches
         tasks = [agent.tool_calls.invoke("search", query=f"concurrent_{i}") for i in range(50)]
@@ -397,7 +397,7 @@ class TestConcurrency:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Try to make more requests than rate limit allows
         results = []
@@ -457,7 +457,7 @@ class TestConcurrency:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Start search and cancel it
         task = asyncio.create_task(agent.tool_calls.invoke("search", query="test"))
@@ -494,7 +494,7 @@ class TestScalability:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         start = time.time()
         response = await agent.tool_calls.invoke("search", query="test")
@@ -549,7 +549,7 @@ class TestScalability:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         start = time.time()
         response = await agent.tool_calls.invoke("search", query="test")

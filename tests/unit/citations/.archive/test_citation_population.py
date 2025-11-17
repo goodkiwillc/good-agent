@@ -16,7 +16,7 @@ async def test_citation_population():
         model="gpt-4o-mini",
     )
 
-    await agent.ready()
+    await agent.initialize()
 
     # Test 1: Direct message with citations in content
     print("Test 1: Message with inline citations")

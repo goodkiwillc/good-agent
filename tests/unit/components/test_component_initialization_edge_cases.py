@@ -60,11 +60,11 @@ class ComponentWithInvalidToolSignature(AgentComponent):
 
 
 class ComponentWithCircularDependency(AgentComponent):
-    """Component that tries to call agent.ready() during initialization."""
+    """Component that tries to call agent.initialize() during initialization."""
 
     async def install(self, agent):
         await super().install(agent)
-        # Don't actually call agent.ready() as it would cause issues
+        # Don't actually call agent.initialize() as it would cause issues
         # Just simulate what would happen
         await asyncio.sleep(0.1)
 
@@ -78,15 +78,15 @@ class TestComponentInitializationEdgeCases:
 
     @pytest.mark.asyncio
     async def test_initialization_timeout_handling(self):
-        """Test that agent.ready() waits for component initialization to complete."""
+        """Test that agent.initialize() waits for component initialization to complete."""
         component = SlowInitializationComponent()
         agent = Agent("Test agent", extensions=[component])
 
-        # Measure time to ensure ready() actually waits for component initialization
+        # Measure time to ensure initialize() actually waits for component initialization
         import time
 
         start_time = time.time()
-        await agent.ready()  # Should wait for the 2-second component init
+        await agent.initialize()  # Should wait for the 2-second component init
         elapsed = time.time() - start_time
 
         # Should have waited at least the component initialization time (2.0 seconds)
@@ -108,7 +108,7 @@ class TestComponentInitializationEdgeCases:
         agent = Agent("Test agent", extensions=[component])
 
         # Should complete despite failing initialization task
-        await agent.ready()
+        await agent.initialize()
 
         # Agent should still be ready
         from good_agent.agent import AgentState
@@ -130,7 +130,7 @@ class TestComponentInitializationEdgeCases:
         agent = Agent("Test agent", extensions=[component])
 
         # Should complete quickly since no tools to register
-        await agent.ready()
+        await agent.initialize()
 
         assert component.installed
         assert len(agent.tools._tools) == 0
@@ -153,7 +153,7 @@ class TestComponentInitializationEdgeCases:
         no_tools = ComponentWithNoTools()
 
         agent = Agent("Test agent", extensions=[working, failing, no_tools])
-        await agent.ready()
+        await agent.initialize()
 
         # Working component tools should be available
         assert "working_tool" in agent.tools
@@ -171,7 +171,7 @@ class TestComponentInitializationEdgeCases:
         agent = Agent("Test agent", extensions=[component])
 
         # Should not raise exception despite task failure
-        await agent.ready()
+        await agent.initialize()
 
         # Verify the exception was caught and handled
         assert component.install_failed
@@ -181,7 +181,7 @@ class TestComponentInitializationEdgeCases:
 
     @pytest.mark.asyncio
     async def test_agent_ready_idempotency(self):
-        """Test that calling agent.ready() multiple times is safe."""
+        """Test that calling agent.initialize() multiple times is safe."""
         from good_agent.components import AgentComponent
         from good_agent.tools import tool
 
@@ -194,15 +194,15 @@ class TestComponentInitializationEdgeCases:
         agent = Agent("Test agent", extensions=[component])
 
         # First call
-        await agent.ready()
+        await agent.initialize()
         assert "simple_tool" in agent.tools
 
         # Second call should be idempotent
-        await agent.ready()
+        await agent.initialize()
         assert "simple_tool" in agent.tools
 
         # Third call should still work
-        await agent.ready()
+        await agent.initialize()
         assert "simple_tool" in agent.tools
 
         await agent.events.async_close()
@@ -214,7 +214,7 @@ class TestComponentInitializationEdgeCases:
         agent = Agent("Test agent", extensions=[component])
 
         # Just verify that ready completes despite exceptions
-        await agent.ready()
+        await agent.initialize()
 
         # Component should still be accessible
         assert component._agent is agent
@@ -244,7 +244,7 @@ class TestComponentInitializationEdgeCases:
         agent = Agent("Test agent", extensions=[component])
 
         # Should work even if task creation failed
-        await agent.ready()
+        await agent.initialize()
 
         # Tool should still be registered
         assert "test_tool" in agent.tools
@@ -262,7 +262,7 @@ class TestComponentInitializationEdgeCases:
         # Should start in INITIALIZING
         assert agent.state == AgentState.INITIALIZING
 
-        await agent.ready()
+        await agent.initialize()
 
         # Should reach READY despite component failure
         assert agent.state == AgentState.READY
@@ -304,11 +304,11 @@ class TestComponentInitializationEdgeCases:
         # Test different installation orders
         comp_a1, comp_b1 = ComponentA(), ComponentB()
         agent1 = Agent("Test 1", extensions=[comp_a1, comp_b1])
-        await agent1.ready()
+        await agent1.initialize()
 
         comp_a2, comp_b2 = ComponentA(), ComponentB()
         agent2 = Agent("Test 2", extensions=[comp_b2, comp_a2])  # Reversed order
-        await agent2.ready()
+        await agent2.initialize()
 
         # Both should have both tools regardless of order
         assert "tool_a" in agent1.tools and "tool_b" in agent1.tools
@@ -334,7 +334,7 @@ class TestComponentInitializationEdgeCases:
         # Component tasks are managed internally
         # Just verify initialization completes
 
-        await agent.ready()
+        await agent.initialize()
 
         # Tasks should be cleared (memory cleanup)
         assert len(agent._component_tasks) == 0

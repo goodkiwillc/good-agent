@@ -21,7 +21,7 @@ def test_context_priority_ordering():
 
         # Create agent with both config and agent context
         agent = Agent("Test system", context={**config_context, **agent_context})
-        await agent.ready()
+        await agent.initialize()
 
         # Message context (highest priority)
         message_context = {"var": "message", "message_only": "message_value"}
@@ -51,7 +51,7 @@ def test_context_priority_ordering():
 async def test_context_providers_in_messages():
     """Test that messages can access context providers."""
     agent = Agent("Test system")
-    await agent.ready()
+    await agent.initialize()
 
     # Register a context provider
     @agent.template.context_provider("timestamp")
@@ -92,7 +92,7 @@ async def test_tool_parameter_templates():
         context={"base_url": "http://api.example.com", "api_key": "secret123"},
         tools=[fetch],  # Pass tools at creation time
     )
-    await agent.ready()
+    await agent.initialize()
 
     # Manually execute tool with template parameters
     # First resolve the templates
@@ -133,7 +133,7 @@ async def test_tool_parameter_templates():
 async def test_backward_compatibility():
     """Test that old patterns still work."""
     agent = Agent("Test system", context={"global": "value"})
-    await agent.ready()
+    await agent.initialize()
 
     # Old pattern: direct message creation with content
     msg = UserMessage(content="Template: {{ global }}")
@@ -153,7 +153,7 @@ async def test_backward_compatibility():
 async def test_context_provider_override():
     """Test that message context can override context providers."""
     agent = Agent("Test system")
-    await agent.ready()
+    await agent.initialize()
 
     # Register a context provider
     @agent.template.context_provider("value")
@@ -179,7 +179,7 @@ async def test_context_provider_override():
 async def test_template_content_part_with_snapshot():
     """Test that TemplateContentPart context_snapshot works correctly."""
     agent = Agent("Test system", context={"global": "global_value"})
-    await agent.ready()
+    await agent.initialize()
 
     # Create a TemplateContentPart with a context snapshot
     part = TemplateContentPart(
@@ -206,7 +206,7 @@ async def test_template_content_part_with_snapshot():
 async def test_render_mode_in_context():
     """Test that render_mode is available in template context."""
     agent = Agent("Test system")
-    await agent.ready()
+    await agent.initialize()
 
     # Add template that uses render_mode
     agent.append("Mode: {{ render_mode }}")
@@ -228,7 +228,7 @@ async def test_render_mode_in_context():
 async def test_empty_agent_context():
     """Test that templates work with no agent context."""
     agent = Agent("Test system")  # No context provided
-    await agent.ready()
+    await agent.initialize()
 
     # Add template that doesn't require context
     agent.append("Static text and {{ 'literal' }}")
@@ -243,7 +243,7 @@ async def test_empty_agent_context():
 async def test_get_rendering_context_method():
     """Test the new get_rendering_context method directly."""
     agent = Agent("Test system", context={"base": "base_value", "override": "base"})
-    await agent.ready()
+    await agent.initialize()
 
     # Register a context provider
     @agent.template.context_provider("provider")
@@ -271,7 +271,7 @@ async def test_get_rendering_context_method():
 async def test_async_context_provider():
     """Test that async context providers work correctly."""
     agent = Agent("Test system")
-    await agent.ready()
+    await agent.initialize()
 
     # Register an async context provider
     @agent.template.context_provider("async_value")
@@ -307,7 +307,7 @@ async def test_agentless_message_rendering():
 async def test_template_error_handling():
     """Test that template errors are handled gracefully."""
     agent = Agent("Test system")
-    await agent.ready()
+    await agent.initialize()
 
     # Add template with undefined variable (without strict mode)
     agent.append("Undefined: {{ undefined_var }}")
@@ -344,7 +344,7 @@ async def test_system_prompt_with_template_variable():
     # Create context with today's date
     today = datetime.now()
     agent = Agent(system_prompt, context={"today": today})
-    await agent.ready()
+    await agent.initialize()
 
     # Check that the system message exists
     assert len(agent.messages) > 0
@@ -397,7 +397,7 @@ async def test_system_prompt_template_with_citation_manager():
     agent = Agent(
         system_prompt, context={"today": today}, extensions=[citation_manager]
     )
-    await agent.ready()
+    await agent.initialize()
 
     # Check that the system message exists
     assert len(agent.messages) > 0

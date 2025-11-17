@@ -21,7 +21,7 @@ def test_import_step_by_step():
     # Step 2: Try creating a simple agent
     async def create_agent():
         agent = Agent("Test system", context={"var": "test"})
-        await agent.ready()
+        await agent.initialize()
         await agent.events.async_close()
         return True
 

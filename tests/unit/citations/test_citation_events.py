@@ -15,7 +15,7 @@ class TestMessageCreateEvent:
         """MESSAGE_CREATE_BEFORE extracts citations from content."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         # append() triggers MESSAGE_CREATE_BEFORE
         agent.append(
@@ -39,7 +39,7 @@ class TestMessageCreateEvent:
         """MESSAGE_CREATE_BEFORE respects provided citations."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         citations = ["https://example.com/doc1", "https://example.com/doc2"]
 
@@ -61,7 +61,7 @@ class TestMessageCreateEvent:
         """MESSAGE_CREATE_BEFORE normalizes citation format."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append(
             """
@@ -87,7 +87,7 @@ class TestMessageCreateEvent:
         """MESSAGE_CREATE_BEFORE adds citations to global index."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         initial_count = len(manager.index)
 
@@ -111,7 +111,7 @@ class TestMessageCreateEvent:
         """MESSAGE_CREATE_BEFORE handles XML tag content."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append(
             """
@@ -144,7 +144,7 @@ class TestMessageCreateEvent:
         """MESSAGE_CREATE_BEFORE handles mixed XML and markdown content."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append(
             """
@@ -189,7 +189,7 @@ class TestMessageCreateEvent:
         """MESSAGE_CREATE_BEFORE handles messages without citations."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append("This message has no citations.")
 
@@ -209,7 +209,7 @@ class TestMessageRenderEvent:
         """MESSAGE_RENDER_BEFORE transforms citations for DISPLAY mode."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append(
             """
@@ -240,7 +240,7 @@ class TestMessageRenderEvent:
         """MESSAGE_RENDER_BEFORE transforms citations for LLM mode."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append(
             """
@@ -266,7 +266,7 @@ class TestMessageRenderEvent:
         """MESSAGE_RENDER_BEFORE ensures citations use global index."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         all_urls = set()
 
@@ -337,7 +337,7 @@ class TestMessageRenderEvent:
         """MESSAGE_RENDER_BEFORE preserves XML structure in tool messages."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append(
             """
@@ -375,7 +375,7 @@ class TestMessageRenderEvent:
         """MESSAGE_RENDER_BEFORE handles mixed XML/markdown with global index."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append(
             """
@@ -436,7 +436,7 @@ class TestMessageRenderEvent:
         """MESSAGE_RENDER_BEFORE handles inline citation without source."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         logger_name = "good_agent.extensions.citations.manager"
         with caplog.at_level(logging.WARNING, logger=logger_name):
@@ -468,7 +468,7 @@ class TestMessageRenderEvent:
         """MESSAGE_RENDER_BEFORE warns if inline citation not in global index."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         manager.index.add("https://example.com/otherdoc")  # idx 1
         manager.index.add("https://example.com/moredoc")  # idx 2
@@ -510,7 +510,7 @@ class TestMessageRenderEvent:
 #         """MESSAGE_APPEND_AFTER processes pre-created AssistantMessage."""
 #         manager = CitationManager()
 #         agent = Agent(extensions=[manager])
-#         await agent.ready()
+#         await agent.initialize()
 
 #         # Pre-populate index
 #         agent.append("Doc [1]\n\n[1]: https://example.com/doc1")
@@ -533,7 +533,7 @@ class TestMessageRenderEvent:
 #         """MESSAGE_APPEND_AFTER skips processing if citations already set."""
 #         manager = CitationManager()
 #         agent = Agent(extensions=[manager])
-#         await agent.ready()
+#         await agent.initialize()
 
 #         # Create message with explicit citations
 #         citations = ["https://example.com/doc1"]
@@ -556,7 +556,7 @@ class TestMessageRenderEvent:
 #         """MESSAGE_APPEND_AFTER handles [!CITE_X!] references."""
 #         manager = CitationManager()
 #         agent = Agent(extensions=[manager])
-#         await agent.ready()
+#         await agent.initialize()
 
 #         # Pre-populate index
 #         idx = manager.index.add("https://example.com/doc")
@@ -583,7 +583,7 @@ class TestMessageRenderEvent:
 #         """MESSAGE_CREATE_BEFORE fires before MESSAGE_APPEND_AFTER."""
 #         manager = CitationManager()
 #         agent = Agent(extensions=[manager])
-#         await agent.ready()
+#         await agent.initialize()
 
 #         event_order = []
 
@@ -609,7 +609,7 @@ class TestMessageRenderEvent:
 #         """MESSAGE_RENDER_BEFORE fires each time message is rendered."""
 #         manager = CitationManager()
 #         agent = Agent(extensions=[manager])
-#         await agent.ready()
+#         await agent.initialize()
 
 #         agent.append("Test message")
 #         message = agent.messages[-1]
@@ -640,7 +640,7 @@ class TestEventPriorities:
         """CitationManager handlers run at priority 150."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         execution_order = []
 
@@ -670,7 +670,7 @@ class TestErrorHandling:
         """Malformed citation content doesn't crash agent."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         # Malformed citations
         agent.append("Text [1] without references")
@@ -686,7 +686,7 @@ class TestErrorHandling:
         """Missing citation references are handled gracefully."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         # Reference [2] but only provide [1]
         agent.append(
@@ -713,7 +713,7 @@ class TestMultipleMessages:
         """Citations from multiple messages accumulate in global index."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append("First [1]\n\n[1]: https://example.com/doc1")
         agent.append("Second [1]\n\n[1]: https://example.com/doc2")
@@ -729,7 +729,7 @@ class TestMultipleMessages:
         """Same URL referenced in multiple messages has consistent index."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         url = "https://example.com/doc"
 

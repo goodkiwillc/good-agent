@@ -125,7 +125,7 @@ class AgentTaskManager:
         return stats
 
     def waitable_tasks(self) -> list[asyncio.Task[Any]]:
-        """List of tasks that should block :meth:`Agent.ready`."""
+        """List of tasks that should block :meth:`Agent.initialize`."""
 
         return [
             task

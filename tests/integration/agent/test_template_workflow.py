@@ -286,7 +286,7 @@ Limit results to {{ limit | default(10) }} items.""")
             language_model=mock_lm,  # Provide the mocked language model
         )
 
-        await agent.ready()
+        await agent.initialize()
 
         # Verify system prompt was properly rendered
         assert len(agent.messages) == 1
