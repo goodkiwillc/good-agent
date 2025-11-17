@@ -571,7 +571,7 @@ class Agent(EventRouter):
         self._pending_tools = tools
 
         # Track the component installation task
-        self._component_install_task = None
+        self._component_install_task: asyncio.Task[None] | None = None
         # Mirror legacy attribute for tests/back-compat
         self._component_tasks = self._component_registry._component_tasks
 
@@ -1372,28 +1372,6 @@ class Agent(EventRouter):
             **kwargs,
         )
 
-    @overload
-    async def call(
-        self,
-        *content_parts: MessageContent,
-        role: Literal["user", "assistant", "system", "tool"] = "user",
-        response_model: None = None,
-        context: dict | None = None,
-        auto_execute_tools: bool = True,
-        **kwargs: Any,
-    ) -> AssistantMessage: ...
-
-    @overload
-    async def call(
-        self,
-        *content_parts: MessageContent,
-        role: Literal["user", "assistant", "system", "tool"] = "user",
-        response_model: type[T_Output],
-        context: dict | None = None,
-        auto_execute_tools: bool = True,
-        **kwargs: Any,
-    ) -> AssistantMessageStructuredOutput[T_Output]: ...
-
     async def _get_tool_definitions(self) -> list[ToolSignature] | None:
         """Get tool definitions for the LLM call.
 
@@ -1419,6 +1397,28 @@ class Agent(EventRouter):
         return await self._llm_coordinator.llm_call(
             response_model=response_model, **kwargs
         )
+
+    @overload
+    async def call(
+        self,
+        *content_parts: MessageContent,
+        role: Literal["user", "assistant", "system", "tool"] = "user",
+        response_model: None = None,
+        context: dict | None = None,
+        auto_execute_tools: bool = True,
+        **kwargs: Any,
+    ) -> AssistantMessage: ...
+
+    @overload
+    async def call(
+        self,
+        *content_parts: MessageContent,
+        role: Literal["user", "assistant", "system", "tool"] = "user",
+        response_model: type[T_Output],
+        context: dict | None = None,
+        auto_execute_tools: bool = True,
+        **kwargs: Any,
+    ) -> AssistantMessageStructuredOutput[T_Output]: ...
 
     @ensure_ready
     async def call(

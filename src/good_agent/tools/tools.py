@@ -907,12 +907,12 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
         **kwargs: P.kwargs,
     ) -> ToolResponse[FuncResp]:
         """Execute the tool and return response"""
-        tool_call = None
+        tool_call: ToolCall | None = None
         try:
             # Set up dependency injection context if available
             # Extract context from kwargs if provided
             agent = kwargs.pop("_agent", None)
-            tool_call: ToolCall | None = kwargs.pop("_tool_call", None)
+            tool_call = kwargs.pop("_tool_call", None)
 
             # Handle ContextValue injection
             sig = inspect.signature(self._original_fn)
@@ -921,7 +921,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
                     isinstance(param.default, _ContextValueDescriptor)
                     and param_name not in kwargs
                 ):
-                    context_value = param.default
+                    context_value: _ContextValueDescriptor = param.default
                     # Try to get from agent context
                     if agent and hasattr(agent, "context"):
                         # Try to get the value from context
@@ -1285,7 +1285,7 @@ def tool(
             config = {"retry": retry, "hide": hide or [], **kwargs}
 
             # Create and return BoundTool descriptor
-            bound_tool = BoundTool(
+            bound_tool: BoundTool[Any, P, FuncResp] = BoundTool(
                 tool_class=Tool,
                 unbound_method=f,
                 metadata=metadata,
@@ -1338,7 +1338,7 @@ def tool(
 
         # Attach metadata to both function and tool instance
         # Use setattr to handle the union type properly
-        f._tool_metadata = metadata
+        f._tool_metadata = metadata  # type: ignore[union-attr]
         tool_instance._tool_metadata = metadata
 
         # If register=True, register the tool globally
@@ -1362,7 +1362,7 @@ def tool(
             )
 
         # Return the Tool instance
-        return tool_instance
+        return tool_instance  # type: ignore[return-value]
 
     # Handle both @tool and @tool()
     if func is None:

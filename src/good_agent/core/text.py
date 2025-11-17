@@ -75,11 +75,11 @@ class StringFormatter:
                 s = getattr(self, call)(s)
             else:
                 raise ValueError(f"Method {call} not found in StringFormatter.")
-        return s
+        return s if s is not None else ""
 
     def unindent(self, s: str | None) -> str:
         if not s:
-            return s
+            return ""
         return textwrap.dedent(s).strip()
 
     def remove_all_indents(
@@ -106,7 +106,7 @@ class StringFormatter:
         """
         paragraphs = []
 
-        paragraph_lines = []
+        paragraph_lines: list[str] = []
         num_newlines_before_paragraphs = 0
         for line in text.splitlines():
             if not line.strip() and paragraph_lines:  # end of current paragraph
@@ -158,7 +158,7 @@ class StringFormatter:
 
         returns '  foo\nblah'.
         """
-        lines = []
+        lines: list[str] = []
         for line in text.splitlines():
             if lines or line.strip():
                 lines.append(line)

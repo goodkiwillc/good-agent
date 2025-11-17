@@ -5,6 +5,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import typer
 import yaml
@@ -269,7 +270,7 @@ def list_templates(
 
     elif format == "tree":
         tree = Tree("📁 Templates")
-        by_dir: dict[str, list[tuple[str, any]]] = {}
+        by_dir: dict[str, list[tuple[str, Any]]] = {}
         for template in templates:
             parts = template.name.split("/")
             if len(parts) > 1:
@@ -450,7 +451,7 @@ def render(
     config = _load_config()
     prompts_dir = project_root / config.get("prompts_dir", "prompts")
 
-    context_dict: dict[str, any] = {}
+    context_dict: dict[str, Any] = {}
     if context:
         try:
             context_dict = json.loads(context)

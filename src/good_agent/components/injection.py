@@ -126,7 +126,7 @@ class MessageInjectorComponent(AgentComponent):
         # If we have parts to inject, create a new message with modified content
         if prefix_parts or suffix_parts:
             # Combine all content parts
-            new_content_parts = []
+            new_content_parts: list[ContentPart] = []
             if prefix_parts:
                 new_content_parts.extend(prefix_parts)
             new_content_parts.extend(message.content_parts)

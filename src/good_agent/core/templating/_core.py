@@ -3,6 +3,7 @@ import typing
 import warnings
 from abc import ABC, abstractmethod
 from collections import ChainMap
+from typing import Any
 
 from jinja2 import BaseLoader, Environment
 from jinja2 import (
@@ -46,7 +47,7 @@ class AbstractTemplate(ABC):
         super().__init_subclass__()
 
         # Get the existing template config or create a new one
-        base_config = getattr(cls, "__template_config__", ChainMap())
+        base_config: ChainMap[str, Any] = getattr(cls, "__template_config__", ChainMap())
         if not isinstance(base_config, ChainMap):
             base_config = ChainMap(base_config if base_config else {})
 
@@ -55,7 +56,6 @@ class AbstractTemplate(ABC):
             cls.__template_config__ = base_config.new_child(template_config)
         else:
             cls.__template_config__ = base_config
-        return cls
 
     def get_template(self) -> str:
         if current_template := _extract_template(self):

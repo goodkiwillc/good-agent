@@ -164,28 +164,20 @@ def get_managed_router_class():
                     pass
 
                 try:
-                    litellm.logging_callback_manager.add_litellm_async_success_callback = noop_add  # type: ignore
-                    litellm.logging_callback_manager.add_litellm_success_callback = (
-                        noop_add  # type: ignore
-                    )
-                    litellm.logging_callback_manager.add_litellm_async_failure_callback = noop_add  # type: ignore
-                    litellm.logging_callback_manager.add_litellm_failure_callback = (
-                        noop_add  # type: ignore
-                    )
+                    litellm.logging_callback_manager.add_litellm_async_success_callback = noop_add  # type: ignore[method-assign]
+                    litellm.logging_callback_manager.add_litellm_success_callback = noop_add  # type: ignore[method-assign]
+                    litellm.logging_callback_manager.add_litellm_async_failure_callback = noop_add  # type: ignore[method-assign]
+                    litellm.logging_callback_manager.add_litellm_failure_callback = noop_add  # type: ignore[method-assign]
 
                     # Initialize Router - callbacks won't be registered due to monkey-patch
                     super().__init__(model_list=model_list or [], **router_kwargs)
 
                 finally:
                     # Restore original methods
-                    litellm.logging_callback_manager.add_litellm_async_success_callback = original_add_async_success  # type: ignore
-                    litellm.logging_callback_manager.add_litellm_success_callback = (
-                        original_add_success  # type: ignore
-                    )
-                    litellm.logging_callback_manager.add_litellm_async_failure_callback = original_add_async_failure  # type: ignore
-                    litellm.logging_callback_manager.add_litellm_failure_callback = (
-                        original_add_failure  # type: ignore
-                    )
+                    litellm.logging_callback_manager.add_litellm_async_success_callback = original_add_async_success  # type: ignore[method-assign]
+                    litellm.logging_callback_manager.add_litellm_success_callback = original_add_success  # type: ignore[method-assign]
+                    litellm.logging_callback_manager.add_litellm_async_failure_callback = original_add_async_failure  # type: ignore[method-assign]
+                    litellm.logging_callback_manager.add_litellm_failure_callback = original_add_failure  # type: ignore[method-assign]
 
             async def _invoke_async_callbacks(self, method_name: str, *args, **kwargs):
                 """
