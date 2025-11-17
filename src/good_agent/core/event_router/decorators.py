@@ -26,7 +26,7 @@ from __future__ import annotations
 import functools
 import inspect
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar, cast
 
 from .context import EventContext
 from .protocols import ApplyInterrupt, EventName, F
@@ -34,6 +34,9 @@ from .registration import LifecyclePhase
 
 if TYPE_CHECKING:
     pass  # type: ignore[attr-defined]
+
+# Type variable for methods (includes self parameter)
+T_Method = TypeVar("T_Method", bound=Callable[..., object])
 
 
 def on(
@@ -149,7 +152,7 @@ class emit:
         self.include_args = include_args
         self.include_result = include_result
 
-    def __call__(self, func: F) -> F:
+    def __call__(self, func: T_Method) -> T_Method:
         """
         Decorator that automatically emits events around method execution.
 
@@ -256,7 +259,7 @@ class emit:
                         # Use apply_async for async methods to ensure completion
                         await self.apply_async(f"{event_name}:finally", **finally_args)
 
-            return async_wrapper  # type: ignore
+            return cast(T_Method, async_wrapper)
 
         else:
 
@@ -325,7 +328,7 @@ class emit:
                             finally_args["error"] = error
                         self.do(f"{event_name}:finally", **finally_args)
 
-            return sync_wrapper  # type: ignore
+            return cast(T_Method, sync_wrapper)
 
 
 def emit_event(

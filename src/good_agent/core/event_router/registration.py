@@ -134,18 +134,26 @@ class HandlerRegistry:
         self._broadcast_to: list[HandlerRegistry] = []
         """List of other registries to forward events to."""
 
+        self._next_handler_id: int = 0
+        """Auto-incrementing counter for unique handler IDs."""
+
+        self._handler_map: dict[
+            int, tuple[EventName, EventPriority, HandlerRegistration]
+        ] = {}
+        """Mapping from handler ID to (event, priority, registration) for deregistration."""
+
     def register_handler(
         self,
         event: EventName,
         handler: Callable[..., Any],
         priority: EventPriority = 100,
         predicate: Callable[[EventContext], bool] | None = None,
-    ) -> None:
+    ) -> int:
         """Register a handler for an event with thread safety.
 
         This method is thread-safe and can be called concurrently from multiple
         threads. If the handler is already registered for this event at this
-        priority, its predicate will be updated.
+        priority, its predicate will be updated and the existing handler ID is returned.
 
         Args:
             event: Event name to register handler for
@@ -153,30 +161,83 @@ class HandlerRegistry:
             priority: Execution priority (higher = earlier, default: 100)
             predicate: Optional condition for handler execution
 
+        Returns:
+            Unique handler ID that can be used with deregister()
+
         THREAD SAFETY: Protected by self._lock
         """
         with self._lock:
             registrations = self._events[event][priority]
 
             # Check if handler already registered at this priority
-            for registration in registrations:
-                if registration.handler is handler:
+            for handler_id, (
+                reg_event,
+                reg_priority,
+                registration,
+            ) in self._handler_map.items():
+                if (
+                    reg_event == event
+                    and reg_priority == priority
+                    and registration.handler is handler
+                ):
                     # Update predicate for existing handler
                     registration.predicate = predicate
                     if self._debug:
                         logger.debug(
                             f"Updated predicate for {handler.__name__} on {event!r}"
                         )
-                    return
+                    return handler_id
 
-            # Add new registration
-            registrations.append(
-                HandlerRegistration(handler=handler, predicate=predicate)
-            )
+            # Add new registration with unique ID
+            handler_id = self._next_handler_id
+            self._next_handler_id += 1
+
+            registration = HandlerRegistration(handler=handler, predicate=predicate)
+            registrations.append(registration)
+            self._handler_map[handler_id] = (event, priority, registration)
+
             if self._debug:
                 logger.debug(
-                    f"Registered {handler.__name__} for {event!r} at priority {priority}"
+                    f"Registered {handler.__name__} for {event!r} at priority {priority} (ID: {handler_id})"
                 )
+
+            return handler_id
+
+    def deregister(self, handler_id: int) -> bool:
+        """Remove a handler by its ID.
+
+        This method is thread-safe and can be called during event emission
+        without causing crashes or race conditions.
+
+        Args:
+            handler_id: Unique handler ID returned from register_handler()
+
+        Returns:
+            True if handler was found and removed, False if not found
+
+        THREAD SAFETY: Protected by self._lock
+        """
+        with self._lock:
+            if handler_id not in self._handler_map:
+                return False
+
+            event, priority, registration = self._handler_map[handler_id]
+
+            # Remove from event handler list
+            if event in self._events and priority in self._events[event]:
+                try:
+                    self._events[event][priority].remove(registration)
+                    if self._debug:
+                        logger.debug(
+                            f"Deregistered handler ID {handler_id} for {event!r}"
+                        )
+                except ValueError:
+                    # Handler was already removed (edge case)
+                    pass
+
+            # Remove from handler map
+            del self._handler_map[handler_id]
+            return True
 
     def get_sorted_handlers(
         self, event: EventName, include_broadcasts: bool = True

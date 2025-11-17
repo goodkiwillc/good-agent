@@ -386,16 +386,21 @@ class EventRouter:
     ) -> Callable[[F], F]:
         """Register a handler for ``event`` with optional priority and predicate.
 
+        The handler ID is attached to the returned function as `_handler_id` attribute,
+        which can be used with `deregister()` to remove the handler.
+
         See ``examples/event_router/basic_usage.py`` for typical patterns.
         """
 
         def decorator(fn: F) -> F:
-            self._handler_registry.register_handler(
+            handler_id = self._handler_registry.register_handler(
                 event=event,
                 handler=fn,
                 priority=priority,
                 predicate=predicate,
             )
+            # Attach handler ID to function for later deregistration
+            fn._handler_id = handler_id  # type: ignore[attr-defined]
             return fn
 
         return decorator
@@ -466,6 +471,7 @@ class EventRouter:
                         logger.exception(f"Handler {handler} failed")
                     ctx.exception = e
         else:
+
             async def run_handlers():
                 for registration in handlers:
                     if not self._should_run_handler(registration, ctx):
