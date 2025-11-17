@@ -15,7 +15,7 @@ class TestCitationManagerInstallation:
         manager = CitationManager()
         agent = Agent("Test assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Manager should be installed
         assert "CitationManager" in agent.extensions
@@ -39,8 +39,8 @@ class TestCitationManagerInstallation:
         agent1 = Agent("Agent 1", extensions=[manager1])
         agent2 = Agent("Agent 2", extensions=[manager2])
 
-        await agent1.ready()
-        await agent2.ready()
+        await agent1.initialize()
+        await agent2.initialize()
 
         # Both should reference same index
         assert manager1.index is manager2.index
@@ -57,7 +57,7 @@ class TestCitationExtractionPipeline:
         manager = CitationManager()
         agent = Agent("Test assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Add user message with inline URL
         agent.append("Please research https://example.com/study for details.")
@@ -84,7 +84,7 @@ class TestCitationExtractionPipeline:
         manager = CitationManager()
         agent = Agent("Test assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Simulate LLM response with citations
         citations = [
@@ -122,7 +122,7 @@ class TestCitationExtractionPipeline:
         manager = CitationManager()
         agent = Agent("Test assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Simulate tool response with XML content
         xml_content = """
@@ -154,7 +154,7 @@ class TestCitationExtractionPipeline:
         manager = CitationManager()
         agent = Agent("Test assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Message with markdown reference block
         message_content = """
@@ -195,7 +195,7 @@ class TestCitationRenderingTransformation:
         manager = CitationManager()
         agent = Agent("Test assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Pre-populate global index
         manager.index.add(URL("https://existing1.com"))
@@ -239,7 +239,7 @@ class TestCitationRenderingTransformation:
         manager = CitationManager()
         agent = Agent("Test assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Add message with citations
         citations = [URL("https://example.com/page"), URL("https://test.org/article")]
@@ -303,8 +303,8 @@ class TestMultiAgentCitationSharing:
         agent1 = Agent("Research Agent", extensions=[manager1])
         agent2 = Agent("Analysis Agent", extensions=[manager2])
 
-        await agent1.ready()
-        await agent2.ready()
+        await agent1.initialize()
+        await agent2.initialize()
 
         # Agent 1 adds citations
         agent1.append("Found source https://research.org/paper")
@@ -329,8 +329,8 @@ class TestMultiAgentCitationSharing:
         agent1 = Agent("Agent 1", extensions=[CitationManager(shared_index)])
         agent2 = Agent("Agent 2", extensions=[CitationManager(shared_index)])
 
-        await agent1.ready()
-        await agent2.ready()
+        await agent1.initialize()
+        await agent2.initialize()
 
         # Same URLs added in different order by different agents
         agent1.append("Source A https://a.com and B https://b.com")
@@ -357,7 +357,7 @@ class TestRealWorldScenarios:
         manager = CitationManager()
         agent = Agent("Research Assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # 1. User asks for research
         agent.append("Please research the latest developments in AI safety")
@@ -411,7 +411,7 @@ class TestRealWorldScenarios:
         manager = CitationManager()
         agent = Agent("Research Assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Define a dummy search tool that returns our XML
         @tool
@@ -509,7 +509,7 @@ class TestRealWorldScenarios:
         manager = CitationManager()
         agent = Agent("Research Assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Simulate Perplexity-style response
         perplexity_response = {
@@ -558,7 +558,7 @@ class TestRealWorldScenarios:
         manager = CitationManager()
         agent = Agent("Research Assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Multiple messages referencing same sources
         agent.append("First reference to https://example.com/paper")
@@ -583,7 +583,7 @@ class TestRealWorldScenarios:
         manager = CitationManager()
         agent = Agent("Research Assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Different citation formats in different messages
 
@@ -631,7 +631,7 @@ class TestRealWorldScenarios:
         manager = CitationManager()
         agent = Agent("Research Assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Simulate search tool response with XML content matching user's example
         search_results_xml = """<search_query>
@@ -750,7 +750,7 @@ class TestRealWorldScenarios:
         manager = CitationManager()
         agent = Agent("Research Assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # First, add some existing citations to the global index
         agent.append("Check this source: https://existing-source-1.com/article")
@@ -842,7 +842,7 @@ class TestRealWorldScenarios:
         manager = CitationManager()
         agent = Agent("Research Assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Mixed content: XML search results with markdown commentary
         mixed_content = """Based on my search, here are the top results:
@@ -911,7 +911,7 @@ The comprehensive review [3] provides additional insights.
         manager = CitationManager()
         agent = Agent("Research Assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Content mixing inline URLs with XML results
         mixed_content = """Check this source https://inline-url.com/article for background.
@@ -961,7 +961,7 @@ Also see https://another-inline.org/reference for more details."""
         manager = CitationManager()
         agent = Agent("Research Assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Content with both LLM citations and XML idx attributes
         mixed_content = """Summary: The research [!CITE_1!] shows important findings.
@@ -1029,7 +1029,7 @@ class TestCitationManagerAPI:
         manager = CitationManager()
         agent = Agent("Test assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Empty index
         summary = manager.get_citations_summary()
@@ -1049,7 +1049,7 @@ class TestCitationManagerAPI:
         manager = CitationManager()
         agent = Agent("Test assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Add citations with metadata and tags
         manager.index.add(
@@ -1078,7 +1078,7 @@ class TestCitationManagerAPI:
         manager = CitationManager()
         agent = Agent("Test assistant", extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         # Add citations with different tags
         manager.index.add(URL("https://research1.com"), tags=["research", "ai"])
@@ -1144,7 +1144,7 @@ class TestCitationAdapterIntegration:
             tools=[fetch_url, fetch_urls],
             extensions=[manager],
         )
-        await agent.ready()
+        await agent.initialize()
 
         # Step 3: Verify tool adapter registration and signature transformation
         fetch_url_tool = agent.tools["fetch_url"]

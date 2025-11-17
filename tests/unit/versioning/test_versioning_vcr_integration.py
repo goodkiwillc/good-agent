@@ -11,7 +11,7 @@ class TestVersioningWithRealLLM:
     async def test_versioning_with_real_call(self, llm_vcr):
         """Test versioning with a real LLM call."""
         agent = Agent("You are a helpful but concise assistant", model="gpt-4.1-mini")
-        await agent.ready()
+        await agent.initialize()
 
         # Initial state - system message issue means no version yet
         initial_msg_count = len(agent.messages)
@@ -45,7 +45,7 @@ class TestVersioningWithRealLLM:
         agent = Agent(
             "You are a helpful assistant. Be very concise.", model="gpt-4.1-mini"
         )
-        await agent.ready()
+        await agent.initialize()
 
         # First call
         await agent.call("What is the capital of France? One word answer.")
@@ -97,7 +97,7 @@ class TestVersioningWithRealLLM:
             tools=[calculate],
             model="gpt-4.1-mini",
         )
-        await agent.ready()
+        await agent.initialize()
 
         initial_count = len(agent.messages)
 
@@ -129,7 +129,7 @@ class TestVersioningWithRealLLM:
             "You are a story writer. Be creative but very concise (1-2 sentences).",
             model="gpt-4.1-mini",
         )
-        await agent.ready()
+        await agent.initialize()
 
         # Build initial conversation
         await agent.call("Start a story about a robot in one sentence.")
@@ -179,7 +179,7 @@ class TestVersioningWithRealLLM:
         agent = Agent(
             "You are a helpful assistant. Be very concise.", model="gpt-4.1-mini"
         )
-        await agent.ready()
+        await agent.initialize()
 
         # Build conversation
         await agent.call("What is Python in one sentence?")
@@ -212,7 +212,7 @@ class TestVersioningWithRealLLM:
         agent = Agent(
             "You are a helpful assistant. Be very concise.", model="gpt-4.1-mini"
         )
-        await agent.ready()
+        await agent.initialize()
 
         # Initial conversation
         await agent.call("Tell me about dogs in one sentence.")
@@ -265,7 +265,7 @@ class TestVersioningWithRealLLM:
             auto_execute_tools=True,
             model="gpt-4.1-mini",
         )
-        await agent.ready()
+        await agent.initialize()
 
         initial_count = agent._version_manager.version_count
 
@@ -307,7 +307,7 @@ class TestVersioningEdgeCasesWithVCR:
             "You are a silent assistant. Respond with only '...' to everything.",
             model="gpt-4.1-mini",
         )
-        await agent.ready()
+        await agent.initialize()
 
         response = await agent.call("Hello! How are you today?")
 
@@ -330,7 +330,7 @@ class TestVersioningEdgeCasesWithVCR:
             "You are a helpful assistant. Answer in exactly 5 words.",
             model="gpt-4.1-mini",
         )
-        await agent.ready()
+        await agent.initialize()
 
         # Build a conversation
         responses = []

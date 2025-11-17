@@ -44,7 +44,7 @@ class TestMessageRegistry:
 
         # Create a real agent for proper weakref testing
         agent = Agent("test")
-        await agent.ready()
+        await agent.initialize()
 
         registry.register(msg, agent)
         owner = registry.get_agent(msg.id)

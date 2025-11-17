@@ -31,7 +31,7 @@ class TestCitationManagerInitialization:
         manager = CitationManager()
         agent = Agent(extensions=[manager])
 
-        await agent.ready()
+        await agent.initialize()
 
         assert agent[CitationManager] is not None
         assert agent[CitationManager] is manager

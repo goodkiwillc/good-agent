@@ -12,7 +12,7 @@ class TestMessageCreationWithCitations:
         """Messages with markdown citations are extracted during creation."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         content = """
         Research shows [1] that citations work.
@@ -39,7 +39,7 @@ class TestMessageCreationWithCitations:
         """Messages can be created with explicit citations parameter."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         content = "Research shows [1] and [2]."
         citations = [
@@ -60,7 +60,7 @@ class TestMessageCreationWithCitations:
         """Inline URLs are extracted as citations."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         content = "See https://example.com/doc.pdf for details."
 
@@ -79,7 +79,7 @@ class TestMessageCreationWithCitations:
         """Tool messages with XML url attributes are extracted."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         content = """
         <results>
@@ -110,7 +110,7 @@ class TestLocalCitationStorage:
         """Message citations are stored as sequential list (1-based when referenced)."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         content = """
         References [1], [3], and [5].
@@ -136,7 +136,7 @@ class TestLocalCitationStorage:
         """Duplicate URLs within a message are deduplicated."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         content = """
         First reference [1] and second reference [1] again.
@@ -162,7 +162,7 @@ class TestMessageRenderingForDisplay:
         """DISPLAY mode converts citations to clickable markdown links."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         content = """
         Research shows [1] that this works.
@@ -190,7 +190,7 @@ class TestMessageRenderingForDisplay:
         """DISPLAY mode for tool messages shows url attributes."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         content = """
         <results>
@@ -219,7 +219,7 @@ class TestMessageRenderingForLLM:
         """LLM mode uses global indices from CitationIndex."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         # First message establishes global index
         agent.append(
@@ -262,7 +262,7 @@ class TestMessageRenderingForLLM:
         """Same URL gets same global index across messages."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         url = "https://example.com/doc"
 
@@ -292,7 +292,7 @@ class TestMixedFormatHandling:
         """Messages with both markdown and XML citations work correctly."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         content = """
         Text citation [1] and XML data:
@@ -318,7 +318,7 @@ class TestMixedFormatHandling:
         """XML href attributes are treated like url attributes."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         content = """
         <links>

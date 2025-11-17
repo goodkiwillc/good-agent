@@ -76,7 +76,7 @@ async def test_provider_discovery():
 
     # Initialize agent (this triggers discovery)
     agent = Agent("You are a test assistant", extensions=[search])
-    await agent.ready()
+    await agent.initialize()
 
     # Check discovered providers
     providers = search.registry._providers
@@ -253,7 +253,7 @@ async def test_agent_search_integration():
 
     # Create agent with search component
     agent = Agent("You are a search assistant", extensions=[search])
-    await agent.ready()
+    await agent.initialize()
 
     print(f"\nRegistered providers: {list(search._providers.keys())}")
     print(f"Available tools: {list(agent.tools.keys())}")
@@ -291,7 +291,7 @@ async def test_date_range_functionality():
     # Create AgentSearch with discovered providers
     search = AgentSearch(auto_discover=True)
     agent = Agent("Search assistant", extensions=[search])
-    await agent.ready()
+    await agent.initialize()
 
     if len(search.registry._providers) == 0:
         print("No providers available for date range test")

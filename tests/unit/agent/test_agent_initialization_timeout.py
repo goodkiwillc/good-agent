@@ -46,7 +46,7 @@ async def test_agent_initialization_with_simple_tools():
     agent = Agent("You are a helpful assistant", tools=[simple_tool, async_tool])
 
     # Wait for agent to be ready
-    await agent.ready()
+    await agent.initialize()
 
     elapsed = time.time() - start_time
 
@@ -82,7 +82,7 @@ async def test_agent_initialization_with_many_tools():
     agent = Agent("You are a helpful assistant", tools=tools)
 
     # Wait for agent to be ready
-    await agent.ready()
+    await agent.initialize()
 
     elapsed = time.time() - start_time
 
@@ -107,7 +107,7 @@ async def test_agent_initialization_with_tool_patterns():
     agent = Agent("You are a helpful assistant", tools=["nonexistent:*", "fake_tool"])
 
     # Wait for agent to be ready
-    await agent.ready()
+    await agent.initialize()
 
     elapsed = time.time() - start_time
 
@@ -123,9 +123,9 @@ async def test_agent_initialization_with_tool_patterns():
 
 @pytest.mark.asyncio
 async def test_agent_initialization_timeout_detection():
-    """Test that agent.ready() has timeout protection.
+    """Test that agent.initialize() has timeout protection.
 
-    This test verifies that the timeout mechanism exists in the ready() method
+    This test verifies that the timeout mechanism exists in the initialize() method
     by checking that the implementation includes proper timeout handling for
     initialization scenarios.
     """
@@ -142,7 +142,7 @@ async def test_agent_initialization_timeout_detection():
     start_time = time.time()
 
     # This should complete quickly without timing out
-    await agent.ready()
+    await agent.initialize()
 
     elapsed = time.time() - start_time
 
@@ -157,7 +157,7 @@ async def test_agent_initialization_timeout_detection():
     # Note: Testing the actual timeout behavior requires either:
     # 1. A component that genuinely hangs (hard to create reliably in tests)
     # 2. Deep mocking of internal state (fragile and implementation-dependent)
-    # The timeout code is clearly present in agent.py ready() method at lines 709-714,
+    # The timeout code is clearly present in agent.py initialize() method at lines 709-714,
     # and the other tests verify normal initialization works correctly.
 
 
@@ -193,7 +193,7 @@ async def test_agent_initialization_with_mixed_tool_types():
     )
 
     # Wait for agent to be ready
-    await agent.ready()
+    await agent.initialize()
 
     elapsed = time.time() - start_time
 
@@ -222,7 +222,7 @@ async def test_concurrent_agent_initialization():
             return x + idx
 
         agent = Agent(f"Agent {idx}", tools=[agent_tool, simple_tool])
-        await agent.ready()
+        await agent.initialize()
 
         elapsed = time.time() - start
 

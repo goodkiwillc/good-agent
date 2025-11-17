@@ -84,7 +84,7 @@ class TestComponentDecoratorPatterns:
 
         # Create agent - this should trigger decorator registration
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Give async event handlers time to complete
         await asyncio.sleep(0.01)
@@ -101,7 +101,7 @@ class TestComponentDecoratorPatterns:
         """Test that both manual and decorator handlers work together."""
         component = SimpleDecoratorComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Give async event handlers time to complete
         await asyncio.sleep(0.01)
@@ -134,7 +134,7 @@ class TestComponentDecoratorPatterns:
         """Test that handlers respect component enabled state."""
         component = SimpleDecoratorComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Clear initialization events
         component.events.clear()
@@ -165,7 +165,7 @@ class TestComponentDecoratorPatterns:
         """Test component that uses only manual registration."""
         component = ManualOnlyComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Give async event handlers time to complete
         await asyncio.sleep(0.01)
@@ -212,7 +212,7 @@ class TestComponentDecoratorPatterns:
 
         component = PriorityTestComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Give async event handlers time to complete
         await asyncio.sleep(0.01)
@@ -257,7 +257,7 @@ class TestComponentDecoratorPatterns:
 
         component = AsyncTestComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Execute tool via agent to trigger async handlers
         result = await agent.tool_calls.invoke("trigger_tool", value="async_test")

@@ -64,7 +64,7 @@ async def test_decorator_debug():
 
     # Wait for agent to be ready
     print("Waiting for agent ready...")
-    await agent.ready()
+    await agent.initialize()
 
     print(f"Install called: {component.install_called}")
     print(f"Final component events: {component.events}")

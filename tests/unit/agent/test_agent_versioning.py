@@ -14,7 +14,7 @@ class TestAgentVersioning:
         """Agent with versioning enabled (default behavior)."""
         # Create agent without system prompt to have cleaner test state
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
         return agent
 
     @pytest_asyncio.fixture
@@ -27,7 +27,7 @@ class TestAgentVersioning:
     async def test_agent_initializes_versioning(self):
         """Agent should initialize versioning infrastructure by default."""
         agent = Agent("test")
-        await agent.ready()
+        await agent.initialize()
 
         # Check versioning components exist
         assert hasattr(agent, "_message_registry")
@@ -235,7 +235,7 @@ class TestAgentVersioning:
 
         # Create another agent
         other_agent = Agent("other")
-        await other_agent.ready()
+        await other_agent.initialize()
 
         msg2 = UserMessage(content_parts=[])
         other_agent.append(msg2)
@@ -255,7 +255,7 @@ class TestAgentVersioning:
 
         # Fork the agent
         forked = versioned_agent.context_manager.fork(include_messages=True)
-        await forked.ready()
+        await forked.initialize()
 
         # Forked agent should have its own version manager
         assert forked._version_manager is not versioned_agent._version_manager
@@ -281,7 +281,7 @@ class TestBackwardCompatibility:
     async def test_agent_basic_operations_work(self):
         """All basic agent operations should work with versioning."""
         agent = Agent("test")
-        await agent.ready()
+        await agent.initialize()
 
         initial_count = len(agent.messages)  # May have system message
 
@@ -311,7 +311,7 @@ class TestBackwardCompatibility:
     async def test_message_list_interface_preserved(self):
         """MessageList should maintain list interface."""
         agent = Agent()  # No system prompt for cleaner test
-        await agent.ready()
+        await agent.initialize()
 
         msgs = agent.messages
 
@@ -342,18 +342,18 @@ class TestBackwardCompatibility:
     async def test_fork_still_works(self):
         """Agent.fork() should work as before."""
         agent = Agent("original")
-        await agent.ready()
+        await agent.initialize()
 
         agent.append("Message")
 
         # Fork without messages
         fork1 = agent.context_manager.fork(include_messages=False)
-        await fork1.ready()
+        await fork1.initialize()
         assert len(fork1.messages) == 0
 
         # Fork with messages
         fork2 = agent.context_manager.fork(include_messages=True)
-        await fork2.ready()
+        await fork2.initialize()
         assert len(fork2.messages) == 2  # System message + user message
         assert str(fork2.messages[-1]) == str(
             agent.messages[-1]

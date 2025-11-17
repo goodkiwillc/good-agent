@@ -7,7 +7,7 @@ from good_agent.content import TemplateContentPart, TextContentPart
 async def test_agent_available_in_template_context():
     """Test that agent instance is available as 'agent' variable in templates."""
     agent = Agent("Test system prompt", context={"custom_value": "test123"})
-    await agent.ready()
+    await agent.initialize()
 
     # Test accessing agent ID
     agent.append("Agent ID: {{ agent.id }}")
@@ -32,7 +32,7 @@ async def test_agent_available_in_template_context():
 async def test_agent_in_rendering_context_methods():
     """Test that get_rendering_context methods include agent."""
     agent = Agent("Test", context={"key": "value"})
-    await agent.ready()
+    await agent.initialize()
 
     # Test sync method
     context = agent.get_rendering_context()
@@ -62,7 +62,7 @@ async def test_agent_in_rendering_context_methods():
 async def test_agent_in_template_content_part():
     """Test that TemplateContentPart can access agent in templates."""
     agent = Agent("Test")
-    await agent.ready()
+    await agent.initialize()
 
     # Create a message with TemplateContentPart
     msg = UserMessage(
@@ -93,7 +93,7 @@ async def test_agent_available_in_tool_templates():
         return f"Searched for: {query}"
 
     agent = Agent("Test", tools=[test_tool])
-    await agent.ready()
+    await agent.initialize()
 
     # Invoke tool with Template that uses agent
     result = await agent.tool_calls.invoke(
@@ -110,7 +110,7 @@ async def test_agent_available_in_tool_templates():
 async def test_agent_with_context_providers():
     """Test that agent is available alongside context providers."""
     agent = Agent("Test")
-    await agent.ready()
+    await agent.initialize()
 
     # Add a context provider
     @agent.template.context_provider("dynamic_value")
@@ -131,7 +131,7 @@ async def test_agent_with_context_providers():
 async def test_agent_in_nested_template_context():
     """Test agent availability in nested template contexts."""
     agent = Agent("Test", context={"level": "agent"})
-    await agent.ready()
+    await agent.initialize()
 
     # Message with its own context
     msg = UserMessage(

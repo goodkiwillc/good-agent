@@ -8,7 +8,7 @@ from good_agent import Agent
 async def test_datetime_strftime_formatting():
     """Test that datetime objects can be formatted with strftime."""
     agent = Agent("Test")
-    await agent.ready()
+    await agent.initialize()
 
     # Test various strftime formats
     agent.append("Full date: {{ today.strftime('%B %d, %Y') }}")
@@ -33,7 +33,7 @@ async def test_datetime_strftime_formatting():
 async def test_datetime_attribute_access():
     """Test that datetime attributes can be accessed in templates."""
     agent = Agent("Test")
-    await agent.ready()
+    await agent.initialize()
 
     agent.append(
         "Year: {{ today.year }}, Month: {{ today.month }}, Day: {{ today.day }}"
@@ -52,7 +52,7 @@ async def test_datetime_attribute_access():
 async def test_datetime_methods():
     """Test that datetime methods can be called in templates."""
     agent = Agent("Test")
-    await agent.ready()
+    await agent.initialize()
 
     # Test date() method
     agent.append("Date only: {{ today.date() }}")
@@ -72,7 +72,7 @@ async def test_datetime_with_timedelta():
     """Test date arithmetic with timedelta in context."""
     # Add timedelta to context for date arithmetic
     agent = Agent("Test", context={"timedelta": timedelta})
-    await agent.ready()
+    await agent.initialize()
 
     # Test date arithmetic
     agent.append("Tomorrow: {{ (today + timedelta(days=1)).strftime('%Y-%m-%d') }}")
@@ -95,7 +95,7 @@ async def test_datetime_with_timedelta():
 async def test_datetime_in_complex_templates():
     """Test datetime in complex template scenarios."""
     agent = Agent("Test", context={"project": "MyProject"})
-    await agent.ready()
+    await agent.initialize()
 
     # Complex template with multiple datetime uses
     agent.append("""

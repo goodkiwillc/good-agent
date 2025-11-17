@@ -14,7 +14,7 @@ from good_agent.mock import (
 async def test_mock_message_with_citations():
     """Test that mock messages can include citations."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     # Create citations
     citations = [
@@ -41,7 +41,7 @@ async def test_mock_message_with_citations():
 async def test_mock_message_with_annotations():
     """Test that mock messages can include annotations."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     # Create annotations
     annotations = [
@@ -79,7 +79,7 @@ async def test_mock_message_with_annotations():
 async def test_mock_message_with_refusal():
     """Test that mock messages can include refusal reasons."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     # Create mock response with refusal
     mock_response = mock_message(
@@ -100,7 +100,7 @@ async def test_mock_message_with_refusal():
 async def test_mock_message_with_reasoning():
     """Test that mock messages can include reasoning/chain-of-thought."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     # Create mock response with reasoning
     mock_response = mock_message(
@@ -122,7 +122,7 @@ async def test_mock_message_with_reasoning():
 async def test_mock_message_with_usage():
     """Test that mock messages can include token usage information."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     # Create usage information
     usage = create_usage(prompt_tokens=150, completion_tokens=75, total_tokens=225)
@@ -143,7 +143,7 @@ async def test_mock_message_with_usage():
 async def test_mock_message_with_metadata():
     """Test that mock messages can include custom metadata."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     # Create custom metadata
     metadata = {
@@ -170,7 +170,7 @@ async def test_mock_message_with_metadata():
 async def test_mock_message_with_all_parameters():
     """Test that mock messages can include all parameters together."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     # Create all components
     citations = [create_citation("https://example.com/source")]
@@ -207,7 +207,7 @@ async def test_mock_message_with_all_parameters():
 async def test_agent_mock_interface_create_with_citations():
     """Test AgentMockInterface.create() with citations and annotations."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     # Use the agent's mock interface
     mock_response = agent.mock.create(
@@ -229,7 +229,7 @@ async def test_agent_mock_interface_create_with_citations():
 async def test_mock_call_with_citations():
     """Test that MockAgent.call() properly handles citations and annotations."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     # Create mock response with citations
     mock_response = mock_message(

@@ -22,7 +22,7 @@ class TestAddToolInvocationArbitraryResponse:
     async def test_record_invocation_with_tool_response(self):
         """Test tool_calls.record_invocation with standard ToolResponse."""
         agent = Agent("Test agent")
-        await agent.ready()  # Ensure agent is ready
+        await agent.initialize()  # Ensure agent is ready
 
         # Create a standard ToolResponse
         response = ToolResponse(
@@ -103,7 +103,7 @@ class TestAddToolInvocationArbitraryResponse:
     async def test_record_invocation_with_pydantic_model_response(self):
         """Test tool_calls.record_invocation with a Pydantic model response."""
         agent = Agent("Test agent")
-        await agent.ready()  # Ensure agent is ready
+        await agent.initialize()  # Ensure agent is ready
 
         # Create custom response object
         custom_response = CustomResponse(

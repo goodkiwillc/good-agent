@@ -19,7 +19,7 @@ class TestMarkdownCitationBlocksFix:
 
         citation_manager = CitationManager()
         agent = Agent("Test", extensions=[citation_manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append(content)
 
@@ -57,7 +57,7 @@ class TestMarkdownCitationBlocksFix:
         """
 
         agent = Agent("Test", extensions=[citation_manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append(content)
 
@@ -99,7 +99,7 @@ class TestMarkdownCitationBlocksFix:
 
         citation_manager = CitationManager()
         agent = Agent("Test", extensions=[citation_manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append(content)
 
@@ -131,7 +131,7 @@ class TestMarkdownCitationBlocksFix:
 
         citation_manager = CitationManager()
         agent = Agent("Test", extensions=[citation_manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append(content)
 
@@ -157,7 +157,7 @@ class TestMarkdownCitationBlocksFix:
 
         citation_manager = CitationManager()
         agent = Agent("Test", extensions=[citation_manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append(content)
 
@@ -183,7 +183,7 @@ class TestMarkdownCitationBlocksFix:
 
         citation_manager = CitationManager()
         agent = Agent("Test", extensions=[citation_manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append(content)
 

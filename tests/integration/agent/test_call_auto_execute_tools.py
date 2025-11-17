@@ -44,7 +44,7 @@ async def create_test_agent():
         "You are a helpful assistant with access to weather and calculation tools.",
         tools=[get_weather, calculate],
     )
-    await agent.ready()
+    await agent.initialize()
     return agent
 
 
@@ -175,7 +175,7 @@ async def test_call_without_tools_returns_immediately():
     """Test that call() returns immediately when no tools are involved."""
     # Create agent without tools
     agent = Agent("You are a helpful assistant.")
-    await agent.ready()
+    await agent.initialize()
 
     mock_response = MockLLMResponse(
         "Hello! I'm here to help you with any questions you might have."

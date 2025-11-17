@@ -12,7 +12,7 @@ class TestVersioningWithRealOperations:
     async def test_versioning_with_append_operations(self):
         """Test versioning with various append operations."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Start with no versions
         assert agent._version_manager.version_count == 0
@@ -43,7 +43,7 @@ class TestVersioningWithRealOperations:
     async def test_versioning_with_message_manipulation(self):
         """Test versioning with direct message list manipulation."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Add initial messages
         agent.append("Message 1")
@@ -80,7 +80,7 @@ class TestVersioningWithRealOperations:
             return a + b
 
         agent = Agent(tools=[add_numbers])
-        await agent.ready()
+        await agent.initialize()
 
         # Add a message asking for tool use
         agent.append("Please add 5 and 3")
@@ -104,7 +104,7 @@ class TestVersioningWithRealOperations:
     async def test_versioning_with_fork_operations(self):
         """Test versioning with agent forking."""
         parent = Agent("Parent system prompt")
-        await parent.ready()
+        await parent.initialize()
 
         parent.append("Parent message 1")
         parent.append("Parent message 2")
@@ -113,7 +113,7 @@ class TestVersioningWithRealOperations:
 
         # Fork with messages
         child = parent.fork(include_messages=True)
-        await child.ready()
+        await child.initialize()
 
         # Child has own version manager
         assert child._version_manager is not parent._version_manager
@@ -136,7 +136,7 @@ class TestVersioningWithRealOperations:
     async def test_versioning_with_context_managers(self):
         """Test versioning with ThreadContext and ForkContext."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         agent.append("Message 1")
         agent.append("Message 2")
@@ -176,7 +176,7 @@ class TestVersioningWithRealOperations:
     async def test_versioning_with_revert_operations(self):
         """Test versioning with revert operations."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Build history
         agent.append("v1")
@@ -208,7 +208,7 @@ class TestVersioningWithRealOperations:
     async def test_versioning_with_simple_mock_llm(self):
         """Test versioning with a simple mock LLM response."""
         agent = Agent("You are helpful")
-        await agent.ready()
+        await agent.initialize()
 
         # Create a simple mock that returns a basic response
         async def mock_complete(*args, **kwargs):
@@ -264,7 +264,7 @@ class TestVersioningWithRealOperations:
     async def test_versioning_preserves_message_identity(self):
         """Test that versioning preserves message identity and content."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Create messages with specific content
         from good_agent.content.parts import TextContentPart
@@ -302,7 +302,7 @@ class TestVersioningWithRealOperations:
     async def test_versioning_with_mixed_operations(self):
         """Test versioning with a mix of operations."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Build complex history
         agent.append("Start")

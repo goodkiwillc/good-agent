@@ -83,7 +83,7 @@ Additional context: {{ details }}
         # This should work WITHOUT manual rendering
         agent = Agent("{% include 'system/base' %}", model="gpt-4")
 
-        await agent.ready()
+        await agent.initialize()
 
         # Check that system message was rendered from file
         assert len(agent.messages) == 1
@@ -107,7 +107,7 @@ Additional context: {{ details }}
             model="gpt-4",
         )
 
-        await agent.ready()
+        await agent.initialize()
 
         # Check that inheritance and variables worked
         system_msg = agent.messages[0]
@@ -125,7 +125,7 @@ Additional context: {{ details }}
         """Test that file templates work in user messages."""
         agent = Agent("You are a helpful assistant.", model="gpt-4")
 
-        await agent.ready()
+        await agent.initialize()
 
         # Add message using file template
         agent.append(
@@ -148,7 +148,7 @@ Additional context: {{ details }}
         """Test that templates can be preloaded for performance."""
         # Get the template manager from agent
         agent = Agent("Test", model="gpt-4")
-        await agent.ready()
+        await agent.initialize()
 
         # The template manager should be enhanced
         template_manager = agent.template
@@ -179,7 +179,7 @@ Additional context: {{ details }}
             model="gpt-4",
         )
 
-        await agent.ready()
+        await agent.initialize()
 
         system_msg = agent.messages[0]
         rendered_content = str(system_msg.content)
@@ -195,7 +195,7 @@ Additional context: {{ details }}
     async def test_fallback_to_registry(self, project_with_templates):
         """Test that registry templates still work."""
         agent = Agent("Test", model="gpt-4")
-        await agent.ready()
+        await agent.initialize()
 
         # Register a template in the traditional way
         agent.template.add_template(
@@ -233,7 +233,7 @@ Additional context: {{ details }}
                 # Create agent without prompts directory
                 agent = Agent("Regular system prompt without templates", model="gpt-4")
 
-                await agent.ready()
+                await agent.initialize()
 
                 # Should work normally
                 assert len(agent.messages) == 1
@@ -254,7 +254,7 @@ Additional context: {{ details }}
             model="gpt-4",
         )
 
-        await agent.ready()
+        await agent.initialize()
 
         # Template should not be resolved (no file loading)
         system_msg = agent.messages[0]

@@ -16,7 +16,7 @@ async def test_citation_lookup_comprehensive():
         model="gpt-4o-mini",
     )
 
-    await agent.ready()
+    await agent.initialize()
     citation_manager = agent[CitationManager]
 
     print("=" * 60)

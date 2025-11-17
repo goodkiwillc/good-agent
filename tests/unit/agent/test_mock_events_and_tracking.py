@@ -9,7 +9,7 @@ from good_agent.mock import MockAgent, create_citation, mock_message
 async def test_mock_triggers_llm_events():
     """Test that mock LLM calls trigger the expected agent events."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     # Track events
     llm_call_fired = False
@@ -45,7 +45,7 @@ async def test_mock_triggers_llm_events():
 async def test_mock_tracks_api_requests():
     """Test that MockAgent tracks API requests like the real model."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     responses = [
         mock_message("First", role="assistant"),
@@ -89,7 +89,7 @@ async def test_mock_tracks_api_requests():
 async def test_mock_response_has_expected_structure():
     """Test that mock responses have the same structure as real LLM responses."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     mock_response = mock_message(
         "Test content",
@@ -130,7 +130,7 @@ async def test_mock_response_has_expected_structure():
 async def test_mock_preserves_model_api_tracking():
     """Test that the mock model's API tracking works like the real model."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     responses = [
         mock_message("Answer 1", role="assistant"),
@@ -170,7 +170,7 @@ async def test_mock_preserves_model_api_tracking():
 async def test_mock_message_events():
     """Test that message append events are triggered with mocks."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     append_events = []
 
@@ -207,7 +207,7 @@ async def test_mock_message_events():
 async def test_mock_error_events():
     """Test that mock triggers error events when exhausted."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     error_events = []
 

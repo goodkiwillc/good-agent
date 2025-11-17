@@ -14,7 +14,7 @@ async def create_agent(index: int) -> Agent:
         f"You are helper #{index} who responds briefly.",
         language_model=MockLanguageModel({}),
     )
-    await agent.ready()
+    await agent.initialize()
     return agent
 
 

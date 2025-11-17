@@ -169,7 +169,7 @@ async def test_agent_template_manager_inheritance():
 
     # Create agent
     agent = Agent("Test system", context={"msg": "hello"})
-    await agent.ready()
+    await agent.initialize()
 
     try:
         # Agent should find global template
@@ -198,7 +198,7 @@ async def test_agent_template_rendering_with_inheritance():
 
     # Create agent
     agent = Agent("Test system", context={"name": "World"})
-    await agent.ready()
+    await agent.initialize()
 
     try:
         # Add message using global template via include
@@ -220,7 +220,7 @@ async def test_agent_local_template_override():
 
     # Create agent
     agent = Agent("Test system", context={"value": "test"})
-    await agent.ready()
+    await agent.initialize()
 
     try:
         # Agent should initially get global version

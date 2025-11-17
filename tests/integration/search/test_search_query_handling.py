@@ -57,7 +57,7 @@ class TestDateHandling:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Search with explicit dates
         since_date = date(2024, 1, 1)
@@ -84,7 +84,7 @@ class TestDateHandling:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Set a specific date in context
         test_date = date(2024, 6, 15)
@@ -115,7 +115,7 @@ class TestDateHandling:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         agent.context["today"] = date(2024, 6, 15)
 
@@ -142,7 +142,7 @@ class TestDateHandling:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Don't set context date
         await agent.tool_calls.invoke("search", query="test", timeframe="last_day")
@@ -164,7 +164,7 @@ class TestDateHandling:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Set context to a past date
         past_date = date(2023, 3, 15)
@@ -191,7 +191,7 @@ class TestQueryBuilding:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         await agent.tool_calls.invoke(
             "search",
@@ -243,7 +243,7 @@ class TestQueryBuilding:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Search with filters
         await agent.tool_calls.invoke(
@@ -303,7 +303,7 @@ class TestQueryBuilding:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Search specific platforms
         await agent.tool_calls.invoke(
@@ -346,7 +346,7 @@ class TestQueryBuilding:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Search without specifying limit
         await agent.tool_calls.invoke("search", query="test")
@@ -395,7 +395,7 @@ class TestQueryBuilding:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         await agent.tool_calls.invoke(
             "search",

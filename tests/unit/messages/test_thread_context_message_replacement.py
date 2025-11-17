@@ -23,7 +23,7 @@ class TestThreadContextMessageReplacement:
             return f"Results for: {query}"
 
         agent = Agent("You are a helpful assistant", tools=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Build conversation with tool calls
         agent.append("Search for Python tutorials")
@@ -105,7 +105,7 @@ class TestThreadContextMessageReplacement:
     async def test_thread_context_replace_messages_before_fork(self):
         """Test replacing messages before the fork point in ThreadContext."""
         agent = Agent("You are a helpful assistant")
-        await agent.ready()
+        await agent.initialize()
 
         # Build conversation
         agent.append("Message 1")
@@ -163,7 +163,7 @@ class TestThreadContextMessageReplacement:
     async def test_thread_context_multiple_truncations(self):
         """Test multiple nested truncations with ThreadContext."""
         agent = Agent("You are a helpful assistant")
-        await agent.ready()
+        await agent.initialize()
 
         # Build a longer conversation
         for i in range(1, 6):
@@ -215,7 +215,7 @@ class TestThreadContextMessageReplacement:
     async def test_thread_context_with_version_revert(self):
         """Test ThreadContext combined with version reverting."""
         agent = Agent("You are a helpful assistant")
-        await agent.ready()
+        await agent.initialize()
 
         # Build conversation
         agent.append("Original 1")
@@ -263,7 +263,7 @@ class TestThreadContextMessageReplacement:
     async def test_fork_context_preserves_original(self):
         """Test that ForkContext completely isolates changes."""
         agent = Agent("You are a helpful assistant")
-        await agent.ready()
+        await agent.initialize()
 
         # Build conversation with tool-like messages
         agent.append("User request")
@@ -307,7 +307,7 @@ class TestThreadContextMessageReplacement:
     async def test_thread_context_with_system_message_replacement(self):
         """Test that system messages can be replaced in ThreadContext."""
         agent = Agent("Original system prompt")
-        await agent.ready()
+        await agent.initialize()
 
         agent.append("User message")
         agent.append("Assistant response", role="assistant")

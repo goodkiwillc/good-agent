@@ -125,7 +125,7 @@ class MCPToolAdapter(Tool[..., T_Response], Generic[T_Response]):
         if json_type == "array":
             items_schema = schema.get("items", {})
             # Recursively get the item type, but use Any for complex nested types
-            item_type_obj = self._json_schema_to_python_type(items_schema)
+            self._json_schema_to_python_type(items_schema)
             # For typing purposes, we use list[Any] to avoid "not valid as a type" errors
             return list[Any]  # type: ignore[valid-type]
 

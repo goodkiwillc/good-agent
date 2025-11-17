@@ -37,7 +37,7 @@ class ForkContext:
         self.forked_agent = self.agent.context_manager.fork(include_messages=True, **self.fork_kwargs)
 
         # Wait for forked agent to be ready
-        await self.forked_agent.ready()
+        await self.forked_agent.initialize()
 
         if self.truncate_at is not None:
             # Truncate the forked agent's messages if requested
@@ -96,7 +96,7 @@ class ThreadContext:
     async def __aenter__(self) -> Agent:
         """Enter context with modified view."""
         # Ensure agent is ready
-        await self.agent.ready()
+        await self.agent.initialize()
 
         if hasattr(self.agent, "_version_manager"):
             # Versioned agent path

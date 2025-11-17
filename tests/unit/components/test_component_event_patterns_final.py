@@ -141,7 +141,7 @@ class TestComponentEventPatterns:
 
         # Create agent and test actual event handling
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Trigger message event
         agent.append("Test message")
@@ -167,7 +167,7 @@ class TestComponentEventPatterns:
         """Test that manual registration works correctly."""
         component = ManualOnlyComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Test enabled state handling
         assert component.enabled
@@ -192,7 +192,7 @@ class TestComponentEventPatterns:
         """Test that decorator and manual patterns work together."""
         component = ComprehensiveEventComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Test message handling (both patterns should fire)
         component.decorator_events.clear()
@@ -244,7 +244,7 @@ class TestComponentEventPatterns:
         """Test how enabled/disabled state affects different handler types."""
         component = ComprehensiveEventComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Test enabled (default)
         component.decorator_events.clear()
@@ -300,7 +300,7 @@ class TestComponentEventPatterns:
 
         component = PriorityComponent()
         agent = Agent("Test system", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Trigger event
         agent.append("Priority test")

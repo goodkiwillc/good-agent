@@ -97,7 +97,7 @@ class TestErrorHandling:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Should still get results from working provider
         response = await agent.tool_calls.invoke("search", query="test")
@@ -120,7 +120,7 @@ class TestErrorHandling:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Verify search is installed
         print(f"Agent tools: {list(agent.tools.keys())}")
@@ -180,7 +180,7 @@ class TestErrorHandling:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Search for SOCIAL_MEDIA which provider doesn't support
         response = await agent.tool_calls.invoke(
@@ -212,7 +212,7 @@ class TestErrorHandling:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Search with invalid platform name
         await agent.tool_calls.invoke(
@@ -244,7 +244,7 @@ class TestErrorHandling:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Search with invalid domain name
         await agent.tool_calls.invoke(
@@ -276,7 +276,7 @@ class TestErrorHandling:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Search with empty query
         await agent.tool_calls.invoke("search", query="")
@@ -351,7 +351,7 @@ class TestEdgeCases:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         response = await agent.tool_calls.invoke("search", query="test", limit=10)
         results = response.response
@@ -412,7 +412,7 @@ class TestEdgeCases:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Test various special characters
         special_queries = [
@@ -472,7 +472,7 @@ class TestEdgeCases:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         # Launch multiple searches concurrently
         tasks = [agent.tool_calls.invoke("search", query=f"query{i}") for i in range(5)]
@@ -525,7 +525,7 @@ class TestEdgeCases:
         )
 
         agent = Agent("Test", extensions=[search])
-        await agent.ready()
+        await agent.initialize()
 
         response = await agent.tool_calls.invoke("search", query="test")
         results = response.response

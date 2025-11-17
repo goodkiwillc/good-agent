@@ -46,7 +46,7 @@ class TestMessageInjectorComponent:
         """Test that components can inject content into system prompts."""
         component = MockEnabledMessageInjector()
         agent = Agent("Base system prompt", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Check the system message has the injected content
         system_msg = agent.messages[0]
@@ -67,7 +67,7 @@ class TestMessageInjectorComponent:
         """Test that components can inject content into user messages."""
         component = MockEnabledMessageInjector()
         agent = Agent("System prompt", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Add a user message
         agent.append(UserMessage(content="User query"))
@@ -115,7 +115,7 @@ class TestMessageInjectorComponent:
         """Test that disabled components don't inject content."""
         component = MockEnabledMessageInjector(enabled=False)
         agent = Agent("Base system prompt", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Check the system message has NO injected content
         system_msg = agent.messages[0]
@@ -134,7 +134,7 @@ class TestMessageInjectorComponent:
         """Test enabling/disabling components at runtime."""
         component = MockEnabledMessageInjector(enabled=False)
         agent = Agent("Base prompt", extensions=[component])
-        await agent.ready()
+        await agent.initialize()
 
         # Initially disabled - no injection
         initial_system = agent.messages[0]
@@ -161,7 +161,7 @@ class TestMessageInjectorComponent:
             extensions=[component],
             context={"agent_name": "TestBot", "timestamp": "2024-01-01"},
         )
-        await agent.ready()
+        await agent.initialize()
 
         # Check system message has template part
         system_msg = agent.messages[0]
@@ -180,7 +180,7 @@ class TestMessageInjectorComponent:
         )
 
         agent = Agent("Base prompt", extensions=[component1, component2])
-        await agent.ready()
+        await agent.initialize()
 
         # Both components should inject their content
         system_msg = agent.messages[0]
@@ -212,7 +212,7 @@ class TestSimpleMessageInjector:
         )
 
         agent = Agent("Follow instructions", extensions=[injector])
-        await agent.ready()
+        await agent.initialize()
 
         # Check system message
         system_msg = agent.messages[0]
@@ -235,7 +235,7 @@ class TestSimpleMessageInjector:
             extensions=[injector],
             context={"agent_id": "bot-123", "session_id": "sess-456"},
         )
-        await agent.ready()
+        await agent.initialize()
 
         # Check that template parts were created
         system_msg = agent.messages[0]
@@ -256,7 +256,7 @@ class TestSimpleMessageInjector:
         )
 
         agent = Agent("System", extensions=[injector])
-        await agent.ready()
+        await agent.initialize()
 
         system_msg = agent.messages[0]
         # Should only have original + suffix (no prefix since it's None)
@@ -273,7 +273,7 @@ class TestSimpleMessageInjector:
         )
 
         agent = Agent("System", extensions=[injector])
-        await agent.ready()
+        await agent.initialize()
 
         system_msg = agent.messages[0]
         # Should only have original + suffix (empty strings ignored)
@@ -287,7 +287,7 @@ class TestSimpleMessageInjector:
         )
 
         agent = Agent("System", extensions=[injector])
-        await agent.ready()
+        await agent.initialize()
 
         # Add multiple user messages
         agent.append(UserMessage(content="First user message"))
@@ -320,7 +320,7 @@ class TestSimpleMessageInjector:
             tools=[test_tool],
             extensions=[injector],
         )
-        await agent.ready()
+        await agent.initialize()
 
         # Verify system message has tool instruction
         system_msg = agent.messages[0]

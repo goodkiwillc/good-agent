@@ -16,7 +16,7 @@ async def test_citation_mapping_bug():
         model="gpt-4o-mini",
     )
 
-    await agent.ready()
+    await agent.initialize()
     citation_manager = agent[CitationManager]
 
     print("=" * 80)

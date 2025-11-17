@@ -11,7 +11,7 @@ class TestThreadContextContentTruncation:
     async def test_thread_context_truncates_message_content(self):
         """Test replacing verbose messages with condensed versions in ThreadContext."""
         agent = Agent("You are a helpful assistant")
-        await agent.ready()
+        await agent.initialize()
 
         # Build conversation with verbose content
         agent.append("Search for information about Python")
@@ -114,7 +114,7 @@ class TestThreadContextContentTruncation:
             """
 
         agent = Agent("You are a research assistant", tools=[search_web])
-        await agent.ready()
+        await agent.initialize()
 
         # Simulate multiple tool calls with verbose responses
         agent.append("Search for machine learning basics")
@@ -179,7 +179,7 @@ class TestThreadContextContentTruncation:
     async def test_fork_context_with_aggressive_truncation(self):
         """Test using ForkContext for aggressive truncation without affecting original."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Build a conversation with mixed content
         agent.append("Tell me about the history of computing")
@@ -262,7 +262,7 @@ class TestThreadContextContentTruncation:
     async def test_nested_contexts_with_progressive_truncation(self):
         """Test nested contexts with progressive levels of truncation."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Original verbose message
         agent.append("Explain quantum computing")
@@ -318,7 +318,7 @@ class TestThreadContextContentTruncation:
     async def test_revert_after_truncation(self):
         """Test that reverting versions works correctly with truncated messages."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Build conversation
         agent.append("Question 1")

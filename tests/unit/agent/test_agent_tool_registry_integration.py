@@ -55,7 +55,7 @@ class TestAgentToolRegistryIntegration:
 
         # Create agent with tool patterns
         async with Agent("You are a weather assistant", tools=["weather:*"]) as agent:
-            # Agent is already ready due to __aenter__ calling ready()
+            # Agent is already ready due to __aenter__ calling initialize()
 
             # Verify tools were loaded
             assert "get_weather" in agent.tools

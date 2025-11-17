@@ -116,7 +116,7 @@ async def test_bound_tools_work_with_agent():
     """Test that bound Tool instances work correctly when registered with an Agent."""
     component = SampleComponent()
     agent = Agent("Test agent", extensions=[component])
-    await agent.ready()
+    await agent.initialize()
 
     # Wait for component tool registration to complete
     if (

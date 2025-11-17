@@ -39,7 +39,7 @@ class TestToolAdapterIdentification:
         """Adapter identifies tools with 'url' parameter."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         tool = Tool(fn=mock_fetch_url, name="fetch_url")
 
@@ -56,7 +56,7 @@ class TestToolAdapterIdentification:
         """Adapter identifies tools with 'urls' array parameter."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         tool = Tool(
             fn=mock_fetch_multiple,
@@ -75,7 +75,7 @@ class TestToolAdapterIdentification:
         """Adapter identifies tools with alternate 'url' param names."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         tool = Tool(fn=mock_fetch_alt_param, name="fetch_alt_param")
 
@@ -91,7 +91,7 @@ class TestToolAdapterIdentification:
         """Adapter does not adapt tools without URL parameters."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         tool = Tool(fn=mock_search, name="search")
 
@@ -111,7 +111,7 @@ class TestToolSignatureTransformation:
         """Tool 'url' parameter becomes 'citation_idx'."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         tool = Tool(fn=mock_fetch_url, name="fetch_url")
 
@@ -142,7 +142,7 @@ class TestToolSignatureTransformation:
         """Tool 'urls' array becomes 'citation_idxs' array."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         tool = Tool(
             fn=mock_fetch_multiple,
@@ -174,7 +174,7 @@ class TestToolSignatureTransformation:
         """Alternate 'url' param name becomes 'citation_idx'."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         tool = Tool(fn=mock_fetch_alt_param, name="fetch_alt_param")
 
@@ -199,7 +199,7 @@ class TestParameterTranslation:
         """citation_idx parameter is translated back to url."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         # Add URL to global index
         url = "https://example.com/doc.pdf"
@@ -225,7 +225,7 @@ class TestParameterTranslation:
         """citation_idxs array is translated to urls array."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         # Add URLs to global index
         url1 = "https://example.com/doc1.pdf"
@@ -253,7 +253,7 @@ class TestParameterTranslation:
         """Invalid citation index is preserved for error handling."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         adapter = manager._citation_adapter
         assert adapter is not None
@@ -284,7 +284,7 @@ class TestParameterTranslation:
         """Parameters for non-URL tools are unchanged."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         adapter = manager._citation_adapter
         assert adapter is not None
@@ -303,7 +303,7 @@ class TestParameterTranslation:
         """Alternate URL param name is correctly translated."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         # Add URL to global index
         url = "https://example.com/doc.pdf"
@@ -331,7 +331,7 @@ class TestEndToEndToolIntegration:
         """Tool can be called via citation index instead of URL."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         # Register tool
         tool = Tool(fn=mock_fetch_url, name="fetch_url")
@@ -355,7 +355,7 @@ class TestEndToEndToolIntegration:
         """Adapter can analyze what transformations it will perform."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         tool = Tool(fn=mock_fetch_url, name="fetch_url")
 
@@ -377,7 +377,7 @@ class TestAdapterDisabling:
         """Manager can be created without tool adapter."""
         manager = CitationManager(use_tool_adapter=False)
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         # Adapter should not be installed
         assert manager._citation_adapter is None
@@ -389,7 +389,7 @@ class TestAdapterDisabling:
         """Tools are not adapted when adapter is disabled."""
         manager = CitationManager(use_tool_adapter=False)
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         tool = Tool(fn=mock_fetch_url, name="fetch_url")
         await agent.tools.register_tool(tool)

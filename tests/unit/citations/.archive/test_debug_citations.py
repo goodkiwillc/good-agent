@@ -24,7 +24,7 @@ async def test_debug_citations():
         model="gpt-4o-mini",
     )
 
-    await agent.ready()
+    await agent.initialize()
     citation_manager = agent[CitationManager]
 
     print("=" * 60)

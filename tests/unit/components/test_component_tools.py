@@ -61,9 +61,9 @@ async def test_component_tools_registration():
     # Create agent with TaskManager component
     task_manager = TaskManager()
     agent = Agent("You are a task management assistant", extensions=[task_manager])
-    await agent.ready()
+    await agent.initialize()
 
-    # Tools should now be registered immediately after ready() completes
+    # Tools should now be registered immediately after initialize() completes
 
     # Check that tools were registered
     assert "create_list" in agent.tools
@@ -92,7 +92,7 @@ async def test_component_tools_execution():
         "You are a task management assistant. Use the tools to manage tasks.",
         extensions=[task_manager],
     )
-    await agent.ready()
+    await agent.initialize()
 
     # Call agent with a request that should use tools
     await agent.call("Create a new list called 'Work Tasks'")
@@ -123,7 +123,7 @@ async def test_component_tool_with_agent_reference():
 
     manager = SmartTaskManager()
     agent = Agent("Assistant", extensions=[manager])
-    await agent.ready()
+    await agent.initialize()
 
     # Add some messages
     agent.append("Hello")
@@ -154,7 +154,7 @@ async def test_component_tool_type_checking():
 
     manager = TypedManager()
     agent = Agent("Test", extensions=[manager])
-    await agent.ready()
+    await agent.initialize()
 
     # Both sync and async methods should be registered as tools
     assert "sync_method" in agent.tools
@@ -187,7 +187,7 @@ async def test_component_tool_with_hide_parameter():
 
     manager = SecureManager()
     agent = Agent("Test", extensions=[manager])
-    await agent.ready()
+    await agent.initialize()
 
     tool = agent.tools["secure_operation"]
 

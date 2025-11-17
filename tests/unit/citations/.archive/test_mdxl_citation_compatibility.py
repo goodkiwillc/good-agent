@@ -29,7 +29,7 @@ class TestMDXLCitationCompatibility:
         # Create agent with citation manager
         citation_manager = CitationManager()
         agent = Agent("Test agent", extensions=[citation_manager])
-        await agent.ready()
+        await agent.initialize()
 
         # Add the MDXL content as a message
         agent.append(mdxl_content)
@@ -100,7 +100,7 @@ class TestMDXLCitationCompatibility:
         citation_manager.index.add("https://results.com/data.pdf")  # Will be CITE_2
 
         agent = Agent("Test agent", extensions=[citation_manager])
-        await agent.ready()
+        await agent.initialize()
 
         # Add the content
         agent.append(mdxl_content)
@@ -146,7 +146,7 @@ class TestMDXLCitationCompatibility:
             citation_manager.index.add(f"https://example.com/doc{i}.pdf")
 
         agent = Agent("Test agent", extensions=[citation_manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append(mdxl_content)
 
@@ -203,7 +203,7 @@ class TestMDXLCitationCompatibility:
         """
 
         agent = Agent("Test agent", extensions=[citation_manager])
-        await agent.ready()
+        await agent.initialize()
 
         agent.append(mdxl_content)
 

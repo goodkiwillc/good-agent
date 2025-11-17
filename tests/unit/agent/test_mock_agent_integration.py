@@ -13,7 +13,7 @@ async def test_mock_agent_intercepts_call():
     """Test that MockAgent intercepts agent.call() and returns mocked response."""
     # Create agent
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     # Create mock responses
     mock_response1 = mock_message("This is the first mocked response", role="assistant")
@@ -43,7 +43,7 @@ async def test_mock_agent_intercepts_call():
 async def test_mock_agent_with_citations_and_annotations():
     """Test that mocked responses with citations and annotations work correctly."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     # Create mock response with citations and annotations
     citations = [create_citation("https://example.com/source")]
@@ -74,7 +74,7 @@ async def test_mock_agent_with_citations_and_annotations():
 async def test_mock_agent_async_context_manager():
     """Test that MockAgent works as an async context manager."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     mock_response = mock_message("Async mock response", role="assistant")
 
@@ -88,7 +88,7 @@ async def test_mock_agent_async_context_manager():
 async def test_mock_agent_restores_original_model():
     """Test that the original model is restored after exiting MockAgent context."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     # Store reference to original model
     original_model = agent.model
@@ -109,7 +109,7 @@ async def test_mock_agent_restores_original_model():
 async def test_mock_agent_with_multiple_user_messages():
     """Test that mock works correctly when user sends multiple messages."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     # Queue up multiple mock responses
     responses = [
@@ -141,7 +141,7 @@ async def test_mock_agent_with_multiple_user_messages():
 async def test_mock_agent_appending_to_original():
     """Test that messages should be appended to the original agent, not the mock."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     mock_response = mock_message("Mock response", role="assistant")
 
@@ -166,7 +166,7 @@ async def test_mock_agent_appending_to_original():
 async def test_mock_with_refusal():
     """Test that mock responses with refusal work correctly."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     mock_response = mock_message(
         "",  # Empty content when refusing

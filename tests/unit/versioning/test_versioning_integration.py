@@ -40,7 +40,7 @@ class TestVersioningWithAgentOperations:
     async def agent_with_mock_llm(self, mock_llm_response):
         """Create an agent with mocked LLM."""
         agent = Agent("You are a test assistant")
-        await agent.ready()
+        await agent.initialize()
 
         # Mock the language model's complete method
         with patch.object(
@@ -173,7 +173,7 @@ class TestVersioningWithAgentOperations:
 
         # Create agent with tool
         agent = Agent("You are a test assistant", tools=[test_tool])
-        await agent.ready()
+        await agent.initialize()
 
         # Mock LLM to return tool call
         tool_function = Mock()
@@ -294,7 +294,7 @@ class TestVersioningWithAgentOperations:
         """Test that versions could be persisted and restored (simulation)."""
         # Create agent and add messages
         agent1 = Agent("Test system")
-        await agent1.ready()
+        await agent1.initialize()
 
         agent1.append("Message 1")
         agent1.append("Message 2")
@@ -311,7 +311,7 @@ class TestVersioningWithAgentOperations:
 
         # Simulate restoration in new agent
         agent2 = Agent("Test system")
-        await agent2.ready()
+        await agent2.initialize()
 
         # Restore versions (in real implementation, this would be from storage)
         agent2._version_manager._versions = version_data["versions"]
@@ -339,7 +339,7 @@ class TestMemoryAndPerformance:
         # Create agent in a scope
         async def create_agent_and_messages():
             agent = Agent("Test")
-            await agent.ready()
+            await agent.initialize()
 
             agent.append("Message 1")
             agent.append("Message 2")
@@ -373,7 +373,7 @@ class TestMemoryAndPerformance:
     async def test_version_memory_growth(self):
         """Test that versions don't cause excessive memory growth."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Add many messages
         for i in range(100):
@@ -406,7 +406,7 @@ class TestMemoryAndPerformance:
     async def test_large_message_handling(self):
         """Test versioning with large messages."""
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         # Create a large message (1MB of text)
         large_content = "x" * (1024 * 1024)
@@ -438,7 +438,7 @@ class TestEdgeCases:
     async def test_empty_agent_operations(self):
         """Test operations on empty agent."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Empty agent should have no versions
         assert agent._version_manager.version_count == 0
@@ -461,7 +461,7 @@ class TestEdgeCases:
     async def test_concurrent_modifications(self):
         """Test concurrent message modifications (should be safe due to GIL)."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         import asyncio
 
@@ -491,7 +491,7 @@ class TestEdgeCases:
     async def test_version_index_bounds(self):
         """Test version index boundary conditions."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         agent.append("Message 1")
         agent.append("Message 2")
@@ -517,7 +517,7 @@ class TestEdgeCases:
     async def test_message_id_uniqueness(self):
         """Test that message IDs are unique within each version."""
         agent = Agent("Test system")
-        await agent.ready()
+        await agent.initialize()
 
         # Add and modify messages
         agent.append("Original 1")

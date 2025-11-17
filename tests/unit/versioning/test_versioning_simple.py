@@ -11,7 +11,7 @@ class TestSimpleVersioning:
         """Test that appending messages creates versions."""
         # Create agent without system message
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Initially no versions
         assert agent._version_manager.version_count == 0
@@ -44,7 +44,7 @@ class TestSimpleVersioning:
         """
         # Create agent with system message
         agent = Agent("You are a helpful assistant")
-        await agent.ready()
+        await agent.initialize()
 
         # System message now creates initial version (fixed!)
         assert agent._version_manager.version_count == 1
@@ -74,7 +74,7 @@ class TestSimpleVersioning:
     async def test_message_replacement_versioning(self):
         """Test that replacing messages creates new versions."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Add initial messages
         agent.append("First")
@@ -100,7 +100,7 @@ class TestSimpleVersioning:
     async def test_revert_to_version(self):
         """Test reverting to earlier versions."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Build version history
         agent.append("v1")
@@ -131,7 +131,7 @@ class TestSimpleVersioning:
     async def test_thread_context_basic(self):
         """Test basic thread context functionality."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Add messages
         agent.append("Message 1")
@@ -158,7 +158,7 @@ class TestSimpleVersioning:
     async def test_fork_context_basic(self):
         """Test basic fork context functionality."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         agent.append("Original message")
         original_count = len(agent.messages)
@@ -181,7 +181,7 @@ class TestSimpleVersioning:
     async def test_clear_messages(self):
         """Test that clearing messages creates empty version."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Add messages
         agent.append("Message 1")
@@ -202,7 +202,7 @@ class TestSimpleVersioning:
     async def test_extend_messages(self):
         """Test that extend creates single version."""
         agent = Agent()
-        await agent.ready()
+        await agent.initialize()
 
         # Add initial message
         agent.append("First")

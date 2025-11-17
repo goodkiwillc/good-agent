@@ -7,7 +7,7 @@ from good_agent.mock import MockAgent, mock_message
 async def test_mock_agent_instance_introspection():
     """Test that we can introspect the MockAgent instance for debugging."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     responses = [
         mock_message("First", role="assistant"),
@@ -42,7 +42,7 @@ async def test_mock_agent_instance_introspection():
 async def test_mock_agent_execute_alternative_api():
     """Test the execute() method as an alternative API for getting mock messages."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     responses = [
         mock_message("First", role="assistant"),
@@ -68,7 +68,7 @@ async def test_mock_agent_execute_alternative_api():
 async def test_mock_agent_direct_call():
     """Test the call() method on MockAgent (legacy API)."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     mock_response = mock_message("Direct call response", role="assistant")
     mock_agent = MockAgent(agent, mock_response)
@@ -85,7 +85,7 @@ async def test_mock_agent_direct_call():
 async def test_accessing_mock_agent_for_verification():
     """Show how the MockAgent instance could be used for test verification."""
     agent = Agent("You are a helpful assistant")
-    await agent.ready()
+    await agent.initialize()
 
     responses = [
         mock_message("Answer 1", role="assistant"),

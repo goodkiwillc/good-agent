@@ -11,7 +11,7 @@ class TestGlobalIndexConsistency:
         """Same URL always gets the same global index."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         url = "https://example.com/doc.pdf"
 
@@ -34,7 +34,7 @@ class TestGlobalIndexConsistency:
         """Different URLs get different global indices."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         url1 = "https://example.com/doc1.pdf"
         url2 = "https://example.com/doc2.pdf"
@@ -72,7 +72,7 @@ class TestLocalToGlobalMapping:
         """Local message indices map to correct global indices."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         # First message: establishes doc1 as global index 1
         agent.append("Text [1]\n\n[1]: https://example.com/doc1")
@@ -96,7 +96,7 @@ class TestLocalToGlobalMapping:
         """Message with multiple citations maps each to global index."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         # Pre-populate global index
         manager.index.add("https://example.com/doc1")
@@ -160,7 +160,7 @@ class TestCitationLookup:
         """LLM response with [1], [2] should resolve from global index."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         # Populate global index
         agent.append(
@@ -202,7 +202,7 @@ class TestSparseIndexHandling:
         """Sparse indices [1], [5], [10] are compacted in message.citations."""
         manager = CitationManager()
         agent = Agent(extensions=[manager])
-        await agent.ready()
+        await agent.initialize()
 
         content = """
         References [1], [5], and [10].

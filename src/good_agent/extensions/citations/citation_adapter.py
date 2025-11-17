@@ -14,8 +14,12 @@ if TYPE_CHECKING:
     from ...tools import BoundTool, Tool, ToolSignature
     from .manager import CitationManager
 
+    CitationManagerType = CitationManager
+else:
+    CitationManagerType = Any
 
-class CitationAdapter(ToolAdapter["CitationManager"]):
+
+class CitationAdapter(ToolAdapter[CitationManagerType]):
     """
     Tool adapter that transforms URL parameters to citation indices.
 

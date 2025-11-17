@@ -16,7 +16,7 @@ async def test_citation_fix():
     print()
 
     agent = Agent("Test", extensions=[CitationManager()])
-    await agent.ready()
+    await agent.initialize()
     cm = agent[CitationManager]
 
     # Setup: Add specific URLs at specific indices

@@ -13,7 +13,7 @@ async def test_full_integration_with_thread_context_and_tools():
         return "default"
 
     agent = Agent("System prompt", tools=[default_tool])
-    await agent.ready()
+    await agent.initialize()
 
     # Create a resource
     resource = EditableResource("Hello world", name="doc")
@@ -82,7 +82,7 @@ async def test_nested_resource_contexts():
     from good_agent.resources import EditableResource
 
     agent = Agent("Test agent")
-    await agent.ready()
+    await agent.initialize()
 
     resource1 = EditableResource("Document 1", name="doc1")
     resource2 = EditableResource("Document 2", name="doc2")
@@ -120,7 +120,7 @@ async def test_resource_with_agent_call():
     # the full LLM interaction without mocking
 
     agent = Agent("You are a helpful editor")
-    await agent.ready()
+    await agent.initialize()
 
     resource = EditableResource(
         "This is a test dokument with misteaks.", name="document"
@@ -166,7 +166,7 @@ async def test_resource_error_handling():
 
     resource = FailingResource("test")
     agent = Agent("Test")
-    await agent.ready()
+    await agent.initialize()
 
     # Should raise the initialization error
     with pytest.raises(ValueError, match="Initialization failed"):
@@ -185,7 +185,7 @@ async def test_resource_state_persistence():
     from good_agent.resources import EditableResource
 
     agent = Agent("Test agent")
-    await agent.ready()
+    await agent.initialize()
 
     resource = EditableResource("Initial content", name="doc")
 
@@ -218,7 +218,7 @@ async def test_multiple_resources_sequential():
     from good_agent.resources import EditableResource
 
     agent = Agent("Test agent")
-    await agent.ready()
+    await agent.initialize()
 
     doc1 = EditableResource("Document 1", name="doc1")
     doc2 = EditableResource("Document 2", name="doc2")

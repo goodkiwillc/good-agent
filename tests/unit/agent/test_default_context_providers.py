@@ -9,7 +9,7 @@ from good_agent.components.template_manager import _GLOBAL_CONTEXT_PROVIDERS, Te
 async def test_today_context_provider():
     """Test that 'today' context provider returns datetime object at midnight."""
     agent = Agent("Test")
-    await agent.ready()
+    await agent.initialize()
 
     # Test in template - should render as datetime string
     agent.append("Date: {{ today }}")
@@ -36,7 +36,7 @@ async def test_today_context_provider():
 async def test_now_context_provider():
     """Test that 'now' context provider returns datetime object."""
     agent = Agent("Test")
-    await agent.ready()
+    await agent.initialize()
 
     # Test in template
     agent.append("Time: {{ now }}")
@@ -64,7 +64,7 @@ async def test_context_providers_in_tool_templates():
         return f"Processed: {message}"
 
     agent = Agent("Test", tools=[test_tool])
-    await agent.ready()
+    await agent.initialize()
 
     # Use context providers in Template parameter with formatting
     result = await agent.tool_calls.invoke(
@@ -86,7 +86,7 @@ async def test_context_providers_in_tool_templates():
 async def test_context_providers_with_agent_context():
     """Test that default providers work alongside agent context."""
     agent = Agent("Test", context={"custom": "value"})
-    await agent.ready()
+    await agent.initialize()
 
     # Use both default providers and agent context
     agent.append("Date: {{ today }}, Custom: {{ custom }}, Agent: {{ agent.id }}")
@@ -104,7 +104,7 @@ async def test_context_providers_with_agent_context():
 async def test_context_providers_priority():
     """Test that context can override default providers if needed."""
     agent = Agent("Test")
-    await agent.ready()
+    await agent.initialize()
 
     # Override 'today' with custom value
     agent.context._chainmap.maps[0]["today"] = "2024-01-01"

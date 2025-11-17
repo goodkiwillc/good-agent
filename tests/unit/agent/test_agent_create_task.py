@@ -81,10 +81,10 @@ class TestAgentCreateTask:
             assert component.tasks_created == 1
 
     async def test_ready_waits_for_tasks(self):
-        """Test that ready() waits for tasks with wait_on_ready=True."""
-        # Create agent without async with to control when ready() is called
+        """Test that initialize() waits for tasks with wait_on_ready=True."""
+        # Create agent without async with to control when initialize() is called
         agent = Agent("Test")
-        await agent.ready()  # Initialize the agent first
+        await agent.initialize()  # Initialize the agent first
 
         completed = {"task1": False, "task2": False, "task3": False}
 
@@ -288,7 +288,7 @@ class TestAgentCreateTask:
             await agent.tasks.wait_for_all()
 
     async def test_create_task_without_wait_on_ready(self):
-        """Test that tasks with wait_on_ready=False don't block ready()."""
+        """Test that tasks with wait_on_ready=False don't block initialize()."""
         async with Agent("Test") as agent:
             slow_task_done = {"done": False}
 
@@ -299,8 +299,8 @@ class TestAgentCreateTask:
             # Create slow task without wait_on_ready
             task = agent.tasks.create(slow_task(), wait_on_ready=False)
 
-            # ready() should return quickly
-            await agent.ready()
+            # initialize() should return quickly
+            await agent.initialize()
 
             # Task should still be running
             assert not slow_task_done["done"]

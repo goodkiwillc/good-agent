@@ -65,7 +65,7 @@ class TestToolPatternMatching:
         agent = Agent("You are a weather assistant", tools=["weather:*"])
 
         # Wait for agent to be ready (tools will be loaded)
-        await agent.ready()
+        await agent.initialize()
 
         # Check that only weather tools are loaded
         assert len(agent.tools) == 2
@@ -83,7 +83,7 @@ class TestToolPatternMatching:
         )
 
         # Wait for agent to be ready (tools will be loaded)
-        await agent.ready()
+        await agent.initialize()
 
         # Check that weather tools and calculate_sum are loaded
         assert len(agent.tools) == 3
@@ -101,7 +101,7 @@ class TestToolPatternMatching:
         )
 
         # Wait for agent to be ready (tools will be loaded)
-        await agent.ready()
+        await agent.initialize()
 
         # Check that only the specific tool is loaded
         assert len(agent.tools) == 1
@@ -115,7 +115,7 @@ class TestToolPatternMatching:
         agent = Agent("You are a universal assistant", tools=["*"])
 
         # Wait for agent to be ready (tools will be loaded)
-        await agent.ready()
+        await agent.initialize()
 
         # Check that all tools are loaded
         assert len(agent.tools) == 4
@@ -134,7 +134,7 @@ class TestToolPatternMatching:
         )
 
         # Wait for agent to be ready (tools will be loaded)
-        await agent.ready()
+        await agent.initialize()
 
         # Check that only specified tools are loaded
         assert len(agent.tools) == 2
@@ -157,7 +157,7 @@ class TestToolPatternMatching:
         agent = Agent("You are a mixed assistant", tools=["weather:*", custom_tool])
 
         # Wait for agent to be ready (tools will be loaded)
-        await agent.ready()
+        await agent.initialize()
 
         # Check that pattern tools and direct tool are loaded
         assert len(agent.tools) == 3
@@ -172,7 +172,7 @@ class TestToolPatternMatching:
         agent = Agent("You are an assistant", tools=["nonexistent:*", "fake_tool"])
 
         # Wait for agent to be ready (tools will be loaded)
-        await agent.ready()
+        await agent.initialize()
 
         # Check that no tools are loaded
         assert len(agent.tools) == 0
@@ -184,7 +184,7 @@ class TestToolPatternMatching:
         agent = Agent("You are a weather assistant", tools=["weather:*"])
 
         # Wait for agent to be ready (tools will be loaded)
-        await agent.ready()
+        await agent.initialize()
 
         # Execute a tool
         response = await agent.tool_calls.invoke("get_current_weather", location="New York")

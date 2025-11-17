@@ -16,7 +16,7 @@ async def demo_citation_access():
         model="gpt-4o-mini",
     )
 
-    await agent.ready()
+    await agent.initialize()
 
     # Simulate a response with citations (like from the campaign analysis)
     agent.append("""Based on recent news [1] and analysis [2], the California Governor race shows:
