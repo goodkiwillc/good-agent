@@ -3,7 +3,7 @@
 import pytest
 
 from good_agent import Agent
-from good_agent.pool import AgentPool
+from good_agent.agent.pool import AgentPool
 
 
 class TestAgentPoolInitialization:

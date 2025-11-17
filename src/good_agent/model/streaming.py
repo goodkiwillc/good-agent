@@ -14,7 +14,7 @@ from .protocols import StreamChunk
 if TYPE_CHECKING:
     from litellm.types.completion import ChatCompletionMessageParam
 
-    from ..config_types import ModelConfig
+    from ..agent.config import ModelConfig
     from .llm import LanguageModel
 
 logger = logging.getLogger(__name__)

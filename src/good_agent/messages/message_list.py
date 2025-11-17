@@ -20,7 +20,7 @@ from .roles import AssistantMessage, SystemMessage, ToolMessage, UserMessage
 
 if TYPE_CHECKING:
     from ..agent import Agent
-    from ..versioning import MessageRegistry, VersionManager
+    from .versioning import MessageRegistry, VersionManager
 
 T_Message = TypeVar("T_Message", bound=Message)
 

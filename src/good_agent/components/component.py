@@ -12,7 +12,7 @@ from .tool_adapter import ToolAdapter, ToolAdapterRegistry
 
 if TYPE_CHECKING:
     from ..agent import Agent
-    from ..config import AgentConfigManager
+    from ..agent.config import AgentConfigManager
     from ..events import ToolsGenerateSignature
     from ..tools import ToolSignature
 

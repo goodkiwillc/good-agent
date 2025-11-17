@@ -5,7 +5,9 @@ from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 from ulid import ULID
 
 if TYPE_CHECKING:
-    from .messages import Message
+    from . import Message
+
+from .utilities import MessageFactory
 
 
 class MessageNotFoundError(Exception):
@@ -129,8 +131,6 @@ class InMemoryMessageStore:
                         import json
 
                         json_loads = json.loads
-
-                    from .messages import MessageFactory
 
                     redis_key = f"agent:message:{message_id_str}"
                     cached_data = await self._redis_client.get(redis_key)

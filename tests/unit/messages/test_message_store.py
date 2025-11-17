@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from good_agent.messages import AssistantMessage, UserMessage
-from good_agent.store import (
+from good_agent.messages.store import (
     InMemoryMessageStore,
     MessageNotFoundError,
     get_message,
@@ -229,7 +229,7 @@ class TestGlobalMessageStore:
     def test_global_store_initialization(self):
         """Test that global store auto-initializes"""
         # Reset global state
-        from good_agent import store
+        from good_agent.messages import store
 
         store._global_message_store = None
 
@@ -262,7 +262,7 @@ class TestGlobalMessageStore:
         assert retrieved is message
 
         # Test message_exists
-        from good_agent.store import message_exists
+        from good_agent.messages.store import message_exists
 
         assert message_exists(message.id)
         assert not message_exists(ULID())
@@ -270,7 +270,7 @@ class TestGlobalMessageStore:
     @pytest.mark.asyncio
     async def test_global_async_functions(self):
         """Test global async convenience functions"""
-        from good_agent.store import aget_message, amessage_exists, aput_message
+        from good_agent.messages.store import aget_message, amessage_exists, aput_message
 
         # Reset with clean store
         set_message_store(InMemoryMessageStore())

@@ -23,7 +23,7 @@ if TYPE_CHECKING:
         ToolAdapterRegistry,
     )
     from .components.injection import MessageInjectorComponent, SimpleMessageInjector
-    from .config import AgentConfigManager
+    from .agent.config import AgentConfigManager
     from .content import (
         BaseContentPart,
         ContentPartType,
@@ -34,8 +34,8 @@ if TYPE_CHECKING:
         deserialize_content_part,
         is_template,
     )
-    from .context import Context
-    from .conversation import Conversation
+    from .agent.config import Context
+    from .agent.conversation import Conversation
     from .extensions import (
         AgentSearch,
         # BulkFetchResult,
@@ -131,7 +131,7 @@ _LAZY_IMPORTS = {
     "Agent": "agent",
     "AgentConfigParameters": "agent",
     "AgentState": "agent",
-    "AgentConfigManager": "config",
+    "AgentConfigManager": "agent.config",
     # Content parts (beyond the eager imports)
     "BaseContentPart": "content",
     "ContentPartType": "content",
@@ -148,8 +148,8 @@ _LAZY_IMPORTS = {
     "ToolAdapter": "components",
     "ToolAdapterRegistry": "components",
     # Context and conversation
-    "Context": "context",
-    "Conversation": "conversation",
+    "Context": "agent.config",
+    "Conversation": "agent.conversation",
     # Extensions - Citations
     "CitationIndex": "extensions",
     "CitationManager": "extensions",

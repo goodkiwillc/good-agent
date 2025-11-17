@@ -49,8 +49,6 @@ from ..components.template_manager.injection import (
     ContextValue,
     _ContextValueDescriptor,
 )
-from ..config import AgentConfigManager
-
 logger = logging.getLogger(__name__)
 
 type ToolCallId = str
@@ -58,6 +56,7 @@ type ToolLike = Union["Tool[..., Any]", Callable[..., Any]]
 
 if TYPE_CHECKING:
     from good_agent.agent import Agent
+    from ..agent.config import AgentConfigManager
 
     from ..mcp.client import MCPServerConfig
     from .bound_tools import BoundTool

@@ -9,8 +9,8 @@ from ulid import ULID
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from .agent import Agent
-    from .messages import Message
+    from good_agent.agent.core import Agent
+    from . import Message
     from .store import MessageStore
 
 

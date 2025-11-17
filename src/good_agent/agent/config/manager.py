@@ -362,7 +362,7 @@ class AgentConfigManager(ConfigStack):
                 # TaskManager will be disabled here
                 response = await agent.call("Process without task manager")
         """
-        from .components.component import AgentComponent
+        from good_agent.components.component import AgentComponent
 
         # Track original enabled states for extensions
         original_states: dict[AgentComponent, bool] = {}

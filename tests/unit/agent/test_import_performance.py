@@ -76,7 +76,7 @@ print(','.join(imported_heavy) if imported_heavy else 'NONE')
             ("good_agent.agent", 8.0),  # Currently ~7.7s
             ("good_agent.messages", 2.0),  # Currently ~1.1s
             ("good_agent.tools", 1.0),  # Currently ~0.05s
-            ("good_agent.context", 0.5),  # Currently minimal
+            ("good_agent.agent.config", 0.5),  # Context stack now lives here
             ("good_agent", 2.0),  # Currently ~1.2s
         ]
 

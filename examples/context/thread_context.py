@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from good_agent.config import AgentConfigManager
-from good_agent.context import Context
+from good_agent.agent.config import AgentConfigManager, Context
 
 
 def main() -> None:

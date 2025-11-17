@@ -8,12 +8,12 @@ from good_agent.messages import (
     ToolMessage,
     UserMessage,
 )
-from good_agent.tools import ToolCall, ToolCallFunction
-from good_agent.validation import (
+from good_agent.messages.validation import (
     MessageSequenceValidator,
     ValidationError,
     ValidationMode,
 )
+from good_agent.tools import ToolCall, ToolCallFunction
 
 
 class TestMessageSequenceValidator:

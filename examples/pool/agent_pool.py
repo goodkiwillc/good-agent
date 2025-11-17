@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 
 from good_agent.agent import Agent
-from good_agent.pool import AgentPool
+from good_agent.agent.pool import AgentPool
 
 try:  # pragma: no cover
     from .._shared.mock_llm import ExampleLanguageModel, assistant_response

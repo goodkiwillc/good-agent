@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, TypedDict
 from good_agent.core.event_router import EventContext
 from ulid import ULID
 
-from ..base import Index
+from ..core.indexing import Index
 from ..components import AgentComponent
 from ..events import AgentEvents
 

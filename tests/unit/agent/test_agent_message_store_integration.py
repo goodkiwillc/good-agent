@@ -1,6 +1,6 @@
 import pytest
 from good_agent import Agent
-from good_agent.store import (
+from good_agent.messages.store import (
     InMemoryMessageStore,
     message_store,
     set_message_store,
@@ -205,7 +205,7 @@ class TestMessageStoreErrorHandling:
 
     def test_missing_message_error(self):
         """Test error when trying to get non-existent message"""
-        from good_agent.store import MessageNotFoundError
+        from good_agent.messages.store import MessageNotFoundError
 
         with pytest.raises(MessageNotFoundError):
             message_store.get("non-existent-id")

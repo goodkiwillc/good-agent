@@ -3,7 +3,7 @@ import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from good_agent.config import AgentConfigManager
+from good_agent.agent.config import AgentConfigManager
 from good_agent.model.llm import LanguageModel
 from litellm.router import Router
 from pydantic import BaseModel

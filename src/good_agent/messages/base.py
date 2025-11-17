@@ -34,7 +34,7 @@ from ..content import (
     deserialize_content_part,
     is_template,
 )
-from ..interfaces import SupportsDisplay, SupportsLLM, SupportsRender, SupportsString
+from ..utilities.typing import SupportsDisplay, SupportsLLM, SupportsRender, SupportsString
 
 if TYPE_CHECKING:
     from ..agent import Agent

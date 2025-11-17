@@ -655,7 +655,7 @@ class TestFilteredMessageList:
             tool_msgs.append("Tool result")
 
         # Append with required fields
-        with patch("good_agent.store.put_message"):
+        with patch("good_agent.messages.store.put_message"):
             tool_msgs.append(
                 "Tool result",
                 tool_call_id="call_123",
