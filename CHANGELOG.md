@@ -132,6 +132,31 @@ Developers frequently asked when to use `call()` vs `execute()`, indicating docu
 - Updated `MIGRATION.md` Phase 4 guidance with readiness lifecycle examples, replacement snippets, and facade summaries referencing `examples/agent/basic_chat.py`.
 - Refreshed the Phase 4 migration tables so downstream teams follow the new manager accessors instead of the legacy Agent shortcuts.
 
+#### Task 5: Documentation & Example Validation (Completed 2025-11-17)
+
+##### Added
+
+- `docs/api-reference.md` – authoritative table covering the 30 public `Agent`
+  attributes/facades enforced by `Agent.public_attribute_names()`.
+- `tests/test_examples.py` – parametrized smoke suite that imports and executes
+  every script under `examples/`, failing if a `DeprecationWarning` is raised.
+
+##### Changed
+
+- `README.md` now ships with a runnable quick-start snippet plus links to the API
+  reference and migration guide.
+- `MIGRATION.md` Phase 4 section gained a quick checklist, before/after code
+  blocks for `ready()`→`initialize()`, tool-call migrations, message editing, and
+  context/event facade usage.
+- Added facade-specific docstrings on `Agent.tool_calls`,
+  `Agent.context_manager`, `Agent.events`, and `Agent.tasks` so IDEs and
+  generated docs highlight the preferred entry points.
+
+##### Testing
+
+- `uv run pytest tests/test_examples.py` (also executed as part of the default
+  `pytest` run).
+
 ### Phase 1: Template Consolidation (Completed 2025-11-15)
 
 **Status**: ✅ Complete (Step 6 of refactoring plan)

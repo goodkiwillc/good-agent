@@ -22,9 +22,9 @@ class AgentEventsFacade:
         self._agent = agent
 
     async def apply(self, *args: Any, **kwargs: Any) -> EventContext[Any, Any]:
-        """Delegate to :meth:`EventRouter.apply` with the owning agent."""
+        """Delegate to :meth:`EventRouter.apply_async` without hitting Agent shim."""
 
-        return await EventRouter.apply(self._agent, *args, **kwargs)
+        return await EventRouter.apply_async(self._agent, *args, **kwargs)
 
     async def apply_async(self, event: EventName, **kwargs: Any) -> EventContext[Any, Any]:
         """Delegate to :meth:`EventRouter.apply_async`."""

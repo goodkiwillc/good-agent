@@ -241,6 +241,19 @@ from good_agent.model.formatting import MessageFormatter  # ✅
 
 **Breaking Changes**: ❌ None – calls now forward with `DeprecationWarning`
 
+### Quick Migration Checklist
+
+1. **Replace `await agent.ready()` with `await agent.initialize()`** and gate on
+   the cheap `agent.is_ready` property when you need a boolean check.
+2. **Move advanced helpers onto their facades**: `agent.events`,
+   `agent.tasks`, `agent.tool_calls`, and `agent.context_manager` each expose the
+   full surface; legacy aliases now emit warnings.
+3. **Update message editing/rendering** to operate on `agent.messages` directly
+   (`agent.messages[0] = ...`, slicing, or `good_agent.utilities.print_message`).
+4. **Audit warnings**: run `uv run pytest tests/test_examples.py` to guarantee
+   your project is free from `DeprecationWarning`s triggered by the examples we
+   mirror in the documentation.
+
 ### What Changed
 
 - `Agent` exposes at most **30** public attributes. The canonical allow-list is available via `Agent.public_attribute_names()`.
@@ -279,6 +292,22 @@ Search your codebase with:
 rg "agent\.ready\("  # replace each hit with initialize()/is_ready
 ```
 
+**Before**
+
+```python
+await agent.ready()
+if not await agent.ready():
+    raise RuntimeError("agent still booting")
+```
+
+**After**
+
+```python
+await agent.initialize()
+if not agent.is_ready:
+    raise RuntimeError("agent still booting")
+```
+
 #### Manager facades
 
 Update any direct calls to the legacy helpers to use the new facades:
@@ -313,6 +342,59 @@ Update any direct calls to the legacy helpers to use the new facades:
 | `agent.get_token_count(...)` | `agent.token_count` or `get_message_token_count(...)` per message |
 | `agent.get_token_count_by_role(...)` | Aggregate `get_message_token_count(...)` results per role |
 | `agent.current_version` | `agent.versioning.current_version` |
+
+### Example migrations
+
+#### Tool execution helpers → `agent.tool_calls`
+
+```python
+# Before
+await agent.add_tool_invocation("docs_search", query="event router")
+pending = agent.get_pending_tool_calls()
+
+# After
+await agent.tool_calls.record_invocation("docs_search", query="event router")
+pending = agent.tool_calls.get_pending_tool_calls()
+```
+
+#### Rendering + message editing
+
+```python
+# Before
+agent.set_system_message("You are level-headed")
+agent.replace_message(-1, agent.model.create_message("result", role="tool"))
+agent.print()
+
+# After
+agent.messages[0] = agent.model.create_message("You are level-headed", role="system")
+agent.messages[-1] = agent.model.create_message("result", role="tool")
+from good_agent.utilities import print_message
+print_message(agent.messages[-1])
+```
+
+#### Context providers → `agent.context_manager`
+
+```python
+# Before
+with agent.context_provider("experiment") as ctx:
+    ctx["id"] = "alpha"
+
+# After
+with agent.context_manager.context_provider("experiment") as ctx:
+    ctx["id"] = "alpha"
+```
+
+#### Event APIs → `agent.events`
+
+```python
+# Before
+router = agent.apply_sync("demo:event", payload=payload)
+agent.broadcast_to(other_agent)
+
+# After
+router = agent.events.apply_sync("demo:event", payload=payload)
+agent.events.broadcast_to(other_agent.events)
+```
 
 ### Guardrail Test
 

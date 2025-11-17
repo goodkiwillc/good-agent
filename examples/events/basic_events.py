@@ -6,14 +6,22 @@ import asyncio
 
 from good_agent.agent import Agent
 from good_agent.events import AgentEvents
-from good_agent.mock import MockLanguageModel
+
+try:  # pragma: no cover
+    from .._shared.mock_llm import ExampleLanguageModel, assistant_response
+except ImportError:  # pragma: no cover
+    import sys
+    from pathlib import Path
+
+    sys.path.append(str(Path(__file__).resolve().parent.parent))
+    from _shared.mock_llm import ExampleLanguageModel, assistant_response  # type: ignore[no-redef]
 
 
 async def main() -> None:
     agent = Agent(
-        "Log every assistant reply.",
-        language_model=MockLanguageModel({}),
+        language_model=ExampleLanguageModel([assistant_response("Hello events!")]),
     )
+    agent.append("Log every assistant reply.", role="system")
 
     @agent.on(AgentEvents.MESSAGE_APPEND_AFTER)
     def record_message(ctx):

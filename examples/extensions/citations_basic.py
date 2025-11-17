@@ -7,16 +7,14 @@ import asyncio
 from good_agent.agent import Agent
 from good_agent.extensions.citations.manager import CitationManager
 from good_agent.messages import AssistantMessage
-from good_agent.mock import MockLanguageModel
 
 
 async def main() -> None:
     citations = CitationManager()
     agent = Agent(
-        "Normalize citations automatically.",
-        language_model=MockLanguageModel({}),
         extensions=[citations],
     )
+    agent.append("Normalize citations automatically.", role="system")
 
     async with agent:
         agent.append(
