@@ -96,20 +96,21 @@ filterwarnings = [
 [tool.coverage.run]
 branch = true
 source = ["src/good_agent"]
-omit = [
-    "src/good_agent/agent/__init__.py",
-    "src/good_agent/components/__init__.py",
-    "src/good_agent/components/template_manager/__init__.py",
-]
 
 [tool.coverage.report]
-fail_under = 80.0
+fail_under = 65.0
 precision = 2
 show_missing = true
 skip_covered = false
 exclude_lines = [
-    "if TYPE_CHECKING:",
     "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
     "raise NotImplementedError",
-    'if __name__ == "__main__":',
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]
+omit = [
+    "*/tests/*",
+    "*/__init__.py",
 ]

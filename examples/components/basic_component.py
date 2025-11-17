@@ -8,8 +8,16 @@ from good_agent.agent import Agent
 from good_agent.components import AgentComponent
 from good_agent.core.event_router import on
 from good_agent.events import AgentEvents
-from good_agent.mock import MockLanguageModel
 from good_agent.tools import tool
+
+try:  # pragma: no cover - support running via ``python``
+    from .._shared.mock_llm import ExampleLanguageModel, assistant_response
+except ImportError:  # pragma: no cover
+    import sys
+    from pathlib import Path
+
+    sys.path.append(str(Path(__file__).resolve().parent.parent))
+    from _shared.mock_llm import ExampleLanguageModel, assistant_response  # type: ignore[no-redef]
 
 
 class LoggingComponent(AgentComponent):
@@ -27,12 +35,11 @@ class LoggingComponent(AgentComponent):
 
 async def main() -> None:
     component = LoggingComponent()
-    mock_llm = MockLanguageModel({})
     agent = Agent(
-        "You are a cheerful assistant.",
-        language_model=mock_llm,
+        language_model=ExampleLanguageModel([assistant_response("Hello from component!")]),
         extensions=[component],
     )
+    agent.append("You are a cheerful assistant.", role="system")
 
     async with agent:
         await agent.call("say hello")

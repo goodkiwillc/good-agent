@@ -5,15 +5,28 @@ from __future__ import annotations
 import asyncio
 
 from good_agent.agent import Agent
-from good_agent.mock import MockLanguageModel
+
+try:  # pragma: no cover - fallback for ``python examples/...`` execution
+    from .._shared.mock_llm import ExampleLanguageModel, assistant_response
+except ImportError:  # pragma: no cover
+    import sys
+    from pathlib import Path
+
+    sys.path.append(str(Path(__file__).resolve().parent.parent))
+    from _shared.mock_llm import ExampleLanguageModel, assistant_response  # type: ignore[no-redef]
 
 
 async def main() -> None:
-    mock_llm = MockLanguageModel({})
     agent = Agent(
-        "You respond cheerfully and keep answers short.",
-        language_model=mock_llm,
+        language_model=ExampleLanguageModel(
+            [
+                assistant_response("Hi there!"),
+                assistant_response("Step 1: gather facts."),
+                assistant_response("Step 2: summarize the plan."),
+            ]
+        ),
     )
+    agent.append("You respond cheerfully and keep answers short.", role="system")
 
     async with agent:
         reply = await agent.call("Say hi to the user.")

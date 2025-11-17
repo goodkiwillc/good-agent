@@ -5,15 +5,26 @@ from __future__ import annotations
 import asyncio
 
 from good_agent.agent import Agent
-from good_agent.mock import MockLanguageModel
 from good_agent.pool import AgentPool
+
+try:  # pragma: no cover
+    from .._shared.mock_llm import ExampleLanguageModel, assistant_response
+except ImportError:  # pragma: no cover
+    import sys
+    from pathlib import Path
+
+    sys.path.append(str(Path(__file__).resolve().parent.parent))
+    from _shared.mock_llm import ExampleLanguageModel, assistant_response  # type: ignore[no-redef]
 
 
 async def create_agent(index: int) -> Agent:
+    responses = [
+        assistant_response(f"Helper #{index} response {slot}") for slot in range(1, 5)
+    ]
     agent = Agent(
-        f"You are helper #{index} who responds briefly.",
-        language_model=MockLanguageModel({}),
+        language_model=ExampleLanguageModel(responses),
     )
+    agent.append(f"You are helper #{index} who responds briefly.", role="system")
     await agent.initialize()
     return agent
 

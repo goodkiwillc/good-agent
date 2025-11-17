@@ -612,17 +612,31 @@ class Agent(EventRouter):
 
     @property
     def tool_calls(self) -> ToolExecutor:
-        """Access the tool execution/runtime manager."""
+        """Tool execution facade (``agent.tool_calls``).
+
+        Prefer ``await agent.tool_calls.invoke("name", **kwargs)`` or
+        ``agent.tool_calls.record_invocation(...)`` instead of legacy helpers.
+        A runnable sample lives in :mod:`examples.tools.basic_tool`.
+        """
         return self._tool_executor
 
     @property
     def context_manager(self) -> ContextManager:
-        """Access the context lifecycle manager."""
+        """Context lifecycle facade (``agent.context_manager``).
+
+        Provides ``fork()``, ``thread_context()``, and scoped overrides; see
+        :mod:`examples.context.thread_context` for the recommended pattern.
+        """
         return self._context_manager
 
     @property
     def events(self) -> AgentEventsFacade:
-        """Access advanced event router helpers via a facade."""
+        """EventRouter facade (``agent.events``).
+
+        Use ``await agent.events.apply("topic", **payload)`` or
+        ``agent.events.broadcast_to(...)`` instead of the deprecated Agent methods.
+        End-to-end usage appears in :mod:`examples.event_router.basic_usage`.
+        """
         return self._events_facade
 
     async def apply(self, *args: Any, **kwargs: Any) -> EventContext[Any, Any]:
@@ -718,7 +732,11 @@ class Agent(EventRouter):
 
     @property
     def tasks(self) -> AgentTaskManager:
-        """Access the task manager for background work."""
+        """Task orchestration facade (``agent.tasks``).
+
+        Supports ``agent.tasks.create(...)``, ``await agent.tasks.join()`` and
+        exposes ``task_count``; :mod:`examples.pool.agent_pool` shows practical usage.
+        """
         return self._task_manager
 
     @property
@@ -1531,11 +1549,12 @@ class Agent(EventRouter):
         # Check and resolve any pending tool calls first
 
         message_index = 0
-        if pending_tool_calls := self.get_pending_tool_calls():
+        pending_tool_calls = self.tool_calls.get_pending_tool_calls()
+        if pending_tool_calls:
             logger.debug(
                 f"Resolving {len(pending_tool_calls)} pending tool calls before execution"
             )
-            async for tool_message in self.resolve_pending_tool_calls():
+            async for tool_message in self.tool_calls.resolve_pending_tool_calls():
                 # Create and yield tool message for each resolved call
                 tool_message._i = message_index
                 message_index += 1
@@ -1564,7 +1583,7 @@ class Agent(EventRouter):
             # Check if the response has tool calls that need to be executed
             if response.tool_calls:
                 # Resolve the tool calls that were just added
-                async for tool_message in self.resolve_pending_tool_calls():
+                async for tool_message in self.tool_calls.resolve_pending_tool_calls():
                     tool_message._i = message_index
                     message_index += 1
                     # Yield each tool response message
@@ -2352,7 +2371,7 @@ class Agent(EventRouter):
         """
         Async context manager exit. Ensures all pending tasks are cleaned up.
 
-        This automatically calls join_async() to wait for all EventRouter tasks to complete,
+        This automatically calls events.join_async() to wait for all EventRouter tasks to complete,
         preventing "Task was destroyed but it is pending!" warnings.
         """
         # Cancel init task if still running
@@ -2366,7 +2385,7 @@ class Agent(EventRouter):
         # Cancel managed tasks
         await self.tasks.cancel_all()
 
-        await self.join_async()
+        await self.events.join_async()
 
     def get_token_count(
         self,
