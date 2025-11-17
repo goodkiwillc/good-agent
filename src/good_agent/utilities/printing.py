@@ -211,7 +211,7 @@ def _preprocess_xml_tags(content: str) -> str:
     return temp_content
 
 
-def _detect_markdown(content: str) -> bool:
+def _detect_markdown(content: str | None) -> bool:
     """Detect if content contains markdown formatting.
 
     Args:

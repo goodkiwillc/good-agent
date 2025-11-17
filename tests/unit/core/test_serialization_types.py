@@ -29,7 +29,9 @@ class _UUIDModel(BaseModel):
 
 
 def test_datetime_serializer_converts_to_utc():
-    aware = datetime.datetime(2024, 1, 1, 12, 0, tzinfo=datetime.timezone(datetime.timedelta(hours=2)))
+    aware = datetime.datetime(
+        2024, 1, 1, 12, 0, tzinfo=datetime.timezone(datetime.timedelta(hours=2))
+    )
     model = _SerializerModel(ts=aware)
     dump = model.model_dump()
     assert dump["ts"].tzinfo == datetime.timezone.utc

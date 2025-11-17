@@ -16,7 +16,7 @@ def test_section_extension_respects_indentation_and_attributes():
 {% endsection %}
 """
     rendered = _render(template)
-    assert rendered.splitlines()[0] == "<article class=\"intro\">"
+    assert rendered.splitlines()[0] == '<article class="intro">'
     assert rendered.splitlines()[1].strip() == "Line"
     assert rendered.splitlines()[-1] == "</article>"
 

@@ -5,7 +5,9 @@ from good_agent.core.markdown import CitationManager, CitationPreprocessor
 
 def test_citation_preprocessor_converts_numeric_references():
     preprocessor = CitationPreprocessor(markdown.Markdown())
-    processed = preprocessor.run(["[1] https://example.com"],)
+    processed = preprocessor.run(
+        ["[1] https://example.com"],
+    )
     assert processed == ["[1]: https://example.com"]
 
 

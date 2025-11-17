@@ -491,9 +491,7 @@ class Agent(EventRouter):
 
         tools: Sequence[
             str | Callable[..., Any] | Tool | ToolCallFunction | "Agent"
-        ] = (
-            config.pop("tools", []) or []
-        )
+        ] = config.pop("tools", []) or []
 
         # Initialize message list
         self._messages = MessageList[Message]()

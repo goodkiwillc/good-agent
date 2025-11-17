@@ -273,7 +273,11 @@ class TestGlobalMessageStore:
     @pytest.mark.asyncio
     async def test_global_async_functions(self):
         """Test global async convenience functions"""
-        from good_agent.messages.store import aget_message, amessage_exists, aput_message
+        from good_agent.messages.store import (
+            aget_message,
+            amessage_exists,
+            aput_message,
+        )
 
         # Reset with clean store
         set_message_store(InMemoryMessageStore())

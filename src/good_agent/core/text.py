@@ -354,7 +354,9 @@ class StringFormatter:
                 len(line.strip().split(" ")) < 5 for line in para_split
             )
             contains_sentence_punctuation = any(
-                SENTENCE_PUNCT_RE.search(line.strip()) for line in para_split if line.strip()
+                SENTENCE_PUNCT_RE.search(line.strip())
+                for line in para_split
+                if line.strip()
             )
             # pytesseract converts some bullet points to standalone "e" characters
             if UNICODE_BULLETS_RE.match(paragraph.strip()) or E_BULLET_PATTERN.match(

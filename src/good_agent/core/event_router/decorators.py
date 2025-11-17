@@ -219,9 +219,7 @@ class emit:
                     if _root.lifecycle & LifecyclePhase.BEFORE:
                         ctx = await cast(
                             EventContextAwaitable,
-                            router.apply_async(
-                                f"{event_name}:before", **method_args
-                            ),
+                            router.apply_async(f"{event_name}:before", **method_args),
                         )
                         # Note: EventRouter does NOT modify method parameters
                         # The output is available but doesn't affect the method execution
@@ -239,9 +237,7 @@ class emit:
                             after_args["result"] = result
                         ctx = await cast(
                             EventContextAwaitable,
-                            router.apply_async(
-                                f"{event_name}:after", **after_args
-                            ),
+                            router.apply_async(f"{event_name}:after", **after_args),
                         )
                         if ctx.output is not None:
                             result = ctx.output
@@ -257,9 +253,7 @@ class emit:
                         try:
                             ctx = await cast(
                                 EventContextAwaitable,
-                                router.apply_async(
-                                    f"{event_name}:error", **error_args
-                                ),
+                                router.apply_async(f"{event_name}:error", **error_args),
                             )
                             if ctx.output is not None:
                                 return ctx.output
@@ -278,9 +272,7 @@ class emit:
                         # Use apply_async for async methods to ensure completion
                         await cast(
                             EventContextAwaitable,
-                            router.apply_async(
-                                f"{event_name}:finally", **finally_args
-                            ),
+                            router.apply_async(f"{event_name}:finally", **finally_args),
                         )
 
             return cast(T_Method, async_wrapper)
