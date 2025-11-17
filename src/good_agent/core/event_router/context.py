@@ -30,8 +30,14 @@ class EventContext(Generic[T_Parameters, T_Return]):
     exception: BaseException | None = None
     """Captured exception for error handling (mutable)."""
 
+    event: str | None = None
+    """Event name associated with this context (for handler inspection)."""
+
     _should_stop: bool = False
     """Internal flag for early termination (use should_stop property)."""
+
+    _stopped_with_exception: bool = False
+    """Whether stop_with_exception/stop(exception=...) was invoked."""
 
     invocation_timestamp: float | None = None
     """Unix timestamp when event was dispatched (for debugging/monitoring)."""
@@ -63,8 +69,40 @@ class EventContext(Generic[T_Parameters, T_Return]):
             exception: The exception that caused the stop
         """
         self.exception = exception
+        self.output = exception  # Preserve legacy behavior inspected by tests
         self._should_stop = True
+        self._stopped_with_exception = True
         # Note: Does NOT raise ApplyInterrupt - handler decides what to do
+
+    def stop(
+        self,
+        *,
+        output: T_Return | None = None,
+        exception: BaseException | None = None,
+    ) -> None:
+        """Backward-compatible helper allowing ctx.stop(output=...) usage.
+
+        Args:
+            output: Optional result to return (raises ApplyInterrupt)
+            exception: Optional exception object to record (no interrupt)
+
+        Raises:
+            ValueError: If both output and exception are provided
+        """
+
+        if output is not None and exception is not None:
+            raise ValueError("Provide either output or exception, not both")
+
+        if exception is not None:
+            self.stop_with_exception(exception)
+            return
+
+        if output is not None:
+            self.stop_with_output(output)
+            return
+
+        # No payload, just flag future handlers to stop early
+        self._should_stop = True
 
     @property
     def should_stop(self) -> bool:
@@ -74,6 +112,18 @@ class EventContext(Generic[T_Parameters, T_Return]):
             True if stop_with_output() or stop_with_exception() was called
         """
         return self._should_stop
+
+    @property
+    def stopped(self) -> bool:
+        """Backward-compatible alias for should_stop."""
+
+        return self.should_stop
+
+    @property
+    def stopped_with_exception(self) -> bool:
+        """Indicate whether stop_with_exception / stop(exception=...) was invoked."""
+
+        return self._stopped_with_exception
 
 
 # Context variable for current event context

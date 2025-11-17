@@ -240,7 +240,10 @@ class HandlerRegistry:
             return True
 
     def get_sorted_handlers(
-        self, event: EventName, include_broadcasts: bool = True
+        self,
+        event: EventName,
+        include_broadcasts: bool = True,
+        _visited: set[int] | None = None,
     ) -> list[HandlerRegistration]:
         """Get all handlers for an event, sorted by priority (high to low).
 
@@ -259,6 +262,15 @@ class HandlerRegistry:
         """
         handlers: list[HandlerRegistration] = []
 
+        if _visited is None:
+            _visited = set()
+
+        registry_id = id(self)
+        if registry_id in _visited:
+            return handlers
+
+        _visited.add(registry_id)
+
         with self._lock:
             # Get handlers from this registry
             if event in self._events:
@@ -272,7 +284,11 @@ class HandlerRegistry:
                 for target in self._broadcast_to:
                     # Recursive call to get handlers from broadcast targets
                     handlers.extend(
-                        target.get_sorted_handlers(event, include_broadcasts=True)
+                        target.get_sorted_handlers(
+                            event,
+                            include_broadcasts=True,
+                            _visited=_visited,
+                        )
                     )
 
         return handlers
