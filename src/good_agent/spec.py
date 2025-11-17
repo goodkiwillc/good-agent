@@ -499,10 +499,12 @@ class TestAgentPipeline:
                 # conversation ensures agents ready
             ) as conversation:
                 async for message in conversation.execute():
+                    # Note: Message doesn't have a parent attribute in current implementation
+                    # This is example/spec code showing desired API
                     match message:
-                        case Message(parent=agent):
+                        case Message():  # type: ignore[misc]
                             pass
-                        case Message(parent=sub_agent):
+                        case Message():  # type: ignore[misc]
                             pass
 
             message = await agent.call(response_model=DecisionModel)
@@ -513,10 +515,11 @@ class TestAgentPipeline:
                 tool_response = await agent.tool_calls.invoke("tool_name", key="value", test=100)
 
                 async with agent.context_manager.fork(
-                    "system message",  # system message not currently set this way
+                    True,  # This API may change - spec/example code
+                    system_message="system message",
                     compact_convesation="",
                 ) as forked_subagent:
-                    forked_subagent.call()
+                    await forked_subagent.call()  # Must await async call
 
                 message = await agent.call()
 
@@ -534,23 +537,26 @@ class TestAgentRouting:
 
         # @agent.router
 
-        @agent.route("/init")
+        # Note: This routing API is speculative/example code
+        # agent.route() and agent.next() don't exist in current implementation
+        
+        @agent.route("/init")  # type: ignore[attr-defined]
         async def on_init(agent: Agent):
             agent.append("Hello! How can I assist you today?")
 
-            return agent.next("mode")
+            return agent.next("mode")  # type: ignore[attr-defined]
 
-        @agent.route("/mode")
+        @agent.route("/mode")  # type: ignore[attr-defined]
         async def choose_mode(agent: Agent):
             message = await agent.call("Would you like to chat or execute a command?")
 
             if "chat" in message.content.lower():
-                return agent.next("chat_mode")
+                return agent.next("chat_mode")  # type: ignore[attr-defined]
             elif "execute" in message.content.lower():
-                return agent.next("exec_mode")
+                return agent.next("exec_mode")  # type: ignore[attr-defined]
             else:
                 agent.append("I didn't understand that. Please choose chat or execute.")
-                return agent.next("mode")
+                return agent.next("mode")  # type: ignore[attr-defined]
 
 
 class TestAgentCli:

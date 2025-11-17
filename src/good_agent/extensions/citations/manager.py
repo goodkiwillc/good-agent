@@ -243,13 +243,14 @@ class CitationManager(AgentComponent):
                 ctx.parameters["citations"] = extracted_citations
 
                 # Also update extra_kwargs to ensure citations are passed to message
+                # Note: extra_kwargs is not a standard TypedDict key, but we use it dynamically
                 if (
-                    "extra_kwargs" in ctx.parameters  # type: ignore[typeddict-item]
+                    "extra_kwargs" in ctx.parameters  # type: ignore[typeddict-item, typeddict-unknown-key]
                     and ctx.parameters["extra_kwargs"] is not None  # type: ignore[typeddict-item, typeddict-unknown-key]
                 ):
-                    ctx.parameters["extra_kwargs"]["citations"] = extracted_citations  # type: ignore[typeddict-unknown-key]
+                    ctx.parameters["extra_kwargs"]["citations"] = extracted_citations  # type: ignore[typeddict-item, typeddict-unknown-key]
                 else:
-                    ctx.parameters["extra_kwargs"] = {"citations": extracted_citations}  # type: ignore[typeddict-unknown-key]
+                    ctx.parameters["extra_kwargs"] = {"citations": extracted_citations}  # type: ignore[typeddict-item, typeddict-unknown-key]
 
         except Exception as e:
             logger.error(f"Error in _on_message_create_before: {e}", exc_info=True)

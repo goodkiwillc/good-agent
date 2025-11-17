@@ -597,7 +597,7 @@ class EditableMDXL(StatefulResource[MDXL]):
         logger.info(result)
         return result
 
-    @tool(name="delete")
+    @tool(name="delete")  # type: ignore[arg-type,misc]
     async def delete(
         self,
         xpath: str = Field(
