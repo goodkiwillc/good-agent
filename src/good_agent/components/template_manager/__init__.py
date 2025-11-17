@@ -1,3 +1,5 @@
+# coverage: ignore file
+# Rationale: module aggregates template manager exports for convenience only.
 """Exports the template manager component plus helpers.
 
 See ``examples/templates/render_template.py`` for inline rendering patterns that

@@ -1,3 +1,5 @@
+# coverage: ignore file
+# Rationale: this module only re-exports Agent manager classes for import ergonomics.
 """Agent module - refactored into focused manager classes."""
 
 from __future__ import annotations

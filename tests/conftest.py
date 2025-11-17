@@ -11,6 +11,28 @@ from pydantic import PydanticDeprecatedSince20, PydanticDeprecatedSince211
 from good_agent.core.event_router import current_test_nodeid
 
 # ---------------------------------------------------------------------------
+# Coverage policy helpers
+# ---------------------------------------------------------------------------
+
+_COVERAGE_POLICY_URL = "coverage/phase5/baseline/"
+_SKIP_COVERAGE_ERROR = (
+    "@pytest.mark.skip_coverage requires a non-empty 'reason' kwarg referencing "
+    f"the coverage policy documented under {_COVERAGE_POLICY_URL}."
+)
+
+
+@pytest.fixture(autouse=True)
+def _enforce_skip_coverage_reason(request):
+    """Ensure tests opting out of coverage document their rationale."""
+    marker = request.node.get_closest_marker("skip_coverage")
+    if not marker:
+        return
+
+    reason = marker.kwargs.get("reason")
+    if not isinstance(reason, str) or not reason.strip():
+        raise AssertionError(_SKIP_COVERAGE_ERROR)
+
+# ---------------------------------------------------------------------------
 # Warning controls
 # ---------------------------------------------------------------------------
 

@@ -1,3 +1,5 @@
+# coverage: ignore file
+# Rationale: this package initializer is a pure re-export surface for components.
 from .component import AgentComponent, AgentComponentType
 from .injection import (
     MessageInjectorComponent,

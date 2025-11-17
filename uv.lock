@@ -796,6 +796,7 @@ dev = [
     { name = "pytest-asyncio" },
     { name = "pyupgrade" },
     { name = "ruff" },
+    { name = "types-markdown" },
     { name = "vcrpy" },
 ]
 
@@ -825,12 +826,13 @@ dev = [
     { name = "pytest-asyncio", specifier = ">=1.2.0" },
     { name = "pyupgrade", specifier = ">=3.21.1" },
     { name = "ruff", specifier = ">=0.14.3" },
+    { name = "types-markdown", specifier = ">=3.10.0.20251106" },
     { name = "vcrpy", specifier = ">=7.0.0" },
 ]
 
 [[package]]
 name = "good-common"
-version = "1.3.0"
+version = "1.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -861,10 +863,10 @@ dependencies = [
     { name = "uuid-utils" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/03/76/4920df7ae5126df7638c542ce3791ef22de1aadb7cacf0e705ce830b0256/good_common-1.3.0-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:5c063d5fbeb6334a560f164498a31c3a52baf589b13308bd8dd988c1e4118c6a", size = 1158131, upload-time = "2025-11-11T16:34:40.782Z" },
-    { url = "https://files.pythonhosted.org/packages/db/11/ab3ccba77653fdeda7500e376b13760bc25244e777d40199ad4c02bcd5ca/good_common-1.3.0-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:1b70f371552a8389b2549da6a1a2e731e9ad808bd0da20c51707f4c6d9acb3f4", size = 2262751, upload-time = "2025-11-11T16:34:42.505Z" },
-    { url = "https://files.pythonhosted.org/packages/99/da/597578b8118047262b131759156690610a931fec10e4599503319e385476/good_common-1.3.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:2e84e7d6dfc80ed3b1b24aa8bdaafd510cf14cc0fe707fd7dc07ca355912b504", size = 2286692, upload-time = "2025-11-11T16:34:44.137Z" },
-    { url = "https://files.pythonhosted.org/packages/04/78/3385298061c5e30b054e8ab79cb4f9960cf510a82bc63414f40feba6353c/good_common-1.3.0-cp313-cp313-win_amd64.whl", hash = "sha256:c86f99d8933bbad766f5d457a11eb7302e80d813497e5e5bd10bbee0e0cb33fc", size = 873414, upload-time = "2025-11-11T16:34:45.263Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/c9/02a78abefe3b79933ac15e93e1ae0d3bbaf2f3cc30370be8b0a2e479e363/good_common-1.4.0-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:e3b1711889ce419e7c001ae7c04e59bc386720edcc50ac9c82ca5d7b2c3a7f83", size = 1161467, upload-time = "2025-11-17T02:47:14.236Z" },
+    { url = "https://files.pythonhosted.org/packages/81/39/1bb18c6f19d27532b45658b141e54b559625a3d7525ceee5e52d0de99e6f/good_common-1.4.0-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:6d9296e187a77dadc7898cfd13a28718d87554bc447621080911c321952676ac", size = 2264821, upload-time = "2025-11-17T02:47:16.414Z" },
+    { url = "https://files.pythonhosted.org/packages/5f/b4/9e85891fecdf2cc064b22609623cf4e280a52c2128e65b8ce8657bdff474/good_common-1.4.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:6fdc5736e73e38055870bef7d7353c94f4416373dd70a3a8c5df0fcff2a56cb8", size = 2290971, upload-time = "2025-11-17T02:47:18.897Z" },
+    { url = "https://files.pythonhosted.org/packages/ae/19/315cb00378299f4a2e5ce4d769d5c131fad0bbe0577aaebcb17908e04222/good_common-1.4.0-cp313-cp313-win_amd64.whl", hash = "sha256:aa214930c9bdf4805c097214e61418fb77636e259038ff8b02b597e96cf9c31d", size = 877226, upload-time = "2025-11-17T02:47:20.446Z" },
 ]
 
 [[package]]
@@ -2990,6 +2992,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e0/3e/a545ece610c1bd9699addd887edfe9477a8f647c4336ba75cfb0561d197c/types_lxml-2025.8.25.tar.gz", hash = "sha256:79b9f5b1f236f937f14fe3add9dc687bd8d4111ca5df58eb9f1bde1a3b032fd5", size = 156126, upload-time = "2025-08-26T06:28:56.793Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b5/29/c45f567b4142288b8184f073af8f659abd134c21de055f971c65f2d755bd/types_lxml-2025.8.25-py3-none-any.whl", hash = "sha256:d61340e5329e102d3f8d64124e90d50c12c0bfeaa9088d65558279ef4e7138ac", size = 95318, upload-time = "2025-08-26T06:28:54.066Z" },
+]
+
+[[package]]
+name = "types-markdown"
+version = "3.10.0.20251106"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/de/e4/060f0dadd9b551cae77d6407f2bc84b168f918d90650454aff219c1b3ed2/types_markdown-3.10.0.20251106.tar.gz", hash = "sha256:12836f7fcbd7221db8baeb0d3a2f820b95050d0824bfa9665c67b4d144a1afa1", size = 19486, upload-time = "2025-11-06T03:06:44.317Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/92/58/f666ca9391f2a8bd33bb0b0797cde6ac3e764866708d5f8aec6fab215320/types_markdown-3.10.0.20251106-py3-none-any.whl", hash = "sha256:2c39512a573899b59efae07e247ba088a75b70e3415e81277692718f430afd7e", size = 25862, upload-time = "2025-11-06T03:06:43.082Z" },
 ]
 
 [[package]]

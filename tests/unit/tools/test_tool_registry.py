@@ -6,6 +6,7 @@ import pytest_asyncio
 from good_agent.tools import (
     ToolRegistration,
     ToolRegistry,
+    clear_tool_registry,
     get_tool_registry,
     get_tool_registry_sync,
     register_tool,
@@ -188,6 +189,20 @@ class TestToolRegistry:
         assert retrieved is tool_high  # Still the high priority tool
 
     @pytest.mark.asyncio
+    async def test_register_sync_defers_when_loop_running(self, registry):
+        """register_sync queues the registration while the loop is active."""
+
+        tool = MockTool("queued_tool")
+
+        registry.register_sync("queued_tool", tool)
+
+        assert await registry.get("queued_tool") is None
+
+        await registry._process_pending_registrations()
+
+        assert await registry.get("queued_tool") is tool
+
+    @pytest.mark.asyncio
     async def test_unregister_tool(self, registry):
         """Test unregistering a tool"""
         tool = MockTool("removable")
@@ -365,6 +380,31 @@ class TestGlobalRegistry:
 
         registry = get_tool_registry_sync()
         assert registry is not None
+
+    @pytest.mark.asyncio
+    async def test_get_tool_registry_sync_in_async_context(self):
+        """get_tool_registry_sync should defer initialization while loop is running."""
+
+        await clear_tool_registry()
+        registry = get_tool_registry_sync()
+
+        try:
+            assert isinstance(registry, ToolRegistry)
+            assert registry._initialized is False
+        finally:
+            await clear_tool_registry()
+
+    def test_get_tool_registry_sync_without_loop_initializes(self):
+        """Outside an event loop the sync helper eagerly initializes the registry."""
+
+        asyncio.run(clear_tool_registry())
+        registry = get_tool_registry_sync()
+
+        try:
+            assert isinstance(registry, ToolRegistry)
+            assert registry._initialized is True
+        finally:
+            asyncio.run(clear_tool_registry())
 
 
 class TestRegisterToolDecorator:
