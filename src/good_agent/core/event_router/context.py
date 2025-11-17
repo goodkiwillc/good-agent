@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import contextvars
 from dataclasses import dataclass
-from typing import Generic
+from typing import Generic, cast
 
 from .protocols import ApplyInterrupt, T_Parameters, T_Return
 
@@ -69,7 +69,7 @@ class EventContext(Generic[T_Parameters, T_Return]):
             exception: The exception that caused the stop
         """
         self.exception = exception
-        self.output = exception  # Preserve legacy behavior inspected by tests
+        self.output = cast(T_Return, exception)  # Preserve legacy behavior inspected by tests
         self._should_stop = True
         self._stopped_with_exception = True
         # Note: Does NOT raise ApplyInterrupt - handler decides what to do

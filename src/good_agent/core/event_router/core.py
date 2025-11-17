@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import inspect
 import logging
 import time
@@ -391,6 +392,48 @@ class EventRouter:
             raise RuntimeError("No event context available")
         return ctx
 
+    def _wrap_handler_for_registration(
+        self, fn: Callable[..., Any]
+    ) -> Callable[..., Any]:
+        """Wrap callables that do not expose a writable __dict__."""
+
+        bound_self = getattr(fn, "__self__", None)
+        target = getattr(fn, "__func__", None) or fn
+        is_async = inspect.iscoroutinefunction(target)
+
+        def invoke(*args, **kwargs):
+            if bound_self is None:
+                return target(*args, **kwargs)
+            return target(bound_self, *args, **kwargs)
+
+        if is_async:
+
+            @functools.wraps(target)
+            async def async_wrapper(*args, **kwargs):
+                return await invoke(*args, **kwargs)
+
+            return async_wrapper
+
+        @functools.wraps(target)
+        def sync_wrapper(*args, **kwargs):
+            return invoke(*args, **kwargs)
+
+        return sync_wrapper
+
+    @staticmethod
+    def _supports_metadata_assignment(fn: Callable[..., Any]) -> bool:
+        """Check if we can attach attributes to the handler."""
+
+        sentinel = "__event_router_handler_probe__"
+        if hasattr(fn, sentinel):
+            return True
+        try:
+            setattr(fn, sentinel, True)
+            delattr(fn, sentinel)
+            return True
+        except (AttributeError, TypeError):
+            return False
+
     def on(
         self,
         event: EventName,
@@ -406,15 +449,25 @@ class EventRouter:
         """
 
         def decorator(fn: F) -> F:
+            handler_callable: Callable[..., Any]
+            attr_target: Callable[..., Any]
+
+            if self._supports_metadata_assignment(fn):
+                handler_callable = fn  # type: ignore[assignment]
+                attr_target = fn  # type: ignore[assignment]
+            else:
+                handler_callable = self._wrap_handler_for_registration(fn)
+                attr_target = handler_callable
+
             handler_id = self._handler_registry.register_handler(
                 event=event,
-                handler=fn,
+                handler=handler_callable,
                 priority=priority,
                 predicate=predicate,
             )
             # Attach handler ID to function for later deregistration
-            fn._handler_id = handler_id  # type: ignore[attr-defined]
-            return fn
+            attr_target._handler_id = handler_id  # type: ignore[attr-defined]
+            return cast(F, attr_target)
 
         return decorator
 
@@ -581,8 +634,6 @@ class EventRouter:
                     if self._debug:
                         logger.exception(f"Handler {handler} failed")
                     ctx.exception = e
-                    if not is_async_handler:
-                        raise
                     if ctx.should_stop:
                         break
                     continue
@@ -590,8 +641,6 @@ class EventRouter:
                     if self._debug:
                         logger.exception(f"Handler {handler} failed")
                     ctx.exception = e
-                    if not is_async_handler:
-                        raise
                     if ctx.should_stop:
                         break
                     continue

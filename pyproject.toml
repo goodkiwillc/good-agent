@@ -37,6 +37,7 @@ dev = [
     "pyupgrade>=3.21.1",
     "ruff>=0.14.3",
     "types-markdown>=3.10.0.20251106",
+    "types-pyyaml>=6.0.12.20250915",
     "vcrpy>=7.0.0",
 ]
 
