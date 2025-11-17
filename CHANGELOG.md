@@ -110,6 +110,24 @@ Developers frequently asked when to use `call()` vs `execute()`, indicating docu
 - `uv run pytest`
 - `uv run mypy src/good_agent` (known repo-wide issues persist; no new errors introduced)
 
+#### Task 4: Readiness lifecycle & facade documentation (Completed 2025-11-17)
+
+##### Added
+
+- Introduced `Agent.initialize()` as the canonical async initializer, invoked automatically by `async with Agent(...)` and available for manual bootstrapping.
+- Added the synchronous `Agent.is_ready` property for inexpensive readiness checks.
+- Documented the preferred entry points for manager facades (`agent.tool_calls`, `agent.events`, `agent.context_manager`, `agent.tasks`, `agent.versioning`) alongside migration tips.
+
+##### Deprecated
+
+- `Agent.ready()` now emits a `DeprecationWarning` and will be removed in v1.0.0; the MIGRATION guide captures the `rg` search-and-replace steps to transition to `initialize()`/`is_ready`.
+- Legacy manager shims (`agent.invoke`, `agent.apply`, `agent.context_provider`, etc.) remain in place indefinitely while we evaluate the facade ergonomics—no removal timeline has been set yet.
+
+##### Documentation
+
+- Updated `MIGRATION.md` Phase 4 guidance with readiness lifecycle examples, replacement snippets, and facade summaries referencing `examples/agent/basic_chat.py`.
+- Refreshed the Phase 4 migration tables so downstream teams follow the new manager accessors instead of the legacy Agent shortcuts.
+
 ### Phase 1: Template Consolidation (Completed 2025-11-15)
 
 **Status**: ✅ Complete (Step 6 of refactoring plan)

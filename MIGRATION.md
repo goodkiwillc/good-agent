@@ -244,6 +244,7 @@ from good_agent.model.formatting import MessageFormatter  # ✅
 ### What Changed
 
 - `Agent` exposes at most **30** public attributes. The canonical allow-list is available via `Agent.public_attribute_names()`.
+- Readiness now flows through `Agent.initialize()` (async) and the cheap `Agent.is_ready` property; the legacy `Agent.ready()` shim forwards with a `DeprecationWarning` and is scheduled for removal in v1.0.0.
 - Thick helper methods moved behind dedicated facades:
   - **Tool execution** via `agent.tool_calls.*`
   - **Event router** via `agent.events.*`
@@ -251,6 +252,33 @@ from good_agent.model.formatting import MessageFormatter  # ✅
 - Legacy methods remain callable but are hidden from `dir(agent)` and emit warnings when used directly.
 
 ### Required Changes
+
+#### Readiness lifecycle
+
+- Replace direct calls to `await agent.ready()` with `await agent.initialize()`.
+- Prefer the cheap synchronous `agent.is_ready` property instead of invoking an async poller.
+- `async with Agent(...)` continues to call `initialize()` for you; see `examples/agent/basic_chat.py` for the canonical pattern.
+
+**Old:**
+```python
+await agent.ready()
+if not await agent.ready():
+    ...
+```
+
+**New:**
+```python
+await agent.initialize()
+if not agent.is_ready:
+    ...
+```
+
+Search your codebase with:
+```bash
+rg "agent\.ready\("  # replace each hit with initialize()/is_ready
+```
+
+#### Manager facades
 
 Update any direct calls to the legacy helpers to use the new facades:
 
@@ -286,7 +314,7 @@ Update any direct calls to the legacy helpers to use the new facades:
    ```bash
    rg "agent\\.(invoke|add_tool_invocation|apply|context_provider|broadcast_to)"
    ```
-2. **Handle warnings**: Replace usages rather than silencing `DeprecationWarning`; the shims are removed in the v1.0.0 plan.
+2. **Handle warnings**: Replace usages rather than silencing `DeprecationWarning`; the shims remain available while we evaluate the facade ergonomics, so you have time to migrate at your own pace.
 3. **Discover the supported API**: Use `Agent.public_attribute_names()` programmatically in tooling or linters.
 4. **Remember to close agents**: When forking manually, call `await forked_agent.events.async_close()` or use `async with` to avoid background tasks leaking.
 
