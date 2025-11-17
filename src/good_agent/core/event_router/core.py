@@ -597,6 +597,8 @@ class EventRouter:
         ctx.event = event
         token = event_ctx.set(ctx)
 
+        sync_exception: BaseException | None = None
+
         try:
             handlers = self._get_sorted_handlers(event)
 
@@ -633,6 +635,8 @@ class EventRouter:
                     if self._debug:
                         logger.exception(f"Handler {handler} failed")
                     ctx.exception = e
+                    if not is_async_handler and sync_exception is None:
+                        sync_exception = e
                     if ctx.should_stop:
                         break
                     continue
@@ -640,11 +644,16 @@ class EventRouter:
                     if self._debug:
                         logger.exception(f"Handler {handler} failed")
                     ctx.exception = e
+                    if not is_async_handler and sync_exception is None:
+                        sync_exception = e
                     if ctx.should_stop:
                         break
                     continue
         finally:
             event_ctx.reset(token)
+
+        if sync_exception is not None:
+            raise sync_exception
 
         return ctx
 

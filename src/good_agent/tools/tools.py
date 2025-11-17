@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import copy
 import inspect
@@ -43,11 +45,11 @@ from tenacity import before_sleep_log, retry, stop_after_attempt, wait_exponenti
 from good_agent.core.models import Renderable
 
 from ..components import AgentComponent
-from ..config import AgentConfigManager
 from ..components.template_manager.injection import (
     ContextValue,
     _ContextValueDescriptor,
 )
+from ..config import AgentConfigManager
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +57,10 @@ type ToolCallId = str
 type ToolLike = Union["Tool[..., Any]", Callable[..., Any]]
 
 if TYPE_CHECKING:
-    from .bound_tools import BoundTool
+    from good_agent.agent import Agent
+
     from ..mcp.client import MCPServerConfig
+    from .bound_tools import BoundTool
 
 
 @dataclass
@@ -313,7 +317,7 @@ class ToolManager(AgentComponent):
 
     async def load_mcp_servers(
         self,
-        server_configs: Sequence[str | dict[str, Any] | "MCPServerConfig"] | None,
+        server_configs: Sequence[str | dict[str, Any] | MCPServerConfig] | None,
     ) -> None:
         """
         Load tools from MCP servers.
@@ -337,12 +341,12 @@ class ToolManager(AgentComponent):
                 self._mcp_client.setup(self.agent)
 
         # Connect to servers with normalized configs for typing compatibility
-        normalized_configs: list[str | "MCPServerConfig"] = []
+        normalized_configs: list[str | MCPServerConfig] = []
         for config in server_configs:
             if isinstance(config, str):
                 normalized_configs.append(config)
             else:
-                normalized_configs.append(cast("MCPServerConfig", config))
+                normalized_configs.append(cast(MCPServerConfig, config))
 
         await self._mcp_client.connect_servers(normalized_configs)
 
@@ -831,7 +835,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
         # Create wrapper that applies the new signature
         if asyncio.iscoroutinefunction(fn):
 
-            async def wrapper(*args, **kwargs):
+            async def wrapper(*args, **kwargs):  # type: ignore[reportRedeclaration]
                 return await fn(*args, **kwargs)
         else:
 
@@ -921,7 +925,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
         try:
             # Set up dependency injection context if available
             # Extract context from kwargs if provided
-            agent = kwargs.pop("_agent", None)
+            agent: Agent = kwargs.pop("_agent", None)
             tool_call = kwargs.pop("_tool_call", None)  # type: ignore[assignment]
 
             # Handle ContextValue injection
