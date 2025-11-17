@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from good_agent.core.event_router import EventContext, on
 
@@ -68,7 +68,7 @@ class CitationManager(AgentComponent):
 
         self._agent = None
         self._use_tool_adapter = use_tool_adapter
-        self._citation_adapter = None
+        self._citation_adapter: CitationAdapter | None = None
         self._debug = debug
 
     async def install(self, agent: Agent) -> None:
@@ -211,7 +211,7 @@ class CitationManager(AgentComponent):
         try:
             # Extract parameters from event context
             role = ctx.parameters.get("role")
-            content_parts = ctx.parameters.get("content", [])
+            content_parts: list[Any] = ctx.parameters.get("content", [])
             citations = ctx.parameters.get("citations")
 
             # Convert content parts to strings using default render mode (DISPLAY)
@@ -227,7 +227,7 @@ class CitationManager(AgentComponent):
 
             # Process content parts to extract and normalize citations
             processed_parts, extracted_citations = self._process_content_parts(
-                converted_content, citations, role, RenderMode.DISPLAY
+                converted_content, citations, role or "", RenderMode.DISPLAY  # type: ignore[arg-type]
             )
 
             # Always update content with processed parts
@@ -244,13 +244,12 @@ class CitationManager(AgentComponent):
 
                 # Also update extra_kwargs to ensure citations are passed to message
                 if (
-                    "extra_kwargs" in ctx.parameters
-                    and ctx.parameters["extra_kwargs"] is not None
+                    "extra_kwargs" in ctx.parameters  # type: ignore[typeddict-item]
+                    and ctx.parameters["extra_kwargs"] is not None  # type: ignore[typeddict-item, typeddict-unknown-key]
                 ):
-                    ctx.parameters["extra_kwargs"]["citations"] = extracted_citations
+                    ctx.parameters["extra_kwargs"]["citations"] = extracted_citations  # type: ignore[typeddict-unknown-key]
                 else:
-                    # type: ignore
-                    ctx.parameters["extra_kwargs"] = {"citations": extracted_citations}
+                    ctx.parameters["extra_kwargs"] = {"citations": extracted_citations}  # type: ignore[typeddict-unknown-key]
 
         except Exception as e:
             logger.error(f"Error in _on_message_create_before: {e}", exc_info=True)
@@ -291,7 +290,7 @@ class CitationManager(AgentComponent):
             if not hasattr(message, "citations") or not message.citations:
                 try:
                     processed_parts, extracted_citations = self._process_content_parts(
-                        output, None, getattr(message, "role", "user"), mode
+                        output, None, getattr(message, "role", "user"), mode  # type: ignore[arg-type]
                     )
                     if extracted_citations:
                         if hasattr(message, "__dict__"):
@@ -299,8 +298,8 @@ class CitationManager(AgentComponent):
                         for citation in extracted_citations:
                             self.index.add(citation)
                         # Use normalized parts (with local indices) for downstream transforms
-                        ctx.output = processed_parts
-                        ctx.parameters["output"] = processed_parts
+                        ctx.output = processed_parts  # type: ignore[assignment]
+                        ctx.parameters["output"] = processed_parts  # type: ignore[typeddict-unknown-key]
                         output = processed_parts
                 except Exception as e:
                     logger.error(
@@ -319,7 +318,7 @@ class CitationManager(AgentComponent):
             transformed_parts = []
             was_transformed = False
 
-            for part in output:
+            for part in output:  # type: ignore[attr-defined]
                 if isinstance(part, TextContentPart):
                     original_text = part.text
 
@@ -349,8 +348,8 @@ class CitationManager(AgentComponent):
 
             # Update the output if transformation was applied
             if was_transformed:
-                ctx.output = transformed_parts
-                ctx.parameters["output"] = transformed_parts
+                ctx.output = transformed_parts  # type: ignore[assignment]
+                ctx.parameters["output"] = transformed_parts  # type: ignore[typeddict-unknown-key]
 
         except Exception as e:
             logger.error(f"Error in _on_message_render_before: {e}", exc_info=True)
@@ -546,7 +545,7 @@ class CitationManager(AgentComponent):
                 )
             else:
                 # Non-text parts pass through unchanged
-                content_texts.append((None, part, [], {}))
+                content_texts.append((None, part, [], {}))  # type: ignore[arg-type]
 
         # Phase 2: Build deduplicated citations list
         # We need to handle sparse indices from markdown references
@@ -1030,7 +1029,7 @@ class CitationManager(AgentComponent):
 
         # Transform to LLM format with local indices
         normalized_content = CitationTransformer.transform_to_llm_format(
-            content, local_mapping, current_format
+            content, local_mapping, current_format  # type: ignore[arg-type]
         )
 
         # Update message content through content_parts
@@ -1437,7 +1436,7 @@ class CitationManager(AgentComponent):
 
         if has_refs:
             # Extract well-formed references
-            refs = {}
+            refs: dict[int, str] = {}
             for match in ref_block_pattern.finditer(content):
                 idx_str = match.group(1)
                 # Try to convert to int if it's numeric, otherwise use as-is
@@ -1630,8 +1629,8 @@ class CitationManager(AgentComponent):
         elif format == "csv":
             lines = ["Index,URL,Tags"]
             for index, url in self.index.items():
-                tags = "; ".join(self.index.get_tags(index))  # Use index, not URL
-                lines.append(f'{index},{url},"{tags}"')
+                tags_str: str = "; ".join(self.index.get_tags(index))  # Use index, not URL
+                lines.append(f'{index},{url},"{tags_str}"')
             return "\n".join(lines)
 
         else:

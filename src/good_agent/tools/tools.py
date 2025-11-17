@@ -912,7 +912,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
             # Set up dependency injection context if available
             # Extract context from kwargs if provided
             agent = kwargs.pop("_agent", None)
-            tool_call = kwargs.pop("_tool_call", None)
+            tool_call = kwargs.pop("_tool_call", None)  # type: ignore[assignment]
 
             # Handle ContextValue injection
             sig = inspect.signature(self._original_fn)
@@ -928,7 +928,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
                         context_val = agent.context.get(context_value.name)
                         if context_val is not None:
                             kwargs[param_name] = context_val
-                        elif context_value.default is not ContextValue._MISSING:
+                        elif context_value.default is not ContextValue._MISSING:  # type: ignore[attr-defined]
                             kwargs[param_name] = context_value.default
                         elif context_value.default_factory is not None:
                             kwargs[param_name] = context_value.default_factory()
@@ -948,7 +948,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
                             )
                     else:
                         # No agent context available - use defaults if available
-                        if context_value.default is not ContextValue._MISSING:
+                        if context_value.default is not ContextValue._MISSING:  # type: ignore[attr-defined]
                             kwargs[param_name] = context_value.default
                         elif context_value.default_factory is not None:
                             kwargs[param_name] = context_value.default_factory()
@@ -1233,7 +1233,7 @@ def tool(
 ]: ...
 
 
-def tool(
+def tool(  # type: ignore[misc]
     func: Callable[P, FuncResp] | Callable[P, Awaitable[FuncResp]] | None = None,
     *,
     name: str | None = None,
@@ -1287,7 +1287,7 @@ def tool(
             # Create and return BoundTool descriptor
             bound_tool: BoundTool[Any, P, FuncResp] = BoundTool(
                 tool_class=Tool,
-                unbound_method=f,
+                unbound_method=f,  # type: ignore[arg-type]
                 metadata=metadata,
                 config=config,
             )

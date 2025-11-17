@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from ...agent import Agent
-    from ...tools import Tool, ToolSignature
+    from ...tools import BoundTool, Tool, ToolSignature
+    from .manager import CitationManager
 
 
 class CitationAdapter(ToolAdapter["CitationManager"]):
@@ -38,19 +39,19 @@ class CitationAdapter(ToolAdapter["CitationManager"]):
     """
 
     def analyze_transformation(
-        self, tool: Tool, signature: ToolSignature
+        self, tool: Tool[Any, Any] | BoundTool[Any, Any, Any], signature: ToolSignature
     ) -> AdapterMetadata:
         """
         Analyze the transformations this adapter will perform.
 
         Returns metadata about which parameters will be modified.
         """
-        modified = set()
+        modified: set[str] = set()
         added = set()
         removed = set()
 
         # Check which parameters we'll modify
-        params = signature["function"]["parameters"].get("properties", {})
+        params: dict[str, Any] = signature["function"]["parameters"].get("properties", {})
         for key, schema in params.items():
             # Single URL parameter
             if key == "url" and schema.get("type") == "string":
@@ -67,7 +68,7 @@ class CitationAdapter(ToolAdapter["CitationManager"]):
             modified_params=modified, added_params=added, removed_params=removed
         )
 
-    def should_adapt(self, tool: Tool, agent: Agent) -> bool:
+    def should_adapt(self, tool: Tool[Any, Any] | BoundTool[Any, Any, Any], agent: Agent) -> bool:
         """
         Check if this tool should be adapted.
 
@@ -84,7 +85,7 @@ class CitationAdapter(ToolAdapter["CitationManager"]):
         """
         # Get the tool's model to inspect parameters
         try:
-            model = tool.model
+            model = tool.model  # type: ignore[union-attr]
             schema = model.model_json_schema()
             properties = schema.get("properties", {})
 
@@ -111,7 +112,7 @@ class CitationAdapter(ToolAdapter["CitationManager"]):
             return False
 
     def adapt_signature(
-        self, tool: Tool, signature: ToolSignature, agent: Agent
+        self, tool: Tool[Any, Any] | BoundTool[Any, Any, Any], signature: ToolSignature, agent: Agent
     ) -> ToolSignature:
         """
         Transform tool signature to use citation indices.
@@ -131,7 +132,7 @@ class CitationAdapter(ToolAdapter["CitationManager"]):
 
         # Get the function parameters
         params = adapted_sig["function"]["parameters"]
-        properties = params.get("properties", {})
+        properties: dict[str, Any] = params.get("properties", {})
 
         # Track which parameters we're adapting
         adapted_params = []

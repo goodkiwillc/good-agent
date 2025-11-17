@@ -45,7 +45,8 @@ def format_date(value: datetime.datetime | datetime.date | str, fmt: str | None 
         except (ValueError, AttributeError):
             try:
                 # Try to parse as date
-                value = datetime.datetime.strptime(value, "%Y-%m-%d").date()
+                if isinstance(value, str):
+                    value = datetime.datetime.strptime(value, "%Y-%m-%d").date()
             except ValueError:
                 # If all parsing fails, return the string as-is
                 return value

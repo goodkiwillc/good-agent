@@ -16,7 +16,7 @@ def get_logger(name: str | None = None):
         - Provides consistent logging interface across environments
     """
     try:
-        from prefect import get_run_logger
+        from prefect import get_run_logger  # type: ignore[import-not-found]
 
         return get_run_logger()
     except Exception:

@@ -120,7 +120,7 @@ class MCPClientManager(AgentComponent):
             # Create new connection
             connection = MCPConnection(
                 server_id=server_id,
-                config=config,
+                config=dict(config),  # Convert TypedDict to dict
             )
 
             try:
@@ -175,10 +175,11 @@ class MCPClientManager(AgentComponent):
 
             # Parse command and arguments
             parts = command.split()
+            env_value = config.get("env", None)
             server_params = StdioServerParameters(
                 command=parts[0],
                 args=parts[1:] if len(parts) > 1 else [],
-                env=config.get("env", None),
+                env=env_value if isinstance(env_value, dict) else None,  # type: ignore[arg-type]
             )
 
             async with stdio_client(server_params) as (read, write):
@@ -218,7 +219,7 @@ class MCPClientManager(AgentComponent):
                 )
 
                 # Create the adapter
-                adapter = MCPToolAdapter(
+                adapter: MCPToolAdapter[Any] = MCPToolAdapter(
                     mcp_client=connection.session,
                     tool_spec=tool_spec,
                     name=tool_name,
@@ -253,7 +254,7 @@ class MCPClientManager(AgentComponent):
             resources_response = await connection.session.list_resources()
 
             for resource in resources_response.resources:
-                resource_id = resource.uri
+                resource_id = str(resource.uri)  # type: ignore[index]
                 connection.resources[resource_id] = {
                     "uri": resource.uri,
                     "name": resource.name,
@@ -356,7 +357,7 @@ class MCPClientManager(AgentComponent):
         for connection in self.connections.values():
             if uri in connection.resources and connection.session:
                 try:
-                    response = await connection.session.read_resource(uri)
+                    response = await connection.session.read_resource(uri)  # type: ignore[arg-type]
                     return response.contents
                 except Exception as e:
                     logger.error(f"Failed to read resource {uri}: {e}")

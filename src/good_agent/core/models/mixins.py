@@ -39,7 +39,7 @@ class ModelAllFields(BaseModelLike, ABC):
     @classmethod
     def model_all_fields(cls) -> dict[str, TypeInfo]:
         model_fields = {}
-        for key, field_info in cls.model_fields.items():  # type: ignore - classproperty
+        for key, field_info in cls.model_fields.items():  # type: ignore[attr-defined]
             type_info = TypeInfo(
                 field_info.annotation,
                 (not field_info.is_required)

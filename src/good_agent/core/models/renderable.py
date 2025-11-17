@@ -34,6 +34,7 @@ class Renderable(BaseModel, ModelAllFields, AbstractTemplate, ABC):
     """
 
     __template__ = "{{ __root__.model_dump() | yaml }}"
+    _template_config_via_init_subclass: bool = False
 
     def __init_subclass__(cls, __template_config__: dict | None = None, **kwargs):
         """
