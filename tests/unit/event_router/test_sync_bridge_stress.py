@@ -151,7 +151,7 @@ class TestSyncBridgeErrorHandling:
     """Test error propagation through sync bridge."""
 
     def test_async_handler_exception_propagates_to_sync_caller(self) -> None:
-        """Exceptions in async handlers should reach sync callers."""
+        """Exceptions in async handlers should be captured in context."""
         router = EventRouter()
 
         @router.on("failing:event")
@@ -159,8 +159,9 @@ class TestSyncBridgeErrorHandling:
             await asyncio.sleep(0.001)
             raise ValueError("Async handler failed")
 
-        with pytest.raises(ValueError, match="Async handler failed"):
-            router.apply_sync("failing:event")
+        ctx = router.apply_sync("failing:event")
+        assert isinstance(ctx.exception, ValueError)
+        assert "Async handler failed" in str(ctx.exception)
 
     def test_multiple_handlers_with_mixed_success(self) -> None:
         """When some handlers fail, successful ones should still run."""
@@ -179,12 +180,17 @@ class TestSyncBridgeErrorHandling:
         async def handler3(ctx) -> None:
             successful_calls.append("handler3")
 
-        # apply_sync should capture the exception
-        with pytest.raises(RuntimeError, match="handler2 fails"):
-            router.apply_sync("mixed:outcome")
+        # apply_sync should capture the exception in context
+        ctx = router.apply_sync("mixed:outcome")
 
-        # But handler1 should have run (higher priority runs first)
+        # Exception should be captured
+        assert isinstance(ctx.exception, RuntimeError)
+        assert "handler2 fails" in str(ctx.exception)
+
+        # Handler1 should have run (higher priority runs first)
+        # Handler3 should also run (exceptions don't stop subsequent handlers)
         assert "handler1" in successful_calls
+        assert "handler3" in successful_calls
 
     def test_do_with_failing_async_handlers_does_not_block(self) -> None:
         """do() should not propagate exceptions from async handlers."""
@@ -310,15 +316,35 @@ class TestSyncBridgeEdgeCases:
         assert ctx.parameters["foo"] == "bar"  # type: ignore[attr-defined]
         assert ctx.output is None  # type: ignore[attr-defined]
 
-    def test_nested_apply_sync_calls(self) -> None:
-        """Handler can call apply_sync recursively."""
+    def test_nested_apply_sync_from_async_handler_raises_error(self) -> None:
+        """Calling apply_sync from async handler should raise RuntimeError."""
+        router = EventRouter()
+
+        @router.on("outer")
+        async def outer_handler(ctx) -> None:
+            # This would cause a deadlock, so it should raise an error
+            router.apply_sync("inner")
+
+        @router.on("inner")
+        async def inner_handler(ctx) -> None:
+            pass
+
+        with pytest.raises(
+            RuntimeError,
+            match="Cannot call apply_sync.*from within an async event handler",
+        ):
+            router.apply_sync("outer")
+
+    def test_nested_async_calls_work_correctly(self) -> None:
+        """Handler can call apply_async for nested dispatch."""
         router = EventRouter()
         call_stack: list[str] = []
 
         @router.on("outer")
         async def outer_handler(ctx) -> None:
             call_stack.append("outer")
-            router.apply_sync("inner")
+            # Correct pattern: use apply_async for nested dispatch
+            await router.apply_async("inner")
 
         @router.on("inner")
         async def inner_handler(ctx) -> None:

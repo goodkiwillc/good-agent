@@ -509,7 +509,20 @@ class EventRouter:
         Synchronous blocking event dispatch.
 
         Returns context with results.
+
+        Raises:
+            RuntimeError: If called from within the event loop thread (nested
+                sync call from async handler would cause deadlock)
         """
+        # Prevent deadlock: detect if we're being called from within an async
+        # handler running on the event loop thread
+        if self._sync_bridge.is_event_loop_thread:
+            raise RuntimeError(
+                "Cannot call apply_sync() from within an async event handler "
+                "running on the event loop thread. This would cause a deadlock. "
+                "Use 'await router.apply_async()' instead for nested event dispatch."
+            )
+
         ctx: EventContext[dict[str, Any], Any] = EventContext(
             parameters=kwargs, invocation_timestamp=time.time()
         )
@@ -539,6 +552,17 @@ class EventRouter:
 
                 except ApplyInterrupt:
                     break
+                except RuntimeError as e:
+                    # Re-raise RuntimeErrors that indicate programming errors
+                    # (e.g., nested apply_sync deadlock)
+                    if "Cannot call apply_sync()" in str(e):
+                        raise
+                    # Store other RuntimeErrors
+                    if self._debug:
+                        logger.exception(f"Handler {handler} failed")
+                    ctx.exception = e
+                    if ctx.should_stop:
+                        break
                 except Exception as e:
                     if self._debug:
                         logger.exception(f"Handler {handler} failed")

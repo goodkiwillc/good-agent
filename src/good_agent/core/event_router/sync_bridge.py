@@ -323,28 +323,38 @@ class SyncBridge:
         THREAD SAFETY: Thread-safe
         """
         with self._lock:
-            # Wait for tasks with short timeout
-            self.join(timeout=1.0)
-
-            # Cancel any remaining futures
+            # Cancel any remaining futures first
             for future in list(self._futures):
                 if not future.done():
                     future.cancel()
             self._futures.clear()
 
-            # Cancel any remaining tasks
+            # Cancel any remaining tasks and wait for them to be cancelled
             if self._tasks and self._event_loop:
 
-                def cancel_tasks():
-                    for task in list(self._tasks):
-                        if not task.done():
-                            task.cancel()
+                async def cancel_and_wait():
+                    """Cancel all tasks and wait for them to finish."""
+                    tasks_to_cancel = [t for t in list(self._tasks) if not t.done()]
+                    for task in tasks_to_cancel:
+                        task.cancel()
+                    # Wait for all cancelled tasks to complete
+                    if tasks_to_cancel:
+                        await asyncio.gather(*tasks_to_cancel, return_exceptions=True)
 
-                self._event_loop.call_soon_threadsafe(cancel_tasks)
+                try:
+                    future = asyncio.run_coroutine_threadsafe(
+                        cancel_and_wait(), self._event_loop
+                    )
+                    future.result(timeout=1.0)
+                except Exception:
+                    # Best effort - continue with shutdown
+                    pass
 
-            # Stop event loop
+            # Now stop event loop
             if self._event_loop:
                 self._event_loop.call_soon_threadsafe(self._event_loop.stop)
+                # Give loop time to process stop request
+                time.sleep(0.1)
                 if self._loop_thread:
                     self._loop_thread.join(timeout=1.0)
 
@@ -408,3 +418,16 @@ class SyncBridge:
         """
         with self._lock:
             return self._event_loop is not None and self._event_loop.is_running()
+
+    @property
+    def is_event_loop_thread(self) -> bool:
+        """Check if current thread is the event loop thread.
+
+        Returns:
+            True if calling thread is the event loop thread
+        """
+        with self._lock:
+            return (
+                self._loop_thread is not None
+                and threading.current_thread() == self._loop_thread
+            )

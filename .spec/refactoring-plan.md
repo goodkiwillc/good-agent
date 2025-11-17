@@ -2295,15 +2295,13 @@ No active blockers at start. Potential blockers:
 ### Implementation Checklist
 
 **Phase 1: Foundation (Weeks 1-2)**
-- [ ] Remove utilities/ wrapper modules
-- [ ] Remove duplicate text.py
-- [ ] Remove debug/manual tests
-- [ ] Add tests for pool.py
-- [ ] Add tests for utilities/ modules
-- [ ] Consolidate template duplication
-- [ ] Verify and document changes
-- [ ] Run full test suite
-- [ ] Commit and push to feature branch
+- [x] Remove utilities/ wrapper modules
+- [x] Remove duplicate text.py
+- [x] Remove debug/manual tests
+- [x] Add tests for pool.py
+- [x] Add tests for utilities/ modules
+- [x] Consolidate template duplication
+- [x] Verify and document changes
 
 **Phase 2: Break Up Files (Weeks 3-5)** - NEARLY COMPLETE ✅⚠️
 - [x] Week 1: Extract Agent managers (messages, state, tools, llm) ✅
