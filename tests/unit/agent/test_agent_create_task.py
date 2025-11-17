@@ -324,9 +324,7 @@ class TestAgentCreateTask:
                     was_cancelled["value"] = True
                     raise
 
-            task_handle = agent.tasks.create(
-                check_cancellation(), wait_on_ready=False
-            )
+            task_handle = agent.tasks.create(check_cancellation(), wait_on_ready=False)
 
         # Task should be cancelled after context exit
         assert task_handle.cancelled() or was_cancelled["value"]

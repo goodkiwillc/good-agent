@@ -47,7 +47,9 @@ class AbstractTemplate(ABC):
         super().__init_subclass__()
 
         # Get the existing template config or create a new one
-        base_config: ChainMap[str, Any] = getattr(cls, "__template_config__", ChainMap())
+        base_config: ChainMap[str, Any] = getattr(
+            cls, "__template_config__", ChainMap()
+        )
         if not isinstance(base_config, ChainMap):
             base_config = ChainMap(base_config if base_config else {})
 

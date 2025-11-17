@@ -12,6 +12,8 @@ import pytest
 
 
 EXAMPLES_ROOT = Path(__file__).resolve().parent.parent / "examples"
+
+
 def _is_runtime_example(path: Path) -> bool:
     if path.name == "__init__.py":
         return False

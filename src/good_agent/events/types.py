@@ -126,6 +126,7 @@ class MessageRenderParams(TypedDict):
     message: Message
     mode: Literal["text", "llm", "display"]
     context: NotRequired[dict[str, Any]]
+    output: NotRequired[list[Any]]
 
 
 class MessagePartRenderParams(TypedDict):

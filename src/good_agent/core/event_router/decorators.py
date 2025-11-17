@@ -26,17 +26,18 @@ from __future__ import annotations
 import functools
 import inspect
 from collections.abc import Callable
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Awaitable, TypeVar, cast
 
 from .context import EventContext
 from .protocols import ApplyInterrupt, EventName, F
 from .registration import LifecyclePhase
 
 if TYPE_CHECKING:
-    pass  # type: ignore[attr-defined]
+    from .core import EventRouter  # pragma: no cover
 
 # Type variable for methods (includes self parameter)
 T_Method = TypeVar("T_Method", bound=Callable[..., object])
+EventContextAwaitable = Awaitable[EventContext[dict[str, Any], Any]]
 
 
 def on(
@@ -99,7 +100,8 @@ class emit:
         if callable(lifecycle) and not isinstance(lifecycle, (LifecyclePhase, str)):
             # Create a default emit instance and immediately apply it
             instance = object.__new__(cls)
-            instance.__init__(
+            emit.__init__(
+                instance,
                 lifecycle=LifecyclePhase.BEFORE | LifecyclePhase.AFTER,
                 event=None,
                 include_args=True,
@@ -194,7 +196,12 @@ class emit:
 
                 # Ensure self is EventRouter
                 if not isinstance(self, EventRouter):
-                    return await func(self, *args, **kwargs)
+                    return await cast(
+                        Awaitable[Any],
+                        func(self, *args, **kwargs),
+                    )
+
+                router: EventRouter = self
 
                 method_args = {}
                 if _root.include_args:
@@ -210,22 +217,31 @@ class emit:
                 try:
                     # BEFORE phase
                     if _root.lifecycle & LifecyclePhase.BEFORE:
-                        ctx = await self.apply_async(
-                            f"{event_name}:before", **method_args
+                        ctx = await cast(
+                            EventContextAwaitable,
+                            router.apply_async(
+                                f"{event_name}:before", **method_args
+                            ),
                         )
                         # Note: EventRouter does NOT modify method parameters
                         # The output is available but doesn't affect the method execution
 
                     # Execute method with original parameters
-                    result = await func(self, *args, **kwargs)
+                    result = await cast(
+                        Awaitable[Any],
+                        func(self, *args, **kwargs),
+                    )
 
                     # AFTER phase
                     if _root.lifecycle & LifecyclePhase.AFTER:
                         after_args = method_args.copy()
                         if _root.include_result:
                             after_args["result"] = result
-                        ctx = await self.apply_async(
-                            f"{event_name}:after", **after_args
+                        ctx = await cast(
+                            EventContextAwaitable,
+                            router.apply_async(
+                                f"{event_name}:after", **after_args
+                            ),
                         )
                         if ctx.output is not None:
                             result = ctx.output
@@ -239,8 +255,11 @@ class emit:
                         error_args = method_args.copy()
                         error_args["error"] = e
                         try:
-                            ctx = await self.apply_async(
-                                f"{event_name}:error", **error_args
+                            ctx = await cast(
+                                EventContextAwaitable,
+                                router.apply_async(
+                                    f"{event_name}:error", **error_args
+                                ),
                             )
                             if ctx.output is not None:
                                 return ctx.output
@@ -257,7 +276,12 @@ class emit:
                         if error is not None:
                             finally_args["error"] = error
                         # Use apply_async for async methods to ensure completion
-                        await self.apply_async(f"{event_name}:finally", **finally_args)
+                        await cast(
+                            EventContextAwaitable,
+                            router.apply_async(
+                                f"{event_name}:finally", **finally_args
+                            ),
+                        )
 
             return cast(T_Method, async_wrapper)
 
@@ -271,6 +295,8 @@ class emit:
                 # Ensure self is EventRouter
                 if not isinstance(self, EventRouter):
                     return func(self, *args, **kwargs)
+
+                router: EventRouter = self
 
                 method_args = {}
                 if _root.include_args:
@@ -286,7 +312,7 @@ class emit:
                 try:
                     # BEFORE phase
                     if _root.lifecycle & LifecyclePhase.BEFORE:
-                        ctx = self.apply_sync(f"{event_name}:before", **method_args)
+                        ctx = router.apply_sync(f"{event_name}:before", **method_args)
                         # Note: EventRouter does NOT modify method parameters
                         # The output is available but doesn't affect the method execution
 
@@ -298,7 +324,7 @@ class emit:
                         after_args = method_args.copy()
                         if _root.include_result:
                             after_args["result"] = result
-                        ctx = self.apply_sync(f"{event_name}:after", **after_args)
+                        ctx = router.apply_sync(f"{event_name}:after", **after_args)
                         if ctx.output is not None:
                             result = ctx.output
 
@@ -311,7 +337,7 @@ class emit:
                         error_args = method_args.copy()
                         error_args["error"] = e
                         try:
-                            ctx = self.apply_sync(f"{event_name}:error", **error_args)
+                            ctx = router.apply_sync(f"{event_name}:error", **error_args)
                             if ctx.output is not None:
                                 return ctx.output
                         except ApplyInterrupt:
@@ -326,7 +352,7 @@ class emit:
                             finally_args["result"] = result
                         if error is not None:
                             finally_args["error"] = error
-                        self.do(f"{event_name}:finally", **finally_args)
+                        router.do(f"{event_name}:finally", **finally_args)
 
             return cast(T_Method, sync_wrapper)
 

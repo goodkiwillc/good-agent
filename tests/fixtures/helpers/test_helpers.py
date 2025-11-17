@@ -21,12 +21,20 @@ class _MockAgentEvents:
         return self._agent.apply_sync(event, **kwargs)
 
     async def apply_typed(
-        self, event: str, params_type: type | None, return_type: type | None, **kwargs: Any
+        self,
+        event: str,
+        params_type: type | None,
+        return_type: type | None,
+        **kwargs: Any,
     ):
         return await self._agent.apply_typed(event, params_type, return_type, **kwargs)
 
     def apply_typed_sync(
-        self, event: str, params_type: type | None, return_type: type | None, **kwargs: Any
+        self,
+        event: str,
+        params_type: type | None,
+        return_type: type | None,
+        **kwargs: Any,
     ):
         return self._agent.apply_sync(event, **kwargs)
 
@@ -42,7 +50,9 @@ class _MockAgentEvents:
     def consume_from(self, _other: Any):  # pragma: no cover - no-op
         return None
 
-    def set_event_trace(self, enabled: bool, *, verbosity: int = 1, use_rich: bool = True):
+    def set_event_trace(
+        self, enabled: bool, *, verbosity: int = 1, use_rich: bool = True
+    ):
         self._event_trace_enabled = enabled
 
     @property

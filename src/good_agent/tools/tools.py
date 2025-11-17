@@ -2,7 +2,7 @@ import asyncio
 import copy
 import inspect
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from functools import update_wrapper
 from typing import (
@@ -17,6 +17,7 @@ from typing import (
     TypedDict,
     TypeVar,
     Union,
+    cast,
     get_args,
     get_type_hints,
     overload,
@@ -55,6 +56,7 @@ type ToolLike = Union["Tool[..., Any]", Callable[..., Any]]
 
 if TYPE_CHECKING:
     from .bound_tools import BoundTool
+    from ..mcp.client import MCPServerConfig
 
 
 @dataclass
@@ -310,7 +312,8 @@ class ToolManager(AgentComponent):
         return available
 
     async def load_mcp_servers(
-        self, server_configs: list[str | dict[str, Any]]
+        self,
+        server_configs: Sequence[str | dict[str, Any] | "MCPServerConfig"] | None,
     ) -> None:
         """
         Load tools from MCP servers.
@@ -333,8 +336,15 @@ class ToolManager(AgentComponent):
                 self.agent.events.broadcast_to(self._mcp_client)
                 self._mcp_client.setup(self.agent)
 
-        # Connect to servers
-        await self._mcp_client.connect_servers(server_configs)
+        # Connect to servers with normalized configs for typing compatibility
+        normalized_configs: list[str | "MCPServerConfig"] = []
+        for config in server_configs:
+            if isinstance(config, str):
+                normalized_configs.append(config)
+            else:
+                normalized_configs.append(cast("MCPServerConfig", config))
+
+        await self._mcp_client.connect_servers(normalized_configs)
 
         # Get all tools from MCP servers
         mcp_tools = self._mcp_client.get_tools()

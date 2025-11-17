@@ -54,7 +54,9 @@ class StructuredOutputExtractor:
         from ..core.event_router import EventContext
 
         start_time = time.time()
-        ctx: EventContext[CompletionEvent, None] = await self.llm.agent.events.apply_typed(
+        ctx: EventContext[
+            CompletionEvent, None
+        ] = await self.llm.agent.events.apply_typed(
             AgentEvents.LLM_EXTRACT_BEFORE,
             CompletionEvent,
             None,  # No specific return type expected for 'before' event

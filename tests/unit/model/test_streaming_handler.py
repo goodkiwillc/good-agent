@@ -20,11 +20,7 @@ class FakeRouter:
 
         async def _generator() -> AsyncIterator:
             yield SimpleNamespace(
-                choices=[
-                    SimpleNamespace(
-                        delta={"content": "hi"}, finish_reason=None
-                    )
-                ]
+                choices=[SimpleNamespace(delta={"content": "hi"}, finish_reason=None)]
             )
 
         return _generator()

@@ -322,7 +322,9 @@ async def test_date_range_functionality():
         print(f"Response type: {type(response)}")
 
         # Test relative date functionality
-        response = await agent.tool_calls.invoke("search", query="recent news", last_week=True)
+        response = await agent.tool_calls.invoke(
+            "search", query="recent news", last_week=True
+        )
 
         print("✓ Relative date search (last_week) completed successfully")
 

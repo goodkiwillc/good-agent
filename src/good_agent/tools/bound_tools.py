@@ -107,10 +107,14 @@ class BoundTool(Generic[ComponentSelf, P, FuncResp]):
         )
 
     @overload
-    def __get__(self, instance: None, owner: type[Any]) -> BoundTool[ComponentSelf, P, FuncResp]: ...
+    def __get__(
+        self, instance: None, owner: type[Any]
+    ) -> BoundTool[ComponentSelf, P, FuncResp]: ...
 
     @overload
-    def __get__(self, instance: ComponentSelf, owner: type[Any]) -> Tool[P, FuncResp]: ...
+    def __get__(
+        self, instance: ComponentSelf, owner: type[Any]
+    ) -> Tool[P, FuncResp]: ...
 
     def __get__(
         self,

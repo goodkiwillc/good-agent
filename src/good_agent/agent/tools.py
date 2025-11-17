@@ -378,7 +378,9 @@ class ToolExecutor:
                         )
                     else:
                         visible_params = {
-                            k: v for k, v in execution_params.items() if k not in {"_agent", "_tool_call"}
+                            k: v
+                            for k, v in execution_params.items()
+                            if k not in {"_agent", "_tool_call"}
                         }
                         return ToolResponse(
                             tool_name=tn,
@@ -663,7 +665,9 @@ class ToolExecutor:
         )
 
         tool_msg = self.agent.model.create_message(
-            content=content if tool_response.success else f"Error: {tool_response.error}",
+            content=content
+            if tool_response.success
+            else f"Error: {tool_response.error}",
             tool_call_id=tool_call_id,
             tool_name=tool_name,
             tool_response=tool_response,

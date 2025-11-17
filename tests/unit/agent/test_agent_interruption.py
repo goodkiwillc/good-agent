@@ -363,7 +363,9 @@ class TestAgentInterruption:
 
                 # The tool should have started but not completed
                 assert tool_started_event.is_set(), "Tool should have started"
-                assert nested_call_started_event.is_set(), "Nested call should have started"
+                assert nested_call_started_event.is_set(), (
+                    "Nested call should have started"
+                )
                 assert not tool_completed, (
                     "Tool should not have completed due to cancellation"
                 )

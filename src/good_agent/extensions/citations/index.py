@@ -36,6 +36,21 @@ class CitationIndex(Index[URL, int, Renderable]):
         self.tags_store: dict[str, set[str]] = {}
         self.next_index = index_offset
 
+    def _to_url(self, value: URL | str, fallback: URL | str | None = None) -> URL:
+        """Convert arbitrary input into a URL, falling back when conversion fails."""
+
+        if isinstance(value, URL):
+            return value
+
+        try:
+            return URL(value)
+        except ValueError:
+            if fallback is not None:
+                if isinstance(fallback, URL):
+                    return fallback
+                return URL(fallback)
+            raise
+
     def _get_canonical_url(self, url_or_key: URL | str) -> str:
         """
         Get canonical URL string from URL object or string.
@@ -389,7 +404,7 @@ class CitationIndex(Index[URL, int, Renderable]):
         canonical_url = self._resolve_aliases_str(canonical_url)
         return canonical_url in self.url_to_index
 
-    def _resolve_aliases(self, key: URL) -> URL:
+    def _resolve_aliases(self, key: URL | str) -> URL:
         """
         Resolve URL aliases to primary URL (required by Index protocol).
 
@@ -412,8 +427,7 @@ class CitationIndex(Index[URL, int, Renderable]):
             seen.add(current)
             current = self.aliases[current]
 
-        # Return as URL object
-        return URL(current) if current != str(key) else key
+        return self._to_url(current, fallback=key)
 
     def _resolve_aliases_str(self, canonical_url: str) -> str:
         """
@@ -489,7 +503,7 @@ class CitationIndex(Index[URL, int, Renderable]):
             result[url] = value
         return result
 
-    def _get_aliases(self, key: URL) -> set[URL]:
+    def _get_aliases(self, key: URL | str) -> set[URL]:
         """
         Get all aliases for a given URL (required by Index protocol).
 

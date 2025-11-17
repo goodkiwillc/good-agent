@@ -48,7 +48,7 @@ class AgentTaskManager:
         coro: Coroutine[Any, Any, T],
         *,
         name: str | None = None,
-        component: "AgentComponent" | str | None = None,
+        component: "AgentComponent | str | None" = None,
         wait_on_ready: bool = True,
         cleanup_callback: Callable[[asyncio.Task[T]], None] | None = None,
     ) -> asyncio.Task[T]:
@@ -160,7 +160,9 @@ class AgentTaskManager:
                 asyncio.gather(*tasks, return_exceptions=True), timeout=timeout
             )
         except TimeoutError:
-            logger.warning("Some managed tasks did not cancel within %s seconds", timeout)
+            logger.warning(
+                "Some managed tasks did not cancel within %s seconds", timeout
+            )
 
 
 __all__ = ["AgentTaskManager"]

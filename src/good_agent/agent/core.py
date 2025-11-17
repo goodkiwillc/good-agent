@@ -30,26 +30,36 @@ from typing import (
 import orjson
 from ulid import ULID
 
+from good_agent.core.event_router import (
+    EventContext,
+    EventName,
+    EventRouter,
+    TypedApply,
+    on,
+)
 from good_agent.core.types import URL
-from good_agent.core.event_router import EventContext, EventRouter, EventName, TypedApply, on
 from good_agent.core.ulid_monotonic import (
     create_monotonic_ulid,
 )
 
 from .components import ComponentRegistry
 from .context import ContextManager
+from .events import AgentEventsFacade
 from .llm import LLMCoordinator
 from .messages import MessageManager
 from .state import AgentState, AgentStateMachine
 from .tasks import AgentTaskManager
 from .tools import ToolExecutor
 from .versioning import AgentVersioningManager
-from .events import AgentEventsFacade
 
 if TYPE_CHECKING:
-    from litellm.utils import Choices
+    from litellm.types.utils import Choices
 
 from ..components import AgentComponent
+from ..components.template_manager import (
+    Template,
+    TemplateManager,
+)
 from ..config import AgentConfigManager
 from ..config_types import AGENT_CONFIG_KEYS, AgentOnlyConfig, LLMCommonConfig
 from ..context import Context as AgentContext
@@ -75,10 +85,6 @@ from ..mock import AgentMockInterface
 from ..model.llm import LanguageModel
 from ..pool import AgentPool
 from ..store import put_message
-from ..components.template_manager import (
-    Template,
-    TemplateManager,
-)
 from ..tools import (
     BoundTool,
     Tool,
@@ -345,7 +351,9 @@ class Agent(EventRouter):
     def __dir__(self) -> list[str]:
         base_dir = super().__dir__()
         filtered = [
-            name for name in base_dir if name.startswith("_") or name in self._PUBLIC_ATTRIBUTE_NAMES
+            name
+            for name in base_dir
+            if name.startswith("_") or name in self._PUBLIC_ATTRIBUTE_NAMES
         ]
         for name in self._PUBLIC_ATTRIBUTE_NAMES:
             if name not in filtered:
@@ -645,7 +653,9 @@ class Agent(EventRouter):
         self._warn_event_facade("apply")
         return await self.events.apply(*args, **kwargs)
 
-    async def apply_async(self, event: EventName, **kwargs: Any) -> EventContext[Any, Any]:
+    async def apply_async(
+        self, event: EventName, **kwargs: Any
+    ) -> EventContext[Any, Any]:
         """Deprecated wrapper delegating to :attr:`events`."""
 
         self._warn_event_facade("apply_async")
@@ -1841,6 +1851,7 @@ class Agent(EventRouter):
         Returns:
             New parameters dict with JSON-like strings parsed where appropriate.
         """
+
         def _resolve_tool_for_schema(t: Any) -> Any:
             # Try to resolve to a Tool-like object that has a .model with JSON schema
             try:

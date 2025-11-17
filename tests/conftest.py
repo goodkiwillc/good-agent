@@ -32,6 +32,7 @@ def _enforce_skip_coverage_reason(request):
     if not isinstance(reason, str) or not reason.strip():
         raise AssertionError(_SKIP_COVERAGE_ERROR)
 
+
 # ---------------------------------------------------------------------------
 # Warning controls
 # ---------------------------------------------------------------------------

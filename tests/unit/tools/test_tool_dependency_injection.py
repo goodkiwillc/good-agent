@@ -159,7 +159,9 @@ class TestAgentComponentInjection:
         async with Agent(
             "Test system", tools=[save_data], extensions=[data_store]
         ) as agent:
-            result = await agent.tool_calls.invoke(save_data, key="test_key", value="test_value")
+            result = await agent.tool_calls.invoke(
+                save_data, key="test_key", value="test_value"
+            )
 
             assert result.success
             assert cast(str, result.response) == "Saved test_key=test_value"
@@ -197,11 +199,15 @@ class TestAgentComponentInjection:
             "Test system", tools=[complex_operation], extensions=[data_store, counter]
         ) as agent:
             # First call
-            result1 = await agent.tool_calls.invoke(complex_operation, operation="first")
+            result1 = await agent.tool_calls.invoke(
+                complex_operation, operation="first"
+            )
             assert cast(str, result1.response) == "Operation 1: first"
 
             # Second call
-            result2 = await agent.tool_calls.invoke(complex_operation, operation="second")
+            result2 = await agent.tool_calls.invoke(
+                complex_operation, operation="second"
+            )
             assert cast(str, result2.response) == "Operation 2: second"
 
             # Verify components were updated
@@ -267,7 +273,9 @@ class TestMixedInjection:
         async with Agent(
             "Test system", tools=[comprehensive_tool], extensions=[data_store]
         ) as agent:
-            result = await agent.tool_calls.invoke(comprehensive_tool, input_data="test data")
+            result = await agent.tool_calls.invoke(
+                comprehensive_tool, input_data="test data"
+            )
 
             assert result.success
             response = cast(str, result.response)

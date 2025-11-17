@@ -74,9 +74,7 @@ def test_event_trace_verbose_rich(monkeypatch: pytest.MonkeyPatch) -> None:
         def print(self, *args: Any, **_: Any) -> None:
             printed.append(args)
 
-    monkeypatch.setattr(
-        "good_agent.core.event_router.core._console", DummyConsole()
-    )
+    monkeypatch.setattr("good_agent.core.event_router.core._console", DummyConsole())
 
     router.set_event_trace(True, verbosity=2, use_rich=True)
     router._log_event(

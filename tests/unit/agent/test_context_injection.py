@@ -159,7 +159,9 @@ class TestFunctionInjectionModification:
     def test_mixed_injection_types(self):
         """Test mixing ContextValue with Depends injection."""
         from fast_depends import Depends
-        from good_agent.components.template_manager.injection import _get_injection_params
+        from good_agent.components.template_manager.injection import (
+            _get_injection_params,
+        )
 
         # Create a dummy dependency provider
         def agent_provider():
