@@ -237,7 +237,7 @@ from good_agent.model.formatting import MessageFormatter  # ✅
 
 ## Phase 4: Agent API Surface Reduction
 
-**Status**: In Progress (2025-11-16 and later)
+**Status**: In Progress (updated 2025-11-17)
 
 **Breaking Changes**: ❌ None – calls now forward with `DeprecationWarning`
 
@@ -249,6 +249,7 @@ from good_agent.model.formatting import MessageFormatter  # ✅
   - **Tool execution** via `agent.tool_calls.*`
   - **Event router** via `agent.events.*`
   - **Context lifecycle** via `agent.context_manager.*`
+- Legacy message, rendering, context, and token helpers now emit `DeprecationWarning`; migrate to message list assignment, template manager helpers, and the context manager facade per the table below.
 - Legacy methods remain callable but are hidden from `dir(agent)` and emit warnings when used directly.
 
 ### Required Changes
@@ -298,11 +299,20 @@ Update any direct calls to the legacy helpers to use the new facades:
 | `agent.set_event_trace(...)` | `agent.events.set_event_trace(...)` |
 | `agent.join(...)`, `agent.join_async(...)`, `agent.close()`, `agent.async_close()` | `agent.events.join(...)`, `agent.events.join_async(...)`, etc. |
 | `agent.fork(...)` | `agent.context_manager.fork(...)` |
+| `agent.thread_context(...)` | `agent.context_manager.thread_context(...)` |
 | `agent.copy(...)` | `agent.context_manager.copy(...)` |
 | `agent.spawn(...)` | `await agent.context_manager.spawn(...)` |
 | `agent.merge(...)` | `await agent.context_manager.merge(...)` |
 | `agent.context_provider("name")` | `agent.context_manager.context_provider("name")` |
 | `Agent.context_providers("name")` | `ContextManager.context_providers("name")` or `agent.context_manager.context_providers("name")` |
+| `agent.print(...)` | `good_agent.utilities.print_message(message, render_mode=...)` |
+| `agent.replace_message(index, msg)` | `agent.messages[index] = msg` (list assignment updates versions) |
+| `agent.set_system_message("..." )` | `agent.messages[0] = agent.model.create_message(..., role="system")` |
+| `agent.get_rendering_context(...)` | `agent.template.resolve_context_sync(...)` (or custom TemplateManager helper) |
+| `agent.get_rendering_context_async(...)` | `await agent.template.resolve_context_async(...)` |
+| `agent.get_token_count(...)` | `agent.token_count` or `get_message_token_count(...)` per message |
+| `agent.get_token_count_by_role(...)` | Aggregate `get_message_token_count(...)` results per role |
+| `agent.current_version` | `agent.versioning.current_version` |
 
 ### Guardrail Test
 

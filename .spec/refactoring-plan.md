@@ -29,7 +29,6 @@ This is a 12-week, 7-phase refactoring following the audit recommendations. We a
 - **Open Work Items**:
   1. Phase 4 Task 5: Expand API docs & migration guidance after the API reshaping.
   2. Wire the new `examples/` inventory into automated smoke tests (`tests/test_examples.py`) once Phase 4 API stabilizes.
-  3. Audit for any remaining legacy entry points before retiring shims in v1.0.0.
 - **Notes for Next Session**:
   - Capture the `ready()`→`initialize()` migration plus facade usage guidance in `MIGRATION.md`/`CHANGELOG.md` (Task 5)
   - Docstring audit script still reports `Total long docstrings: 0`; rerun after documentation edits
@@ -989,7 +988,7 @@ Decision: Keep `add_tool_invocation()` and `add_tool_invocations()` as they serv
 - Dependencies: Phase 2 complete ✅
 - Success Criteria: Clear documentation, no confusion about use cases ✅
 
-### 3. [ ] **Reduce Agent Public API Surface** - MEDIUM RISK
+### 3. [x] **Reduce Agent Public API Surface** - MEDIUM RISK (Completed 2025-11-17)
 - Files: `agent/core.py`
 - Details:
   1. **Week 8, Day 4-5: Audit current API**
@@ -1059,28 +1058,31 @@ Decision: Keep `add_tool_invocation()` and `add_tool_invocations()` as they serv
   - Backward compatibility maintained
   - Clear API documentation
 
-  **Progress 2025-11-16 (sessions 9-11):**
+**Progress 2025-11-17:**
   - ✅ Task orchestration helpers now route through the new `AgentTaskManager` facade (`agent.tasks`, `agent.task_count`, `agent.versioning`). Legacy helpers (`create_task`, `get_task_count`, `get_task_stats`, `wait_for_tasks`, `revert_to_version`) issue `DeprecationWarning`s while delegating to the manager or `versioning` property, and the task-focused unit suite was migrated to the new API.
   - ✅ Event router plumbing has been hidden behind `agent.events` (powered by the new `AgentEventsFacade`). Every EventRouter convenience (`apply*`, `typed`, `broadcast_to`, `consume_from`, `set_event_trace`, `ctx`, `event_trace_enabled`, `join*`, `close`, `async_close`) now funnels through that facade, and `Agent` simply forwards with a uniform warning message. All internal callers (LLM coordinator, formatting pipeline, template manager, messaging, tools) have been updated to use `agent.events.*` directly, eliminating redundant surface area and silencing the DeprecationWarning flood.
   - ✅ Context lifecycle and tool plumbing also moved behind manager facades: `agent.context_manager` now exposes `copy()`, `spawn()`, `context_provider(s)`, `merge()` etc., while `agent.tool_calls` wraps `ToolExecutor` with `record_invocation(s)`, `invoke`, `invoke_many`, `invoke_func`, `get_pending_tool_calls`, and `resolve_pending_tool_calls`.
   - ✅ Test suites covering tools, templating, citations, and language models were migrated to the new manager properties. A new `_MockAgentEvents` shim keeps the language-model unit tests green without depending on the full Agent implementation.
   - ✅ Validators re-run after the refactor (`uv run ruff check`, `uv run pytest` → 1,316 passed / 36 skipped / 1 deselected). `uv run mypy src/good_agent` still reports the existing 147 repo-wide issues; none are new and the failure log was captured verbatim for future Phase 5 work.
+  - ✅ Newly deprecated: `Agent.fork()`, `Agent.thread_context()`, `Agent.print()`, `Agent.replace_message()`, `Agent.set_system_message()`, `Agent.get_rendering_context()` (+ async variant), `Agent.get_token_count()`, `Agent.get_token_count_by_role()`, and `Agent.current_version`. Each shim now emits a precise `DeprecationWarning` pointing to the context manager facade, message list assignment, template manager helpers, token utility helpers, or `agent.versioning`.
+  - ✅ Added `tests/unit/agent/test_agent_legacy_warnings.py` to lock in warning behavior for the de-scoped helpers so future refactors cannot accidentally reintroduce silent legacy paths.
+  - ✅ MIGRATION.md and CHANGELOG.md now capture the expanded deprecation matrix, including step-by-step replacements (e.g., `agent.messages[index] = replacement` for message editing and `good_agent.utilities.print_message` for rendering).
 
-  Remaining work for Task 3 (target 2025-11-18): finish polishing documentation (`MIGRATION.md`, `CHANGELOG.md`) and audit for any straggling legacy entry points before we drop the shims in v1.0.0.
+  Remaining work: None – Task 3 is fully signed off, with documentation and regression tests in place. Shims remain until v1.0.0 for backward compatibility but are now centrally tracked.
 
 #### Current API Surface Snapshot (2025-11-16, post-guard)
 
 | Kind | Count | Symbols |
 | --- | --- | --- |
-| Public attributes (methods/properties/constants) | 30 | `EVENTS`, `append`, `assistant`, `call`, `config`, `context`, `context_manager`, `do`, `events`, `execute`, `extensions`, `id`, `messages`, `model`, `name`, `on`, `ready`, `session_id`, `state`, `system`, `task_count`, `tasks`, `token_count`, `tool`, `tool_calls`, `tools`, `user`, `validate_message_sequence`, `version_id`, `versioning` |
+| Public attributes (methods/properties/constants) | 30 | `EVENTS`, `append`, `assistant`, `call`, `config`, `context`, `context_manager`, `do`, `events`, `execute`, `extensions`, `id`, `messages`, `model`, `name`, `on`, `initialize`, `is_ready`, `session_id`, `state`, `system`, `task_count`, `tasks`, `tool`, `tool_calls`, `tools`, `user`, `validate_message_sequence`, `version_id`, `versioning` |
 
 Legacy shims (e.g., `invoke`, `apply`, `broadcast_to`, `context_provider`) remain callable but are omitted from `dir(agent)` and emit `DeprecationWarning` with guidance to transition to the respective manager facades.
 
 Observations:
-- 18 of the 54 methods are thin EventRouter forwards (`apply*`, `do`, `typed`, `broadcast_to`, `consume_from`, `set_event_trace`, `on`).
-- 9 methods are task orchestration helpers (`create_task`, `wait_for_tasks`, `get_task_count`, `get_task_stats`, `join*`, `async_close`, `close`).
-- 8 methods handle tool plumbing that already lives in `MessageManager` or `ToolExecutor` (`add_tool_*`, `resolve_pending_tool_calls`, `get_pending_tool_calls`, `has_pending_tool_calls`).
-- Context lifecycle (`fork*`, `thread_context`, `spawn`, `merge`, `copy`) and rendering (`print`, `get_rendering_context*`) can move behind managers without breaking callers.
+- EventRouter conveniences continue to exist but are hidden behind `agent.events` to keep the stable surface smaller.
+- Task orchestration helpers now live under `agent.tasks`; only the lightweight `task_count` property remains on `Agent`.
+- Tool plumbing (`add_tool_*`, `resolve/get/has_pending_tool_calls`) is now fully delegated to `agent.tool_calls`.
+- Context lifecycle (`fork*`, `thread_context`, `spawn`, `merge`, `copy`), rendering (`print`, `get_rendering_context*`), and message editing (`set_system_message`, `replace_message`) are officially deprecated and issue warnings that point to the manager/list-assignment alternatives.
 
 #### Consolidation Plan
 
@@ -1089,17 +1091,17 @@ Observations:
 | Event router facade | Keep only `agent.on()` and `agent.do()` on Agent; move `apply*`, `typed`, `broadcast_to`, `consume_from`, `set_event_trace`, `context_provider(s)` behind `agent.events` (new proxy returning the underlying `EventRouter`). | `agent.events` (returns `EventRouterFacade`) | Agent already inherits EventRouter; we expose a single facade to avoid leaking every method. |
 | Task orchestration | Remove `create_task`, `wait_for_tasks`, `get_task_count`, `get_task_stats`, `join`, `join_async` from Agent; expose them via `agent.tasks`. | Existing (but internal) TaskManager within `agent/state.py` | Requires promoting `_task_manager` to public property; Agent retains `task_count` property for quick access. |
 | Tool plumbing | Deprecate `add_tool_invocation(s)` and `resolve/get/has_pending_tool_calls`; direct callers to `agent.tools` / `agent.messages`. | `ToolExecutor` & `MessageManager` | `add_tool_response` already deprecated via Task 1; extend warnings here. |
-| Context lifecycle | Keep `agent.fork()` and `agent.thread_context()`; route `fork_context`, `spawn`, `merge`, `copy`, `context_provider(s)` through `agent.context`. | `ContextManager` | Ensures only two verbs remain on Agent surface. |
-| Rendering helpers | Move `print`, `get_rendering_context*`, `set_system_message`, `replace_message` to MessageManager + TemplateManager facades. | `MessageManager` / `TemplateManager` | Agent keeps `append()` and `system` property for common cases. |
-| Versioning | Drop `revert_to_version`, `current_version`, `version_id` from Agent; require `agent.versioning.revert()` and `agent.versioning.current`. | `VersioningManager` | Provide shim methods with DeprecationWarnings until v1.0. |
+| Context lifecycle | Deprecate all Agent-level helpers (`fork`, `thread_context`, `fork_context`, `spawn`, `merge`, `copy`, `context_provider(s)`) in favor of `agent.context_manager.*`. | `ContextManager` | Shims remain with warnings until v1.0, ensuring one facade for lifecycle operations. |
+| Rendering helpers | Deprecate `print`, `get_rendering_context*`, `set_system_message`, `replace_message` and point callers to `good_agent.utilities.print_message`, message list assignment, or template manager helpers. | `MessageManager` / `TemplateManager` | Keeps Agent focused on orchestration; message manipulation moves closer to the data structures. |
+| Versioning | Drop `revert_to_version`, `current_version`, `version_id` from Agent; require `agent.versioning.revert()` and `agent.versioning.current`. | `VersioningManager` | Shim methods now warn and delegate so users adopt the dedicated manager. |
 | Misc legacy verbs | Remove alias methods (`chat`, `invoke`, `invoke_many*`, `apply_sync`, `apply_async` duplicates) once telemetry confirms zero usage; keep `call` and `execute` as the canonical entry points. | n/a | Each alias gets DeprecationWarning immediately; targeted removal in Phase 7. |
 
 #### Deprecation & Timeline
 
-1. **Audit phase (Nov 16-17):** capture telemetry or search usage for each alias; update `PHASE4_MESSAGE_API_PROPOSAL.md` with impact notes.
-2. **Shim phase (Nov 18-20):** add manager-backed forwarding methods emitting `DeprecationWarning` with `stacklevel=2`; update MIGRATION.md with replacements.
-3. **Surface reduction (Nov 21-22):** update `agent/__all__` exports and spec to advertise the trimmed API; ensure `dir(Agent)` now reports ≤30 symbols.
-4. **Removal gate:** keep shims until v1.0; add runtime feature flag (`GOOD_AGENT_LEGACY_API=1`) if we need to extend support beyond 0.3.0.
+1. **Audit phase (Nov 16-17):** ✅ complete – telemetry snapshot plus exhaustive shim inventory captured in PHASE4 docs.
+2. **Shim phase (Nov 17):** ✅ complete – all remaining helpers emit `DeprecationWarning` with precise guidance and tests enforce the behavior.
+3. **Surface reduction:** ✅ `dir(Agent)` now reflects the 30-entry allow-list; any future additions must update `Agent.public_attribute_names()` and the guard test.
+4. **Removal gate:** Shims stay in place until v1.0.0 (or behind `GOOD_AGENT_LEGACY_API`) with documentation tracked in MIGRATION.md and CHANGELOG.md.
 
 ### 4. [ ] **Standardize Property vs Method Usage** - LOW RISK
 - Files: All agent modules
