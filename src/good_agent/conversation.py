@@ -51,7 +51,6 @@ class Conversation:
     async def __aenter__(self) -> Self:
         """Enter the conversation context and set up message forwarding."""
         self._active = True
-        self._original_append_methods: dict[Agent, Any] = {}
 
         # Set up direct message forwarding by wrapping append methods
         for source_agent in self.participants:
@@ -92,7 +91,7 @@ class Conversation:
                 return wrapped_append
 
             # Replace append method with wrapper
-            source_agent.append = create_wrapper(
+            source_agent.append = create_wrapper(  # type: ignore[method-assign]
                 source_agent, target_agents, self._original_append_methods[source_agent]
             )
 
@@ -105,7 +104,7 @@ class Conversation:
         # Restore original append methods
         if hasattr(self, "_original_append_methods"):
             for agent, original_append in self._original_append_methods.items():
-                agent.append = original_append
+                agent.append = original_append  # type: ignore[method-assign]
             self._original_append_methods.clear()
 
     async def execute(

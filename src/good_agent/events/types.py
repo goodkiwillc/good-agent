@@ -7,7 +7,7 @@ from ulid import ULID
 if TYPE_CHECKING:
     from ..agent import Agent, AgentState
     from ..messages import Message
-    from ..model.llm import ResponseWithUsage
+    from ..model.protocols import ResponseWithUsage
     from ..tools import Tool, ToolCall, ToolResponse
 
 

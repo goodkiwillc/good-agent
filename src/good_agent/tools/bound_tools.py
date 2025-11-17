@@ -107,16 +107,16 @@ class BoundTool(Generic[ComponentSelf, P, FuncResp]):
         )
 
     @overload
-    def __get__(self, instance: None, owner: type[Any]) -> BoundTool[Any, Any, Any]: ...
+    def __get__(self, instance: None, owner: type[Any]) -> BoundTool[ComponentSelf, P, FuncResp]: ...
 
     @overload
-    def __get__(self, instance: object, owner: type[Any]) -> Tool[Any, Any]: ...
+    def __get__(self, instance: ComponentSelf, owner: type[Any]) -> Tool[P, FuncResp]: ...
 
     def __get__(
         self,
         instance: ComponentSelf | None,
         owner: type[Any],
-    ) -> Tool[Any, Any] | BoundTool[Any, Any, Any]:
+    ) -> Tool[P, FuncResp] | BoundTool[ComponentSelf, P, FuncResp]:
         """
         Get a Tool instance bound to the component instance.
 
@@ -217,7 +217,7 @@ def create_component_tool_decorator():
             config = {"retry": retry, "hide": hide or [], **kwargs}
 
             # Create and return BoundTool descriptor
-            bound_tool: BoundTool[Any, Any] = BoundTool(
+            bound_tool: BoundTool[Any, Any, Any] = BoundTool(
                 tool_class=Tool,
                 unbound_method=f,
                 metadata=metadata,

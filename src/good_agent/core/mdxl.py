@@ -815,7 +815,7 @@ class MDXL:
         citation_pattern = r"\[(\d+)\](?!\:)"
 
         # Build mapping of old to new indices
-        old_to_new = {}
+        old_to_new: dict[str, str] = {}
         new_refs = []
 
         for line in content.split("\n"):
@@ -833,10 +833,10 @@ class MDXL:
         for line in content.split("\n"):
             match = re.match(ref_pattern, line)
             if match:
-                old_idx = match.group(1)
+                old_idx_str = match.group(1)
                 url = match.group(2).strip()
-                if old_idx in old_to_new:
-                    new_idx = old_to_new[old_idx]
+                if old_idx_str in old_to_new:
+                    new_idx = old_to_new[old_idx_str]
                     lines.append(f"[{new_idx}]: {url}")
                 else:
                     lines.append(line)
@@ -906,12 +906,12 @@ class MDXL:
                     text = "\n".join(dedented)
         else:
             # Use standard lxml formatting
-            text: str = etree.tostring(
+            text = str(etree.tostring(
                 self._root,
                 encoding="unicode",
                 pretty_print=pretty,
                 xml_declaration=False,
-            )  # type: ignore[arg-type]
+            ))  # type: ignore[arg-type]
 
             # Strip <root> wrapper by default for root elements
             if not include_root and self.tag == "root" and not self._parent:
@@ -1438,7 +1438,7 @@ class MDXL:
         # First pass: collect all citations and assign new indices
         seen_urls = {}  # url -> new_idx
         next_new_idx = 1
-        current_scope_defs = {}
+        current_scope_defs: dict[str, str] = {}
 
         for i, line in enumerate(lines):
             # Check if this is a section boundary (closing tag)
@@ -1480,10 +1480,10 @@ class MDXL:
 
         # Second pass: rewrite with new indices and collect references per section
         result_lines = []
-        current_scope_defs = {}
-        section_refs = {}  # new_idx -> url for current section
+        current_scope_defs_2: dict[str, str] = {}
+        section_refs: dict[str, str] = {}  # new_idx -> url for current section
         base_indent = 0
-        blank_line_buffer = []  # Buffer to hold blank lines until we know if they precede references
+        blank_line_buffer: list[str] = []  # Buffer to hold blank lines until we know if they precede references
 
         for i, line in enumerate(lines):
             # Track indentation of content lines for reference formatting
@@ -1520,7 +1520,7 @@ class MDXL:
                             result_lines.append("")
 
                 # Clear section state
-                current_scope_defs = {}
+                current_scope_defs_2 = {}
                 section_refs = {}
                 result_lines.append(line)
                 blank_line_buffer = []
@@ -1531,7 +1531,7 @@ class MDXL:
             if def_match:
                 idx = def_match.group(1)
                 url = def_match.group(2).strip()
-                current_scope_defs[idx] = url
+                current_scope_defs_2[idx] = url
                 # Track which references are used in this section
                 if url in seen_urls:
                     new_idx = seen_urls[url]
@@ -1559,8 +1559,8 @@ class MDXL:
             ):
                 idx = match.group(1)
                 url = None
-                if idx in current_scope_defs:
-                    url = current_scope_defs[idx]
+                if idx in current_scope_defs_2:
+                    url = current_scope_defs_2[idx]
                 else:
                     # Look ahead for definition
                     for j in range(i + 1, len(lines)):
@@ -1695,8 +1695,8 @@ class MDXL:
                 if url in url_to_new_idx and url not in seen_definitions:
                     new_idx = url_to_new_idx[url]
                     # Preserve original indentation
-                    indent = len(line) - len(line.lstrip())
-                    result_lines.append(" " * indent + f"[{new_idx}]: {url}")
+                    indent_len = len(line) - len(line.lstrip())
+                    result_lines.append(" " * indent_len + f"[{new_idx}]: {url}")
                     seen_definitions.add(url)
                 # Skip duplicate or unmapped definitions
                 continue
@@ -1777,7 +1777,7 @@ class MDXL:
         original_has_trailing_blank = text.rstrip() != text
 
         lines = text.split("\n")
-        result = []
+        result: list[str] = []
 
         for i, line in enumerate(lines):
             stripped = line.strip()

@@ -271,7 +271,7 @@ class MessageSequenceValidator:
         1. System messages typically appear at the beginning
         2. Some models support system messages throughout, but this is model-specific
         """
-        issues = []
+        issues: list[str] = []
 
         # Find all system message indices
         system_indices = [
