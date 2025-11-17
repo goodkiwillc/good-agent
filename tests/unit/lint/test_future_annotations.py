@@ -8,7 +8,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SOURCE_DIR = PROJECT_ROOT / "src" / "good_agent"
 
 
-def _has_future_annotations(tree: ast.AST) -> bool:
+def _has_future_annotations(tree: ast.Module) -> bool:
     for node in tree.body:
         if isinstance(node, ast.ImportFrom) and node.module == "__future__":
             if any(alias.name == "annotations" for alias in node.names):
@@ -28,7 +28,7 @@ class _StringUnionVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def _uses_string_union(tree: ast.AST) -> bool:
+def _uses_string_union(tree: ast.Module) -> bool:
     visitor = _StringUnionVisitor()
     visitor.visit(tree)
     return visitor.has_string_union
@@ -39,11 +39,12 @@ def test_string_union_forward_refs_require_future_annotations() -> None:
 
     for path in SOURCE_DIR.rglob("*.py"):
         source = path.read_text()
-        tree = ast.parse(source)
+        tree: ast.Module = ast.parse(source)
         if _uses_string_union(tree) and not _has_future_annotations(tree):
             violations.append(path.relative_to(PROJECT_ROOT))
 
     assert not violations, (
         "The following modules use PEP 604 unions with string literals but lack "
-        "'from __future__ import annotations':\n" + "\n".join(str(path) for path in violations)
+        "'from __future__ import annotations':\n"
+        + "\n".join(str(path) for path in violations)
     )

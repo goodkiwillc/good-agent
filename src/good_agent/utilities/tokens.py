@@ -198,13 +198,10 @@ def get_message_token_count(
     # Check if message has cached token count for this model/config
     cache_key = f"{model}:{include_tools}"
 
-    # Messages are immutable, so we can cache on the object itself
-    # Use a private attribute to store cache
-    if not hasattr(message, "_token_count_cache"):
-        message._token_count_cache = {}  # type: ignore
+    token_cache = message._token_count_cache
 
-    if cache_key in message._token_count_cache:  # type: ignore
-        return message._token_count_cache[cache_key]  # type: ignore
+    if cache_key in token_cache:
+        return token_cache[cache_key]
 
     # Convert message to dictionary format for litellm
     message_dict = message_to_dict(message, include_tools)
@@ -213,6 +210,6 @@ def get_message_token_count(
     count = count_message_tokens(message_dict, model, include_tools)
 
     # Cache result on message object
-    message._token_count_cache[cache_key] = count  # type: ignore
+    token_cache[cache_key] = count
 
     return count

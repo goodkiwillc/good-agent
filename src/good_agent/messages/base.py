@@ -34,7 +34,12 @@ from ..content import (
     deserialize_content_part,
     is_template,
 )
-from ..utilities.typing import SupportsDisplay, SupportsLLM, SupportsRender, SupportsString
+from ..utilities.typing import (
+    SupportsDisplay,
+    SupportsLLM,
+    SupportsRender,
+    SupportsString,
+)
 
 if TYPE_CHECKING:
     from ..agent import Agent
@@ -215,6 +220,9 @@ class Message(PrivateAttrBase, GoodBase, ABC):
     # Rendering cache
     _rendered_cache: dict[RenderMode, str] = PrivateAttr(default_factory=dict)
     _context: dict[str, Any] = PrivateAttr(default_factory=dict)
+
+    # Token counting cache keyed by "{model}:{include_tools}"
+    _token_count_cache: dict[str, int] = PrivateAttr(default_factory=dict)
 
     # Legacy support
     _raw_content: str | None = PrivateAttr(default=None)

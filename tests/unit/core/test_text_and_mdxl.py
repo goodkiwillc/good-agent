@@ -26,10 +26,7 @@ def test_mdxl_detects_legacy_and_handles_attributes():
     section = mdxl.select("./section")
     assert section.attributes["private"] is True
     assert mdxl._should_convert_legacy("[1] Missing definition") is True
-    assert (
-        mdxl._should_convert_legacy("<?mdxl version=\"2\"?>\n<root></root>")
-        is False
-    )
+    assert mdxl._should_convert_legacy('<?mdxl version="2"?>\n<root></root>') is False
 
 
 def test_mdxl_references_and_sort_children():

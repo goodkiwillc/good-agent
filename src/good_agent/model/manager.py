@@ -1,5 +1,7 @@
 import asyncio
 import logging
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 from weakref import WeakValueDictionary
@@ -65,6 +67,27 @@ class ModelDefinition:
 
 # Global variable to store the actual ManagedRouter class
 _ManagedRouterClass = None
+
+
+CallbackFunc = Callable[..., Any]
+
+
+@contextmanager
+def _temporarily_patch_callbacks(
+    callback_manager: Any, replacements: dict[str, CallbackFunc]
+) -> Iterator[None]:
+    """Temporarily replace callback manager methods and restore them afterward."""
+
+    originals: dict[str, CallbackFunc] = {}
+    for attr, replacement in replacements.items():
+        originals[attr] = getattr(callback_manager, attr)
+        setattr(callback_manager, attr, replacement)
+
+    try:
+        yield
+    finally:
+        for attr, original in originals.items():
+            setattr(callback_manager, attr, original)
 
 
 def get_managed_router_class():
@@ -143,41 +166,23 @@ def get_managed_router_class():
                 # No need to assign callbacks - they're already overridden as class methods
 
                 # HACK: Temporarily monkey-patch litellm's callback manager to prevent registration
-                # Save original methods
                 import litellm
-
-                original_add_async_success = (
-                    litellm.logging_callback_manager.add_litellm_async_success_callback
-                )
-                original_add_success = (
-                    litellm.logging_callback_manager.add_litellm_success_callback
-                )
-                original_add_async_failure = (
-                    litellm.logging_callback_manager.add_litellm_async_failure_callback
-                )
-                original_add_failure = (
-                    litellm.logging_callback_manager.add_litellm_failure_callback
-                )
 
                 # Replace with no-ops during Router.__init__
                 def noop_add(*args, **kwargs):
                     pass
 
-                try:
-                    litellm.logging_callback_manager.add_litellm_async_success_callback = noop_add  # type: ignore[method-assign]
-                    litellm.logging_callback_manager.add_litellm_success_callback = noop_add  # type: ignore[method-assign]
-                    litellm.logging_callback_manager.add_litellm_async_failure_callback = noop_add  # type: ignore[method-assign]
-                    litellm.logging_callback_manager.add_litellm_failure_callback = noop_add  # type: ignore[method-assign]
+                callback_manager = litellm.logging_callback_manager
+                replacements = {
+                    "add_litellm_async_success_callback": noop_add,
+                    "add_litellm_success_callback": noop_add,
+                    "add_litellm_async_failure_callback": noop_add,
+                    "add_litellm_failure_callback": noop_add,
+                }
 
-                    # Initialize Router - callbacks won't be registered due to monkey-patch
+                # Initialize Router while callbacks are temporarily silenced
+                with _temporarily_patch_callbacks(callback_manager, replacements):
                     super().__init__(model_list=model_list or [], **router_kwargs)
-
-                finally:
-                    # Restore original methods
-                    litellm.logging_callback_manager.add_litellm_async_success_callback = original_add_async_success  # type: ignore[method-assign]
-                    litellm.logging_callback_manager.add_litellm_success_callback = original_add_success  # type: ignore[method-assign]
-                    litellm.logging_callback_manager.add_litellm_async_failure_callback = original_add_async_failure  # type: ignore[method-assign]
-                    litellm.logging_callback_manager.add_litellm_failure_callback = original_add_failure  # type: ignore[method-assign]
 
             async def _invoke_async_callbacks(self, method_name: str, *args, **kwargs):
                 """
