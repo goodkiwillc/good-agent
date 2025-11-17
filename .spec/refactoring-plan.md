@@ -1163,54 +1163,124 @@ Observations:
 
 ## Phase 5: Coverage Hardening (Weeks 9-10)
 
-**Goal:** Translate the November 16 coverage report into targeted suites that raise critical-path coverage to ≥85 % while codifying pragmatic exclusions for glue modules.
+**Goal:** Turn the November 16 coverage snapshot into actionable suites that raise critical-path modules to ≥85 % line/branch coverage while documenting intentional exclusions.
 
-**Status:** 🆕 Planned — coverage baseline captured 2025-11-16
+**Status:** 🚧 Kickoff 2025-11-17 — baseline instrumentation pending, coverage JSON artifacts not yet checked in.
 
-### 1. [ ] **Codify Baseline & Exclusions** - LOW RISK
-- Files: `pyproject.toml`, `tests/conftest.py`
-- Details:
-  1. Enable branch coverage where feasible and ensure `coverage.xml` output for CI diffs.
-  2. Annotate pure re-export files (e.g., `src/good_agent/__init__.py`) with `# pragma: no cover` plus inline rationale.
-  3. Capture snapshot report (`uv run coverage json`) to track module deltas over time.
-  4. Summarize the policy in `CHANGELOG.md` testing notes once ratified.
-- Success Criteria: Baseline JSON committed, exemptions documented, CI ready for trend comparisons.
+**Key Objectives:**
+1. Capture a reproducible coverage baseline with branch metrics and checked-in policy for exclusions.
+2. Backfill deterministic suites for the event router, component lifecycle, tooling, messaging, and templating subsystems.
+3. Wire coverage reporting into CI with thresholds and dashboards so regressions are caught automatically.
 
-### 2. [ ] **Event Router & Component Suites** - HIGH RISK
-- Files: `tests/unit/event_router/*`, `tests/unit/components/*`
-- Details:
-  1. Add table-driven dispatcher tests covering predicate branching, decorator edge cases, and sync bridge error paths noted as uncovered.
-  2. Introduce integration scenario wiring sample components through the router, asserting emitted events, context propagation, and lifecycle hooks.
-  3. Harden concurrency coverage with deterministic stress cases guarding against regressions.
-- Success Criteria: `core/event_router/*` ≥75 % coverage; suites stable under `pytest -n auto`.
+**Milestones:**
+- **M1 (2025-11-18):** Baseline + exclusion policy PR merged.
+- **M2 (2025-11-20):** Event router/component suites green locally (`pytest -n auto`).
+- **M3 (2025-11-22):** Tooling + messaging/templating suites merged, coverage ≥80 % overall.
+- **M4 (2025-11-23):** CI gate + documentation updates ready for review.
 
-### 3. [ ] **Tooling Subsystem Regression Nets** - MEDIUM RISK
-- Files: `tests/unit/tools/test_registry.py`, `tests/unit/tools/test_tool_adapter.py`, `tests/integration/test_tools_litellm.py`
-- Details:
-  1. Use fake tool definitions to exercise register/update/remove lifecycle plus permission filtering.
-  2. Add LiteLLM/VCR scenarios for streaming paths that currently fail when `parallel_tool_calls` is set without tools.
-  3. Assert error propagation branches and telemetry hooks.
-- Success Criteria: `tools/registry.py` and `tools/tools.py` ≥70 % coverage with regression cases reproduced.
+### 1. [ ] **Codify Baseline & Exclusions** — LOW RISK
+**Status:** In Progress (ETA 2025-11-18)
 
-### 4. [ ] **Messaging & Lifecycle Coverage** - MEDIUM RISK
-- Files: `tests/unit/messages/*`, `tests/unit/components/test_lifecycle.py`
-- Details:
-  1. Parameterize message normalization tests across roles, attachments, and tool-call metadata to cover gaps in `messages/base.py`.
-  2. Simulate component initialization/shutdown failure paths plus dependency injection graphs presently untested.
-- Success Criteria: `messages/base.py` and `components/component.py` exceed 65 % coverage with deterministic fixtures.
+**Implementation Notes:**
+- Run `uv run coverage run --branch -m pytest` with the existing test matrix; store the `.coverage` artifacts under `coverage/phase5/baseline/`.
+- Generate machine-readable reports: `uv run coverage json -o coverage/phase5/baseline.json` and `uv run coverage xml -o coverage/phase5/baseline.xml` for CI comparisons.
+- Update `pyproject.toml` with a `[tool.coverage.report]` section (fail-under, omit patterns for glue modules, precision).
+- Annotate pure re-export files (e.g., `src/good_agent/__init__.py`, `src/good_agent/agent/__init__.py`) with `# pragma: no cover` plus a one-line rationale to avoid noisy gaps.
+- Document the exclusion policy inside `tests/conftest.py` (fixture for asserting `skip_coverage` markers) and append a short testing note in `CHANGELOG.md` once the policy is stable.
 
-### 5. [ ] **Templating, Config, and Utilities** - MEDIUM RISK
-- Files: `tests/unit/core/templating/*`, `tests/unit/config/test_config.py`, `tests/unit/utilities/test_printing.py`
-- Details:
-  1. Add golden-file tests for templating permutations and environment/filter registrations.
-  2. Expand configuration tests for env override precedence, validation errors, and legacy shim behavior.
-  3. Snapshot heavy formatting utilities or extract non-deterministic formatting behind injectable strategy objects for easier assertions.
-- Success Criteria: `core/templating/*`, `config.py`, and key utilities reach ≥75 % coverage with flake-free suites.
+**Deliverables:**
+- Committed baseline JSON/XML artifacts for 2025-11-16.
+- Coverage configuration blocks in `pyproject.toml` and helper fixture in `tests/conftest.py`.
+- Draft section “Coverage Policy” in the refactoring spec referencing baseline locations.
+
+**Dependencies:** Phase 4 API reshaping must remain stable to keep coverage deltas meaningful.
+
+**Risks & Mitigations:** Coverage run may exceed CI time budget → enable `--max-parallel=4` when invoking pytest; ensure cache reuse between jobs.
+
+**Testing:** `uv run coverage report -m` (no modules <50 % except exempted), `uv run coverage json` diff reviewed.
+
+### 2. [ ] **Event Router & Component Suites** — HIGH RISK
+**Status:** Ready for implementation (ETA 2025-11-20)
+
+**Implementation Notes:**
+- Add table-driven dispatcher tests hitting predicate branching, lifecycle priority sorting, and decorator edge cases noted as uncovered in the snapshot.
+- Extend concurrency harness from Phase 3 to assert deterministic handler ordering under mixed sync/async dispatch and simultaneous registration/removal.
+- Create an integration fixture wiring representative `AgentComponent` implementations through the new `AgentEventsFacade` to validate end-to-end propagation.
+- Guard against flakiness by using `pytest.mark.flaky(reruns=1)` only on known race reproducers; aim for deterministic assertions first.
+
+**Deliverables:**
+- New suites in `tests/unit/event_router/test_dispatch_matrix.py` and `tests/unit/components/test_event_integration.py` with >100 new assertions.
+- Updated stress harness shared via `tests/unit/event_router/conftest.py`.
+- Coverage for `core/event_router/*` ≥75 %, `components/component.py` ≥70 % on local report.
+
+**Dependencies:** Step 1 baseline must be merged so deltas are tracked; relies on existing thread-safety scaffolding from Phase 3.
+
+**Risks & Mitigations:** Concurrency flake risk — run `uv run pytest tests/unit/event_router -n auto --maxfail=1 --strict-markers` in loop; capture flaky seeds.
+
+**Testing:** Targeted job `uv run pytest tests/unit/event_router tests/unit/components -n auto` plus full suite once merged.
+
+### 3. [ ] **Tooling Subsystem Regression Nets** — MEDIUM RISK
+**Status:** Scoped (ETA 2025-11-22)
+
+**Implementation Notes:**
+- Build fake tool definitions covering registration, permission gates, and failure callbacks; assert telemetry hooks are emitted.
+- Add LiteLLM/VCR regression scenarios for streaming when `parallel_tool_calls=True` but no tools registered, reproducing the bug noted in audit.
+- Cover the error propagation branches in `tools/registry.py` (duplicate names, invalid metadata) and `tools/tools.py` (timeout paths).
+- Leverage pytest parametrization to minimize duplication while covering structured and streaming responses.
+
+**Deliverables:**
+- `tests/unit/tools/test_registry.py` expanded with table-driven cases; new `tests/integration/test_tools_parallel_streaming.py` VCR cassette.
+- Coverage uplift: `tools/registry.py` + `tools/tools.py` ≥70 %, no untested exception paths.
+- Updated developer note in spec referencing tool regression fixtures.
+
+**Dependencies:** Requires stable LiteLLM fixtures (reuse from Phase 4) and network cassettes checked into `tests/cassettes/`.
+
+**Risks & Mitigations:** VCR cassette drift — pin model IDs and use recorded timestamps; run `pytest --record-mode=none` in CI to enforce deterministic playback.
+
+**Testing:** `uv run pytest tests/unit/tools tests/integration/test_tools_parallel_streaming.py -n auto` with coverage sampling.
+
+### 4. [ ] **Messaging & Lifecycle Coverage** — MEDIUM RISK
+**Status:** Scoped (ETA 2025-11-22)
+
+**Implementation Notes:**
+- Parameterize normalization tests across roles, attachments, metadata, and error branches to close gaps in `messages/base.py` and `messages/filtering.py`.
+- Exercise component lifecycle failure paths (init/shutdown exceptions, dependency graph cycles) using lightweight fake components and asserting `Agent.events` emissions.
+- Introduce golden fixtures for versioning operations to ensure `agent.versioning` paths stay covered after API slimming.
+
+**Deliverables:**
+- Expanded `tests/unit/messages/test_normalization_matrix.py` and `tests/unit/components/test_lifecycle_failures.py`.
+- Coverage uplift: `messages/base.py` ≥70 %, `components/component.py` ≥65 %.
+- Regression fixture documenting expected lifecycle error sequences.
+
+**Dependencies:** Requires manager facade changes from Phase 4 Task 3 to be merged so lifecycle APIs are stable.
+
+**Risks & Mitigations:** High fixture cost — use `pytest` shared fixtures with lazy message construction; avoid hitting real template rendering.
+
+**Testing:** `uv run pytest tests/unit/messages tests/unit/components/test_lifecycle_failures.py` with coverage sampling.
+
+### 5. [ ] **Templating, Config, and Utilities** — MEDIUM RISK
+**Status:** Scoped (ETA 2025-11-23)
+
+**Implementation Notes:**
+- Add golden-file assertions for templating permutations (Jinja environment filters, partial application) stored under `tests/data/templates/`.
+- Extend config tests to cover env override precedence, validation errors, and legacy shim warnings triggered during import.
+- Snapshot formatting utilities with deterministic strategy injection to avoid reliance on console width; split tests per formatter where needed.
+
+**Deliverables:**
+- `tests/unit/core/templating/test_render_variants.py`, `tests/unit/config/test_env_overrides.py`, and expanded `tests/unit/utilities/test_printing.py`.
+- Coverage uplift: `core/templating/*` ≥75 %, `config.py` ≥75 %, `utilities/printing.py` ≥80 %.
+- Documented fixture inventory in spec’s Appendix once suites land.
+
+**Dependencies:** Step 1 policy must list golden data directories so coverage excludes fixture files.
+
+**Risks & Mitigations:** Golden drift — add `pytest --lf` quick check for template outputs; store canonical outputs alongside inputs.
+
+**Testing:** `uv run pytest tests/unit/core/templating tests/unit/config tests/unit/utilities/test_printing.py` with coverage sampling.
 
 **Integration & Exit Criteria:**
-- Coverage gates introduced in CI once ≥80 % sustained.
-- `uv run coverage report -m` shows no modules below 50 % besides documented glue files.
-- Residual gaps triaged into follow-up tickets when structural refactors are required.
+- Overall coverage (branch + line) ≥80 %, event router/tooling/messaging modules meeting individual targets above.
+- CI job publishes `coverage.xml` and enforces `fail_under=80`; failures block merge.
+- Residual gaps documented in spec Appendix + `TECH_DEBT.md` tickets with owners and timelines.
 
 ## Phase 6: Testing & Quality (Weeks 10-11)
 
@@ -2227,7 +2297,7 @@ No active blockers at start. Potential blockers:
 - [x] Week 8: Clarify call() vs execute() ✅ (commit 0807ffb)
 - [x] Week 8: Reduce Agent public API surface (guard + facade routing landed; docs follow-up pending)
 - [x] Week 9: Standardize property vs method usage (agent.initialize(), agent.is_ready property)
-- [ ] Document Phase 4 changes
+- [x] Document Phase 4 changes
 - [x] Get user approval for API changes ✅ (Task 1 approved, Task 2 renaming declined)
 - [x] Run full test suite ✅ (403 agent tests passing - 100%)
 

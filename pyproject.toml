@@ -36,6 +36,7 @@ dev = [
     "pytest-asyncio>=1.2.0",
     "pyupgrade>=3.21.1",
     "ruff>=0.14.3",
+    "types-markdown>=3.10.0.20251106",
     "vcrpy>=7.0.0",
 ]
 
@@ -70,6 +71,7 @@ markers = [
     "benchmark: marks benchmark-focused tests",
     "requires_signals: tests that rely on signal handling",
     "timeout: tests with custom timeout behavior",
+    "skip_coverage(reason): tests excluded from coverage collection (requires rationale)",
 ]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
@@ -89,4 +91,25 @@ filterwarnings = [
     "ignore:Accessing the 'model_computed_fields' attribute::",
     # litellm still calls BaseModel.dict()
     "ignore:The `dict` method is deprecated::",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src/good_agent"]
+omit = [
+    "src/good_agent/agent/__init__.py",
+    "src/good_agent/components/__init__.py",
+    "src/good_agent/components/template_manager/__init__.py",
+]
+
+[tool.coverage.report]
+fail_under = 80.0
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "if TYPE_CHECKING:",
+    "pragma: no cover",
+    "raise NotImplementedError",
+    'if __name__ == "__main__":',
 ]
