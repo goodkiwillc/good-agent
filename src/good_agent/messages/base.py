@@ -346,16 +346,26 @@ class Message(PrivateAttrBase, GoodBase, ABC):
             if self.agent is not None:
                 from ..events import AgentEvents
 
-                # Fire BEFORE event with content_parts (not yet rendered)
-                # Components can modify the parts before rendering
-                ctx = self.agent.events.apply_sync(
-                    AgentEvents.MESSAGE_RENDER_BEFORE,
-                    message=self,
-                    mode=mode,
-                    output=list(content_parts),  # Pass parts, not rendered string
-                )
-                # Use modified content_parts if handlers transformed them
-                content_parts = ctx.parameters.get("output", content_parts)
+                try:
+                    # Fire BEFORE event with content_parts (not yet rendered)
+                    # Components can modify the parts before rendering
+                    ctx = self.agent.events.apply_sync(
+                        AgentEvents.MESSAGE_RENDER_BEFORE,
+                        message=self,
+                        mode=mode,
+                        output=list(content_parts),  # Pass parts, not rendered string
+                    )
+                except Exception as exc:  # noqa: BLE001 - propagate gracefully for render
+                    logger.warning(
+                        "Message render handler failed for %s (%s mode): %s",
+                        self.id,
+                        mode,
+                        exc,
+                        exc_info=True,
+                    )
+                else:
+                    # Use modified content_parts if handlers transformed them
+                    content_parts = ctx.parameters.get("output", content_parts)
 
             # Render content parts using the centralized _render_part method
             rendered_parts = []

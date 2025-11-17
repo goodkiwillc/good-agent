@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar
 
 from good_agent.core.event_router import EventContext
 from good_agent.events import AgentEvents
@@ -14,6 +14,8 @@ from good_agent.tools import Tool, ToolSignature
 from good_agent.validation import ValidationError
 
 if TYPE_CHECKING:
+    from litellm.types.utils import Choices
+
     from good_agent.agent import Agent
 
 logger = logging.getLogger(__name__)
@@ -21,8 +23,13 @@ logger = logging.getLogger(__name__)
 T_Output = TypeVar("T_Output")
 
 
-def _is_choices_instance(obj: Any) -> bool:
-    """Type guard to check if object is a Choices instance"""
+def _is_choices_instance(obj: Any) -> TypeGuard[Choices]:
+    """Type guard to check if an object is a Choices instance for type narrowing.
+
+    This allows us to keep Choices behind TYPE_CHECKING while still
+    providing proper type narrowing at runtime.
+    """
+    # At runtime, check the class name since we can't import Choices directly
     return obj.__class__.__name__ == "Choices"
 
 

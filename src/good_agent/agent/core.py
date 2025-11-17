@@ -112,7 +112,7 @@ class AgentConfigParameters(LLMCommonConfig, AgentOnlyConfig, TypedDict, total=F
     # temperature and max_tokens inherited from LLMCommonConfig
     max_retries: int
     fallback_models: list[str]
-    tools: Sequence[str | Callable[..., Any] | ToolCallFunction]
+    tools: Sequence[str | Callable[..., Any] | Tool | "Agent"]
     # extensions: NotRequired[list[AgentComponent | type[AgentComponent]]]
 
 
@@ -483,7 +483,9 @@ class Agent(EventRouter):
         self.context = agent_context or AgentContext()
         self.context._set_agent_config(self.config)
 
-        tools: Sequence[str | Callable[..., Any] | ToolCallFunction] = (
+        tools: Sequence[
+            str | Callable[..., Any] | Tool | ToolCallFunction | "Agent"
+        ] = (
             config.pop("tools", []) or []
         )
 
