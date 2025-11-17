@@ -61,6 +61,9 @@ if TYPE_CHECKING:
 
     from ..mcp.client import MCPServerConfig
     from .bound_tools import BoundTool
+else:  # pragma: no cover - fallback for runtime to avoid circular imports
+    Agent = Any  # type: ignore[assignment]
+    MCPServerConfig = Any  # type: ignore[assignment]
 
 
 @dataclass
@@ -925,7 +928,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
         try:
             # Set up dependency injection context if available
             # Extract context from kwargs if provided
-            agent: Agent = kwargs.pop("_agent", None)
+            agent = cast(Agent | None, kwargs.pop("_agent", None))
             tool_call = kwargs.pop("_tool_call", None)  # type: ignore[assignment]
 
             # Handle ContextValue injection
