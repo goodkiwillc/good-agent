@@ -114,17 +114,30 @@ class EventRouter:
 
             register_for_signals(self)
 
-    def broadcast_to(self, obs: EventRouter) -> int:
-        """Add another router to receive our events."""
+    def _link_broadcast_target(self, obs: EventRouter, *, bidirectional: bool) -> int:
+        """Internal helper to register broadcast targets with optional reciprocity."""
+
         if obs not in self._broadcast_to:
             self._broadcast_to.append(obs)
-            self._handler_registry.add_broadcast_target(obs._handler_registry)
-            return len(self._broadcast_to) - 1
-        return self._broadcast_to.index(obs)
+            index = len(self._broadcast_to) - 1
+        else:
+            index = self._broadcast_to.index(obs)
+
+        self._handler_registry.add_broadcast_target(obs._handler_registry)
+
+        if bidirectional:
+            obs._link_broadcast_target(self, bidirectional=False)
+
+        return index
+
+    def broadcast_to(self, obs: EventRouter) -> int:
+        """Add another router to receive our events (bidirectionally)."""
+
+        return self._link_broadcast_target(obs, bidirectional=True)
 
     def consume_from(self, obs: EventRouter):
         """Register to receive events from another router."""
-        obs.broadcast_to(self)
+        obs._link_broadcast_target(self, bidirectional=False)
 
     def set_event_trace(
         self, enabled: bool, verbosity: int = 1, use_rich: bool = True
@@ -430,6 +443,14 @@ class EventRouter:
         except Exception:
             return cast(T_Parameters, kwargs)
 
+    def _is_async_handler(self, handler: Callable[..., Any]) -> bool:
+        """Detect coroutine functions, including bound methods."""
+
+        return inspect.iscoroutinefunction(handler) or (
+            inspect.ismethod(handler)
+            and inspect.iscoroutinefunction(handler.__func__)  # type: ignore[attr-defined]
+        )
+
     def do(self, event: EventName, **kwargs):
         """Dispatch event handlers without waiting for completion."""
 
@@ -437,6 +458,7 @@ class EventRouter:
         ctx: EventContext = EventContext(
             parameters=kwargs, invocation_timestamp=time.time()
         )
+        ctx.event = event
 
         # Get all handlers
         handlers = self._get_sorted_handlers(event)
@@ -445,14 +467,7 @@ class EventRouter:
         self._log_event(event, "do", kwargs, len(handlers))
 
         # Check if we have any async handlers
-        has_async = any(
-            inspect.iscoroutinefunction(h.handler)
-            or (
-                inspect.ismethod(h.handler)
-                and inspect.iscoroutinefunction(h.handler.__func__)
-            )
-            for h in handlers
-        )
+        has_async = any(self._is_async_handler(h.handler) for h in handlers)
 
         if not has_async:
             # All sync - run directly
@@ -477,8 +492,9 @@ class EventRouter:
                     if not self._should_run_handler(registration, ctx):
                         continue
                     handler = registration.handler
+                    is_async_handler = self._is_async_handler(handler)
                     try:
-                        if inspect.iscoroutinefunction(handler):
+                        if is_async_handler:
                             await handler(ctx)
                         else:
                             handler(ctx)
@@ -526,6 +542,7 @@ class EventRouter:
         ctx: EventContext[dict[str, Any], Any] = EventContext(
             parameters=kwargs, invocation_timestamp=time.time()
         )
+        ctx.event = event
         token = event_ctx.set(ctx)
 
         try:
@@ -536,8 +553,9 @@ class EventRouter:
                     continue
 
                 handler = registration.handler
+                is_async_handler = self._is_async_handler(handler)
                 try:
-                    if inspect.iscoroutinefunction(handler):
+                    if is_async_handler:
                         result = self._sync_bridge.run_coroutine_from_sync(
                             handler(ctx), timeout=self._default_event_timeout
                         )
@@ -551,6 +569,8 @@ class EventRouter:
                         break
 
                 except ApplyInterrupt:
+                    if is_async_handler and not ctx.should_stop:
+                        raise
                     break
                 except RuntimeError as e:
                     # Re-raise RuntimeErrors that indicate programming errors
@@ -561,14 +581,20 @@ class EventRouter:
                     if self._debug:
                         logger.exception(f"Handler {handler} failed")
                     ctx.exception = e
+                    if not is_async_handler:
+                        raise
                     if ctx.should_stop:
                         break
+                    continue
                 except Exception as e:
                     if self._debug:
                         logger.exception(f"Handler {handler} failed")
                     ctx.exception = e
+                    if not is_async_handler:
+                        raise
                     if ctx.should_stop:
                         break
+                    continue
         finally:
             event_ctx.reset(token)
 
@@ -588,6 +614,7 @@ class EventRouter:
         ctx: EventContext[dict[str, Any], Any] = EventContext(
             parameters=kwargs, invocation_timestamp=time.time()
         )
+        ctx.event = event
         token = event_ctx.set(ctx)
 
         try:
@@ -601,8 +628,9 @@ class EventRouter:
                     continue
 
                 handler = registration.handler
+                is_async_handler = self._is_async_handler(handler)
                 try:
-                    if inspect.iscoroutinefunction(handler):
+                    if is_async_handler:
                         result = await handler(ctx)
                     else:
                         result = handler(ctx)
@@ -614,6 +642,8 @@ class EventRouter:
                         break
 
                 except ApplyInterrupt:
+                    if is_async_handler and not ctx.should_stop:
+                        raise
                     break
                 except Exception as e:
                     if self._debug:
@@ -621,6 +651,7 @@ class EventRouter:
                     ctx.exception = e
                     if ctx.should_stop:
                         break
+                    continue
         finally:
             event_ctx.reset(token)
 
@@ -666,6 +697,7 @@ class EventRouter:
         ctx = EventContext[T_Parameters, T_Return](parameters=typed_params)
         if initial_output is not None:
             ctx.output = initial_output
+        ctx.event = event
         token = event_ctx.set(ctx)
 
         try:
@@ -679,8 +711,9 @@ class EventRouter:
                     continue
 
                 handler = registration.handler
+                is_async_handler = self._is_async_handler(handler)
                 try:
-                    if inspect.iscoroutinefunction(handler):
+                    if is_async_handler:
                         result = await handler(ctx)
                     else:
                         result = handler(ctx)
@@ -692,6 +725,8 @@ class EventRouter:
                         break
 
                 except ApplyInterrupt:
+                    if is_async_handler and not ctx.should_stop:
+                        raise
                     break
                 except Exception as e:
                     if self._debug:
@@ -699,6 +734,7 @@ class EventRouter:
                     ctx.exception = e
                     if ctx.should_stop:
                         break
+                    continue
 
         finally:
             event_ctx.reset(token)
@@ -737,6 +773,7 @@ class EventRouter:
         ctx = EventContext[T_Parameters, T_Return](parameters=typed_params)
         if initial_output is not None:
             ctx.output = initial_output
+        ctx.event = event
         token = event_ctx.set(ctx)
 
         try:
@@ -752,7 +789,7 @@ class EventRouter:
                 handler = registration.handler
                 try:
                     # Only run sync handlers in sync mode
-                    if inspect.iscoroutinefunction(handler):
+                    if self._is_async_handler(handler):
                         continue  # Skip async handlers
 
                     result = handler(ctx)
