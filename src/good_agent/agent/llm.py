@@ -11,7 +11,7 @@ from good_agent.events import AgentEvents
 from good_agent.messages import AssistantMessage, AssistantMessageStructuredOutput
 from good_agent.model.protocols import ResponseWithUsage
 from good_agent.tools import Tool, ToolSignature
-from good_agent.validation import ValidationError
+from good_agent.messages.validation import ValidationError
 
 if TYPE_CHECKING:
     from litellm.types.utils import Choices

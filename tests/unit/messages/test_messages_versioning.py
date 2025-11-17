@@ -6,7 +6,7 @@ from good_agent.messages import (
     SystemMessage,
     UserMessage,
 )
-from good_agent.versioning import MessageRegistry, VersionManager
+from good_agent.messages.versioning import MessageRegistry, VersionManager
 
 
 class TestMessageListVersioning:

@@ -241,7 +241,7 @@ async def test_agent_setitem_single_message_to_slice():
 @pytest.mark.asyncio
 async def test_agent_setitem_maintains_message_store():
     """Test that replaced messages are properly stored in the message store."""
-    from good_agent.store import message_store
+    from good_agent.messages.store import message_store
 
     async with Agent("System") as agent:
         agent.append("Original")

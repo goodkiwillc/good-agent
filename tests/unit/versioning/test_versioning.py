@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pytest
 from good_agent import Agent
 from good_agent.messages import SystemMessage, UserMessage
-from good_agent.versioning import (
+from good_agent.messages.versioning import (
     InMemoryMessageStore,
     MessageNotFoundError,
     MessageRegistry,

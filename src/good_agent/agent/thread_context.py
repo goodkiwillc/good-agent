@@ -8,7 +8,7 @@ from ulid import ULID
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from .agent import Agent
+    from .core import Agent
 
 
 class ForkContext:
@@ -55,7 +55,7 @@ class ForkContext:
                 self.forked_agent._messages._sync_from_version()
             else:
                 # Fallback for non-versioned agents
-                from .messages import MessageList
+                from good_agent.messages import MessageList
 
                 truncated = list(self.forked_agent.messages[: self.truncate_at])
                 self.forked_agent._messages = MessageList(truncated)
@@ -125,7 +125,7 @@ class ThreadContext:
                 # Store original messages
                 self._original_messages = list(self.agent.messages)
                 # Truncate directly (less safe but works without versioning)
-                from .messages import MessageList
+                from good_agent.messages import MessageList
 
                 truncated = list(self.agent.messages[: self.truncate_at])
                 self.agent._messages = MessageList(truncated)
@@ -182,7 +182,7 @@ class ThreadContext:
                 new_messages = current_messages[self.truncate_at :]
 
                 # Restore original + new
-                from .messages import MessageList
+                from good_agent.messages import MessageList
 
                 restored = self._original_messages + new_messages
                 self.agent._messages = MessageList(restored)

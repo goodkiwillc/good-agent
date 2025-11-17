@@ -23,8 +23,8 @@ from pydantic import BaseModel
 from good_agent.core.types import URL
 
 from ..components import AgentComponent
-from ..config import AgentConfigManager
-from ..config_types import PASS_THROUGH_KEYS, ModelConfig
+from ..agent.config import AgentConfigManager
+from ..agent.config import PASS_THROUGH_KEYS, ModelConfig
 from ..events import AgentEvents
 from ..messages import (
     AssistantMessage,

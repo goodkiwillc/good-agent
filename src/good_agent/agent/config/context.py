@@ -1,6 +1,6 @@
 from typing import Any
 
-from .config import ConfigStack
+from .manager import ConfigStack
 
 
 class Context(ConfigStack):

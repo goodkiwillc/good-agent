@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from litellm.types.completion import ChatCompletionMessageParam
     from pydantic import BaseModel
 
-    from ..config_types import ModelConfig
+    from ..agent.config import ModelConfig
     from .llm import LanguageModel
 
 

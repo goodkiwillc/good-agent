@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from good_agent.core.ulid_monotonic import create_monotonic_ulid
 from good_agent.events import AgentEvents
-from good_agent.versioning import VersionManager
+from good_agent.messages.versioning import VersionManager
 from ulid import ULID
 
 if TYPE_CHECKING:

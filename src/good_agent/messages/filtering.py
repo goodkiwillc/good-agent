@@ -88,7 +88,7 @@ class FilteredMessageList(MessageList[T_Message], Generic[T_Message]):
 
         # Import here to avoid circular dependency
         from .roles import SystemMessage
-        from ..config_types import AGENT_CONFIG_KEYS
+        from ..agent.config import AGENT_CONFIG_KEYS
 
         # Extract and apply config parameters
         message_kwargs = {}

@@ -62,9 +62,13 @@ from ..components.template_manager import (
     Template,
     TemplateManager,
 )
-from ..config import AgentConfigManager
-from ..config_types import AGENT_CONFIG_KEYS, AgentOnlyConfig, LLMCommonConfig
-from ..context import Context as AgentContext
+from .config import (
+    AGENT_CONFIG_KEYS,
+    AgentConfigManager,
+    AgentOnlyConfig,
+    Context as AgentContext,
+    LLMCommonConfig,
+)
 from ..events import (  # Import typed event parameters
     AgentEvents,
     AgentInitializeParams,
@@ -85,8 +89,8 @@ from ..messages import (
 )
 from ..mock import AgentMockInterface
 from ..model.llm import LanguageModel
-from ..pool import AgentPool
-from ..store import put_message
+from .pool import AgentPool
+from ..messages.store import put_message
 from ..tools import (
     BoundTool,
     Tool,
@@ -97,10 +101,10 @@ from ..tools import (
     ToolSignature,
 )
 from ..utilities import print_message
-from ..validation import MessageSequenceValidator, ValidationMode
+from ..messages.validation import MessageSequenceValidator, ValidationMode
 
 if TYPE_CHECKING:
-    from ..conversation import Conversation
+    from .conversation import Conversation
 
 logger = logging.getLogger(__name__)
 
@@ -503,7 +507,7 @@ class Agent(EventRouter):
         self._name: str | None = None
 
         # Initialize versioning infrastructure
-        from ..versioning import MessageRegistry
+        from ..messages.versioning import MessageRegistry
 
         self._message_registry = MessageRegistry()
 
@@ -2367,7 +2371,7 @@ class Agent(EventRouter):
                 # Assistant messages from one agent become user messages in the other
                 agent_one.append(AssistantMessage("Hello"))
         """
-        from ..conversation import Conversation
+        from .conversation import Conversation
 
         return Conversation(self, other)
 

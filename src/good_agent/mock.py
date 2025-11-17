@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from ulid import ULID
 
 from .components import AgentComponent
-from .config import AgentConfigManager
+from .agent.config import AgentConfigManager
 from .content import TextContentPart
 from .messages import (
     Annotation,

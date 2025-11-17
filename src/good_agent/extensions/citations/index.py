@@ -6,7 +6,7 @@ from typing import Any
 from good_agent.core.models import Renderable
 from good_agent.core.types import URL
 
-from ...base import Index
+from ...core.indexing import Index
 
 # if TYPE_CHECKING:
 # from ..interfaces import SupportsDisplay, SupportsLLM, SupportsRender, SupportsString

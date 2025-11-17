@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from litellm.types.utils import Choices, StreamingChoices, Usage
     from pydantic import BaseModel
 
-    from ..config_types import ModelConfig
+    from ..agent.config import ModelConfig
 
 
 class ModelResponseProtocol(Protocol):

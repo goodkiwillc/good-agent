@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from ulid import ULID
 
-from good_agent.config_types import AGENT_CONFIG_KEYS
+from .config import AGENT_CONFIG_KEYS
 from good_agent.events import AgentEvents
 from good_agent.messages import (
     AssistantMessage,
@@ -16,12 +16,12 @@ from good_agent.messages import (
     ToolMessage,
     UserMessage,
 )
-from good_agent.pool import AgentPool
+from .pool import AgentPool
 from good_agent.tools import ToolCall, ToolCallFunction, ToolResponse
 
 if TYPE_CHECKING:
-    from good_agent.agent import Agent
-    from good_agent.thread_context import ForkContext, ThreadContext
+    from .core import Agent
+    from .thread_context import ForkContext, ThreadContext
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ class ContextManager:
             **kwargs: Configuration overrides for the new agent
         """
         # Avoid circular import
-        from good_agent.agent import Agent
+        from .core import Agent
 
         # Get current config and update with kwargs
         config = self.agent.config.as_dict()
@@ -168,7 +168,7 @@ class ContextManager:
                 response = await forked.call("Summarize")
                 # Response only exists in fork
         """
-        from good_agent.thread_context import ForkContext
+        from .thread_context import ForkContext
 
         return ForkContext(self.agent, truncate_at, **fork_kwargs)
 
@@ -186,7 +186,7 @@ class ContextManager:
                 response = await ctx_agent.call("Summarize")
                 # After context, agent has original messages + response
         """
-        from good_agent.thread_context import ThreadContext
+        from .thread_context import ThreadContext
 
         return ThreadContext(self.agent, truncate_at)
 

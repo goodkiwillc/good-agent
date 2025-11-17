@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 from good_agent import Agent
-from good_agent.store import message_store
+from good_agent.messages.store import message_store
 
 
 class TestStateManagement:

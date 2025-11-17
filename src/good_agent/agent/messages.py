@@ -27,7 +27,7 @@ from good_agent.messages import (
     ToolResponse,
     UserMessage,
 )
-from good_agent.store import put_message
+from good_agent.messages.store import put_message
 
 if TYPE_CHECKING:
     from ..agent import Agent

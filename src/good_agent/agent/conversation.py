@@ -1,15 +1,13 @@
 import uuid
 from collections.abc import AsyncIterator
-from typing import TYPE_CHECKING, Any, Self, Union
-
-from typing import TypeVar
+from typing import TYPE_CHECKING, Any, Self, TypeVar, Union
 from ulid import ULID
 
 if TYPE_CHECKING:
     ConversationSelf = TypeVar("ConversationSelf", bound="Conversation")
 
-from .agent import Agent
-from .messages import AssistantMessage, Message, UserMessage
+from .core import Agent
+from good_agent.messages import AssistantMessage, Message, UserMessage
 
 
 class Conversation:
