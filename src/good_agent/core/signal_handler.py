@@ -3,11 +3,43 @@ import signal
 import sys
 import threading
 import weakref
-from typing import Any
+from typing import Any, Callable
 
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class _RouterRef:
+    """Weak-ref friendly wrapper that falls back to strong references when needed."""
+
+    __slots__ = ("_weakref", "_strong", "_hash")
+
+    def __init__(self, router: Any, finalizer: Callable[["_RouterRef"], None]):
+        self._hash = id(router)
+        self._weakref: weakref.ref[Any] | None = None
+        self._strong: Any | None = None
+
+        def _cleanup(_: weakref.ref[Any]) -> None:
+            finalizer(self)
+
+        try:
+            self._weakref = weakref.ref(router, _cleanup)
+        except TypeError:
+            self._strong = router
+
+    def __call__(self) -> Any | None:
+        if self._weakref is not None:
+            return self._weakref()
+        return self._strong
+
+    def __hash__(self) -> int:
+        return self._hash
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, _RouterRef):
+            return self() is other()
+        return False
 
 
 class SignalHandler:
@@ -23,7 +55,7 @@ class SignalHandler:
     def __init__(self):
         """Initialize the signal handler."""
         self._original_handlers: dict[int, Any] = {}
-        self._registered_routers: set[weakref.ref] = set()
+        self._registered_routers: set[_RouterRef] = set()
         self._shutdown_initiated = False
         self._shutdown_event = threading.Event()
         self._lock = threading.Lock()
@@ -37,7 +69,7 @@ class SignalHandler:
         """
         with self._lock:
             # Use weak reference to avoid keeping routers alive
-            self._registered_routers.add(weakref.ref(router, self._on_router_deleted))
+            self._registered_routers.add(_RouterRef(router, self._on_router_deleted))
 
             # Install signal handlers on first registration
             if len(self._registered_routers) == 1:
@@ -65,7 +97,7 @@ class SignalHandler:
             if not self._registered_routers:
                 self._restore_handlers()
 
-    def _on_router_deleted(self, ref: weakref.ref) -> None:
+    def _on_router_deleted(self, ref: _RouterRef) -> None:
         """Called when a router is garbage collected."""
         with self._lock:
             self._registered_routers.discard(ref)

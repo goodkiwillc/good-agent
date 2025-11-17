@@ -48,18 +48,16 @@ class TaskManager(MessageInjectorComponent):
         self.lists = {}
         super().__init__(*args, **kwargs)
 
-    @tool
     def create_list(
         self, name: str | None = None, items: list[str] | None = None
     ) -> ToDoList:
-        """Create a new to-do list with an optional name. Returns the ID of the new list."""
+        """Create a new to-do list with an optional name."""
         name = name or f"List {len(self.lists) + 1}"
         self.lists[name] = ToDoList(
             name=name, items=[ToDoItem(item=i) for i in (items or [])]
         )
         return self.lists[name]
 
-    @tool
     def add_item(self, list_name: str, item: str) -> str:
         """Add a new item to the specified to-do list."""
         if list_name not in self.lists:
@@ -67,7 +65,6 @@ class TaskManager(MessageInjectorComponent):
         self.lists[list_name].items.append(ToDoItem(item=item))
         return f'Item "{item}" added to list {list_name}.'
 
-    @tool
     def complete_item(
         self,
         list_name: str,
@@ -99,12 +96,40 @@ class TaskManager(MessageInjectorComponent):
         self.lists[list_name].items[item_index].complete = True
         return f"`{self.lists[list_name].items[item_index].item}` marked as complete."
 
-    @tool
     def view_list(self, list_name: str) -> ToDoList:
         """View the contents of the specified to-do list."""
         if list_name not in self.lists:
             raise ValueError(f"List ID {list_name} does not exist.")
         return self.lists[list_name]
+
+    @tool(name="create_list")  # type: ignore[arg-type]
+    def create_list_tool(
+        self, name: str | None = None, items: list[str] | None = None
+    ) -> ToDoList:
+        """Tool wrapper for create_list."""
+        return self.create_list(name=name, items=items)
+
+    @tool(name="add_item")  # type: ignore[arg-type]
+    def add_item_tool(self, list_name: str, item: str) -> str:
+        """Tool wrapper for add_item."""
+        return self.add_item(list_name=list_name, item=item)
+
+    @tool(name="complete_item")  # type: ignore[arg-type]
+    def complete_item_tool(
+        self,
+        list_name: str,
+        item_index: int | None = None,
+        item_text: str | None = None,
+    ) -> str:
+        """Tool wrapper for complete_item."""
+        return self.complete_item(
+            list_name=list_name, item_index=item_index, item_text=item_text
+        )
+
+    @tool(name="view_list")  # type: ignore[arg-type]
+    def view_list_tool(self, list_name: str) -> ToDoList:
+        """Tool wrapper for view_list."""
+        return self.view_list(list_name)
 
     def get_system_prompt_suffix(self, agent: Agent) -> Sequence[ContentPartType]:
         if not self.lists:

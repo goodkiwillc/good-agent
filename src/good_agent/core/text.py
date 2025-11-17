@@ -45,6 +45,7 @@ E_BULLET_PATTERN = re.compile(r"^e(?=\s)", re.MULTILINE)
 LINE_BREAK_RE = re.compile(LINE_BREAK)
 UNICODE_BULLETS_RE = re.compile(f"(?:{BULLETS_PATTERN})(?!{BULLETS_PATTERN})")
 UNICODE_BULLETS_RE_0W = re.compile(f"(?={BULLETS_PATTERN})(?<!{BULLETS_PATTERN})")
+SENTENCE_PUNCT_RE = re.compile(r"[.!?]['\"]?$")
 
 
 PARAGRAPH_PATTERN_RE = re.compile(
@@ -352,12 +353,15 @@ class StringFormatter:
             all_lines_short = all(
                 len(line.strip().split(" ")) < 5 for line in para_split
             )
+            contains_sentence_punctuation = any(
+                SENTENCE_PUNCT_RE.search(line.strip()) for line in para_split if line.strip()
+            )
             # pytesseract converts some bullet points to standalone "e" characters
             if UNICODE_BULLETS_RE.match(paragraph.strip()) or E_BULLET_PATTERN.match(
                 paragraph.strip()
             ):
                 clean_paragraphs.extend(self.group_bullet_paragraph(paragraph))
-            elif all_lines_short:
+            elif all_lines_short and not contains_sentence_punctuation:
                 clean_paragraphs.extend([line for line in para_split if line.strip()])
             else:
                 clean_paragraphs.append(re.sub(PARAGRAPH_PATTERN, " ", paragraph))

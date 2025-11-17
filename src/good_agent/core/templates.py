@@ -16,7 +16,8 @@ def render_template(
             undefined=StrictUndefined,
             loader=BaseLoader(),
         )
-        return env.from_string(template).render(context, **kwargs)
+        rendered_context = {**context, **kwargs}
+        return env.from_string(template).render(**rendered_context)
     except Exception:
         return template
 
@@ -35,6 +36,8 @@ async def render_template_async(
             loader=BaseLoader(),
             enable_async=True,
         )
-        return env.from_string(template).render(context, **kwargs)
+        rendered_context = {**context, **kwargs}
+        template_obj = env.from_string(template)
+        return await template_obj.render_async(**rendered_context)
     except Exception:
         return template
