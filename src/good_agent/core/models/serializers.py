@@ -9,7 +9,14 @@ from pydantic.functional_serializers import WrapSerializer
 def _datetime_to_utc_serializer(
     value: datetime.datetime, nxt: SerializerFunctionWrapHandler
 ):
-    return nxt(any_datetime_to_utc(value))
+    normalized = any_datetime_to_utc(value)
+
+    if normalized.tzinfo is None:
+        normalized = normalized.replace(tzinfo=datetime.timezone.utc)
+    elif normalized.tzinfo is not datetime.timezone.utc:
+        normalized = normalized.astimezone(datetime.timezone.utc)
+
+    return nxt(normalized)
 
 
 DateTimeSerializedUTC = Annotated[

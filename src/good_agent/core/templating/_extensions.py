@@ -152,9 +152,11 @@ class SectionExtension(Extension):
         self.section_indents[section_id] = {"tag_indent": tag_indent}
 
         # Parse the body content until {% end section %}
-        body = parser.parse_statements(("name:end",), drop_needle=True)
+        body = parser.parse_statements(
+            ("name:endsection", "name:end"), drop_needle=True
+        )
 
-        # Skip the "section" after "end" if present
+        # Support both `{% end section %}` and `{% endsection %}`
         if parser.stream.current.test("name:section"):
             parser.stream.skip()
 
@@ -186,6 +188,11 @@ class SectionExtension(Extension):
             attrs_str = " " + attrs_str
 
         content = caller()
+
+        if content.startswith("\r\n"):
+            content = content[2:]
+        elif content.startswith("\n"):
+            content = content[1:]
 
         if content.endswith("\n"):
             content = content[:-1]
@@ -352,18 +359,11 @@ class MultiLineInclude(Extension):
             indentation = line_content_before_statement or ""
             block_start_modifier = match.group("block_start_modifier") or ""
             block_end_modifier = match.group("block_end_modifier") or ""
+            indent_width = len(indentation)
 
-            start_filter = (
-                indentation
-                + f"{block_start + block_start_modifier} filter indent({len(indentation)}) -{block_end}"
-            )
-            include_statement = (
-                '{{ "' + indentation + '" }}' + f"{block_start} {statement} {block_end}"
-            )
-            end_filter = (
-                indentation
-                + f"{block_start}- endfilter {block_end_modifier + block_end}"
-            )
+            start_filter = f"{block_start + block_start_modifier} filter indent({indent_width}, True) -{block_end}"
+            include_statement = f"{block_start} {statement.strip()} {block_end}"
+            end_filter = f"{block_start}- endfilter {block_end_modifier + block_end}"
             return "\n".join([start_filter, include_statement, end_filter])
 
         return pattern.sub(add_indentation_filter, source)

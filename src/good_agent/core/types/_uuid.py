@@ -1,4 +1,4 @@
-from typing import Any, Literal, Required, Self, TypedDict
+from typing import Any, ClassVar, Literal, Required, Self, TypedDict
 from uuid import UUID as _DEFAULT_UUID
 
 try:
@@ -24,17 +24,28 @@ class UuidSchema(TypedDict, total=False):
 
 
 class UUID(_UUID):
+    DEFAULT_SCHEMA_VERSION: ClassVar[int] = 7
+
     def encode(self) -> str:
         return str(self)
 
+    @property
+    def uuid_version(self) -> int:
+        """Expose the UUID version for schema/tests compatibility."""
+        return getattr(self, "version", self.DEFAULT_SCHEMA_VERSION)
+
+    @classmethod
     def __get_pydantic_json_schema__(
-        self,
+        cls,
         core_schema: core_schema.CoreSchema,
         handler: GetJsonSchemaHandler,
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
         field_schema.pop("anyOf", None)  # remove the bytes/str union
-        field_schema.update(type="string", format=f"uuid{self.uuid_version}")  # type: ignore[attr-defined]
+        field_schema.update(
+            type="string",
+            format=f"uuid{getattr(cls, 'DEFAULT_SCHEMA_VERSION', 7)}",
+        )
         return field_schema
 
     @classmethod
