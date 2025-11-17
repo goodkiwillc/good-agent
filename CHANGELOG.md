@@ -84,12 +84,13 @@ Developers frequently asked when to use `call()` vs `execute()`, indicating docu
 - **Test Coverage**: All 403 agent tests passing (100%)
 - **API Changes**: No behavioral changes, only improved documentation
 
-#### Task 3: Agent API Surface Reduction (In Progress 2025-11-16)
+#### Task 3: Agent API Surface Reduction (Completed 2025-11-17)
 
 ##### Added
 
 - Introduced `Agent.public_attribute_names()` listing the 30 officially supported public attributes (properties, methods, constants).
 - Added `tests/unit/agent/test_agent_public_api_surface.py` guard to ensure the surface remains ≤30 entries.
+- Added `tests/unit/agent/test_agent_legacy_warnings.py` to ensure every shim continues to emit a `DeprecationWarning` and provides guidance toward the preferred facade or helper.
 
 ##### Changed
 
@@ -99,16 +100,19 @@ Developers frequently asked when to use `call()` vs `execute()`, indicating docu
   - Context lifecycle helpers now route through `agent.context_manager.*` (fork, copy, spawn, merge, context providers).
 - Updated tests, fixtures, and examples to consume the manager facades instead of the deprecated Agent shortcuts.
 - Trimmed `dir(agent)` to hide legacy helpers while keeping them callable (with `DeprecationWarning`).
+- Extended shim coverage so message management (`set_system_message`, `replace_message`), context helpers (`fork`, `thread_context`), rendering helpers (`print`, `get_rendering_context*`), and token/version introspection (`get_token_count*`, `current_version`) all emit consistent `DeprecationWarning`s pointing to list assignment, template manager helpers, or `agent.versioning` accessors.
 
 ##### Deprecated
 
 - Continued deprecation of legacy Agent helpers (`invoke`, `apply`, `broadcast_to`, `context_provider`, etc.) with guidance to use the respective facade accessors.
+- Newly deprecated: `Agent.fork()`, `Agent.thread_context()`, `Agent.print()`, `Agent.set_system_message()`, `Agent.replace_message()`, `Agent.get_rendering_context()`, `Agent.get_rendering_context_async()`, `Agent.get_token_count()`, `Agent.get_token_count_by_role()`, and `Agent.current_version` (replaced by `agent.context_manager.*`, `good_agent.utilities.print_message()`, message list assignment, template manager helpers, and `agent.versioning.current_version`).
 
 ##### Testing
 
 - `uv run ruff check .`
 - `uv run pytest`
 - `uv run mypy src/good_agent` (known repo-wide issues persist; no new errors introduced)
+- Added `tests/unit/agent/test_agent_legacy_warnings.py` ensuring all shims are covered by warning assertions.
 
 #### Task 4: Readiness lifecycle & facade documentation (Completed 2025-11-17)
 

@@ -398,7 +398,13 @@ class Agent(EventRouter):
             message: Message to print (defaults to last message)
             mode: Render mode ('display', 'llm', 'raw'). If None, uses config.print_messages_mode
         """
-        from .content import RenderMode  # type: ignore[import-not-found]
+        warnings.warn(
+            "Agent.print() is deprecated. Use good_agent.utilities.print_message() or "
+            "agent.messages for rendering instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        from ..content import RenderMode
 
         # Determine which message to print
         if message is None:
@@ -782,6 +788,11 @@ class Agent(EventRouter):
         Returns:
             List of message IDs in the current version
         """
+        warnings.warn(
+            "Agent.current_version is deprecated. Use agent.versioning.current_version instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._versioning_manager.current_version
 
     @property
@@ -851,6 +862,11 @@ class Agent(EventRouter):
                 response = await ctx_agent.call("Summarize")
                 # After context, agent has original messages + response
         """
+        warnings.warn(
+            "Agent.thread_context() is deprecated. Use agent.context_manager.thread_context().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._context_manager.thread_context(truncate_at)
 
     async def initialize(self) -> None:
@@ -1264,6 +1280,11 @@ class Agent(EventRouter):
             index: Index of message to replace
             new_message: New message to insert
         """
+        warnings.warn(
+            "Agent.replace_message() is deprecated. Assign directly via agent.messages[index] = message instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self._message_manager.replace_message(index, new_message)
 
     def set_system_message(
@@ -1272,6 +1293,11 @@ class Agent(EventRouter):
         message: SystemMessage | None = None,
     ) -> None:
         """Set or update the system message"""
+        warnings.warn(
+            "Agent.set_system_message() is deprecated. Assign a new SystemMessage via agent.messages[0] = message instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self._message_manager.set_system_message(*content, message=message)
 
     @overload
@@ -1604,6 +1630,11 @@ class Agent(EventRouter):
             include_messages: Whether to copy messages to the forked agent
             **kwargs: Configuration overrides for the new agent
         """
+        warnings.warn(
+            "Agent.fork() is deprecated. Use agent.context_manager.fork().",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._context_manager.fork(include_messages, **kwargs)
 
     @ensure_ready
@@ -1679,6 +1710,11 @@ class Agent(EventRouter):
         Returns:
             Complete resolved context dictionary
         """
+        warnings.warn(
+            "Agent.get_rendering_context() is deprecated. Use agent.template.resolve_context_sync() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         # 1. Start with config context (lowest priority)
         context = {}
 
@@ -1717,6 +1753,11 @@ class Agent(EventRouter):
         Returns:
             Complete resolved context dictionary
         """
+        warnings.warn(
+            "Agent.get_rendering_context_async() is deprecated. Use agent.template.resolve_context_async() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         # 1. Start with config context (lowest priority)
         context = {}
 
@@ -2343,6 +2384,11 @@ class Agent(EventRouter):
         Returns:
             Total token count across specified messages
         """
+        warnings.warn(
+            "Agent.get_token_count() is deprecated. Use agent.token_count or good_agent.utilities.tokens helpers instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         from ..utilities.tokens import get_message_token_count
 
         # Use provided messages or all agent messages
@@ -2375,6 +2421,11 @@ class Agent(EventRouter):
         Returns:
             Dictionary mapping role to token count
         """
+        warnings.warn(
+            "Agent.get_token_count_by_role() is deprecated. Use good_agent.utilities.tokens.get_message_token_count() per role instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         from ..utilities.tokens import get_message_token_count
 
         counts: dict[str, int] = {
