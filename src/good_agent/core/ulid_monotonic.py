@@ -149,7 +149,7 @@ class MonotonicULIDField(ULID):
     """
 
     @classmethod
-    def create(cls) -> MonotonicULIDField:
+    def create(cls) -> "MonotonicULIDField":
         """
         Create a new monotonic ULID instance.
 
@@ -159,7 +159,8 @@ class MonotonicULIDField(ULID):
             MonotonicULIDField: A new monotonic ULID instance.
         """
         ulid = MonotonicULID.generate()
-        return cls(ulid.bytes)
+        # Cast to the correct type since cls() returns Self which is compatible
+        return cls(ulid.bytes)  # type: ignore[return-value]
 
     @classmethod
     async def create_async(cls) -> MonotonicULIDField:
@@ -188,13 +189,13 @@ class MonotonicULIDField(ULID):
             if isinstance(value, cls):
                 return value  # type: ignore[return-value]
             elif isinstance(value, ULID):
-                return cls(value.bytes)
+                return cls(value.bytes)  # type: ignore[return-value]
             elif isinstance(value, str):
-                return cls.from_str(value)
+                return cls.from_str(value)  # type: ignore[return-value]
             elif isinstance(value, bytes):
-                return cls(value)
+                return cls(value)  # type: ignore[return-value]
             elif isinstance(value, int):
-                return cls(value.to_bytes(16, "big"))
+                return cls(value.to_bytes(16, "big"))  # type: ignore[return-value]
             else:
                 raise ValueError(
                     f"Cannot convert {type(value).__name__} to MonotonicULIDField"

@@ -281,7 +281,7 @@ class EditableYAML(StatefulResource[Box]):
             try:
                 res = self._validator(_deep_to_plain(data_box))  # type: ignore[misc]
             except TypeError:
-                res = self._validator(_dump_box_to_yaml(data_box))  # type: ignore[misc]
+                res = self._validator(_dump_box_to_yaml(data_box))  # type: ignore[arg-type,misc]
         except Exception as e:
             return False, ["Validator error: " + str(e)], None
 
@@ -323,7 +323,7 @@ class EditableYAML(StatefulResource[Box]):
         except Exception as e:
             return f"ERROR: {e}"
 
-    @tool(name="set")
+    @tool(name="set")  # type: ignore[arg-type,misc]
     async def _tool_set(
         self,
         path: str = Field(..., description="Dot-path to set"),
@@ -391,18 +391,19 @@ class EditableYAML(StatefulResource[Box]):
         coerce_to_existing_type: bool = True,
         reasoning: str | None = None,
     ) -> str:
-        return await self._tool_set(
-            path=path,
-            value=value,
-            create_missing=create_missing,
-            strategy=strategy,
-            array_key=array_key,
-            run_validation=validate,
-            coerce_to_existing_type=coerce_to_existing_type,
-            reasoning=reasoning,
+        # mypy can't infer BoundTool call signature properly
+        return await self._tool_set(  # type: ignore[return-value,call-overload,misc]
+            path=path,  # type: ignore[arg-type]
+            value=value,  # type: ignore[arg-type]
+            create_missing=create_missing,  # type: ignore[arg-type]
+            strategy=strategy,  # type: ignore[arg-type]
+            array_key=array_key,  # type: ignore[arg-type]
+            run_validation=validate,  # type: ignore[arg-type]
+            coerce_to_existing_type=coerce_to_existing_type,  # type: ignore[arg-type]
+            reasoning=reasoning,  # type: ignore[arg-type]
         )
 
-    @tool(name="delete")
+    @tool(name="delete")  # type: ignore[arg-type,misc]
     async def _tool_delete(
         self,
         path: str = Field(..., description="Dot-path to delete"),
@@ -435,13 +436,14 @@ class EditableYAML(StatefulResource[Box]):
         validate: bool = True,
         reasoning: str | None = None,
     ) -> str:
-        return await self._tool_delete(
-            path=path,
-            run_validation=validate,
-            reasoning=reasoning,
+        # mypy can't infer BoundTool call signature properly
+        return await self._tool_delete(  # type: ignore[return-value,call-overload,misc]
+            path=path,  # type: ignore[arg-type]
+            run_validation=validate,  # type: ignore[arg-type]
+            reasoning=reasoning,  # type: ignore[arg-type]
         )
 
-    @tool(name="replace")
+    @tool(name="replace")  # type: ignore[arg-type,misc]
     async def _tool_replace(
         self,
         pattern: str = Field(..., description="Regex pattern"),
@@ -485,15 +487,16 @@ class EditableYAML(StatefulResource[Box]):
         validate: bool = True,
         reasoning: str | None = None,
     ) -> str:
-        return await self._tool_replace(
-            pattern=pattern,
-            replacement=replacement,
-            flags=flags,
-            run_validation=validate,
-            reasoning=reasoning,
+        # mypy can't infer BoundTool call signature properly
+        return await self._tool_replace(  # type: ignore[return-value,call-overload,misc]
+            pattern=pattern,  # type: ignore[arg-type]
+            replacement=replacement,  # type: ignore[arg-type]
+            flags=flags,  # type: ignore[arg-type]
+            run_validation=validate,  # type: ignore[arg-type]
+            reasoning=reasoning,  # type: ignore[arg-type]
         )
 
-    @tool(name="patch")
+    @tool(name="patch")  # type: ignore[arg-type,misc]
     async def _tool_patch(
         self,
         ops: list[dict[str, Any]] = Field(
@@ -634,22 +637,23 @@ class EditableYAML(StatefulResource[Box]):
         validate: bool = True,
         coerce_to_existing_type: bool = True,
     ) -> dict:
-        return await self._tool_patch(
-            ops=ops,
-            run_validation=validate,
-            coerce_to_existing_type=coerce_to_existing_type,
+        # mypy can't infer BoundTool call signature properly
+        return await self._tool_patch(  # type: ignore[return-value,call-overload,misc]
+            ops=ops,  # type: ignore[arg-type]
+            run_validation=validate,  # type: ignore[arg-type]
+            coerce_to_existing_type=coerce_to_existing_type,  # type: ignore[arg-type]
         )
 
-    @tool
+    @tool  # type: ignore[arg-type,misc]
     async def validate(self) -> str:
         ok, errors, extra = self._validate_data(self.state)
         return "ok" if ok else ("ERROR: " + "; ".join(errors))
 
-    @tool
+    @tool  # type: ignore[arg-type,misc]
     async def text(self) -> str:
         return _dump_box_to_yaml(self.state)
 
-    @tool(name="save")
+    @tool(name="save")  # type: ignore[arg-type,misc]
     async def save(self) -> str:
         await self.persist()
         return f"Saved {self.name}"

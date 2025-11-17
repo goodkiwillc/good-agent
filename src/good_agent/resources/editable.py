@@ -1,3 +1,5 @@
+from typing import Any
+
 from .base import StatefulResource
 
 
@@ -20,11 +22,12 @@ class EditableResource(StatefulResource[str]):
         """Mark as saved (subclasses can override for actual persistence)."""
         self._modified = False
 
-    def get_tools(self) -> dict:
-        """Return editing tools."""
+    def get_tools(self) -> dict[str, Any]:  # type: ignore[override]
+        """Return editing tools as a dict (backwards compatibility)."""
+        from typing import Any
         from good_agent import tool
 
-        @tool(name="read", description="Read the current content")
+        @tool(name="read", description="Read the current content")  # type: ignore[arg-type,misc]
         async def read(
             start_line: int | None = None, num_lines: int | None = None
         ) -> str:
@@ -46,7 +49,7 @@ class EditableResource(StatefulResource[str]):
                 f"{actual_start + i:4}: {line}" for i, line in enumerate(lines)
             )
 
-        @tool(name="replace", description="Replace text in document")
+        @tool(name="replace", description="Replace text in document")  # type: ignore[arg-type,misc]
         async def replace(
             old_text: str, new_text: str, all_occurrences: bool = False
         ) -> str:
@@ -66,7 +69,7 @@ class EditableResource(StatefulResource[str]):
                 return f"Replaced {count} occurrence(s)"
             return "No matches found"
 
-        @tool(name="edit_line", description="Edit a specific line")
+        @tool(name="edit_line", description="Edit a specific line")  # type: ignore[arg-type,misc]
         async def edit_line(line_number: int, new_content: str) -> str:
             """Edit a specific line."""
             lines = self.state.split("\n")
@@ -80,7 +83,7 @@ class EditableResource(StatefulResource[str]):
 
             return f"Updated line {line_number}"
 
-        @tool(name="insert", description="Insert text after a line")
+        @tool(name="insert", description="Insert text after a line")  # type: ignore[arg-type,misc]
         async def insert(after_line: int, content: str) -> str:
             """Insert content after specified line."""
             lines = self.state.split("\n")
@@ -100,7 +103,7 @@ class EditableResource(StatefulResource[str]):
 
             return f"Inserted {len(new_lines)} line(s)"
 
-        @tool(name="save", description="Save changes")
+        @tool(name="save", description="Save changes")  # type: ignore[arg-type,misc]
         async def save() -> str:
             """Save the document and exit editing mode."""
             await self.persist()
