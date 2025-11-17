@@ -154,7 +154,9 @@ class TestAddToolInvocations:
                 ({"message": "World"}, "Echo: World"),
             ]
 
-            agent.tool_calls.record_invocations(echo, invocations, skip_assistant_message=True)
+            agent.tool_calls.record_invocations(
+                echo, invocations, skip_assistant_message=True
+            )
 
             # Should only add tool response messages (2 messages)
             assert len(agent) == initial_len + 2

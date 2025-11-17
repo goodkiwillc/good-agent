@@ -225,20 +225,22 @@ class SyncBridge:
         if not self._event_loop:
             self.start_event_loop()
 
-        assert self._event_loop is not None
+        loop = self._event_loop
+        if loop is None:
+            raise RuntimeError("Event loop failed to initialize for background task")
 
         # Create task in event loop thread
         task_container = []
 
-        def create_task():
-            task = self._event_loop.create_task(coro)
+        def create_task() -> None:
+            task = loop.create_task(coro)
             task_container.append(task)
             with self._lock:
                 self._tasks.add(task)
             # Remove from tracking when done
             task.add_done_callback(lambda t: self._tasks.discard(t))
 
-        self._event_loop.call_soon_threadsafe(create_task)
+        loop.call_soon_threadsafe(create_task)
 
         # Wait briefly for task creation
         timeout = time.time() + 1.0

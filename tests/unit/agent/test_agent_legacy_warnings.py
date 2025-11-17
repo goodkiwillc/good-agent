@@ -16,7 +16,9 @@ def _assert_warns(callable_obj):
         warnings.simplefilter("always", DeprecationWarning)
         result = callable_obj()
 
-    assert any(w.category is DeprecationWarning for w in caught), "Expected DeprecationWarning"
+    assert any(w.category is DeprecationWarning for w in caught), (
+        "Expected DeprecationWarning"
+    )
     return result
 
 

@@ -55,7 +55,9 @@ class CitationAdapter(ToolAdapter[CitationManagerType]):
         removed = set()
 
         # Check which parameters we'll modify
-        params: dict[str, Any] = signature["function"]["parameters"].get("properties", {})
+        params: dict[str, Any] = signature["function"]["parameters"].get(
+            "properties", {}
+        )
         for key, schema in params.items():
             # Single URL parameter
             if key == "url" and schema.get("type") == "string":
@@ -72,7 +74,9 @@ class CitationAdapter(ToolAdapter[CitationManagerType]):
             modified_params=modified, added_params=added, removed_params=removed
         )
 
-    def should_adapt(self, tool: Tool[Any, Any] | BoundTool[Any, Any, Any], agent: Agent) -> bool:
+    def should_adapt(
+        self, tool: Tool[Any, Any] | BoundTool[Any, Any, Any], agent: Agent
+    ) -> bool:
         """
         Check if this tool should be adapted.
 
@@ -116,7 +120,10 @@ class CitationAdapter(ToolAdapter[CitationManagerType]):
             return False
 
     def adapt_signature(
-        self, tool: Tool[Any, Any] | BoundTool[Any, Any, Any], signature: ToolSignature, agent: Agent
+        self,
+        tool: Tool[Any, Any] | BoundTool[Any, Any, Any],
+        signature: ToolSignature,
+        agent: Agent,
     ) -> ToolSignature:
         """
         Transform tool signature to use citation indices.
@@ -250,9 +257,7 @@ class CitationAdapter(ToolAdapter[CitationManagerType]):
                     adapted_params[url_key] = url
                 else:
                     # Invalid index - keep as is for error handling and emit warning
-                    logger.warning(
-                        "Citation index %s not found in global index.", idx
-                    )
+                    logger.warning("Citation index %s not found in global index.", idx)
                     adapted_params[key] = idx
 
             # Handle multiple citation indices (parameter containing 'citation_idx' and ending in 's')

@@ -171,7 +171,9 @@ class TestDateHandling:
         agent.context["today"] = past_date
 
         # Search last week from that past date
-        await agent.tool_calls.invoke("search", query="historical", timeframe="last_week")
+        await agent.tool_calls.invoke(
+            "search", query="historical", timeframe="last_week"
+        )
 
         # Should calculate from the past date
         assert provider.last_query.since.date() == date(2023, 3, 8)

@@ -42,20 +42,19 @@ class TestStructuredOutputSequencing:
 
         async with Agent("You are helpful") as agent:
             # Manually create an AssistantMessageStructuredOutput
-            weather_output = Weather(location="New York", temperature=72.0, condition="Sunny")
+            weather_output = Weather(
+                location="New York", temperature=72.0, condition="Sunny"
+            )
             tool_call = ToolCall(
                 id="call_weather_123",
                 type="function",
                 function=ToolCallFunction(
-                    name="Weather",
-                    arguments=json.dumps(weather_output.model_dump())
-                )
+                    name="Weather", arguments=json.dumps(weather_output.model_dump())
+                ),
             )
 
             structured_msg = AssistantMessageStructuredOutput[Weather](
-                "Weather retrieved",
-                output=weather_output,
-                tool_calls=[tool_call]
+                "Weather retrieved", output=weather_output, tool_calls=[tool_call]
             )
 
             # Add messages to agent history
@@ -68,24 +67,50 @@ class TestStructuredOutputSequencing:
 
             print("\n=== Before _ensure_tool_call_pairs ===")
             for i, msg in enumerate(formatted):
-                role = msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", None)
-                tool_calls = msg.get("tool_calls") if isinstance(msg, dict) else getattr(msg, "tool_calls", None)
+                role = (
+                    msg.get("role")
+                    if isinstance(msg, dict)
+                    else getattr(msg, "role", None)
+                )
+                tool_calls = (
+                    msg.get("tool_calls")
+                    if isinstance(msg, dict)
+                    else getattr(msg, "tool_calls", None)
+                )
                 print(f"{i}: role={role}, has_tool_calls={bool(tool_calls)}")
 
             # Now call _ensure_tool_call_pairs (this is what complete() does)
-            with_pairs = agent.model._ensure_tool_call_pairs_for_formatted_messages(formatted)
+            with_pairs = agent.model._ensure_tool_call_pairs_for_formatted_messages(
+                formatted
+            )
 
             print("\n=== After _ensure_tool_call_pairs ===")
             for i, msg in enumerate(with_pairs):
-                role = msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", None)
-                tool_call_id = msg.get("tool_call_id") if isinstance(msg, dict) else getattr(msg, "tool_call_id", None)
+                role = (
+                    msg.get("role")
+                    if isinstance(msg, dict)
+                    else getattr(msg, "role", None)
+                )
+                tool_call_id = (
+                    msg.get("tool_call_id")
+                    if isinstance(msg, dict)
+                    else getattr(msg, "tool_call_id", None)
+                )
                 print(f"{i}: role={role}, tool_call_id={tool_call_id}")
 
             # Find assistant with tool_calls
             assistant_idx = None
             for i, msg in enumerate(with_pairs):
-                role = msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", None)
-                tool_calls = msg.get("tool_calls") if isinstance(msg, dict) else getattr(msg, "tool_calls", None)
+                role = (
+                    msg.get("role")
+                    if isinstance(msg, dict)
+                    else getattr(msg, "role", None)
+                )
+                tool_calls = (
+                    msg.get("tool_calls")
+                    if isinstance(msg, dict)
+                    else getattr(msg, "tool_calls", None)
+                )
                 if role == "assistant" and tool_calls:
                     assistant_idx = i
                     break
@@ -93,8 +118,14 @@ class TestStructuredOutputSequencing:
             assert assistant_idx is not None
             # Check if synthetic tool response was injected
             next_msg = with_pairs[assistant_idx + 1]
-            next_role = next_msg.get("role") if isinstance(next_msg, dict) else getattr(next_msg, "role", None)
-            assert next_role == "tool", f"Expected synthetic tool response after assistant, got {next_role}"
+            next_role = (
+                next_msg.get("role")
+                if isinstance(next_msg, dict)
+                else getattr(next_msg, "role", None)
+            )
+            assert next_role == "tool", (
+                f"Expected synthetic tool response after assistant, got {next_role}"
+            )
 
     @pytest.mark.asyncio
     async def test_structured_output_followed_by_regular_call_real(self):
@@ -107,7 +138,9 @@ class TestStructuredOutputSequencing:
 
         async with Agent("You are a test agent") as agent:
             # Mock the extract and complete methods
-            mock_weather = Weather(location="New York", temperature=72.0, condition="Sunny")
+            mock_weather = Weather(
+                location="New York", temperature=72.0, condition="Sunny"
+            )
 
             # Create tool call that would be on the structured output response
             mock_tool_call = MagicMock()
@@ -121,24 +154,29 @@ class TestStructuredOutputSequencing:
             mock_structured_response = MockLLMResponse(
                 content="Weather data retrieved",
                 tool_calls=[mock_tool_call],
-                usage=MagicMock(prompt_tokens=10, completion_tokens=20, total_tokens=30),
+                usage=MagicMock(
+                    prompt_tokens=10, completion_tokens=20, total_tokens=30
+                ),
             )
 
             # Mock the response for the second regular call
             mock_regular_response = MockLLMResponse(
                 content="Yes, that's typical for this time of year",
-                usage=MagicMock(prompt_tokens=15, completion_tokens=25, total_tokens=40),
+                usage=MagicMock(
+                    prompt_tokens=15, completion_tokens=25, total_tokens=40
+                ),
             )
 
             # Set up mocks
             agent.model.api_responses = [mock_structured_response]
             agent.model.api_requests = [{}]
 
-            with patch.object(agent.model, "extract", AsyncMock(return_value=mock_weather)):
+            with patch.object(
+                agent.model, "extract", AsyncMock(return_value=mock_weather)
+            ):
                 # First call with response_model - creates AssistantMessageStructuredOutput
                 weather = await agent.call(
-                    "What's the weather in New York?",
-                    response_model=Weather
+                    "What's the weather in New York?", response_model=Weather
                 )
 
                 assert isinstance(weather, AssistantMessageStructuredOutput)
@@ -147,11 +185,19 @@ class TestStructuredOutputSequencing:
                 # Now make a second regular call - this is where the bug happens
                 # The agent history has AssistantMessageStructuredOutput with tool_calls
                 # but no ToolMessage responses. The validation and formatting should handle this.
-                with patch.object(agent.model, "complete", AsyncMock(return_value=mock_regular_response)) as mock_complete:
-                    response = await agent.call("Is that typical for this time of year?")
+                with patch.object(
+                    agent.model,
+                    "complete",
+                    AsyncMock(return_value=mock_regular_response),
+                ) as mock_complete:
+                    response = await agent.call(
+                        "Is that typical for this time of year?"
+                    )
 
                     # The call should succeed
-                    assert response.content == "Yes, that's typical for this time of year"
+                    assert (
+                        response.content == "Yes, that's typical for this time of year"
+                    )
 
                     # Verify that complete was called with properly formatted messages
                     # that include synthetic tool responses
@@ -162,17 +208,33 @@ class TestStructuredOutputSequencing:
                     # Find the assistant message with tool calls (from first structured output call)
                     assistant_idx = None
                     for i, msg in enumerate(formatted_messages):
-                        role = msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", None)
-                        tool_calls = msg.get("tool_calls") if isinstance(msg, dict) else getattr(msg, "tool_calls", None)
+                        role = (
+                            msg.get("role")
+                            if isinstance(msg, dict)
+                            else getattr(msg, "role", None)
+                        )
+                        tool_calls = (
+                            msg.get("tool_calls")
+                            if isinstance(msg, dict)
+                            else getattr(msg, "tool_calls", None)
+                        )
                         if role == "assistant" and tool_calls:
                             assistant_idx = i
                             break
 
                     # THIS IS THE KEY ASSERTION - synthetic tool response should be injected
-                    assert assistant_idx is not None, "Should have assistant message with tool calls"
+                    assert assistant_idx is not None, (
+                        "Should have assistant message with tool calls"
+                    )
                     tool_response = formatted_messages[assistant_idx + 1]
-                    role = tool_response.get("role") if isinstance(tool_response, dict) else getattr(tool_response, "role", None)
-                    assert role == "tool", f"Expected tool response after assistant, got {role}"
+                    role = (
+                        tool_response.get("role")
+                        if isinstance(tool_response, dict)
+                        else getattr(tool_response, "role", None)
+                    )
+                    assert role == "tool", (
+                        f"Expected tool response after assistant, got {role}"
+                    )
 
     @pytest.mark.asyncio
     async def test_structured_output_creates_assistant_message(self):
@@ -202,7 +264,9 @@ class TestStructuredOutputSequencing:
             mock_response = MockLLMResponse(
                 content="Found results",
                 tool_calls=[mock_tool_call],
-                usage=MagicMock(prompt_tokens=10, completion_tokens=20, total_tokens=30),
+                usage=MagicMock(
+                    prompt_tokens=10, completion_tokens=20, total_tokens=30
+                ),
             )
 
             # Set api_responses and api_requests manually - extract method accesses both
@@ -249,13 +313,17 @@ class TestStructuredOutputSequencing:
             mock_structured_response = MockLLMResponse(
                 content="Weather data retrieved",
                 tool_calls=[mock_tool_call],
-                usage=MagicMock(prompt_tokens=10, completion_tokens=20, total_tokens=30),
+                usage=MagicMock(
+                    prompt_tokens=10, completion_tokens=20, total_tokens=30
+                ),
             )
 
             # Mock the second regular response
             mock_regular_response = MockLLMResponse(
                 content="The weather looks great!",
-                usage=MagicMock(prompt_tokens=15, completion_tokens=25, total_tokens=40),
+                usage=MagicMock(
+                    prompt_tokens=15, completion_tokens=25, total_tokens=40
+                ),
             )
 
             # Set api_responses and api_requests manually - extract method accesses both
@@ -276,7 +344,9 @@ class TestStructuredOutputSequencing:
                 # Second regular call - this should trigger message formatting
                 # that properly handles the AssistantMessageStructuredOutput
                 with patch.object(
-                    agent.model, "complete", AsyncMock(return_value=mock_regular_response)
+                    agent.model,
+                    "complete",
+                    AsyncMock(return_value=mock_regular_response),
                 ) as mock_complete:
                     response2 = await agent.call("That sounds nice!")
 
@@ -301,7 +371,10 @@ class TestStructuredOutputSequencing:
             mock_tool_call = {
                 "id": "call_data_123",
                 "type": "function",
-                "function": {"name": "DataModel", "arguments": '{"value":"test","count":5}'},
+                "function": {
+                    "name": "DataModel",
+                    "arguments": '{"value":"test","count":5}',
+                },
             }
 
             # Simulate formatted messages with assistant message containing tool calls
@@ -327,10 +400,7 @@ class TestStructuredOutputSequencing:
             # Find the assistant message with tool calls
             assistant_idx = None
             for i, msg in enumerate(result):
-                if (
-                    msg.get("role") == "assistant"
-                    and msg.get("tool_calls") is not None
-                ):
+                if msg.get("role") == "assistant" and msg.get("tool_calls") is not None:
                     assistant_idx = i
                     break
 
@@ -373,13 +443,17 @@ class TestStructuredOutputSequencing:
             mock_response_1 = MockLLMResponse(
                 content="Query executed",
                 tool_calls=[mock_tool_call_1],
-                usage=MagicMock(prompt_tokens=10, completion_tokens=20, total_tokens=30),
+                usage=MagicMock(
+                    prompt_tokens=10, completion_tokens=20, total_tokens=30
+                ),
             )
 
             mock_response_2 = MockLLMResponse(
                 content="Query executed",
                 tool_calls=[mock_tool_call_2],
-                usage=MagicMock(prompt_tokens=10, completion_tokens=20, total_tokens=30),
+                usage=MagicMock(
+                    prompt_tokens=10, completion_tokens=20, total_tokens=30
+                ),
             )
 
             mock_regular = MockLLMResponse(
@@ -392,7 +466,9 @@ class TestStructuredOutputSequencing:
             agent.model.api_requests = [{}]
 
             with patch.object(
-                agent.model, "extract", AsyncMock(side_effect=[mock_result1, mock_result2])
+                agent.model,
+                "extract",
+                AsyncMock(side_effect=[mock_result1, mock_result2]),
             ):
                 # First structured output call
                 response1 = await agent.call("First query", response_model=QueryResult)
@@ -411,9 +487,7 @@ class TestStructuredOutputSequencing:
                 agent.model.api_requests.append({})
 
                 # Second structured output call
-                response3 = await agent.call(
-                    "Second query", response_model=QueryResult
-                )
+                response3 = await agent.call("Second query", response_model=QueryResult)
                 assert isinstance(response3, AssistantMessageStructuredOutput)
                 assert response3.output.query == "second"
 
@@ -448,7 +522,9 @@ class TestStructuredOutputSequencing:
             mock_response = MockLLMResponse(
                 content="Configuration set",
                 tool_calls=[mock_tool_call],
-                usage=MagicMock(prompt_tokens=10, completion_tokens=20, total_tokens=30),
+                usage=MagicMock(
+                    prompt_tokens=10, completion_tokens=20, total_tokens=30
+                ),
             )
 
             # Set api_responses and api_requests manually
@@ -459,9 +535,7 @@ class TestStructuredOutputSequencing:
                 agent.model, "extract", AsyncMock(return_value=mock_config)
             ):
                 # This should not raise validation errors
-                response = await agent.call(
-                    "Set configuration", response_model=Config
-                )
+                response = await agent.call("Set configuration", response_model=Config)
 
                 assert isinstance(response, AssistantMessageStructuredOutput)
 

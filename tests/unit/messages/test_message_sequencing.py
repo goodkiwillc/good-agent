@@ -174,9 +174,15 @@ class TestMessageSequencing:
 
         async with Agent("Test agent", tools=[process_data]) as agent:
             # Create multiple bound functions
-            upper_processor = agent.tool_calls.invoke_func(process_data, operation="UPPER")
-            lower_processor = agent.tool_calls.invoke_func(process_data, operation="lower")
-            title_processor = agent.tool_calls.invoke_func(process_data, operation="Title")
+            upper_processor = agent.tool_calls.invoke_func(
+                process_data, operation="UPPER"
+            )
+            lower_processor = agent.tool_calls.invoke_func(
+                process_data, operation="lower"
+            )
+            title_processor = agent.tool_calls.invoke_func(
+                process_data, operation="Title"
+            )
 
             agent.append("Process this data")
 

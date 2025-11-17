@@ -36,6 +36,8 @@ def _get_console() -> Console:
 def rprint(*args, **kwargs):
     """Proxy Rich print through a console tied to the active stdout."""
     _get_console().print(*args, **kwargs)
+
+
 app = typer.Typer(help="Manage prompt templates")
 
 

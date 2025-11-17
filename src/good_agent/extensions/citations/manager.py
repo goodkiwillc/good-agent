@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from good_agent.core.event_router import EventContext, on
 
@@ -227,7 +227,10 @@ class CitationManager(AgentComponent):
 
             # Process content parts to extract and normalize citations
             processed_parts, extracted_citations = self._process_content_parts(
-                converted_content, citations, role or "", RenderMode.DISPLAY  # type: ignore[arg-type]
+                converted_content,
+                citations,
+                role or "",
+                RenderMode.DISPLAY,  # type: ignore[arg-type]
             )
 
             # Always update content with processed parts
@@ -282,7 +285,12 @@ class CitationManager(AgentComponent):
             # Extract parameters
             mode = ctx.parameters.get("mode")
             message = ctx.parameters.get("message")
-            output = ctx.parameters.get("output")  # List of content parts
+            output_param = ctx.parameters.get("output")  # List of content parts
+
+            if not isinstance(output_param, list):
+                return
+
+            output = cast(list[Any], output_param)
 
             if not message or not mode or not output:
                 return
@@ -291,7 +299,10 @@ class CitationManager(AgentComponent):
             if not hasattr(message, "citations") or not message.citations:
                 try:
                     processed_parts, extracted_citations = self._process_content_parts(
-                        output, None, getattr(message, "role", "user"), mode  # type: ignore[arg-type]
+                        output,
+                        None,
+                        getattr(message, "role", "user"),
+                        mode,  # type: ignore[arg-type]
                     )
                     if extracted_citations:
                         if hasattr(message, "__dict__"):
@@ -300,7 +311,7 @@ class CitationManager(AgentComponent):
                             self.index.add(citation)
                         # Use normalized parts (with local indices) for downstream transforms
                         ctx.output = processed_parts  # type: ignore[assignment]
-                        ctx.parameters["output"] = processed_parts  # type: ignore[typeddict-unknown-key]
+                        ctx.parameters["output"] = processed_parts
                         output = processed_parts
                 except Exception as e:
                     logger.error(
@@ -350,7 +361,7 @@ class CitationManager(AgentComponent):
             # Update the output if transformation was applied
             if was_transformed:
                 ctx.output = transformed_parts  # type: ignore[assignment]
-                ctx.parameters["output"] = transformed_parts  # type: ignore[typeddict-unknown-key]
+                ctx.parameters["output"] = transformed_parts
 
         except Exception as e:
             logger.error(f"Error in _on_message_render_before: {e}", exc_info=True)
@@ -830,10 +841,10 @@ class CitationManager(AgentComponent):
 
         # Build citations list in index order
         max_index = max(references.keys()) if references else 0
-        citations = [None] * max_index
+        citations: list[str | None] = [None] * max_index
 
         for index, url in references.items():
-            citations[index - 1] = url  # Convert to 0-based
+            citations[index - 1] = str(url)  # Convert to 0-based
 
         # Remove None entries (gaps in indexing)
         citations = [c for c in citations if c is not None]
@@ -1018,7 +1029,7 @@ class CitationManager(AgentComponent):
             return
 
         # Create mapping from detected indices to local indices (1-based)
-        local_mapping = {}
+        local_mapping: dict[int, int] = {}
 
         if current_format == CitationFormat.MARKDOWN:
             # Map [1], [2] to local indices
@@ -1026,11 +1037,15 @@ class CitationManager(AgentComponent):
                 content, CitationFormat.MARKDOWN
             )
             for i, match in enumerate(matches, 1):
-                local_mapping[match.citation_index] = i
+                if match.citation_index is None:
+                    continue
+                local_mapping[int(match.citation_index)] = i
 
         # Transform to LLM format with local indices
         normalized_content = CitationTransformer.transform_to_llm_format(
-            content, local_mapping, current_format  # type: ignore[arg-type]
+            content,
+            local_mapping,
+            current_format,
         )
 
         # Update message content through content_parts
@@ -1106,10 +1121,10 @@ class CitationManager(AgentComponent):
 
         # Build citations list in index order
         max_index = max(references.keys()) if references else 0
-        citations = [None] * max_index
+        citations: list[str | None] = [None] * max_index
 
         for index, url in references.items():
-            citations[index - 1] = url  # Convert to 0-based
+            citations[index - 1] = str(url)  # Convert to 0-based
 
         # Remove None entries (gaps in indexing)
         citations = [c for c in citations if c is not None]
@@ -1630,7 +1645,9 @@ class CitationManager(AgentComponent):
         elif format == "csv":
             lines = ["Index,URL,Tags"]
             for index, url in self.index.items():
-                tags_str: str = "; ".join(self.index.get_tags(index))  # Use index, not URL
+                tags_str: str = "; ".join(
+                    self.index.get_tags(index)
+                )  # Use index, not URL
                 lines.append(f'{index},{url},"{tags_str}"')
             return "\n".join(lines)
 

@@ -126,11 +126,15 @@ class TestThreadContextContentTruncation:
         agent.append(str(tool_response_1), role="assistant")
 
         agent.append("Now search for neural networks")
-        tool_response_2 = await agent.tool_calls.invoke("search_web", query="neural networks")
+        tool_response_2 = await agent.tool_calls.invoke(
+            "search_web", query="neural networks"
+        )
         agent.append(str(tool_response_2), role="assistant")
 
         agent.append("Finally, search for deep learning")
-        tool_response_3 = await agent.tool_calls.invoke("search_web", query="deep learning")
+        tool_response_3 = await agent.tool_calls.invoke(
+            "search_web", query="deep learning"
+        )
         agent.append(str(tool_response_3), role="assistant")
 
         # Original messages are verbose

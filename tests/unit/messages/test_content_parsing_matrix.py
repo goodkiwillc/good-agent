@@ -54,6 +54,9 @@ def test_render_recursion_without_cache_returns_fallback() -> None:
     stack.add(render_key)
 
     try:
-        assert message.render(RenderMode.DISPLAY) == "[Error: Recursive rendering detected]"
+        assert (
+            message.render(RenderMode.DISPLAY)
+            == "[Error: Recursive rendering detected]"
+        )
     finally:
         stack.discard(render_key)

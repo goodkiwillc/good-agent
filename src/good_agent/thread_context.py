@@ -34,7 +34,9 @@ class ForkContext:
     async def __aenter__(self) -> Agent:
         """Create and return forked agent."""
         # Fork the agent with messages
-        self.forked_agent = self.agent.context_manager.fork(include_messages=True, **self.fork_kwargs)
+        self.forked_agent = self.agent.context_manager.fork(
+            include_messages=True, **self.fork_kwargs
+        )
 
         # Wait for forked agent to be ready
         await self.forked_agent.initialize()

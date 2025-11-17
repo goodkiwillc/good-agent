@@ -293,7 +293,9 @@ class TestAgentMCPIntegration:
         agent.tools["mcp_tool"] = mock_adapter
 
         # Invoke the tool
-        result = await agent.tool_calls.invoke("mcp_tool", question="What is the answer?")
+        result = await agent.tool_calls.invoke(
+            "mcp_tool", question="What is the answer?"
+        )
 
         # Check the result
         assert result.tool_name == "mcp_tool"

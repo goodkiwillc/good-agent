@@ -1,6 +1,8 @@
 import re
 import xml.etree.ElementTree as etree
 
+from typing import Match, Tuple
+
 from markdown.extensions import Extension
 from markdown.inlinepatterns import InlineProcessor
 from markdown.preprocessors import Preprocessor
@@ -20,7 +22,9 @@ class CitationPreprocessor(Preprocessor):
 
 
 class SuperscriptCitationProcessor(InlineProcessor):
-    def handleMatch(self, m, data):
+    def handleMatch(  # type: ignore[override]
+        self, m: Match[str], data: str
+    ) -> Tuple[etree.Element, int, int]:
         el = etree.Element("sup")
         link = etree.SubElement(el, "a")
         link.set("href", f"#{m.group(1)}")

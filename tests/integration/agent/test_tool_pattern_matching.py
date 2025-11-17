@@ -187,7 +187,9 @@ class TestToolPatternMatching:
         await agent.initialize()
 
         # Execute a tool
-        response = await agent.tool_calls.invoke("get_current_weather", location="New York")
+        response = await agent.tool_calls.invoke(
+            "get_current_weather", location="New York"
+        )
 
         # Check execution worked
         assert response.success

@@ -500,8 +500,7 @@ class EventRouter:
         """Detect coroutine functions, including bound methods."""
 
         return inspect.iscoroutinefunction(handler) or (
-            inspect.ismethod(handler)
-            and inspect.iscoroutinefunction(handler.__func__)  # type: ignore[attr-defined]
+            inspect.ismethod(handler) and inspect.iscoroutinefunction(handler.__func__)  # type: ignore[attr-defined]
         )
 
     def do(self, event: EventName, **kwargs):

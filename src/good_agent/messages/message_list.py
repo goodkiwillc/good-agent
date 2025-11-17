@@ -11,6 +11,7 @@ from typing import (
     Literal,
     SupportsIndex,
     TypeVar,
+    cast,
     overload,
 )
 
@@ -87,7 +88,7 @@ class MessageList(list[T_Message], Generic[T_Message]):
         for message_id in self._version_manager.current_version:
             message = self._registry.get(message_id)
             if message:
-                super().append(message)
+                super().append(cast(T_Message, message))
 
     @property
     def agent(self) -> Agent | None:

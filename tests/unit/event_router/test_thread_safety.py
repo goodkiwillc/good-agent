@@ -13,6 +13,7 @@ def test_concurrent_handler_registration_is_safe() -> None:
 
     def register(index: int) -> None:
         for i in range(per_thread):
+
             def handler(_: EventContext, marker=(index, i)) -> None:
                 return None
 
@@ -71,6 +72,7 @@ def test_emit_and_register_concurrently() -> None:
 
     def registrar() -> None:
         for offset in range(10):
+
             def handler(ctx: EventContext, marker=offset) -> None:
                 with lock:
                     recorded.append(ctx.parameters["value"])  # type: ignore[index]

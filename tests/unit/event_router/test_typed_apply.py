@@ -38,9 +38,7 @@ def test_apply_typed_sync_instantiates_parameter_type() -> None:
         assert isinstance(ctx.parameters, SumParams)
         return SumResult(total=ctx.parameters.left + ctx.parameters.right)
 
-    ctx = router.apply_typed_sync(
-        "typed:sum", SumParams, SumResult, left=2, right=3
-    )
+    ctx = router.apply_typed_sync("typed:sum", SumParams, SumResult, left=2, right=3)
 
     assert isinstance(ctx.parameters, SumParams)
     assert ctx.parameters.left == 2
@@ -59,9 +57,7 @@ async def test_typed_apply_preserves_parameter_mapping_and_output_type() -> None
 
     typed_login = router.typed(LoginParams, LoginResult)
 
-    ctx = await typed_login.apply(
-        "typed:login", username="neo", password="trinity"
-    )
+    ctx = await typed_login.apply("typed:login", username="neo", password="trinity")
 
     assert ctx.parameters["username"] == "neo"
     assert isinstance(ctx.output, LoginResult)
