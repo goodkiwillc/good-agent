@@ -361,12 +361,12 @@ class MDXL:
         #         except ValueError:
         # return value.lower()  # Case-insensitive string sort
 
-        _convert = try_chain(
+        _convert = try_chain(  # type: ignore[misc]
             [
-                lambda v: datetime.date.fromisoformat(v),
-                lambda v: datetime.datetime.fromisoformat(v),
+                lambda v: datetime.date.fromisoformat(v),  # type: ignore[arg-type, return-value, list-item]
+                lambda v: datetime.datetime.fromisoformat(v),  # type: ignore[arg-type, return-value, list-item]
                 int,
-                float,
+                float,  # type: ignore[list-item]
                 lambda v: v.lower(),  # Case-insensitive string sort
             ],
             default_value=0,
@@ -906,12 +906,14 @@ class MDXL:
                     text = "\n".join(dedented)
         else:
             # Use standard lxml formatting
-            text = str(etree.tostring(
-                self._root,
-                encoding="unicode",
-                pretty_print=pretty,
-                xml_declaration=False,
-            ))  # type: ignore[arg-type]
+            text = str(
+                etree.tostring(
+                    self._root,
+                    encoding="unicode",
+                    pretty_print=pretty,
+                    xml_declaration=False,
+                )
+            )  # type: ignore[arg-type]
 
             # Strip <root> wrapper by default for root elements
             if not include_root and self.tag == "root" and not self._parent:
@@ -1483,7 +1485,9 @@ class MDXL:
         current_scope_defs_2: dict[str, str] = {}
         section_refs: dict[str, str] = {}  # new_idx -> url for current section
         base_indent = 0
-        blank_line_buffer: list[str] = []  # Buffer to hold blank lines until we know if they precede references
+        blank_line_buffer: list[
+            str
+        ] = []  # Buffer to hold blank lines until we know if they precede references
 
         for i, line in enumerate(lines):
             # Track indentation of content lines for reference formatting

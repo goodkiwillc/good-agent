@@ -1,8 +1,6 @@
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, TypedDict
-
-from good_agent.core.types import URL
 from good_agent.core.event_router import EventContext
 from ulid import ULID
 
@@ -66,7 +64,7 @@ class ToolResponseParams(TypedDict):
 
 if TYPE_CHECKING:
     # Type hint for protocol implementation
-    _CitationIndexBase = Index[URL, str, Citation]
+    _CitationIndexBase = Index[str, str, Citation]
 else:
     _CitationIndexBase = object
 
@@ -83,7 +81,7 @@ class CitationIndex(AgentComponent, _CitationIndexBase):
         self.name = name
         self._index: dict[str, Citation] = {}  # citation_id -> Citation
         self._content_map: dict[str, str] = {}  # citation_id -> content
-        self._aliases: dict[str, URL] = {}  # alias -> primary_id
+        self._aliases: dict[str, str] = {}  # alias -> primary_id
         self._target = None  # Will be set by install()
 
     async def install(self, agent):
@@ -144,7 +142,7 @@ class CitationIndex(AgentComponent, _CitationIndexBase):
 
     # Index Protocol Implementation
 
-    def __getitem__(self, ref: str) -> URL:
+    def __getitem__(self, ref: str) -> str:
         """Get content by citation ID"""
         if ref in self._content_map:
             return self._content_map[ref]
