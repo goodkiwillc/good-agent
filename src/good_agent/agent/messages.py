@@ -131,7 +131,7 @@ class MessageManager:
             agent=self.agent,
         )
 
-        new_message = ctx.output or new_message
+        new_message = ctx.return_value or new_message
 
         # Replace the message
         self.agent._messages[index] = new_message
@@ -176,8 +176,8 @@ class MessageManager:
             AgentEvents.MESSAGE_SET_SYSTEM_BEFORE, output=message, agent=self.agent
         )
 
-        if ctx.output is not None:
-            message = ctx.output
+        if ctx.return_value is not None:
+            message = ctx.return_value
 
         # Check if we already have a system message
         if self.agent._messages:

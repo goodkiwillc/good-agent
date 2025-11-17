@@ -69,7 +69,7 @@ class MessageFormatter:
             mode=mode,
         )
 
-        content_parts = ctx.output or content_parts
+        content_parts = ctx.return_value or content_parts
 
         result = []
         for part in content_parts:
@@ -137,7 +137,7 @@ class MessageFormatter:
             mode=mode,
         )
 
-        return ctx.output or result
+        return ctx.return_value or result
 
     async def format_message(
         self,

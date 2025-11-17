@@ -851,8 +851,9 @@ class LanguageModel(AgentComponent):
                 config=config,
                 llm=self,
             )
-            assert ctx.output is not None, "After event must return output"
-            return ctx.output
+            model_response = ctx.return_value
+            assert model_response is not None, "After event must return output"
+            return model_response
         except (asyncio.CancelledError, KeyboardInterrupt):
             raise
         except Exception as e:

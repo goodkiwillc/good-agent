@@ -1604,12 +1604,13 @@ class Agent(EventRouter):
 
     @on(AgentEvents.MESSAGE_APPEND_AFTER)
     def _handle_message_append(self, ctx: EventContext[Any, Message], **kwargs):
-        assert ctx.output
-        message = ctx.output
+        message = ctx.return_value
+        if message is None:
+            return
         if self.config.print_messages and message.role in (
             self.config.print_messages_role or [message.role]
         ):
-            self.print(ctx.output, mode=self.config.print_messages_mode)
+            self.print(message, mode=self.config.print_messages_mode)
 
     def copy(self, include_messages: bool = True, **config):
         warnings.warn(
