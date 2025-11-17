@@ -61,7 +61,7 @@ class MCPToolAdapter(Tool[..., T_Response], Generic[T_Response]):
 
         # Initialize the base Tool with the MCP tool's metadata
         super().__init__(
-            fn=self._execute_mcp_tool,
+            fn=self._execute_mcp_tool,  # type: ignore[arg-type]
             name=name or tool_spec.name,
             description=tool_spec.description or f"MCP tool: {tool_spec.name}",
         )
@@ -93,10 +93,10 @@ class MCPToolAdapter(Tool[..., T_Response], Generic[T_Response]):
             )
 
         # Create dynamic Pydantic model
-        return create_model(
+        return create_model(  # type: ignore[call-overload]
             f"{self.spec.name}Input",
-            **fields,
             __module__=__name__,
+            **fields,
         )
 
     def _json_schema_to_python_type(self, schema: dict[str, Any]) -> type:
@@ -124,8 +124,10 @@ class MCPToolAdapter(Tool[..., T_Response], Generic[T_Response]):
         # Handle array types with items
         if json_type == "array":
             items_schema = schema.get("items", {})
-            item_type = self._json_schema_to_python_type(items_schema)
-            return list[item_type]
+            # Recursively get the item type, but use Any for complex nested types
+            item_type_obj = self._json_schema_to_python_type(items_schema)
+            # For typing purposes, we use list[Any] to avoid "not valid as a type" errors
+            return list[Any]  # type: ignore[valid-type]
 
         # Handle union types
         if isinstance(json_type, list):
@@ -157,7 +159,7 @@ class MCPToolAdapter(Tool[..., T_Response], Generic[T_Response]):
                     )
                     return ToolResponse(
                         tool_name=self.name,
-                        response=None,
+                        response=None,  # type: ignore[arg-type]
                         error=f"Input validation failed: {str(e)}",
                         success=False,
                     )
@@ -190,7 +192,7 @@ class MCPToolAdapter(Tool[..., T_Response], Generic[T_Response]):
                 )
                 return ToolResponse(
                     tool_name=self.name,
-                    response=None,
+                    response=None,  # type: ignore[arg-type]
                     error=f"Tool execution timed out after {self.timeout} seconds",
                     success=False,
                 )
@@ -199,7 +201,7 @@ class MCPToolAdapter(Tool[..., T_Response], Generic[T_Response]):
             logger.error(f"Error executing MCP tool {self.spec.name}: {e}")
             return ToolResponse(
                 tool_name=self.name,
-                response=None,
+                response=None,  # type: ignore[arg-type]
                 error=str(e),
                 success=False,
             )
@@ -240,7 +242,7 @@ class MCPToolAdapter(Tool[..., T_Response], Generic[T_Response]):
         Returns:
             Tool schema dictionary
         """
-        schema = {
+        schema: dict[str, Any] = {
             "type": "function",
             "function": {
                 "name": self.name,

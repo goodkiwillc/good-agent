@@ -103,8 +103,7 @@ P_Message = TypeVar("P_Message", bound=Message)
 
 class AgentConfigParameters(LLMCommonConfig, AgentOnlyConfig, TypedDict, total=False):
     # Merge of LLM parameters and agent-only configuration
-    temperature: float
-    max_tokens: int
+    # temperature and max_tokens inherited from LLMCommonConfig
     max_retries: int
     fallback_models: list[str]
     tools: Sequence[str | Callable[..., Any] | ToolCallFunction]
@@ -191,7 +190,7 @@ def ensure_ready(func: Callable[P, Any]) -> Callable[P, Any]:
             # Yield from the generator
             # Use getattr to bypass type checker's argument analysis
             method = getattr(func, "__call__", func)  # noqa: B004
-            async for item in method(self, *args, **kwargs):  # type: ignore[misc]
+            async for item in method(self, *args, **kwargs):  # type: ignore[misc, arg-type]
                 yield item
 
         return async_gen_wrapper  # type: ignore[return-value]
@@ -204,7 +203,7 @@ def ensure_ready(func: Callable[P, Any]) -> Callable[P, Any]:
             # Await and return the result
             # Use getattr to bypass type checker's argument analysis
             method = getattr(func, "__call__", func)  # noqa: B004
-            return await method(self, *args, **kwargs)  # type: ignore[misc]
+            return await method(self, *args, **kwargs)  # type: ignore[misc, arg-type]
 
         return async_wrapper  # type: ignore[return-value]
 
@@ -398,7 +397,7 @@ class Agent(EventRouter):
             message: Message to print (defaults to last message)
             mode: Render mode ('display', 'llm', 'raw'). If None, uses config.print_messages_mode
         """
-        from .content import RenderMode
+        from .content import RenderMode  # type: ignore[import-not-found]
 
         # Determine which message to print
         if message is None:
@@ -674,7 +673,7 @@ class Agent(EventRouter):
         self.events.consume_from(obs)
 
     def set_event_trace(
-        self, enabled: bool, *, verbosity: int = 1, use_rich: bool = True
+        self, enabled: bool, verbosity: int = 1, use_rich: bool = True
     ) -> None:
         self._warn_event_facade("set_event_trace")
         self.events.set_event_trace(enabled, verbosity=verbosity, use_rich=use_rich)
@@ -889,7 +888,7 @@ class Agent(EventRouter):
         # If we have pending tools, initialize them now
         if hasattr(self, "_pending_tools") and self._pending_tools:
             tools = self._pending_tools
-            self._pending_tools = None  # Clear to avoid re-initialization
+            self._pending_tools = ()  # Clear to avoid re-initialization
             did_initialization = True
 
             # Process tools directly (same logic as _agent_init handler)
@@ -918,11 +917,11 @@ class Agent(EventRouter):
             for direct_tool in direct_tools:
                 if hasattr(direct_tool, "_tool_metadata"):
                     # It's already a Tool instance
-                    await self[ToolManager].register_tool(direct_tool)
+                    await self[ToolManager].register_tool(direct_tool)  # type: ignore[arg-type]
                 elif callable(direct_tool):
                     from .tools import Tool
 
-                    tool_instance = Tool(direct_tool)
+                    tool_instance = Tool(direct_tool)  # type: ignore[arg-type]
                     await self[ToolManager].register_tool(tool_instance)
 
         # Wait for all component initialization tasks to complete

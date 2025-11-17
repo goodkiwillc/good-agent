@@ -23,7 +23,7 @@ class EditableMDXL(StatefulResource[MDXL]):
         self._initial_content = mdxl
         self._modified = False
         self._initialized = False
-        self._changelog = []
+        self._changelog: list[str] = []
 
     async def initialize(self) -> None:
         """Initialize from MDXL."""

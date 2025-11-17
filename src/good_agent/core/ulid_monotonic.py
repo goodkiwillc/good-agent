@@ -186,7 +186,7 @@ class MonotonicULIDField(ULID):
 
         def validate_ulid(value: Any) -> MonotonicULIDField:
             if isinstance(value, cls):
-                return value
+                return value  # type: ignore[return-value]
             elif isinstance(value, ULID):
                 return cls(value.bytes)
             elif isinstance(value, str):

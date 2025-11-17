@@ -240,13 +240,13 @@ class MockQueuedLanguageModel:
                 tool_call.function.name = tc["tool_name"]
                 tool_call.function.arguments = orjson.dumps(tc["arguments"]).decode()
                 tool_calls.append(tool_call)
-            message.tool_calls = tool_calls
+            message.tool_calls = tool_calls  # type: ignore[assignment]
         else:
             message.tool_calls = None
 
         # Add refusal if present (using setattr for dynamic attribute)
         if response.refusal:
-            message.refusal = response.refusal
+            message.refusal = response.refusal  # type: ignore[attr-defined]
 
         # Create the Choices object
         # Create mock choice object

@@ -126,7 +126,7 @@ class MessageInjectorComponent(AgentComponent):
         # If we have parts to inject, create a new message with modified content
         if prefix_parts or suffix_parts:
             # Combine all content parts
-            new_content_parts: list[ContentPart] = []
+            new_content_parts: list[ContentPartType] = []
             if prefix_parts:
                 new_content_parts.extend(prefix_parts)
             new_content_parts.extend(message.content_parts)
@@ -163,7 +163,7 @@ class MessageInjectorComponent(AgentComponent):
                 # If print_messages is enabled and set to 'llm' mode, show the modified system message
                 if hasattr(agent, "config") and agent.config.print_messages:
                     if agent.config.print_messages_mode == "llm":
-                        from ..content_parts import RenderMode
+                        from ..content_parts import RenderMode  # type: ignore[import-not-found]
                         from ..utilities import print_message
 
                         logger.info(
@@ -291,7 +291,7 @@ class SimpleMessageInjector(MessageInjectorComponent):
         self.user_suffix = user_suffix
         self.use_templates = use_templates
 
-    def _create_content_part(self, content: str) -> ContentPartType:
+    def _create_content_part(self, content: str) -> ContentPartType | None:
         """Create appropriate content part based on template detection."""
         if not content:
             return None

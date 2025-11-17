@@ -57,12 +57,12 @@ class MDXL:
             if convert_legacy and self._should_convert_legacy(content):
                 with open("truth.v1.mdxl", "w") as f:
                     f.write(content)
-                from .migration import MDXLMigrator
+                from .migration import MDXLMigrator  # type: ignore[import-not-found]
 
                 content = MDXLMigrator.migrate_to_v2(content, citation_urls=None)
                 with open("truth.v2.mdxl", "w") as f:
-                    f.write(content)
-            self._root = self._parse(content)
+                    f.write(content)  # type: ignore[arg-type]
+            self._root = self._parse(content)  # type: ignore[arg-type]
         else:
             self._root = content
 
@@ -836,8 +836,8 @@ class MDXL:
                 old_idx_str = match.group(1)
                 url = match.group(2).strip()
                 if old_idx_str in old_to_new:
-                    new_idx = old_to_new[old_idx_str]
-                    lines.append(f"[{new_idx}]: {url}")
+                    new_idx_str = old_to_new[old_idx_str]
+                    lines.append(f"[{new_idx_str}]: {url}")
                 else:
                     lines.append(line)
             else:
@@ -1693,10 +1693,10 @@ class MDXL:
 
                 # Only output each unique URL once with its new index
                 if url in url_to_new_idx and url not in seen_definitions:
-                    new_idx = url_to_new_idx[url]
+                    new_idx_str = url_to_new_idx[url]
                     # Preserve original indentation
                     indent_len = len(line) - len(line.lstrip())
-                    result_lines.append(" " * indent_len + f"[{new_idx}]: {url}")
+                    result_lines.append(" " * indent_len + f"[{new_idx_str}]: {url}")
                     seen_definitions.add(url)
                 # Skip duplicate or unmapped definitions
                 continue

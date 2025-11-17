@@ -216,13 +216,13 @@ def _merge_array(existing: Any, patch: Any, key: str | None = None) -> Any:
                 by_key[item[key]] = _deep_to_box(item)
         else:
             by_key[id(item)] = _deep_to_box(item)
-    out: list[Any] = []
+    result_out: list[Any] = []
     existing_keys = [it.get(key) if _is_mapping(it) else id(it) for it in existing]
     for k in existing_keys:
         if k in by_key:
-            out.append(by_key.pop(k))
-    out.extend(by_key.values())
-    return out
+            result_out.append(by_key.pop(k))
+    result_out.extend(by_key.values())
+    return result_out
 
 
 def _apply_strategy(

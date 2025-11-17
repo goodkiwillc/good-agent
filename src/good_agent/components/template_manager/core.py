@@ -142,6 +142,7 @@ class Template:
 
     def __str__(self) -> str:
         """Return cached render if available, otherwise the template string."""
+        return self._rendered if self._rendered else self.template
 
     def __repr__(self) -> str:
         """Return a debug representation including template text and strict flag."""

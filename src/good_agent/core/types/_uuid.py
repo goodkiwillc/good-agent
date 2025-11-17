@@ -34,7 +34,7 @@ class UUID(_UUID):
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
         field_schema.pop("anyOf", None)  # remove the bytes/str union
-        field_schema.update(type="string", format=f"uuid{self.uuid_version}")
+        field_schema.update(type="string", format=f"uuid{self.uuid_version}")  # type: ignore[attr-defined]
         return field_schema
 
     @classmethod
@@ -62,7 +62,7 @@ class UUID(_UUID):
                 when_used="json",
             ),
         )
-        cls.__pydantic_serializer__ = SchemaSerializer(
+        cls.__pydantic_serializer__ = SchemaSerializer(  # type: ignore[attr-defined]
             schema
         )  # <-- this is necessary for pydantic-core to serialize
 
