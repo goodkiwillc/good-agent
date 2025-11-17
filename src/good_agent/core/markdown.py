@@ -6,6 +6,7 @@ from typing import Match, Tuple
 from markdown.extensions import Extension
 from markdown.inlinepatterns import InlineProcessor
 from markdown.preprocessors import Preprocessor
+from markdown.util import AtomicString
 
 
 class CitationPreprocessor(Preprocessor):
@@ -28,7 +29,7 @@ class SuperscriptCitationProcessor(InlineProcessor):
         el = etree.Element("sup")
         link = etree.SubElement(el, "a")
         link.set("href", f"#{m.group(1)}")
-        link.text = f"[{m.group(1)}]"
+        link.text = AtomicString(f"[{m.group(1)}]")
         return el, m.start(0), m.end(0)
 
 

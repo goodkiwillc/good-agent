@@ -1,0 +1,34 @@
+from types import SimpleNamespace
+
+import pytest
+
+from good_agent.extensions.task_manager import TaskManager
+
+
+def test_task_manager_crud_flow():
+    manager = TaskManager()
+    todo = manager.create_list(name="Focus", items=["alpha"])
+    assert todo.name == "Focus"
+    manager.add_item("Focus", "beta")
+    manager.complete_item("Focus", item_index=1)
+    view = manager.view_list("Focus")
+    assert view.items[1].complete is True
+
+
+def test_task_manager_complete_item_by_text_and_prompt_suffix():
+    manager = TaskManager()
+    manager.create_list(name="Sprint", items=["code", "review"])
+    manager.complete_item("Sprint", item_text="review")
+    agent_stub = SimpleNamespace(context={})
+    parts = manager.get_system_prompt_suffix(agent_stub)
+    assert agent_stub.context["todo_lists"]["Sprint"].items[1].complete is True
+    assert parts, "Should inject template content when lists exist"
+
+
+def test_task_manager_complete_item_validations():
+    manager = TaskManager()
+    manager.create_list(name="Ops", items=["deploy"])
+    with pytest.raises(ValueError):
+        manager.complete_item("Ops", item_index=None, item_text=None)
+    with pytest.raises(IndexError):
+        manager.complete_item("Ops", item_index=5)
