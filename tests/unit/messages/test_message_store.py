@@ -115,7 +115,10 @@ class TestInMemoryMessageStore:
 
         # Async exists
         assert await store.aexists(message.id)
-        assert not await store.aexists(ULID())
+        missing_bytes = bytearray(message.id.bytes)
+        missing_bytes[-1] ^= 0x01  # Flip LSB to ensure a different ULID
+        missing_id = ULID(bytes(missing_bytes))
+        assert not await store.aexists(missing_id)
 
         # Async get nonexistent
         nonexistent_id = ULID()
