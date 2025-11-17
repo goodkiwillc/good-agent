@@ -144,8 +144,8 @@ class ToolExecutor:
 
         # Use potentially modified parameters from apply hook
         modified_params = (
-            ctx.output
-            if ctx.output is not None
+            ctx.return_value
+            if ctx.return_value is not None
             else ctx.parameters.get("parameters", visible_params)
         )
 

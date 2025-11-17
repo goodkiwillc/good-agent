@@ -58,7 +58,7 @@ class TypedApply(Generic[T_Parameters, T_Return]):
             ```python
             typed_apply = router.typed(ProcessParams, ProcessResult)
             ctx = await typed_apply.apply("process", data={"x": 1})
-            result: ProcessResult | None = ctx.output
+            result: ProcessResult | None = ctx.return_value
             ```
         """
         return await self.router.apply_typed(
@@ -84,7 +84,7 @@ class TypedApply(Generic[T_Parameters, T_Return]):
             ```python
             typed_apply = router.typed(ProcessParams, ProcessResult)
             ctx = typed_apply.apply_sync("process", data={"x": 1})
-            result: ProcessResult | None = ctx.output
+            result: ProcessResult | None = ctx.return_value
             ```
         """
         return self.router.apply_typed_sync(

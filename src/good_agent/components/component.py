@@ -350,7 +350,7 @@ class AgentComponent(EventRouter, metaclass=AgentComponentType):
             return
 
         tool = ctx.parameters.get("tool")
-        signature = ctx.output
+        signature = ctx.return_value
         agent = ctx.parameters.get("agent")
 
         if not tool or not signature or not agent:

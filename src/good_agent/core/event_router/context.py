@@ -8,9 +8,12 @@ from __future__ import annotations
 
 import contextvars
 from dataclasses import dataclass
-from typing import Generic, cast
+from typing import Generic
 
 from .protocols import ApplyInterrupt, T_Parameters, T_Return
+
+
+type EventResult[T_Return] = T_Return | BaseException
 
 
 @dataclass(slots=True)
@@ -24,8 +27,8 @@ class EventContext(Generic[T_Parameters, T_Return]):
     parameters: T_Parameters
     """Input parameters for the event (read-only in handlers)."""
 
-    output: T_Return | None = None
-    """Output result accumulated by handlers (mutable)."""
+    output: EventResult[T_Return] | None = None
+    """Output or exception accumulated by handlers (mutable)."""
 
     exception: BaseException | None = None
     """Captured exception for error handling (mutable)."""
@@ -69,7 +72,7 @@ class EventContext(Generic[T_Parameters, T_Return]):
             exception: The exception that caused the stop
         """
         self.exception = exception
-        self.output = cast(T_Return, exception)  # Preserve legacy behavior inspected by tests
+        self.output = exception  # Preserve legacy behavior inspected by tests
         self._should_stop = True
         self._stopped_with_exception = True
         # Note: Does NOT raise ApplyInterrupt - handler decides what to do
@@ -124,6 +127,20 @@ class EventContext(Generic[T_Parameters, T_Return]):
         """Indicate whether stop_with_exception / stop(exception=...) was invoked."""
 
         return self._stopped_with_exception
+
+    @property
+    def return_value(self) -> T_Return | None:
+        """Typed accessor that hides stored exceptions from consumers.
+
+        Returns:
+            The declared return type when available, otherwise ``None`` if no output
+            was produced or when the payload holds an exception.
+        """
+
+        output = self.output
+        if isinstance(output, BaseException):
+            return None
+        return output
 
 
 # Context variable for current event context

@@ -60,7 +60,7 @@ class LLMCoordinator:
             agent=self.agent,
         )
 
-        tools = tools_ctx.output
+        tools = tools_ctx.return_value
 
         if tools and len(tools) > 0:
             for tool in tools:
@@ -73,7 +73,7 @@ class LLMCoordinator:
                     agent=self.agent,
                 )
 
-                if signature := tool_ctx.output:
+                if signature := tool_ctx.return_value:
                     tool_definitions.append(signature)
                 else:
                     tool_definitions.append(tool.signature)
