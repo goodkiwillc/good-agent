@@ -938,6 +938,9 @@ class ToolExecutor:
 
             # Handle string values that should be coerced
             if isinstance(param_value, str):
+                # DEBUG
+                # print(f"DEBUG: param={param_name} val={param_value} schema={param_schema}")
+                
                 # Check if parameter has a type definition
                 if "anyOf" in param_schema:
                     # Handle anyOf types (e.g. Optional[T])
@@ -989,6 +992,21 @@ class ToolExecutor:
                         coerced[param_name] = orjson.loads(param_value)
                     except Exception:
                         pass
+                # Some tools define dict parameters as simply 'type: object' without Pydantic definition
+                elif param_type == "object":
+                    try:
+                        parsed = orjson.loads(param_value)
+                        if isinstance(parsed, dict):
+                            coerced[param_name] = parsed
+                    except Exception:
+                        pass
+                elif param_type == "array":
+                    try:
+                        parsed = orjson.loads(param_value)
+                        if isinstance(parsed, list):
+                            coerced[param_name] = parsed
+                    except Exception:
+                        pass
                 
                 # Fallback: If schema has type=object or type=array but wasn't caught above
                 # e.g. because it wasn't processed correctly
@@ -1022,9 +1040,13 @@ class ToolExecutor:
                             elif "anyOf" in param_schema or "oneOf" in param_schema:
                                 should_coerce = True
                             # Case 4: Schema says string but it looks like JSON (risky but sometimes needed)
-                            # But wait, Pydantic v2 is strict. If we pass a dict to a str field, it might work if it stringifies?
-                            # No, Tool execution will fail if type mismatch.
-                            # Let's stick to safe coercions.
+                            # Some LLMs output JSON even for string fields if they think it should be structured.
+                            # However, forcing dict->str can break validation if Pydantic expects str.
+                            # But if we don't coerce, it remains a string (which is fine for str fields).
+                            # So we ONLY coerce if we think it's NOT supposed to be a string.
+                            elif param_schema.get("type") == "string":
+                                # Don't coerce to dict/list if schema explicitly wants a string
+                                should_coerce = False
                             
                             if should_coerce:
                                 coerced[param_name] = parsed

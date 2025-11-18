@@ -811,11 +811,6 @@ class Agent(EventRouter):
         Returns:
             List of message IDs in the current version
         """
-        warnings.warn(
-            "Agent.current_version is deprecated. Use agent.versioning.current_version instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self._versioning_manager.current_version
 
     @property
