@@ -1,7 +1,10 @@
 import weakref
 from collections import ChainMap
+from typing import cast
 
 import pytest
+from good_agent.agent import Agent
+from good_agent.content import TextContentPart
 from good_agent.messages import (
     AssistantMessage,
     AssistantMessageStructuredOutput,
@@ -79,7 +82,7 @@ class TestMessageProperties:
         msg = UserMessage(content="Hello")
 
         # Set agent reference
-        msg._set_agent(agent)
+        msg._set_agent(cast(Agent, agent))
         assert msg.agent is agent
 
         # Test weak reference behavior
@@ -101,9 +104,9 @@ class TestMessageProperties:
         agent.messages.extend([msg1, msg2, msg3])
 
         # Set agent references
-        msg1._set_agent(agent)
-        msg2._set_agent(agent)
-        msg3._set_agent(agent)
+        msg1._set_agent(cast(Agent, agent))
+        msg2._set_agent(cast(Agent, agent))
+        msg3._set_agent(cast(Agent, agent))
 
         # Check indices
         assert msg1.index == 0
@@ -112,7 +115,7 @@ class TestMessageProperties:
 
         # Test message not in list
         msg4 = UserMessage(content="Not in list")
-        msg4._set_agent(agent)
+        msg4._set_agent(cast(Agent, agent))
         with pytest.raises(ValueError, match="Message not attached to agent"):
             _ = msg4.index
 
@@ -172,7 +175,12 @@ class TestMessageProperties:
         )
 
         msg = AssistantMessageStructuredOutput[WeatherResponse](
-            content="The weather in New York is 25.0°C with sunny.", output=weather
+            content_parts=[
+                TextContentPart(
+                    text="The weather in New York is 25.0°C with sunny."
+                )
+            ],
+            output=weather,
         )
 
         assert msg.output is weather

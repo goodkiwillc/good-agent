@@ -47,13 +47,12 @@ class TestVersioningWithAgentOperations:
             agent.model, "complete", new_callable=AsyncMock
         ) as mock_complete:
             mock_complete.return_value = mock_llm_response
-            agent._mock_complete = mock_complete
-            yield agent
+            yield agent, mock_complete
 
     @pytest.mark.asyncio
     async def test_versioning_with_call(self, agent_with_mock_llm):
         """Test that call() creates proper versions."""
-        agent = agent_with_mock_llm
+        agent, _ = agent_with_mock_llm
 
         # Initial state - should have system message
         initial_version_count = agent._version_manager.version_count
@@ -83,7 +82,7 @@ class TestVersioningWithAgentOperations:
     @pytest.mark.asyncio
     async def test_versioning_with_multiple_calls(self, agent_with_mock_llm):
         """Test versioning across multiple call() operations."""
-        agent = agent_with_mock_llm
+        agent, _ = agent_with_mock_llm
 
         # Make multiple calls
         await agent.call("First question")
@@ -108,7 +107,7 @@ class TestVersioningWithAgentOperations:
     @pytest.mark.asyncio
     async def test_thread_context_with_call(self, agent_with_mock_llm):
         """Test ThreadContext with actual call() operations."""
-        agent = agent_with_mock_llm
+        agent, _ = agent_with_mock_llm
 
         # Add some initial messages
         await agent.call("Question 1")
@@ -136,7 +135,7 @@ class TestVersioningWithAgentOperations:
     @pytest.mark.asyncio
     async def test_fork_context_with_call(self, agent_with_mock_llm):
         """Test ForkContext with actual call() operations."""
-        agent = agent_with_mock_llm
+        agent, _ = agent_with_mock_llm
 
         # Add initial messages
         await agent.call("Original question")
@@ -244,13 +243,13 @@ class TestVersioningWithAgentOperations:
     @pytest.mark.asyncio
     async def test_version_consistency_after_error(self, agent_with_mock_llm):
         """Test that versioning remains consistent even after errors."""
-        agent = agent_with_mock_llm
+        agent, mock_complete = agent_with_mock_llm
 
         initial_version_count = agent._version_manager.version_count
         initial_message_count = len(agent.messages)
 
         # Make mock raise an error
-        agent._mock_complete.side_effect = Exception("LLM error")
+        mock_complete.side_effect = Exception("LLM error")
 
         # Call should fail
         with pytest.raises(Exception, match="LLM error"):
@@ -277,8 +276,8 @@ class TestVersioningWithAgentOperations:
             prompt_tokens=10, completion_tokens=5, total_tokens=15
         )
 
-        agent._mock_complete.side_effect = None
-        agent._mock_complete.return_value = recovery_response
+        mock_complete.side_effect = None
+        mock_complete.return_value = recovery_response
 
         # Should be able to continue
         await agent.call("Recover from error")
@@ -421,7 +420,10 @@ class TestMemoryAndPerformance:
         retrieved = agent._message_registry.get(msg_id)
         assert retrieved is not None
         # Check the content itself is preserved
-        assert len(retrieved.content_parts[0].text) == 1024 * 1024
+        assert retrieved.content_parts
+        content_part = retrieved.content_parts[0]
+        assert isinstance(content_part, TextContentPart)
+        assert len(content_part.text) == 1024 * 1024
 
         # Version manager only stores IDs, not content
         version_ids = agent._version_manager.current_version

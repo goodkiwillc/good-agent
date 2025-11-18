@@ -3,6 +3,7 @@ import os
 # ruff: noqa
 import logging
 import warnings
+from typing import Any, cast
 
 import pytest
 
@@ -73,20 +74,22 @@ class TestBasicUsage:
             summary: str
 
         async with Agent("Return JSON matching the schema.") as agent:
-            message = await agent.call(
+            structured_message = await agent.call(
                 "Weather tomorrow in Paris", response_model=Weather
             )
 
-            assert isinstance(message.output, Weather)
+            assert isinstance(structured_message.output, Weather)
 
-            logger.info(f"Received weather: {message.content}")
+            logger.info(f"Received weather: {structured_message.content}")
             logger.info(
-                f'Weather: temp_c={message.output.temp_c}, summary="{message.output.summary}"'
+                f'Weather: temp_c={structured_message.output.temp_c}, summary="{structured_message.output.summary}"'
             )
             # Can continue longer interactions; structured output just for this turn
-            message = await agent.call("Is that warm for Paris at this time of year?")
+            follow_up = await agent.call(
+                "Is that warm for Paris at this time of year?"
+            )
 
-            logger.info(message)
+            logger.info(follow_up)
 
     async def test_simple_tool_use(self):
         async def calculate(x: int, y: int) -> int:
@@ -292,7 +295,9 @@ def search_web():
     def get_web_fetcher() -> WebFetcher:
         return WebFetcher()
 
-    @tool(register=False, name="search_web")
+    tool_decorator = cast(Any, tool)
+
+    @tool_decorator(register=False, name="search_web")
     async def search_web_tool(
         query: str,
         limit: int = 5,

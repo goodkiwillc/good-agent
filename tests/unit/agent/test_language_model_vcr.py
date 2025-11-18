@@ -2,7 +2,10 @@ import pytest
 from good_agent import Agent
 from good_agent.messages import AssistantMessage
 from good_agent.model.llm import LanguageModel, StreamChunk
+from litellm.types.completion import ChatCompletionMessageParam
+from litellm.types.utils import Choices
 from pydantic import BaseModel
+from typing import cast
 
 
 class WeatherInfo(BaseModel):
@@ -26,7 +29,7 @@ async def test_complete_with_real_api(llm_vcr):
         lm = agent.model  # or agent[LanguageModel]
 
         # Create messages
-        messages = [
+        messages: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": "You are a helpful assistant"},
             {"role": "user", "content": "Say hello in exactly 5 words"},
         ]
@@ -38,7 +41,10 @@ async def test_complete_with_real_api(llm_vcr):
         assert response is not None
         assert hasattr(response, "choices")
         assert len(response.choices) > 0
-        assert response.choices[0].message.content is not None
+        first_choice = response.choices[0]
+        assert hasattr(first_choice, "message")
+        message_choice = cast(Choices, first_choice)
+        assert message_choice.message.content is not None
 
         # Verify usage tracking
         assert lm.total_tokens > 0
@@ -62,7 +68,7 @@ async def test_stream_with_real_api(llm_vcr):
         lm = agent.model
 
         # Create messages
-        messages = [
+        messages: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": "You are a helpful assistant"},
             {"role": "user", "content": "Count from 1 to 5"},
         ]
@@ -116,7 +122,7 @@ async def test_extract_with_real_api(llm_vcr):
         lm = agent.model
 
         # Create messages
-        messages = [
+        messages: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": "You are a weather assistant"},
             {
                 "role": "user",
@@ -156,7 +162,7 @@ async def test_fallback_models_with_real_api(llm_vcr):
         # Get the language model from agent
         lm = agent.model
 
-        messages = [
+        messages: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": "You are helpful"},
             {"role": "user", "content": "Say 'test successful'"},
         ]
@@ -165,10 +171,11 @@ async def test_fallback_models_with_real_api(llm_vcr):
         response = await lm.complete(messages)
 
         assert response is not None
-        assert (
-            "test" in response.choices[0].message.content.lower()
-            or "successful" in response.choices[0].message.content.lower()
-        )
+        first_choice = response.choices[0]
+        assert hasattr(first_choice, "message")
+        message_choice = cast(Choices, first_choice)
+        content = message_choice.message.content or ""
+        assert "test" in content.lower() or "successful" in content.lower()
 
 
 @pytest.mark.asyncio
@@ -182,7 +189,7 @@ async def test_usage_tracking_across_calls(llm_vcr):
         lm = agent.model
 
         # First call
-        messages1 = [
+        messages1: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": "You are helpful"},
             {"role": "user", "content": "Say 'first'"},
         ]
@@ -192,7 +199,7 @@ async def test_usage_tracking_across_calls(llm_vcr):
         first_cost = lm.total_cost
 
         # Second call
-        messages2 = [
+        messages2: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": "You are helpful"},
             {"role": "user", "content": "Say 'second'"},
         ]
@@ -238,7 +245,7 @@ async def test_streaming_through_agent(llm_vcr):
         "You are a helpful assistant", model="gpt-4o-mini", temperature=0.5
     ) as agent:
         # Stream a response through the language model
-        messages = [
+        messages: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": "You are a helpful assistant"},
             {"role": "user", "content": "Count from 1 to 3"},
         ]
@@ -267,7 +274,7 @@ async def test_error_handling_with_vcr(llm_vcr):
         lm = agent.model
 
         # Test with valid messages - VCR replay won't trigger real errors
-        messages = [
+        messages: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": "You are helpful"},
             {"role": "user", "content": "Test message"},
         ]
@@ -295,7 +302,7 @@ async def test_model_override_configuration(llm_vcr):
     ) as agent:
         lm = agent.model
 
-        messages = [
+        messages: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": "You are helpful"},
             {
                 "role": "user",
@@ -306,5 +313,8 @@ async def test_model_override_configuration(llm_vcr):
         response = await lm.complete(messages)
 
         # Response should be limited by max_tokens
-        content = response.choices[0].message.content
+        first_choice = response.choices[0]
+        assert hasattr(first_choice, "message")
+        message_choice = cast(Choices, first_choice)
+        content = message_choice.message.content or ""
         assert len(content.split()) < 100  # Should be short due to max_tokens limit

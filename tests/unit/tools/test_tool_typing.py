@@ -1,9 +1,25 @@
 import asyncio
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from good_agent import Tool, ToolResponse, tool
+from good_agent.tools import BoundTool
 from pydantic import BaseModel, Field
+
+
+ToolLike = Tool[Any, Any] | BoundTool[Any, Any, Any]
+
+
+def as_tool(tool_obj: ToolLike) -> Tool[Any, Any]:
+    assert isinstance(tool_obj, Tool)
+    return cast(Tool[Any, Any], tool_obj)
+
+
+async def run_tool(
+    tool_obj: ToolLike, *args: Any, **kwargs: Any
+) -> ToolResponse[Any]:
+    callable_tool = as_tool(tool_obj)
+    return await cast(Any, callable_tool)(*args, **kwargs)
 
 
 class TestBasicToolDecorator:
@@ -16,6 +32,8 @@ class TestBasicToolDecorator:
         def add_numbers(a: int, b: int) -> int:
             """Add two numbers."""
             return a + b
+
+        add_numbers = as_tool(add_numbers)
 
         # Verify it's a Tool instance
         assert isinstance(add_numbers, Tool)
@@ -31,8 +49,10 @@ class TestBasicToolDecorator:
             """Multiply two numbers."""
             return x * y
 
+        multiply = as_tool(multiply)
+
         # Tool.__call__ is always async
-        result = await multiply(3, 4)
+        result = await run_tool(multiply, 3, 4)
 
         assert isinstance(result, ToolResponse)
         assert result.success is True
@@ -49,6 +69,8 @@ class TestBasicToolDecorator:
             await asyncio.sleep(0.001)
             return f"Data for: {query}"
 
+        fetch_data = as_tool(fetch_data)
+
         assert isinstance(fetch_data, Tool)
         assert fetch_data.name == "fetch_data"
 
@@ -62,7 +84,9 @@ class TestBasicToolDecorator:
             await asyncio.sleep(0.001)
             return f"Processed: {data}"
 
-        result = await process("test")
+        process = as_tool(process)
+
+        result = await run_tool(process, "test")
 
         assert isinstance(result, ToolResponse)
         assert result.success is True
@@ -75,19 +99,23 @@ class TestToolWithParameters:
     def test_tool_with_custom_name(self):
         """Test tool with custom name parameter."""
 
-        @tool(name="custom_adder", description="Adds numbers together")
         def add(a: int, b: int) -> int:
             return a + b
 
-        assert add.name == "custom_adder"
-        assert add.description == "Adds numbers together"
+        custom_adder = as_tool(
+            tool(name="custom_adder", description="Adds numbers together")(
+                cast(Any, add)
+            )
+        )
+
+        assert custom_adder.name == "custom_adder"
+        assert custom_adder.description == "Adds numbers together"
 
     @pytest.mark.asyncio
     async def test_tool_with_retry(self):
         """Test tool with retry parameter."""
         call_count = 0
 
-        @tool(retry=True)
         def flaky_function(should_fail: bool) -> str:
             """Function that may fail."""
             nonlocal call_count
@@ -96,21 +124,24 @@ class TestToolWithParameters:
                 raise ValueError("Temporary failure")
             return "Success"
 
+        flaky_tool = as_tool(tool(retry=True)(cast(Any, flaky_function)))
+
         # Note: retry logic would need to be tested with proper mocking
         # This just verifies the tool accepts the parameter
-        result = await flaky_function(False)
+        result = await run_tool(flaky_tool, False)
         assert result.response == "Success"
 
     def test_tool_with_hidden_params(self):
         """Test tool with hidden parameters."""
 
-        @tool(hide=["api_key"])
         def api_call(endpoint: str, api_key: str) -> str:
             """Make API call."""
             return f"Called {endpoint}"
 
+        hidden_api_call = as_tool(tool(hide=["api_key"])(cast(Any, api_call)))
+
         # Check that api_key is not in the signature
-        sig = api_call.signature
+        sig = hidden_api_call.signature
         params = sig["function"]["parameters"]["properties"]
         assert "endpoint" in params
         assert "api_key" not in params
@@ -141,8 +172,10 @@ class TestComplexTypes:
                 results=[{"id": i} for i in range(min(request.limit, 3))],
             )
 
+        search = as_tool(search)
+
         req = SearchRequest(query="test", limit=2)
-        result = await search(req)
+        result = await run_tool(search, req)
 
         assert isinstance(result, ToolResponse)
         assert isinstance(result.response, SearchResult)
@@ -161,12 +194,14 @@ class TestComplexTypes:
                 return len(value)
             return None
 
+        process_optional = as_tool(process_optional)
+
         # Test with value
-        result1 = await process_optional("hello")
+        result1 = await run_tool(process_optional, "hello")
         assert result1.response == 5
 
         # Test without value
-        result2 = await process_optional()
+        result2 = await run_tool(process_optional)
         assert result2.response is None
         assert result2.success is True  # Still successful, just returns None
 
@@ -181,12 +216,14 @@ class TestComplexTypes:
                 return len(data)
             return data * 2
 
+        process_union = as_tool(process_union)
+
         # Test with string
-        result1 = await process_union("test")
+        result1 = await run_tool(process_union, "test")
         assert result1.response == 4
 
         # Test with int
-        result2 = await process_union(10)
+        result2 = await run_tool(process_union, 10)
         assert result2.response == 20
 
     @pytest.mark.asyncio
@@ -204,7 +241,10 @@ class TestComplexTypes:
                 "first_item": items[0] if items else None,
             }
 
-        result = await process_collections(
+        process_collections = as_tool(process_collections)
+
+        result = await run_tool(
+            process_collections,
             items=["a", "b", "c"], mapping={"x": 1, "y": 2, "z": 3}
         )
 
@@ -227,16 +267,19 @@ class TestErrorHandling:
                 raise ValueError("Intentional failure")
             return "Success"
 
+        may_fail = as_tool(may_fail)
+
         # Success case
-        result_ok = await may_fail(False)
+        result_ok = await run_tool(may_fail, False)
         assert result_ok.success is True
         assert result_ok.response == "Success"
         assert result_ok.error is None
 
         # Failure case
-        result_err = await may_fail(True)
+        result_err = await run_tool(may_fail, True)
         assert result_err.success is False
         assert result_err.response is None
+        assert result_err.error is not None
         assert "Intentional failure" in result_err.error
         assert result_err.tool_name == "may_fail"
 
@@ -251,8 +294,10 @@ class TestErrorHandling:
                 return None
             return "Not none"
 
+        returns_none = as_tool(returns_none)
+
         # Returning None is not an error
-        result = await returns_none(True)
+        result = await run_tool(returns_none, True)
         assert result.success is True
         assert result.response is None
         assert result.error is None
@@ -307,6 +352,8 @@ class TestToolSignatureAndModel:
             """Test signature generation."""
             return {}
 
+        signature_test = as_tool(signature_test)
+
         sig = signature_test.signature
 
         assert sig["type"] == "function"
@@ -334,6 +381,8 @@ class TestToolSignatureAndModel:
             """Test model generation."""
             return f"{name} is {age}"
 
+        model_test = as_tool(model_test)
+
         model = model_test.model
 
         assert hasattr(model, "model_fields")
@@ -358,7 +407,9 @@ class TestToolResponseTyping:
         def simple() -> str:
             return "test"
 
-        result = await simple()
+        simple = as_tool(simple)
+
+        result = await run_tool(simple)
 
         assert hasattr(result, "tool_name")
         assert hasattr(result, "tool_call_id")
@@ -375,14 +426,16 @@ class TestToolResponseTyping:
         def with_params(a: int, b: str) -> str:
             return f"{a}-{b}"
 
+        with_params = as_tool(with_params)
+
         # Parameters are captured from kwargs, not args
-        result = await with_params(a=42, b="test")
+        result = await run_tool(with_params, a=42, b="test")
 
         assert result.parameters == {"a": 42, "b": "test"}
         assert result.response == "42-test"
 
         # When called with positional args, parameters dict is empty
-        result2 = await with_params(42, "test")
+        result2 = await run_tool(with_params, 42, "test")
         assert result2.parameters == {}
         assert result2.response == "42-test"
 
@@ -392,6 +445,8 @@ class TestToolResponseTyping:
         @tool
         def tracked() -> str:
             return "result"
+
+        tracked = as_tool(tracked)
 
         assert len(tracked.results) == 0
 

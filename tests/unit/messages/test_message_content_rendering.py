@@ -315,8 +315,9 @@ class TestAgentIntegration:
 
         user_msg = agent.messages[-1]
         assert len(user_msg.content_parts) == 1
-        assert isinstance(user_msg.content_parts[0], TextContentPart)
-        assert user_msg.content_parts[0].text == "Plain text message"
+        first_part = user_msg.content_parts[0]
+        assert isinstance(first_part, TextContentPart)
+        assert first_part.text == "Plain text message"
 
     def test_append_detects_templates(self):
         """Test that templates are automatically detected."""
@@ -340,10 +341,10 @@ class TestAgentIntegration:
         user_msg = agent.messages[-1]
         # Multiple string arguments create multiple TextContentPart objects
         assert len(user_msg.content_parts) == 3
-        assert all(isinstance(part, TextContentPart) for part in user_msg.content_parts)
-        assert user_msg.content_parts[0].text == "First part"
-        assert user_msg.content_parts[1].text == "Second part"
-        assert user_msg.content_parts[2].text == "Third part"
+        expected_parts = ["First part", "Second part", "Third part"]
+        for part, expected in zip(user_msg.content_parts, expected_parts, strict=True):
+            assert isinstance(part, TextContentPart)
+            assert part.text == expected
 
         # When rendered, they are joined with newlines
         rendered = user_msg.render()
@@ -366,8 +367,9 @@ class TestAgentIntegration:
         user_msg = agent.messages[-1]
         # Protocol objects are converted to TextContentPart with their LLM representation
         assert len(user_msg.content_parts) == 1
-        assert isinstance(user_msg.content_parts[0], TextContentPart)
-        assert user_msg.content_parts[0].text == "Custom LLM format"
+        protocol_part = user_msg.content_parts[0]
+        assert isinstance(protocol_part, TextContentPart)
+        assert protocol_part.text == "Custom LLM format"
 
     def test_template_detection_behavior(self):
         """Test that template detection works correctly."""
@@ -386,8 +388,9 @@ class TestAgentIntegration:
 
         user_msg2 = agent.messages[-1]
         # Should be TextContentPart
-        assert isinstance(user_msg2.content_parts[0], TextContentPart)
-        assert user_msg2.content_parts[0].text == "Hello world"
+        user_msg2_part = user_msg2.content_parts[0]
+        assert isinstance(user_msg2_part, TextContentPart)
+        assert user_msg2_part.text == "Hello world"
 
 
 class TestEventIntegration:

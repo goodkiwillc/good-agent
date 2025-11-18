@@ -1,7 +1,9 @@
 from types import SimpleNamespace
+from typing import cast
 
 import pytest
 
+from good_agent import Agent
 from good_agent.extensions.task_manager import TaskManager
 
 
@@ -19,7 +21,7 @@ def test_task_manager_complete_item_by_text_and_prompt_suffix():
     manager = TaskManager()
     manager.create_list(name="Sprint", items=["code", "review"])
     manager.complete_item("Sprint", item_text="review")
-    agent_stub = SimpleNamespace(context={})
+    agent_stub = cast(Agent, SimpleNamespace(context={}))
     parts = manager.get_system_prompt_suffix(agent_stub)
     assert agent_stub.context["todo_lists"]["Sprint"].items[1].complete is True
     assert parts, "Should inject template content when lists exist"

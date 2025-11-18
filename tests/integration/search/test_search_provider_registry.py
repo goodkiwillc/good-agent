@@ -1,3 +1,4 @@
+from typing import Literal
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -306,7 +307,13 @@ class TestSearchProviderRegistry:
         registry.register(provider)
 
         # Test each optimization mode
-        for mode in ["cost", "quality", "speed", "balanced"]:
+        modes: tuple[Literal["cost", "quality", "speed", "balanced"], ...] = (
+            "cost",
+            "quality",
+            "speed",
+            "balanced",
+        )
+        for mode in modes:
             constraints = SearchConstraints(optimize_for=mode)
             best = registry.get_best_provider(
                 OperationType.SEARCH, DataDomain.WEB, constraints=constraints

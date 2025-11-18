@@ -1,5 +1,6 @@
 import datetime
 from datetime import timezone
+from typing import Any, Iterable, Sequence, cast
 from unittest.mock import patch
 
 import pytest
@@ -19,6 +20,7 @@ from good_agent.messages import (
     AssistantMessage,
     AssistantMessageStructuredOutput,
     FilteredMessageList,
+    Message,
     MessageFactory,
     MessageList,
     SystemMessage,
@@ -101,7 +103,8 @@ class TestMessageBase:
         from pydantic import ValidationError
 
         with pytest.raises(ValidationError):
-            msg.role = "assistant"  # Should fail due to frozen=True
+            mutable_msg = cast(Any, msg)
+            mutable_msg.role = "assistant"  # Should fail due to frozen=True
 
     def test_model_post_init(self):
         """Test post-init initialization of attributes."""
@@ -191,6 +194,7 @@ class TestUserMessage:
             URL("https://example.com/image2.jpg"),
         ]
         msg = UserMessage("Look at these", images=images)
+        assert msg.images is not None
         assert msg.images == images
         assert len(msg.images) == 2
 
@@ -198,6 +202,7 @@ class TestUserMessage:
         """Test UserMessage with bytes image."""
         image_bytes = b"fake_image_data"
         msg = UserMessage("Image", images=[image_bytes])
+        assert msg.images is not None
         assert msg.images[0] == image_bytes
 
     def test_user_message_image_detail(self):
@@ -322,12 +327,14 @@ class TestToolMessage:
 
     def test_tool_message_role(self):
         """Test ToolMessage has correct role."""
-        msg = ToolMessage("Result", tool_call_id="123", tool_name="calculator")
+        msg: ToolMessage = ToolMessage(
+            "Result", tool_call_id="123", tool_name="calculator"
+        )
         assert msg.role == "tool"
 
     def test_tool_message_required_fields(self):
         """Test ToolMessage requires tool_call_id and tool_name."""
-        msg = ToolMessage(
+        msg: ToolMessage = ToolMessage(
             "42",
             tool_call_id="call_abc",
             tool_name="calculator",
@@ -343,7 +350,7 @@ class TestToolMessage:
             response={"temp": 25, "condition": "sunny"},
             success=True,
         )
-        msg = ToolMessage(
+        msg: ToolMessage = ToolMessage(
             "Weather data",
             tool_call_id="call_123",
             tool_name="weather",
@@ -355,7 +362,7 @@ class TestToolMessage:
     def test_tool_message_name_aliasing(self):
         """Test that tool_name is aliased to name."""
         # Using tool_name sets name
-        msg1 = ToolMessage(
+        msg1: ToolMessage = ToolMessage(
             "Result",
             tool_call_id="123",
             tool_name="my_tool",
@@ -364,7 +371,7 @@ class TestToolMessage:
         assert msg1.name == "my_tool"
 
         # Using name sets tool_name
-        msg2 = ToolMessage(
+        msg2: ToolMessage = ToolMessage(
             "Result",
             tool_call_id="456",
             name="another_tool",
@@ -391,7 +398,7 @@ class TestAssistantMessageStructuredOutput:
         )
 
         msg = AssistantMessageStructuredOutput[SearchResult](
-            "Found 2 results",
+            content_parts=[TextContentPart(text="Found 2 results")],
             output=output,
         )
 
@@ -407,7 +414,7 @@ class TestAssistantMessageStructuredOutput:
             value: str
 
         msg = AssistantMessageStructuredOutput[DataModel](
-            "Data",
+            content_parts=[TextContentPart(text="Data")],
             output=DataModel(value="test"),
         )
 
@@ -496,14 +503,14 @@ class TestMessageList:
             UserMessage("Hello"),
             AssistantMessage("Hi"),
         ]
-        msg_list = MessageList(messages)
+        msg_list: MessageList[Message] = MessageList(messages)
         assert len(msg_list) == 2
         assert msg_list[0].content == "Hello"
         assert msg_list[1].content == "Hi"
 
     def test_message_list_empty(self):
         """Test creating empty MessageList."""
-        msg_list = MessageList()
+        msg_list: MessageList[Message] = MessageList()
         assert len(msg_list) == 0
 
     def test_message_list_filter_by_role(self):
@@ -518,12 +525,14 @@ class TestMessageList:
         msg_list = MessageList(messages)
 
         # Filter user messages
-        user_msgs = msg_list.filter(role="user")
+        user_msgs: MessageList[UserMessage] = msg_list.filter(role="user")
         assert len(user_msgs) == 2
         assert all(m.role == "user" for m in user_msgs)
 
         # Filter assistant messages
-        assistant_msgs = msg_list.filter(role="assistant")
+        assistant_msgs: MessageList[AssistantMessage] = msg_list.filter(
+            role="assistant"
+        )
         assert len(assistant_msgs) == 2
         assert all(m.role == "assistant" for m in assistant_msgs)
 
@@ -536,7 +545,7 @@ class TestMessageList:
         ]
         msg_list = MessageList(messages)
 
-        alice_msgs = msg_list.filter(name="alice")
+        alice_msgs: MessageList[UserMessage] = msg_list.filter(name="alice")
         assert len(alice_msgs) == 2
         assert all(m.name == "alice" for m in alice_msgs)
 
@@ -589,7 +598,9 @@ class TestMessageList:
         msg_list = MessageList(messages)
 
         # Chain filters
-        result = msg_list.filter(role="user").filter(name="alice")
+        result: MessageList[UserMessage] = msg_list.filter(role="user").filter(
+            name="alice"
+        )
         assert len(result) == 1
         assert result[0].name == "alice"
 
@@ -613,7 +624,7 @@ class TestFilteredMessageList:
         agent.append("Assistant message", role="assistant")
 
         # Create filtered list
-        user_msgs = FilteredMessageList(
+        user_msgs: FilteredMessageList[UserMessage] = FilteredMessageList(
             agent=agent,
             role="user",
             messages=agent.messages.user,
@@ -625,7 +636,7 @@ class TestFilteredMessageList:
     async def test_filtered_list_append(self, agent):
         """Test appending through FilteredMessageList."""
         # Create filtered list for user messages
-        user_msgs = FilteredMessageList(agent=agent, role="user")
+        user_msgs = FilteredMessageList[UserMessage](agent=agent, role="user")
 
         # Append through filtered list
         user_msgs.append("New user message")
@@ -638,7 +649,7 @@ class TestFilteredMessageList:
     @pytest.mark.asyncio
     async def test_filtered_list_append_multiple_parts(self, agent):
         """Test appending multiple content parts."""
-        user_msgs = FilteredMessageList(agent=agent, role="user")
+        user_msgs = FilteredMessageList[UserMessage](agent=agent, role="user")
 
         user_msgs.append("Part 1", "Part 2", "Part 3")
 
@@ -648,7 +659,7 @@ class TestFilteredMessageList:
     @pytest.mark.asyncio
     async def test_filtered_list_tool_append(self, agent):
         """Test appending tool messages."""
-        tool_msgs = FilteredMessageList(agent=agent, role="tool")
+        tool_msgs = FilteredMessageList[ToolMessage](agent=agent, role="tool")
 
         # Tool messages require tool_call_id
         with pytest.raises(ValueError, match="tool_call_id is required"):
@@ -672,7 +683,7 @@ class TestFilteredMessageList:
         agent.append("First user", role="user")
         agent.append("Second user", role="user")
 
-        user_msgs = FilteredMessageList(
+        user_msgs = FilteredMessageList[UserMessage](
             agent=agent,
             role="user",
             messages=agent.messages.user,
@@ -684,7 +695,7 @@ class TestFilteredMessageList:
     @pytest.mark.asyncio
     async def test_filtered_list_set_system(self, agent):
         """Test set method for system messages."""
-        system_msgs = FilteredMessageList(agent=agent, role="system")
+        system_msgs = FilteredMessageList[SystemMessage](agent=agent, role="system")
 
         # Set system message
         system_msgs.set("You are a helpful assistant", temperature=0.7)
@@ -696,7 +707,7 @@ class TestFilteredMessageList:
     @pytest.mark.asyncio
     async def test_filtered_list_set_non_system_error(self, agent):
         """Test that set() only works for system messages."""
-        user_msgs = FilteredMessageList(agent=agent, role="user")
+        user_msgs = FilteredMessageList[UserMessage](agent=agent, role="user")
 
         with pytest.raises(ValueError, match="set\\(\\) is only available for system"):
             user_msgs.set("Content")
@@ -704,14 +715,14 @@ class TestFilteredMessageList:
     @pytest.mark.asyncio
     async def test_filtered_list_bool(self, agent):
         """Test boolean evaluation of filtered list."""
-        user_msgs = FilteredMessageList(agent=agent, role="user")
+        user_msgs = FilteredMessageList[UserMessage](agent=agent, role="user")
 
         # Empty list is False
         assert not user_msgs
 
         # Add message
         agent.append("User message", role="user")
-        user_msgs = FilteredMessageList(
+        user_msgs = FilteredMessageList[UserMessage](
             agent=agent,
             role="user",
             messages=agent.messages.user,
@@ -735,13 +746,13 @@ class TestMessageEventIntegration:
     @pytest.mark.asyncio
     async def test_render_events_with_agent(self, agent):
         """Test that render events are emitted during LLM formatting."""
-        events = []
+        events: list[tuple[str, Any | None, Any | None]] = []
 
         @agent.on("message:render:before")
         def track_before(ctx):
             # EventRouter passes Context object
             mode = ctx.parameters.get("mode")
-            events.append(("before", mode))
+            events.append(("before", mode, None))
 
         @agent.on("message:render:after")
         def track_after(ctx):
@@ -763,7 +774,7 @@ class TestMessageEventIntegration:
         result = msg.render(RenderMode.LLM)
         assert result == "Test"
         assert len(events) == 2  # Both before and after events for LLM mode
-        assert events[0] == ("before", RenderMode.LLM)
+        assert events[0] == ("before", RenderMode.LLM, None)
         assert events[1] == ("after", RenderMode.LLM, None)
 
         # Clear events for next test
@@ -782,7 +793,7 @@ class TestMessageEventIntegration:
         await lm.format_message_list_for_llm([msg])
 
         # Check events were fired
-        assert ("before", RenderMode.LLM) in events
+        assert ("before", RenderMode.LLM, None) in events
         assert any(e[0] == "after" and e[1] == RenderMode.LLM for e in events)
 
     @pytest.mark.asyncio
@@ -952,11 +963,11 @@ class TestMessageCompatibility:
     def test_message_without_content(self):
         """Test message without content parts falls back to legacy."""
         msg = UserMessage("Legacy content")
-        # Don't set content parts
-        msg._content = []
+        # Simulate legacy state without content parts by copying
+        msg_without_parts = msg.copy_with(content_parts=[])
 
-        assert msg.content == "Legacy content"
-        assert msg.render() == "Legacy content"
+        assert msg_without_parts.content == "Legacy content"
+        assert msg_without_parts.render() == "Legacy content"
 
     def test_mixed_initialization(self):
         """Test various initialization patterns."""
@@ -1037,8 +1048,9 @@ class TestErrorHandling:
 
         # Manually set the weak reference
         import weakref
+        from weakref import ReferenceType
 
-        msg._agent_ref = weakref.ref(mock_agent)
+        msg._agent_ref = cast(ReferenceType[Agent], weakref.ref(cast(Agent, mock_agent)))
 
         # Verify it works
         assert msg.agent is mock_agent
@@ -1281,7 +1293,7 @@ class TestRenderRecursionGuard:
 
         # Mock the render stack to track keys
         with patch("good_agent.messages._get_render_stack") as mock_get_stack:
-            mock_stack = set()
+            mock_stack: set[str] = set()
             mock_get_stack.return_value = mock_stack
 
             def track_render_calls(mode):

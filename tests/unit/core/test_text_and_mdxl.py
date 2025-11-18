@@ -52,5 +52,9 @@ def test_mdxl_references_and_sort_children():
     )
     items = sortable.select("./items")
     items.sort_children("date")
-    dates = [child.get("date") for child in items._root]
+    dates: list[str] = []
+    for child in items._root:
+        date = child.get("date")
+        assert date is not None
+        dates.append(date)
     assert dates == sorted(dates)

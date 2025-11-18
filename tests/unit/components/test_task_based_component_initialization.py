@@ -21,8 +21,8 @@ class MockComponent(AgentComponent):
         )  # Important: call parent to trigger tool registration
         self.initialization_log.append("install_end")
 
-    @tool(name="mock_tool")
-    def mock_tool_method(self, value: str) -> str:
+    @tool
+    def mock_tool(self, value: str) -> str:
         """A mock tool for testing."""
         self.tool_calls["mock_tool"] = self.tool_calls.get("mock_tool", 0) + 1
         return f"Mock processed: {value}"

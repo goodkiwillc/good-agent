@@ -47,7 +47,7 @@ class TestThreadContextMessageReplacement:
         agent.messages.append(tool_call_msg)
 
         # Tool response message
-        tool_response_msg = ToolMessage(
+        tool_response_msg: ToolMessage = ToolMessage(
             tool_call_id="call_123",
             tool_name="search",
             content="Results for: Python tutorials - 10 tutorials found",

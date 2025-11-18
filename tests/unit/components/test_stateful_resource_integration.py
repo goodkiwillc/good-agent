@@ -32,16 +32,16 @@ async def test_full_integration_with_thread_context_and_tools():
     from contextlib import asynccontextmanager
 
     @asynccontextmanager
-    async def tracking_thread_context():
+    async def tracking_thread_context(truncate_at: int | None = None):
         nonlocal messages_modified
-        async with original_thread_context() as messages:
+        async with original_thread_context(truncate_at) as messages:
             original_content = messages[0].content if messages else None
             yield messages
             # Check if system message was modified
             if messages and messages[0].content != original_content:
                 messages_modified = True
 
-    agent.context_manager.thread_context = tracking_thread_context
+    setattr(agent.context_manager, "thread_context", tracking_thread_context)
 
     # Use the resource
     async with resource(agent):
@@ -73,7 +73,7 @@ async def test_full_integration_with_thread_context_and_tools():
     assert resource.state == "Hello universe"
 
     # Restore original thread_context
-    agent.context_manager.thread_context = original_thread_context
+    setattr(agent.context_manager, "thread_context", original_thread_context)
 
 
 @pytest.mark.asyncio

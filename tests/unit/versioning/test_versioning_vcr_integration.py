@@ -262,7 +262,6 @@ class TestVersioningWithRealLLM:
         agent = Agent(
             "You are a weather assistant. Use tools to get weather information. Be concise.",
             tools=[get_weather],
-            auto_execute_tools=True,
             model="gpt-4.1-mini",
         )
         await agent.initialize()
@@ -271,8 +270,9 @@ class TestVersioningWithRealLLM:
 
         # Execute should handle tool calls automatically
         # execute() returns an async generator, so we need to collect the responses
+        agent.append("What's the weather in Paris?")
         responses = []
-        async for msg in agent.execute("What's the weather in Paris?"):
+        async for msg in agent.execute():
             responses.append(msg)
 
         # Should have created versions for all messages

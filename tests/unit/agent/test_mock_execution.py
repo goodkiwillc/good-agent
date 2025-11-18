@@ -170,6 +170,7 @@ class TestMockExecution:
                         messages.append("assistant_with_tools")
 
                     case ToolMessage(tool_response=tool_response):
+                        assert tool_response is not None
                         assert tool_response.tool_name == "weather"
                         assert tool_response.response == "sunny"
                         messages.append("tool_response")

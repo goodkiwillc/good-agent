@@ -2,6 +2,7 @@ import pytest
 from good_agent import Agent
 from good_agent.messages import (
     AssistantMessage,
+    Message,
     MessageList,
     SystemMessage,
     UserMessage,
@@ -14,7 +15,7 @@ class TestMessageListVersioning:
 
     def test_messagelist_without_versioning_works_normally(self):
         """Ensure backward compatibility when versioning not initialized."""
-        messages = MessageList()
+        messages: MessageList[Message] = MessageList()
         msg = SystemMessage(content_parts=[])
         messages.append(msg)
 
@@ -35,7 +36,7 @@ class TestMessageListVersioning:
     @pytest.mark.asyncio
     async def test_messagelist_with_versioning_creates_versions(self):
         """When versioning is initialized, operations create versions."""
-        messages = MessageList()
+        messages: MessageList[Message] = MessageList()
         registry = MessageRegistry()
         vm = VersionManager()
 
@@ -70,7 +71,7 @@ class TestMessageListVersioning:
     @pytest.mark.asyncio
     async def test_messagelist_setitem_creates_new_version(self):
         """Setting an item should create a new version."""
-        messages = MessageList([SystemMessage(content_parts=[])])
+        messages: MessageList[Message] = MessageList([SystemMessage(content_parts=[])])
         registry = MessageRegistry()
         vm = VersionManager()
 
@@ -100,7 +101,7 @@ class TestMessageListVersioning:
     @pytest.mark.asyncio
     async def test_sync_from_version_rebuilds_list(self):
         """_sync_from_version should rebuild list from version IDs."""
-        messages = MessageList()
+        messages: MessageList[Message] = MessageList()
         registry = MessageRegistry()
         vm = VersionManager()
 
@@ -134,7 +135,7 @@ class TestMessageListVersioning:
     @pytest.mark.asyncio
     async def test_extend_creates_single_version(self):
         """extend() should create only one new version for all messages."""
-        messages = MessageList()
+        messages: MessageList[Message] = MessageList()
         registry = MessageRegistry()
         vm = VersionManager()
 
@@ -166,7 +167,7 @@ class TestMessageListVersioning:
     @pytest.mark.asyncio
     async def test_clear_creates_empty_version(self):
         """clear() should create an empty version."""
-        messages = MessageList()
+        messages: MessageList[Message] = MessageList()
         registry = MessageRegistry()
         vm = VersionManager()
 
@@ -201,7 +202,7 @@ class TestMessageListVersioning:
     @pytest.mark.asyncio
     async def test_slice_assignment_creates_version(self):
         """Slice assignment should create a new version."""
-        messages = MessageList()
+        messages: MessageList[Message] = MessageList()
         registry = MessageRegistry()
         vm = VersionManager()
 
@@ -241,7 +242,7 @@ class TestMessageListVersioning:
         # Create list with existing messages
         msg1 = SystemMessage(content_parts=[])
         msg2 = UserMessage(content_parts=[])
-        messages = MessageList([msg1, msg2])
+        messages: MessageList[Message] = MessageList([msg1, msg2])
 
         assert len(messages) == 2
 
@@ -266,7 +267,7 @@ class TestMessageListVersioning:
     @pytest.mark.asyncio
     async def test_agent_reference_maintained(self):
         """Agent reference should be maintained through versioning operations."""
-        messages = MessageList()
+        messages: MessageList[Message] = MessageList()
         registry = MessageRegistry()
         vm = VersionManager()
 
@@ -290,7 +291,7 @@ class TestMessageListVersioning:
 
     def test_filter_maintains_list_type(self):
         """filter() should return MessageList, not affect versioning."""
-        messages = MessageList()
+        messages: MessageList[Message] = MessageList()
 
         # Add messages without versioning
         sys_msg = SystemMessage(content_parts=[])

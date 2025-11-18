@@ -251,7 +251,7 @@ class TestIntegrationWithLanguageModel:
         )
         sys.path.insert(0, os.path.join(tests_dir, "fixtures", "helpers"))
         from good_agent.model.llm import LanguageModel
-        from test_helpers import MockAgent
+        from test_helpers import MockAgent  # type: ignore[import-not-found]
 
         # Create mock agent with the configuration
         mock_agent = MockAgent(model="gpt-5-mini")
@@ -287,7 +287,7 @@ class TestIntegrationWithLanguageModel:
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
         from good_agent.model.llm import LanguageModel
         from good_agent.model.overrides import ModelCapabilities, ModelOverride
-        from test_helpers import MockAgent
+        from test_helpers import MockAgent  # type: ignore[import-not-found]
 
         # Register a test model with specific capabilities
         test_override = ModelOverride(
@@ -344,7 +344,7 @@ class TestIntegrationWithLanguageModel:
         )
         sys.path.insert(0, os.path.join(tests_dir, "fixtures", "helpers"))
         from good_agent.model.llm import LanguageModel
-        from test_helpers import MockAgent
+        from test_helpers import MockAgent  # type: ignore[import-not-found]
 
         # Create mock agent with the configuration
         mock_agent = MockAgent(model="gpt-4")

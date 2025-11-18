@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import pytest
 from good_agent import Agent
@@ -15,7 +15,7 @@ from good_agent.extensions.search.models import (
 
 # Try to import providers
 try:
-    from good_agent_valueserp.search_provider import WebSearchProvider
+    from good_agent_valueserp.search_provider import WebSearchProvider  # type: ignore[import-not-found]
 
     print("✓ WebSearchProvider imported successfully")
 except ImportError as e:
@@ -23,7 +23,7 @@ except ImportError as e:
     WebSearchProvider = None
 
 try:
-    from good_agent_twitter.search_provider import TwitterSearchProvider
+    from good_agent_twitter.search_provider import TwitterSearchProvider  # type: ignore[import-not-found]
 
     print("✓ TwitterSearchProvider imported successfully")
 except ImportError as e:
@@ -125,8 +125,10 @@ async def test_web_search():
     query = SearchQuery(
         text="artificial intelligence news",
         limit=5,
-        since=date.today() - timedelta(days=7),  # last week
-        until=date.today(),
+        since=datetime.combine(
+            date.today() - timedelta(days=7), datetime.min.time()
+        ),  # last week
+        until=datetime.combine(date.today(), datetime.max.time()),
     )
 
     # Get web search capability
@@ -185,8 +187,10 @@ async def test_twitter_search():
     query = SearchQuery(
         text="machine learning",
         limit=5,
-        since=date.today() - timedelta(days=1),  # yesterday
-        until=date.today(),
+        since=datetime.combine(
+            date.today() - timedelta(days=1), datetime.min.time()
+        ),  # yesterday
+        until=datetime.combine(date.today(), datetime.max.time()),
     )
 
     # Get social media search capability
@@ -231,7 +235,7 @@ async def test_agent_search_integration():
         try:
             web_provider = WebSearchProvider()
             if await web_provider.validate():
-                search.register_provider(web_provider)
+                search.registry.register(web_provider)
                 print("✓ Registered WebSearchProvider")
                 providers_added += 1
         except Exception as e:
@@ -241,7 +245,7 @@ async def test_agent_search_integration():
         try:
             twitter_provider = TwitterSearchProvider()
             if await twitter_provider.validate():
-                search.register_provider(twitter_provider)
+                search.registry.register(twitter_provider)
                 print("✓ Registered TwitterSearchProvider")
                 providers_added += 1
         except Exception as e:
@@ -255,7 +259,7 @@ async def test_agent_search_integration():
     agent = Agent("You are a search assistant", extensions=[search])
     await agent.initialize()
 
-    print(f"\nRegistered providers: {list(search._providers.keys())}")
+    print(f"\nRegistered providers: {list(search.registry._providers.keys())}")
     print(f"Available tools: {list(agent.tools.keys())}")
 
     # Test search_entities tool if available
@@ -278,7 +282,7 @@ async def test_agent_search_integration():
     print("\n--- Testing via natural language ---")
     try:
         response = await agent.call("Search for recent news about Python programming")
-        print(f"Agent response: {response[:500]}...")
+        print(f"Agent response: {response.content[:500]}...")
     except Exception as e:
         print(f"Error: {e}")
 
@@ -314,8 +318,8 @@ async def test_date_range_functionality():
         response = await agent.tool_calls.invoke(
             "search",
             query="test query with date range",
-            since=date(2024, 1, 1),
-            until=date(2024, 1, 31),
+            since=datetime.combine(date(2024, 1, 1), datetime.min.time()),
+            until=datetime.combine(date(2024, 1, 31), datetime.max.time()),
         )
 
         print("✓ Date range search completed successfully")

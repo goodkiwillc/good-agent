@@ -1,10 +1,10 @@
 import asyncio
 import json
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from good_agent import Agent
-from good_agent.messages import ToolCall
+from good_agent.messages import AssistantMessage, ToolCall, ToolMessage
 from good_agent.tools import ToolCallFunction, ToolContext, ToolResponse, tool
 
 # invoke functionality is now implemented - tests should pass
@@ -42,20 +42,24 @@ class TestAgentInvoke:
             assert len(agent) == initial_len + 2
 
             # Assistant message was created by invoke
-            assert agent[-2].role == "assistant"
-            assert agent[-2].content == ""  # Tool calls typically have empty content
-            assert len(agent[-2].tool_calls) == 1
-            assert agent[-2].tool_calls[0].function.name == "calculate"
-            assert json.loads(agent[-2].tool_calls[0].function.arguments) == {
+            assistant_msg = agent[-2]
+            assert isinstance(assistant_msg, AssistantMessage)
+            assert assistant_msg.content == ""  # Tool calls typically have empty content
+            tool_calls = assistant_msg.tool_calls
+            assert tool_calls is not None
+            assert len(tool_calls) == 1
+            assert tool_calls[0].function.name == "calculate"
+            assert json.loads(tool_calls[0].function.arguments) == {
                 "operation": "add",
                 "a": 5,
                 "b": 3,
             }
 
             # Tool response message
-            assert agent[-1].role == "tool"
-            assert agent[-1].content == "8.0"
-            assert agent[-1].tool_response == result
+            tool_msg = agent[-1]
+            assert isinstance(tool_msg, ToolMessage)
+            assert tool_msg.content == "8.0"
+            assert tool_msg.tool_response == result
 
     @pytest.mark.asyncio
     async def test_invoke_with_custom_tool_call_id(self):
@@ -71,8 +75,14 @@ class TestAgentInvoke:
             )
 
             assert result.tool_call_id == "custom_id_123"
-            assert agent[-1].tool_call_id == "custom_id_123"
-            assert agent[-2].tool_calls[0].id == "custom_id_123"
+            tool_msg = agent[-1]
+            assert isinstance(tool_msg, ToolMessage)
+            assert tool_msg.tool_call_id == "custom_id_123"
+            assistant_msg = agent[-2]
+            assert isinstance(assistant_msg, AssistantMessage)
+            tool_calls = assistant_msg.tool_calls
+            assert tool_calls is not None
+            assert tool_calls[0].id == "custom_id_123"
 
     @pytest.mark.asyncio
     async def test_invoke_skip_assistant_message(self):
@@ -114,10 +124,15 @@ class TestAgentInvoke:
             assert agent[0].role == "system"
             assert agent[1].role == "user"
             assert agent[2].role == "assistant"  # The one we added manually
-            assert agent[2].tool_calls[0].id == "llm_generated_id"
-            assert agent[3].role == "tool"
-            assert agent[3].content == "Echo: Hello"
-            assert agent[3].tool_call_id == "llm_generated_id"
+            assistant_msg = agent[2]
+            assert isinstance(assistant_msg, AssistantMessage)
+            tool_calls = assistant_msg.tool_calls
+            assert tool_calls is not None
+            assert tool_calls[0].id == "llm_generated_id"
+            tool_msg = agent[3]
+            assert isinstance(tool_msg, ToolMessage)
+            assert tool_msg.content == "Echo: Hello"
+            assert tool_msg.tool_call_id == "llm_generated_id"
 
     @pytest.mark.asyncio
     async def test_invoke_with_error(self):
@@ -139,12 +154,14 @@ class TestAgentInvoke:
             # Failed invocation
             result = await agent.tool_calls.invoke(risky_tool, x=-1)
             assert result.success is False
+            assert result.error is not None
             assert "x must be non-negative" in result.error
             assert result.response is None
 
             # Error is recorded in history
-            assert agent[-1].role == "tool"
-            assert "x must be non-negative" in agent[-1].content
+            tool_msg = agent[-1]
+            assert isinstance(tool_msg, ToolMessage)
+            assert "x must be non-negative" in tool_msg.content
 
     @pytest.mark.asyncio
     async def test_invoke_with_sync_tool(self):
@@ -237,35 +254,45 @@ class TestAgentInvoke:
 
             # Verify assistant message was created by invoke
             assistant_msg = agent[-2]
-            assert assistant_msg.role == "assistant"
+            assert isinstance(assistant_msg, AssistantMessage)
             assert assistant_msg.content == ""  # Tool calls have empty content
-            assert len(assistant_msg.tool_calls) == 1
-            assert assistant_msg.tool_calls[0].function.name == "test_tool"
-            tool_args = json.loads(assistant_msg.tool_calls[0].function.arguments)
+            tool_calls = assistant_msg.tool_calls
+            assert tool_calls is not None
+            assert len(tool_calls) == 1
+            assert tool_calls[0].function.name == "test_tool"
+            tool_args = json.loads(tool_calls[0].function.arguments)
             assert tool_args == {"message": "Hello"}
 
             # Verify tool message
             tool_msg = agent[-1]
-            assert tool_msg.role == "tool"
+            assert isinstance(tool_msg, ToolMessage)
             assert tool_msg.content == "Processed: Hello"
             assert tool_msg.tool_response == result
 
             # Tool call IDs should match
-            assert assistant_msg.tool_calls[0].id == tool_msg.tool_call_id
+            assert tool_calls[0].id == tool_msg.tool_call_id
 
     @pytest.mark.asyncio
     async def test_invoke_preserves_tool_metadata(self):
         """Test that invoke preserves tool metadata"""
 
-        @tool(name="custom_calculator", description="A custom calculator tool")
-        async def calc(x: int, y: int) -> int:
+        async def calc_impl(x: int, y: int) -> int:
             return x + y
+
+        tool_decorator = cast(Any, tool)
+        calc = tool_decorator(
+            name="custom_calculator", description="A custom calculator tool"
+        )(calc_impl)
 
         async with Agent("Test agent", tools=[calc]) as agent:
             result = await agent.tool_calls.invoke(calc, x=10, y=20)
 
             assert result.tool_name == "custom_calculator"
-            assert agent[-2].tool_calls[0].function.name == "custom_calculator"
+            assistant_msg = agent[-2]
+            assert isinstance(assistant_msg, AssistantMessage)
+            tool_calls = assistant_msg.tool_calls
+            assert tool_calls is not None
+            assert tool_calls[0].function.name == "custom_calculator"
 
 
 class TestAgentInvokeFunc:
@@ -321,7 +348,9 @@ class TestAgentInvokeFunc:
 
             result = await bound_func(x=7)
             assert result.tool_call_id == "preset_id_456"
-            assert agent[-1].tool_call_id == "preset_id_456"
+            tool_msg = agent[-1]
+            assert isinstance(tool_msg, ToolMessage)
+            assert tool_msg.tool_call_id == "preset_id_456"
 
     @pytest.mark.asyncio
     async def test_invoke_func_type_hints(self):
@@ -420,6 +449,7 @@ class TestAgentInvokeMany:
             assert results[0].tool_name == "safe_tool"
 
             assert results[1].success is False
+            assert results[1].error is not None
             assert "This tool always fails" in results[1].error
             assert results[1].tool_name == "failing_tool"
 
@@ -517,7 +547,7 @@ class TestAgentInvokeMany:
             assert messages_added <= 4  # At maximum: 2 assistants + 2 tools
 
             # Verify we have exactly 2 tool responses
-            tool_messages = [msg for msg in agent if msg.role == "tool"]
+            tool_messages = [msg for msg in agent if isinstance(msg, ToolMessage)]
             assert len(tool_messages) == 2
 
             # Verify tool responses have the correct values
@@ -549,6 +579,7 @@ class TestAgentInvokeMany:
             assert results[0].tool_name == "real_tool"
 
             assert results[1].success is False
+            assert results[1].error is not None
             assert "not found" in results[1].error
 
 

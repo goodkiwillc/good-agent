@@ -161,6 +161,7 @@ class TestApplyTypedMethod:
         )
 
         assert handler_called
+        assert received_params is not None
         assert received_params["content"] == "Test content"
         assert received_params["role"] == "user"
         assert ctx.output == {"modified": True}
@@ -180,8 +181,10 @@ class TestApplyTypedMethod:
         def handler(ctx: EventContext[ExecuteIterationParams, None]):
             nonlocal handler_called
             handler_called = True
-            assert ctx.parameters["iteration"] == 5
-            assert ctx.parameters["agent"] == agent
+            params = ctx.parameters
+            assert params is not None
+            assert params["iteration"] == 5
+            assert params["agent"] == agent
 
         # Use typed helper
         await typed.apply(
@@ -201,7 +204,9 @@ class TestApplyTypedMethod:
 
         @agent.on(AgentEvents.TOOL_CALL_BEFORE)
         def modify_args(ctx: EventContext[ToolCallBeforeParams, dict]):
-            args = ctx.parameters.get("arguments", {})
+            params = ctx.parameters
+            assert params is not None
+            args = params.get("arguments", {})
             args["timestamp"] = "2024-01-20"
             ctx.output = args
             return args
@@ -215,8 +220,10 @@ class TestApplyTypedMethod:
             agent=agent,
         )
 
-        assert ctx.output["value"] == 42
-        assert ctx.output["timestamp"] == "2024-01-20"
+        output = ctx.output
+        assert isinstance(output, dict)
+        assert output["value"] == 42
+        assert output["timestamp"] == "2024-01-20"
 
 
 class TestConvenienceDecorators:
@@ -596,8 +603,10 @@ class TestTypeInference:
         @agent.on(AgentEvents.MESSAGE_APPEND_AFTER)
         def handler(ctx: EventContext[MessageAppendParams, None]):
             # These should have proper types inferred by IDE
-            message = ctx.parameters["message"]
-            agent_ref = ctx.parameters["agent"]
+            params = ctx.parameters
+            assert params is not None
+            message = params["message"]
+            agent_ref = params["agent"]
 
             # Type checker should know these are Message and Agent types
             assert hasattr(message, "content")
@@ -627,8 +636,9 @@ class TestTypeInference:
         )
 
         # ctx.output should be typed as dict | None
-        if ctx.output:
-            assert ctx.output["modified"] is True
+        output = ctx.output
+        if output and not isinstance(output, BaseException):
+            assert output["modified"] is True
 
 
 if __name__ == "__main__":

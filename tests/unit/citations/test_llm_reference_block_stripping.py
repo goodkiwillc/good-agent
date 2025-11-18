@@ -7,6 +7,7 @@ from good_agent.content import RenderMode
 from good_agent.core.mdxl import MDXL
 from good_agent.extensions.citations import CitationManager
 from good_agent.resources.editable_mdxl import EditableMDXL
+from good_agent.tools import ToolResponse
 from good_agent.core.types import URL
 
 
@@ -41,9 +42,8 @@ async def test_editable_mdxl_read_strips_reference_blocks():
     mdxl = MDXL(content)
     resource = EditableMDXL(mdxl)
     await resource.initialize()
-    result = await resource.read()
-    # Extract string from ToolResponse if needed
-    result = result.response if hasattr(result, "response") else str(result)
+    read_result: ToolResponse[str] = await resource.read()
+    result = read_result.response or ""
 
     # Ensure reference blocks are stripped from tool output
     assert "[!CITE_1!]: [!CITE_1!]" not in result

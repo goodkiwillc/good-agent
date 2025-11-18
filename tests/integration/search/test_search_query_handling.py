@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 from good_agent import Agent
+from good_agent.core.types import URL
 from good_agent.extensions.search import (
     AgentSearch,
     BaseSearchProvider,
@@ -21,7 +22,7 @@ class MockDateProvider(BaseSearchProvider):
     def __init__(self):
         super().__init__()
         self.name = "date_test"
-        self.last_query = None
+        self.last_query: SearchQuery | None = None
         self.capabilities = [
             ProviderCapability(
                 operation=OperationType.SEARCH,
@@ -37,11 +38,17 @@ class MockDateProvider(BaseSearchProvider):
             SearchResult(
                 platform="test",
                 id="1",
-                url="https://test.com",
+                url=URL("https://test.com"),
                 content=f"Result with dates: {query.since} to {query.until}",
                 content_type="text",
             )
         ]
+
+
+def _require_last_query(provider: BaseSearchProvider) -> SearchQuery:
+    last_query = getattr(provider, "last_query", None)
+    assert isinstance(last_query, SearchQuery)
+    return last_query
 
 
 class TestDateHandling:
@@ -70,9 +77,9 @@ class TestDateHandling:
             until=until_date,
         )
 
-        # Check that dates were properly converted to datetime
-        assert provider.last_query.since == datetime(2024, 1, 1, 0, 0, 0)
-        assert provider.last_query.until == datetime(2024, 1, 31, 23, 59, 59, 999999)
+        query = _require_last_query(provider)
+        assert query.since == datetime(2024, 1, 1, 0, 0, 0)
+        assert query.until == datetime(2024, 1, 31, 23, 59, 59, 999999)
 
     @pytest.mark.asyncio
     async def test_relative_time_windows(self):
@@ -92,18 +99,27 @@ class TestDateHandling:
 
         # Test last_day
         await agent.tool_calls.invoke("search", query="test", timeframe="last_day")
-        assert provider.last_query.since.date() == date(2024, 6, 14)
-        assert provider.last_query.until.date() == date(2024, 6, 15)
+        query = _require_last_query(provider)
+        assert query.since is not None
+        assert query.until is not None
+        assert query.since.date() == date(2024, 6, 14)
+        assert query.until.date() == date(2024, 6, 15)
 
         # Test last_week
         await agent.tool_calls.invoke("search", query="test", timeframe="last_week")
-        assert provider.last_query.since.date() == date(2024, 6, 8)
-        assert provider.last_query.until.date() == date(2024, 6, 15)
+        query = _require_last_query(provider)
+        assert query.since is not None
+        assert query.until is not None
+        assert query.since.date() == date(2024, 6, 8)
+        assert query.until.date() == date(2024, 6, 15)
 
         # Test last_month
         await agent.tool_calls.invoke("search", query="test", timeframe="last_month")
-        assert provider.last_query.since.date() == date(2024, 5, 16)
-        assert provider.last_query.until.date() == date(2024, 6, 15)
+        query = _require_last_query(provider)
+        assert query.since is not None
+        assert query.until is not None
+        assert query.since.date() == date(2024, 5, 16)
+        assert query.until.date() == date(2024, 6, 15)
 
     @pytest.mark.asyncio
     async def test_relative_windows_override_explicit_dates(self):
@@ -129,8 +145,11 @@ class TestDateHandling:
         )
 
         # Should use last_week, not explicit dates
-        assert provider.last_query.since.date() == date(2024, 6, 8)
-        assert provider.last_query.until.date() == date(2024, 6, 15)
+        query = _require_last_query(provider)
+        assert query.since is not None
+        assert query.until is not None
+        assert query.since.date() == date(2024, 6, 8)
+        assert query.until.date() == date(2024, 6, 15)
 
     @pytest.mark.asyncio
     async def test_no_context_date_uses_today(self):
@@ -151,8 +170,11 @@ class TestDateHandling:
         today = date.today()
         yesterday = today - timedelta(days=1)
 
-        assert provider.last_query.since.date() == yesterday
-        assert provider.last_query.until.date() == today
+        query = _require_last_query(provider)
+        assert query.since is not None
+        assert query.until is not None
+        assert query.since.date() == yesterday
+        assert query.until.date() == today
 
     @pytest.mark.asyncio
     async def test_retroactive_execution(self):
@@ -175,9 +197,11 @@ class TestDateHandling:
             "search", query="historical", timeframe="last_week"
         )
 
-        # Should calculate from the past date
-        assert provider.last_query.since.date() == date(2023, 3, 8)
-        assert provider.last_query.until.date() == date(2023, 3, 15)
+        query = _require_last_query(provider)
+        assert query.since is not None
+        assert query.until is not None
+        assert query.since.date() == date(2023, 3, 8)
+        assert query.until.date() == date(2023, 3, 15)
 
 
 class TestQueryBuilding:
@@ -203,7 +227,7 @@ class TestQueryBuilding:
             sort_by="recent",
         )
 
-        query = provider.last_query
+        query = _require_last_query(provider)
         assert query.text == "test query"
         assert query.limit == 50
         assert query.content_type == "video"
@@ -215,7 +239,7 @@ class TestQueryBuilding:
 
         class EntityProvider(BaseSearchProvider):
             name = "entity_test"
-            last_query = None
+            last_query: SearchQuery | None = None
             capabilities = [
                 ProviderCapability(
                     operation=OperationType.SEARCH,
@@ -230,7 +254,7 @@ class TestQueryBuilding:
                     SearchResult(
                         platform="test",
                         id="1",
-                        url="https://test.com/person",
+                        url=URL("https://test.com/person"),
                         content="John Smith - CEO at TechCorp",
                         content_type="text",
                         author_name="John Smith",
@@ -256,11 +280,13 @@ class TestQueryBuilding:
         )
 
         # Check query was built correctly
-        query = provider.last_query
-        assert "John Smith" in query.text
-        assert "title:CEO" in query.text
-        assert "company:TechCorp" in query.text
-        assert "location:NYC" in query.text
+        query = _require_last_query(provider)
+        text = query.text
+        assert text is not None
+        assert "John Smith" in text
+        assert "title:CEO" in text
+        assert "company:TechCorp" in text
+        assert "location:NYC" in text
 
     @pytest.mark.asyncio
     async def test_platform_domain_selection(self):
@@ -353,12 +379,14 @@ class TestQueryBuilding:
         # Search without specifying limit
         await agent.tool_calls.invoke("search", query="test")
 
-        assert provider.last_query.limit == 25
+        query = _require_last_query(provider)
+        assert query.limit == 25
 
         # Search with explicit limit
         await agent.tool_calls.invoke("search", query="test", limit=100)
 
-        assert provider.last_query.limit == 100
+        query = _require_last_query(provider)
+        assert query.limit == 100
 
     @pytest.mark.asyncio
     async def test_query_transformation(self):
@@ -366,7 +394,7 @@ class TestQueryBuilding:
 
         class CustomTransformProvider(BaseSearchProvider):
             name = "custom"
-            last_transformed = None
+            last_transformed: dict[str, object] | None = None
             capabilities = [
                 ProviderCapability(
                     operation=OperationType.SEARCH,
@@ -407,6 +435,7 @@ class TestQueryBuilding:
         )
 
         # Check transformation was applied
+        assert provider.last_transformed is not None
         assert provider.last_transformed["q"] == "site:example.com test query"
         assert provider.last_transformed["max_results"] == 20
         assert provider.last_transformed["order"] == "date"

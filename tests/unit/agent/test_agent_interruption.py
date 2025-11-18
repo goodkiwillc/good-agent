@@ -1,12 +1,14 @@
 import asyncio
 import signal
 import sys
+from typing import Sequence, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
 from good_agent import Agent
 from good_agent.agent import AgentState
 from good_agent.tools import tool
+from litellm.types.completion import ChatCompletionMessageParam
 
 
 class TestAgentInterruption:
@@ -27,7 +29,7 @@ class TestAgentInterruption:
             cleanup_called = True
             await original_close()
 
-        agent.events.async_close = tracked_close
+        setattr(agent.events, "async_close", tracked_close)
 
         # Simulate some work
         task = asyncio.create_task(agent.call("Generate a long response"))
@@ -64,7 +66,11 @@ class TestAgentInterruption:
 
         async def consume_stream():
             """Helper to consume the async generator."""
-            async for chunk in agent.model.stream(agent.messages):
+            formatted = await agent.model.format_message_list_for_llm(agent.messages)
+            formatted_sequence = cast(
+                Sequence[ChatCompletionMessageParam], formatted
+            )
+            async for chunk in agent.model.stream(formatted_sequence):
                 pass  # Just consume chunks
 
         with patch.object(agent.model, "stream", mock_stream):
@@ -88,7 +94,11 @@ class TestAgentInterruption:
     @pytest.mark.asyncio
     async def test_parallel_tool_execution_interruption(self):
         """Test interruption during parallel tool execution."""
-        tool_states = {"started": [], "completed": [], "cancelled": []}
+        tool_states: dict[str, list[int]] = {
+            "started": [],
+            "completed": [],
+            "cancelled": [],
+        }
 
         @tool
         async def slow_tool(task_id: int) -> str:
@@ -116,7 +126,7 @@ class TestAgentInterruption:
         class MockToolCall:
             id: str
             type: str = "function"
-            function: MockFunction = None
+            function: MockFunction | None = None
 
         mock_response = MagicMock()
         mock_choice = MagicMock()
@@ -223,7 +233,7 @@ class TestAgentInterruption:
         class MockToolCall:
             id: str
             type: str = "function"
-            function: MockFunction = None
+            function: MockFunction | None = None
 
         async def mock_complete(*args, **kwargs):
             mock_response = MagicMock()
@@ -313,7 +323,7 @@ class TestAgentInterruption:
         class MockToolCall:
             id: str
             type: str = "function"
-            function: MockFunction = None
+            function: MockFunction | None = None
 
         call_count = 0
 

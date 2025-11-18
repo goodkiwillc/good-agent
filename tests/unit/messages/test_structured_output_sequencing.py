@@ -1,12 +1,15 @@
 import json
+from typing import Any, Sequence, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from litellm.types.completion import ChatCompletionMessageParam
 from litellm.types.utils import Choices
 from litellm.utils import Message as LiteLLMMessage
 from pydantic import BaseModel
 
 from good_agent import Agent
+from good_agent.content.parts import TextContentPart
 from good_agent.messages import AssistantMessageStructuredOutput, UserMessage
 from good_agent.tools import ToolCall, ToolCallFunction
 
@@ -54,7 +57,9 @@ class TestStructuredOutputSequencing:
             )
 
             structured_msg = AssistantMessageStructuredOutput[Weather](
-                "Weather retrieved", output=weather_output, tool_calls=[tool_call]
+                content_parts=[TextContentPart(text="Weather retrieved")],
+                output=weather_output,
+                tool_calls=[tool_call],
             )
 
             # Add messages to agent history
@@ -80,8 +85,11 @@ class TestStructuredOutputSequencing:
                 print(f"{i}: role={role}, has_tool_calls={bool(tool_calls)}")
 
             # Now call _ensure_tool_call_pairs (this is what complete() does)
+            formatted_sequence = cast(
+                Sequence[ChatCompletionMessageParam | dict[str, Any]], formatted
+            )
             with_pairs = agent.model._ensure_tool_call_pairs_for_formatted_messages(
-                formatted
+                formatted_sequence
             )
 
             print("\n=== After _ensure_tool_call_pairs ===")
@@ -390,8 +398,12 @@ class TestStructuredOutputSequencing:
             ]
 
             # Call the method that should insert synthetic tool responses
+            formatted_sequence = cast(
+                Sequence[ChatCompletionMessageParam | dict[str, Any]],
+                formatted_messages,
+            )
             result = agent.model._ensure_tool_call_pairs_for_formatted_messages(
-                formatted_messages
+                formatted_sequence
             )
 
             # Verify synthetic tool response was inserted
@@ -408,10 +420,12 @@ class TestStructuredOutputSequencing:
 
             # Verify tool response immediately follows assistant
             tool_response = result[assistant_idx + 1]
-            assert tool_response["role"] == "tool"
-            assert tool_response["tool_call_id"] == "call_data_123"
+            assert isinstance(tool_response, dict)
+            tool_response_dict = cast(dict[str, Any], tool_response)
+            assert tool_response_dict["role"] == "tool"
+            assert tool_response_dict["tool_call_id"] == "call_data_123"
             # Synthetic tool responses have empty content "{}"
-            assert tool_response["content"] == "{}"
+            assert tool_response_dict["content"] == "{}"
 
     @pytest.mark.asyncio
     async def test_multiple_structured_outputs_with_regular_calls(self):

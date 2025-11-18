@@ -1,6 +1,11 @@
 import markdown
+from typing import Any, MutableMapping, Protocol, cast
 
 from good_agent.core.markdown import CitationManager, CitationPreprocessor
+
+
+class _MarkdownReferences(Protocol):
+    references: MutableMapping[str, Any]
 
 
 def test_citation_preprocessor_converts_numeric_references():
@@ -25,7 +30,7 @@ def test_citation_manager_can_register_both_features():
     html = md.convert("[1] https://example.com\n\nReference [1].")
     assert '<a href="#1">[1]</a>' in html
     # The converted footnote reference should exist in md.references
-    reference_entry = md.references.get("1")
+    reference_entry = cast(_MarkdownReferences, md).references.get("1")
     assert reference_entry is not None
     if isinstance(reference_entry, tuple):
         reference_entry = reference_entry[0]

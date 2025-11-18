@@ -6,7 +6,7 @@ import asyncio
 import logging
 import time
 from collections.abc import AsyncIterator, Sequence
-from typing import TYPE_CHECKING, Unpack
+from typing import TYPE_CHECKING, Any, Protocol, Unpack
 
 from ..events import AgentEvents
 from .protocols import StreamChunk
@@ -20,6 +20,22 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class SupportsStreamingLanguageModel(Protocol):
+    model: str
+    fallback_models: list[str]
+    router: Any
+    litellm: Any
+    api_stream_responses: list[Any]
+    api_responses: list[Any]
+    api_errors: list[Any]
+
+    def _prepare_request_config(self, **kwargs: Unpack["ModelConfig"]) -> dict[str, Any]: ...
+
+    def _update_usage(self, response_obj: Any) -> None: ...
+
+    def do(self, event: AgentEvents, **kwargs: Any) -> None: ...
+
+
 class StreamingHandler:
     """Handles streaming LLM responses with retry and fallback support.
 
@@ -27,7 +43,7 @@ class StreamingHandler:
     arrive from the API with automatic retry logic for failed streams.
     """
 
-    def __init__(self, language_model: LanguageModel):
+    def __init__(self, language_model: SupportsStreamingLanguageModel):
         """Initialize streaming handler.
 
         Args:

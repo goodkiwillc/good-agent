@@ -292,13 +292,13 @@ class TestComponentInitializationEdgeCases:
         from good_agent.tools import tool
 
         class ComponentA(AgentComponent):
-            @tool(name="tool_a")
-            def tool_method_a(self, value: str) -> str:
+            @tool
+            def tool_a(self, value: str) -> str:
                 return f"A: {value}"
 
         class ComponentB(AgentComponent):
-            @tool(name="tool_b")
-            def tool_method_b(self, value: str) -> str:
+            @tool
+            def tool_b(self, value: str) -> str:
                 return f"B: {value}"
 
         # Test different installation orders

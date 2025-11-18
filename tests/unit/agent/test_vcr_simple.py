@@ -1,8 +1,10 @@
 import os
+from typing import cast
 
 import pytest
 from good_agent import Agent
 from good_agent.model.llm import LanguageModel
+from litellm.types.utils import Choices
 
 
 @pytest.mark.asyncio
@@ -60,8 +62,11 @@ async def test_language_model_without_vcr():
         response = await lm.complete(messages)
 
         assert response is not None
-        assert response.choices[0].message.content is not None
+        first_choice = response.choices[0]
+        assert hasattr(first_choice, "message")
+        message_choice = cast(Choices, first_choice)
+        assert message_choice.message.content is not None
         assert lm.total_tokens > 0
 
-        print(f"Response: {response.choices[0].message.content}")
+        print(f"Response: {message_choice.message.content}")
         print(f"Tokens used: {lm.total_tokens}")

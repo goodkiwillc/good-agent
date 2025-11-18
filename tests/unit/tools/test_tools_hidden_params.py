@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 import pytest
 from good_agent import Agent
 from good_agent.tools import Tool, ToolResponse, tool, wrap_callable_as_tool
@@ -14,7 +16,7 @@ class TestHiddenParameters:
             return f"Query: {query}, Key: {api_key}, Verbose: {verbose}"
 
         # Create tool with hidden parameters
-        tool_instance = Tool(my_func, hide=["api_key", "verbose"])
+        tool_instance = wrap_callable_as_tool(my_func, hide=["api_key", "verbose"])
 
         # Check that hidden params are stored
         assert tool_instance._hidden_params == {"api_key", "verbose"}
@@ -34,20 +36,22 @@ class TestHiddenParameters:
     def test_tool_decorator_with_hide(self):
         """Test @tool decorator with hide parameter"""
 
-        @tool(hide=["secret"])
         def my_tool(input: str, secret: str) -> str:
             """Tool with hidden secret"""
             return f"{input}-{secret}"
 
+        tool_decorator: Any = tool
+        decorated_tool = cast(Tool[Any, Any], tool_decorator(hide=["secret"])(my_tool))
+
         # Check that hidden params are stored
-        assert my_tool._hidden_params == {"secret"}
+        assert decorated_tool._hidden_params == {"secret"}
 
         # Check metadata
-        assert "input" in my_tool._tool_metadata.parameters
-        assert "secret" not in my_tool._tool_metadata.parameters
+        assert "input" in decorated_tool._tool_metadata.parameters
+        assert "secret" not in decorated_tool._tool_metadata.parameters
 
         # Check signature
-        signature = my_tool.signature
+        signature = decorated_tool.signature
         properties = signature["function"]["parameters"]["properties"]
         assert "input" in properties
         assert "secret" not in properties
@@ -71,16 +75,17 @@ class TestHiddenParameters:
     async def test_invoke_with_hidden_params(self):
         """Test that invoke only records visible parameters"""
 
-        @tool(hide=["api_key"])
-        async def search_tool(query: str, api_key: str) -> str:
+        async def search_tool_impl(query: str, api_key: str) -> str:
             """Search with hidden API key"""
             return f"Results for {query} using key {api_key}"
+
+        search_tool = wrap_callable_as_tool(search_tool_impl, hide=["api_key"])
 
         agent = Agent("Test agent")
         await agent.initialize()  # Ensure agent is ready
 
         # Invoke tool with both visible and hidden parameters
-        response = await agent.tool_calls.invoke(
+        response: ToolResponse[Any] = await agent.tool_calls.invoke(
             search_tool, query="test query", api_key="secret123"
         )
 
@@ -90,10 +95,11 @@ class TestHiddenParameters:
 
         # Check that only visible params are recorded in tool call
         assistant_msg = agent.assistant[-1]
-        assert assistant_msg.tool_calls is not None
-        assert len(assistant_msg.tool_calls) == 1
+        tool_calls = assistant_msg.tool_calls
+        assert tool_calls is not None
+        assert len(tool_calls) == 1
 
-        tool_call = assistant_msg.tool_calls[0]
+        tool_call = tool_calls[0]
         import orjson
 
         recorded_params = orjson.loads(tool_call.function.arguments)
@@ -106,7 +112,7 @@ class TestHiddenParameters:
     async def test_invoke_callable_with_hide(self):
         """Test invoking a regular callable with hide parameter"""
 
-        def process_data(data: str, token: str, debug: bool = False) -> str:
+        async def process_data(data: str, token: str, debug: bool = False) -> str:
             """Process data with token"""
             return f"Processed {data} with token {token}, debug={debug}"
 
@@ -114,7 +120,7 @@ class TestHiddenParameters:
         await agent.initialize()  # Ensure agent is ready
 
         # Invoke callable with hide parameter
-        response = await agent.tool_calls.invoke(
+        response: ToolResponse[Any] = await agent.tool_calls.invoke(
             process_data,
             hide=["token", "debug"],
             data="test_data",
@@ -130,7 +136,9 @@ class TestHiddenParameters:
 
         # Check recorded parameters
         assistant_msg = agent.assistant[-1]
-        tool_call = assistant_msg.tool_calls[0]
+        tool_calls = assistant_msg.tool_calls
+        assert tool_calls is not None
+        tool_call = tool_calls[0]
         import orjson
 
         recorded_params = orjson.loads(tool_call.function.arguments)
@@ -176,7 +184,9 @@ class TestHiddenParameters:
                 break
 
         assert assistant_msg is not None
-        tool_call = assistant_msg.tool_calls[0]
+        tool_calls = assistant_msg.tool_calls
+        assert tool_calls is not None
+        tool_call = tool_calls[0]
         import orjson
 
         recorded_params = orjson.loads(tool_call.function.arguments)
@@ -189,7 +199,7 @@ class TestHiddenParameters:
     async def test_invoke_func_with_hide(self):
         """Test invoke_func with hide parameter"""
 
-        def api_call(endpoint: str, api_key: str, timeout: int = 30) -> str:
+        async def api_call(endpoint: str, api_key: str, timeout: int = 30) -> str:
             """Make API call"""
             return f"Called {endpoint} with key {api_key}, timeout={timeout}"
 
@@ -205,7 +215,7 @@ class TestHiddenParameters:
         )
 
         # Call bound function with visible param
-        response = await bound_call(endpoint="/users")
+        response: ToolResponse[Any] = await bound_call(endpoint="/users")
 
         # Check response
         assert response.success
@@ -213,7 +223,9 @@ class TestHiddenParameters:
 
         # Check recorded parameters
         assistant_msg = agent.assistant[-1]
-        tool_call = assistant_msg.tool_calls[0]
+        tool_calls = assistant_msg.tool_calls
+        assert tool_calls is not None
+        tool_call = tool_calls[0]
         import orjson
 
         recorded_params = orjson.loads(tool_call.function.arguments)
@@ -230,7 +242,7 @@ class TestHiddenParameters:
             """Function with mixed params"""
             return f"{visible}-{hidden}-{optional}"
 
-        tool_instance = Tool(func_with_params, hide=["hidden"])
+        tool_instance = wrap_callable_as_tool(func_with_params, hide=["hidden"])
 
         # Get the generated model
         model = tool_instance.model
@@ -243,23 +255,25 @@ class TestHiddenParameters:
 
         # Verify model can be instantiated with only visible params
         instance = model(visible="test", optional=10)
-        assert instance.visible == "test"
-        assert instance.optional == 10
+        data = instance.model_dump()
+        assert data["visible"] == "test"
+        assert data["optional"] == 10
 
     @pytest.mark.asyncio
     async def test_hidden_params_still_work_in_execution(self):
         """Test that hidden parameters are still passed during execution"""
 
-        @tool(hide=["multiplier"])
-        async def multiply(value: int, multiplier: int) -> int:
+        async def multiply_impl(value: int, multiplier: int) -> int:
             """Multiply value by hidden multiplier"""
             return value * multiplier
+
+        multiply = wrap_callable_as_tool(multiply_impl, hide=["multiplier"])
 
         agent = Agent("Test agent")
         await agent.initialize()  # Ensure agent is ready
 
         # Invoke with both params
-        response = await agent.tool_calls.invoke(
+        response: ToolResponse[Any] = await agent.tool_calls.invoke(
             multiply,
             value=5,
             multiplier=3,  # Hidden but still functional
@@ -271,7 +285,9 @@ class TestHiddenParameters:
 
         # But hidden param not in recorded call
         assistant_msg = agent.assistant[-1]
-        tool_call = assistant_msg.tool_calls[0]
+        tool_calls = assistant_msg.tool_calls
+        assert tool_calls is not None
+        tool_call = tool_calls[0]
         import orjson
 
         recorded_params = orjson.loads(tool_call.function.arguments)

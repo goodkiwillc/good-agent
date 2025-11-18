@@ -52,7 +52,9 @@ class TestAddToolInvocationArbitraryResponse:
         tool_msg = agent.tool[-1]
         assert tool_msg.tool_name == "search"
         assert "Search results" in tool_msg.content
-        assert tool_msg.tool_response and tool_msg.tool_response.success is True
+        tool_response = tool_msg.tool_response
+        assert tool_response is not None
+        assert tool_response.success is True
 
     @pytest.mark.asyncio
     async def test_record_invocation_with_string_response(self):
@@ -73,9 +75,11 @@ class TestAddToolInvocationArbitraryResponse:
         tool_msg = agent.tool[-1]
         assert tool_msg.tool_name == "calculator"
         assert "42" in tool_msg.content
-        assert tool_msg.tool_response and tool_msg.tool_response.response == "42"
-        assert tool_msg.tool_response and tool_msg.tool_response.success is True
-        assert tool_msg.tool_response and tool_msg.tool_response.error is None
+        tool_response = tool_msg.tool_response
+        assert tool_response is not None
+        assert tool_response.response == "42"
+        assert tool_response.success is True
+        assert tool_response.error is None
 
     @pytest.mark.asyncio
     async def test_record_invocation_with_dict_response(self):
@@ -94,10 +98,10 @@ class TestAddToolInvocationArbitraryResponse:
         # Verify ToolResponse was created with dict
         tool_msg = agent.tool[-1]
         assert tool_msg.tool_name == "list_items"
-        assert (
-            tool_msg.tool_response and tool_msg.tool_response.response == response_data
-        )
-        assert tool_msg.tool_response and tool_msg.tool_response.success is True
+        tool_response = tool_msg.tool_response
+        assert tool_response is not None
+        assert tool_response.response == response_data
+        assert tool_response.success is True
 
     @pytest.mark.asyncio
     async def test_record_invocation_with_pydantic_model_response(self):
@@ -121,8 +125,10 @@ class TestAddToolInvocationArbitraryResponse:
         # Verify ToolResponse was created with model
         tool_msg = agent.tool[-1]
         assert tool_msg.tool_name == "fetch_data"
-        assert tool_msg.tool_response.response == custom_response
-        assert tool_msg.tool_response.success is True
+        tool_response = tool_msg.tool_response
+        assert tool_response is not None
+        assert tool_response.response == custom_response
+        assert tool_response.success is True
 
         # Verify content shows the model correctly
         assert (
@@ -145,7 +151,9 @@ class TestAddToolInvocationArbitraryResponse:
         # Verify ToolResponse was created with list
         tool_msg = agent.tool[-1]
         assert tool_msg.tool_name == "get_numbers"
-        assert tool_msg.tool_response.response == response_list
+        tool_response = tool_msg.tool_response
+        assert tool_response is not None
+        assert tool_response.response == response_list
         assert "[1, 2, 3, 4, 5]" in tool_msg.content
 
     @pytest.mark.asyncio
@@ -161,8 +169,10 @@ class TestAddToolInvocationArbitraryResponse:
         # Verify ToolResponse was created with None
         tool_msg = agent.tool[-1]
         assert tool_msg.tool_name == "void_function"
-        assert tool_msg.tool_response.response is None
-        assert tool_msg.tool_response.success is True
+        tool_response = tool_msg.tool_response
+        assert tool_response is not None
+        assert tool_response.response is None
+        assert tool_response.success is True
         assert "None" in tool_msg.content
 
     @pytest.mark.asyncio
@@ -269,9 +279,11 @@ class TestAddToolInvocationArbitraryResponse:
         tool_msg = agent.tool[-1]
         assert tool_msg.tool_name == "override_tool"  # Overridden
         assert tool_msg.tool_call_id == "new_id"  # Overridden
-        assert tool_msg.tool_response.response == {"data": "test"}  # Preserved
-        assert tool_msg.tool_response.success is False  # Preserved
-        assert tool_msg.tool_response.error == "Original error"  # Preserved
+        tool_response = tool_msg.tool_response
+        assert tool_response is not None
+        assert tool_response.response == {"data": "test"}  # Preserved
+        assert tool_response.success is False  # Preserved
+        assert tool_response.error == "Original error"  # Preserved
         assert "Error: Original error" in tool_msg.content  # Error format preserved
 
     @pytest.mark.asyncio
@@ -296,8 +308,10 @@ class TestAddToolInvocationArbitraryResponse:
 
         # Verify complex object was stored correctly
         tool_msg = agent.tool[-1]
-        assert tool_msg.tool_response.response == complex_response
-        assert tool_msg.tool_response.success is True
+        tool_response = tool_msg.tool_response
+        assert tool_response is not None
+        assert tool_response.response == complex_response
+        assert tool_response.success is True
 
         # Verify string representation includes the data
         content_str = str(tool_msg.content)

@@ -1,8 +1,10 @@
 import asyncio
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 import pytest_asyncio
+from good_agent import Tool
 from good_agent.tools import (
     ToolRegistration,
     ToolRegistry,
@@ -13,16 +15,15 @@ from good_agent.tools import (
 )
 
 
-class MockTool:
+class MockTool(Tool[Any, Any]):
     """Mock tool for testing"""
 
     def __init__(self, name: str, description: str = ""):
-        self.name = name
-        self.description = description
-        self.version = "1.0.0"
+        async def _run(*args: Any, **kwargs: Any) -> str:
+            return f"Result from {name}"
 
-    def __call__(self, *args, **kwargs):
-        return f"Result from {self.name}"
+        super().__init__(fn=_run, name=name, description=description)
+        self.version = "1.0.0"
 
 
 class TestToolRegistration:

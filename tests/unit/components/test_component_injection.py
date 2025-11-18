@@ -54,8 +54,12 @@ class TestMessageInjectorComponent:
 
         # Verify the content parts were injected
         assert len(system_msg.content_parts) == 3  # prefix + original + suffix
-        assert system_msg.content_parts[0].text == "[SYSTEM PREFIX]"
-        assert system_msg.content_parts[2].text == "[SYSTEM SUFFIX]"
+        prefix_part = system_msg.content_parts[0]
+        suffix_part = system_msg.content_parts[2]
+        assert isinstance(prefix_part, TextContentPart)
+        assert isinstance(suffix_part, TextContentPart)
+        assert prefix_part.text == "[SYSTEM PREFIX]"
+        assert suffix_part.text == "[SYSTEM SUFFIX]"
 
         # Verify rendering includes all parts
         rendered = system_msg.render(RenderMode.DISPLAY)
@@ -107,9 +111,15 @@ class TestMessageInjectorComponent:
         # Check that the parts were injected
         # Should have prefix + original + suffix
         assert len(output_parts) == 3
-        assert output_parts[0].text == "[USER PREFIX]"
-        assert "User query" in output_parts[1].text
-        assert output_parts[2].text == "[USER SUFFIX]"
+        prefix = output_parts[0]
+        middle = output_parts[1]
+        suffix = output_parts[2]
+        assert isinstance(prefix, TextContentPart)
+        assert isinstance(middle, TextContentPart)
+        assert isinstance(suffix, TextContentPart)
+        assert prefix.text == "[USER PREFIX]"
+        assert "User query" in middle.text
+        assert suffix.text == "[USER SUFFIX]"
 
     async def test_component_disabled_no_injection(self):
         """Test that disabled components don't inject content."""
@@ -123,7 +133,9 @@ class TestMessageInjectorComponent:
 
         # Should only have the original content part
         assert len(system_msg.content_parts) == 1
-        assert "Base system prompt" in system_msg.content_parts[0].text
+        first_part = system_msg.content_parts[0]
+        assert isinstance(first_part, TextContentPart)
+        assert "Base system prompt" in first_part.text
 
         # Verify rendering doesn't include disabled component's content
         rendered = system_msg.render(RenderMode.DISPLAY)
@@ -149,7 +161,9 @@ class TestMessageInjectorComponent:
         # Should now have injected content
         new_system = agent.messages[0]
         assert len(new_system.content_parts) == 3
-        assert new_system.content_parts[0].text == "[SYSTEM PREFIX]"
+        new_first = new_system.content_parts[0]
+        assert isinstance(new_first, TextContentPart)
+        assert new_first.text == "[SYSTEM PREFIX]"
 
     async def test_template_injection_with_context(self):
         """Test that template injections have access to agent context."""
@@ -261,7 +275,9 @@ class TestSimpleMessageInjector:
         system_msg = agent.messages[0]
         # Should only have original + suffix (no prefix since it's None)
         assert len(system_msg.content_parts) == 2
-        assert system_msg.content_parts[1].text == "Suffix only"
+        suffix_part = system_msg.content_parts[1]
+        assert isinstance(suffix_part, TextContentPart)
+        assert suffix_part.text == "Suffix only"
 
     async def test_empty_string_no_injection(self):
         """Test that empty strings don't create content parts."""

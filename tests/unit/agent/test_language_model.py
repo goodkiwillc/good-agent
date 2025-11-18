@@ -11,7 +11,7 @@ from pydantic import BaseModel
 # Add the tests directory to the path so we can import test_helpers
 tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 sys.path.insert(0, os.path.join(tests_dir, "fixtures", "helpers"))
-from test_helpers import MockAgent  # noqa: E402
+from test_helpers import MockAgent  # noqa: E402  # type: ignore[import-not-found]
 
 
 class MockResponse(BaseModel):

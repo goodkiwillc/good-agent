@@ -1,4 +1,5 @@
 import datetime
+from typing import Any, cast
 
 import pytest
 from pydantic import BaseModel, ValidationError
@@ -40,23 +41,24 @@ def test_datetime_serializer_converts_to_utc():
 
 def test_date_types_parse_and_allow_nulls():
     model = _DateModel(
-        timestamp="10/30/2007 12:00:00 AM",
+        timestamp=cast(Any, "10/30/2007 12:00:00 AM"),
         maybe_timestamp=None,
-        date="10/30/2007",
-        maybe_date="10/31/2007",
+        date=cast(Any, "10/30/2007"),
+        maybe_date=cast(Any, "10/31/2007"),
     )
     assert model.timestamp.year == 2007
     assert model.maybe_timestamp is None
     assert model.date.month == 10
+    assert model.maybe_date is not None
     assert model.maybe_date.day == 31
 
 
 def test_nullable_date_returns_none_on_invalid_input():
     model = _DateModel(
-        timestamp="10/30/2007 12:00:00 AM",
-        maybe_timestamp="11/01/2007 12:00:00 AM",
-        date="10/30/2007",
-        maybe_date="invalid",
+        timestamp=cast(Any, "10/30/2007 12:00:00 AM"),
+        maybe_timestamp=cast(Any, "11/01/2007 12:00:00 AM"),
+        date=cast(Any, "10/30/2007"),
+        maybe_date=cast(Any, "invalid"),
     )
     assert isinstance(model.maybe_timestamp, datetime.datetime)
     assert model.maybe_date is None
@@ -65,9 +67,9 @@ def test_nullable_date_returns_none_on_invalid_input():
 def test_uuid_type_accepts_multiple_inputs_and_schema_reports_format():
     created = UUID.create_v7()
     as_str = str(created)
-    model = _UUIDModel(id=as_str)
+    model = _UUIDModel(id=cast(Any, as_str))
     assert isinstance(model.id, UUID)
-    from_int = _UUIDModel(id=created.int)
+    from_int = _UUIDModel(id=cast(Any, created.int))
     assert from_int.id == model.id
     schema = _UUIDModel.model_json_schema()
     assert schema["properties"]["id"]["format"] == f"uuid{model.id.uuid_version}"
@@ -75,4 +77,4 @@ def test_uuid_type_accepts_multiple_inputs_and_schema_reports_format():
 
 def test_uuid_type_rejects_invalid_value():
     with pytest.raises(ValidationError):
-        _UUIDModel(id="not-a-uuid")
+        _UUIDModel(id=cast(Any, "not-a-uuid"))

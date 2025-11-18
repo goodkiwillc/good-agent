@@ -1,4 +1,6 @@
 import pytest
+from typing import Any, cast
+
 from good_agent import (
     Agent,
     AssistantMessage,
@@ -99,11 +101,13 @@ async def test_agent_setitem_type_validation():
 
         # Try to assign a non-Message object
         with pytest.raises(TypeError, match="Can only assign Message objects"):
-            agent[1] = "Not a message object"
+            agent[1] = cast(Any, "Not a message object")
 
         # Try to assign a list with non-Message objects
         with pytest.raises(TypeError, match="All values must be Message objects"):
-            agent[1:2] = ["Not a message", UserMessage(content="Valid")]
+            agent[1:2] = cast(
+                list[Any], ["Not a message", UserMessage(content="Valid")]
+            )
 
 
 @pytest.mark.asyncio
@@ -199,7 +203,7 @@ async def test_agent_setitem_with_assistant_and_tool_messages():
         assert isinstance(agent[2], AssistantMessage)
 
         # Replace the tool message
-        new_tool = ToolMessage(
+        new_tool: ToolMessage = ToolMessage(
             content="New tool result", tool_call_id="call_456", tool_name="another_tool"
         )
         agent[3] = new_tool
