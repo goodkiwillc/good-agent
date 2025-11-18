@@ -172,11 +172,18 @@ class TestInMemoryMessageStore:
         # Message not in memory initially
         assert not store.exists(redis_id)
 
-        # Get should fetch from Redis and populate memory
-        with pytest.raises(MessageNotFoundError):
-            # This will fail because we don't have MessageFactory implemented yet
-            # But it tests the Redis fetch path
-            await store.aget(redis_id)
+        # Get should fetch from Redis, populate memory, and return the message
+        retrieved = await store.aget(redis_id)
+
+        assert retrieved.content == "From Redis"
+        assert retrieved.id == redis_id
+        assert store.exists(redis_id)
+
+        # Subsequent gets should hit the memory cache instead of Redis
+        cached = await store.aget(redis_id)
+        assert cached is retrieved
+
+        mock_redis.get.assert_awaited_once_with(f"agent:message:{redis_id}")
 
     @pytest.mark.asyncio
     async def test_redis_error_handling(self):
