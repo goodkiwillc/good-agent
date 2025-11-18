@@ -3,12 +3,14 @@ from unittest.mock import Mock
 import pytest
 from good_agent import Agent
 from good_agent.messages import SystemMessage, UserMessage
+from good_agent.messages.store import MessageStore
 from good_agent.messages.versioning import (
     InMemoryMessageStore,
     MessageNotFoundError,
     MessageRegistry,
     VersionManager,
 )
+from typing import cast
 from ulid import ULID
 
 
@@ -18,8 +20,7 @@ class TestMessageRegistry:
     def test_register_and_retrieve_message(self):
         """Test that messages can be registered and retrieved."""
         registry = MessageRegistry()
-        msg = SystemMessage(content_parts=[])
-        msg._id = ULID()  # Ensure message has an ID
+        msg = SystemMessage(content_parts=[], id=ULID())
         agent_mock = Mock()
         agent_mock._id = ULID()
 
@@ -39,8 +40,7 @@ class TestMessageRegistry:
     async def test_tracks_agent_ownership(self):
         """Test that the registry tracks which agent owns each message."""
         registry = MessageRegistry()
-        msg = SystemMessage(content_parts=[])
-        msg._id = ULID()
+        msg = SystemMessage(content_parts=[], id=ULID())
 
         # Create a real agent for proper weakref testing
         agent = Agent("test")
@@ -56,8 +56,7 @@ class TestMessageRegistry:
     def test_agent_weakref_cleanup(self):
         """Test that agent references are weak and can be garbage collected."""
         registry = MessageRegistry()
-        msg = SystemMessage(content_parts=[])
-        msg._id = ULID()
+        msg = SystemMessage(content_parts=[], id=ULID())
 
         # Create agent in a scope so it can be garbage collected
         def create_and_register():
@@ -106,11 +105,10 @@ class TestMessageRegistry:
 
     def test_custom_message_store(self):
         """Test using a custom message store."""
-        custom_store = InMemoryMessageStore()
+        custom_store = cast(MessageStore, InMemoryMessageStore())
         registry = MessageRegistry(store=custom_store)
 
-        msg = SystemMessage(content_parts=[])
-        msg._id = ULID()
+        msg = SystemMessage(content_parts=[], id=ULID())
         agent_mock = Mock()
         agent_mock._id = ULID()
 
@@ -350,8 +348,7 @@ class TestInMemoryMessageStore:
     def test_store_and_retrieve(self):
         """Test basic store and retrieve operations."""
         store = InMemoryMessageStore()
-        msg = SystemMessage(content_parts=[])
-        msg._id = ULID()
+        msg = SystemMessage(content_parts=[], id=ULID())
 
         store.put(msg)
         assert store.exists(msg.id)

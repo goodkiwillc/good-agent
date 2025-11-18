@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from litellm.types.completion import ChatCompletionMessageParam
 from good_agent.model.llm import LanguageModel, StreamChunk
 
 
@@ -66,7 +67,7 @@ def mock_agent():
     # Add the tests directory to the path so we can import test_helpers
     tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     sys.path.insert(0, os.path.join(tests_dir, "fixtures", "helpers"))
-    from test_helpers import MockAgent
+    from test_helpers import MockAgent  # type: ignore[import-not-found]
 
     return MockAgent(model="gpt-4o-mini", temperature=0.5)
 
@@ -275,7 +276,7 @@ async def test_stream_with_reasoning_content():
     # Add parent directory to path to import test_helpers
     tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     sys.path.insert(0, os.path.join(tests_dir, "fixtures", "helpers"))
-    from test_helpers import MockAgent
+    from test_helpers import MockAgent  # type: ignore[import-not-found]
 
     mock_agent = MockAgent(model="gpt-4o-mini")
     lm = LanguageModel(model="gpt-4o-mini")
@@ -295,7 +296,9 @@ async def test_stream_with_reasoning_content():
     mock_router.acompletion = AsyncMock(return_value=mock_stream())
     lm._router = mock_router
 
-    messages = [{"role": "user", "content": "What is the meaning of life?"}]
+    messages: list[ChatCompletionMessageParam] = [
+        {"role": "user", "content": "What is the meaning of life?"}
+    ]
     chunks_received = []
 
     async for chunk in lm.stream(messages):
@@ -357,7 +360,7 @@ async def test_stream_wrapper_interface():
     # Add parent directory to path to import test_helpers
     tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     sys.path.insert(0, os.path.join(tests_dir, "fixtures", "helpers"))
-    from test_helpers import MockAgent
+    from test_helpers import MockAgent  # type: ignore[import-not-found]
 
     mock_agent = MockAgent(model="gpt-4o-mini")
     lm = LanguageModel(model="gpt-4o-mini")
@@ -372,7 +375,9 @@ async def test_stream_wrapper_interface():
     mock_router.acompletion = AsyncMock(return_value=mock_stream())
     lm._router = mock_router
 
-    messages = [{"role": "user", "content": "Test"}]
+    messages: list[ChatCompletionMessageParam] = [
+        {"role": "user", "content": "Test"}
+    ]
     wrapper = StreamingWrapper(lm, messages)
 
     # Stream and collect
@@ -398,7 +403,7 @@ async def test_stream_integration_with_agent():
     # Add parent directory to path to import test_helpers
     tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     sys.path.insert(0, os.path.join(tests_dir, "fixtures", "helpers"))
-    from test_helpers import MockAgent
+    from test_helpers import MockAgent  # type: ignore[import-not-found]
 
     mock_agent = MockAgent(model="gpt-4o-mini", temperature=0.7)
     lm = LanguageModel(model="gpt-4o-mini", temperature=0.7)
@@ -414,7 +419,9 @@ async def test_stream_integration_with_agent():
     mock_router.acompletion = AsyncMock(return_value=mock_stream())
     lm._router = mock_router
 
-    messages = [{"role": "user", "content": "Are you ready?"}]
+    messages: list[ChatCompletionMessageParam] = [
+        {"role": "user", "content": "Are you ready?"}
+    ]
 
     # Stream through language model
     chunks = []

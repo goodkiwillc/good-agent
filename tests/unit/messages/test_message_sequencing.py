@@ -44,6 +44,7 @@ class TestMessageSequencing:
                     # The next N messages should be tool responses for these calls
                     expected_responses = len(tool_call_ids)
 
+                    tool_messages: list[ToolMessage] = []
                     for j in range(1, expected_responses + 1):
                         next_msg = messages[i + j] if i + j < len(messages) else None
 
@@ -56,11 +57,10 @@ class TestMessageSequencing:
                         assert next_msg.tool_call_id in tool_call_ids, (
                             f"Tool response {next_msg.tool_call_id} not in expected IDs {tool_call_ids}"
                         )
+                        tool_messages.append(next_msg)
 
                     # Remove found IDs to check all are accounted for
-                    found_ids = set()
-                    for j in range(1, expected_responses + 1):
-                        found_ids.add(messages[i + j].tool_call_id)
+                    found_ids = {tool_msg.tool_call_id for tool_msg in tool_messages}
 
                     assert found_ids == set(tool_call_ids), (
                         f"Not all tool calls have responses. Expected: {tool_call_ids}, Found: {found_ids}"
@@ -103,8 +103,10 @@ class TestMessageSequencing:
             )
 
             # That message should have all 3 tool calls
-            assert len(assistant_with_tools[0].tool_calls) == 3, (
-                f"Expected 3 tool calls in assistant message, got {len(assistant_with_tools[0].tool_calls)}"
+            tool_calls = assistant_with_tools[0].tool_calls
+            assert tool_calls is not None
+            assert len(tool_calls) == 3, (
+                f"Expected 3 tool calls in assistant message, got {len(tool_calls)}"
             )
 
     @pytest.mark.asyncio
@@ -156,7 +158,9 @@ class TestMessageSequencing:
                     # This test documents that issue
                     if next_msg and isinstance(next_msg, ToolMessage):
                         # Check if it's the right tool response
-                        tool_call_id = assistant_msg.tool_calls[0].id
+                        tool_calls = assistant_msg.tool_calls
+                        assert tool_calls is not None
+                        tool_call_id = tool_calls[0].id
                         if next_msg.tool_call_id != tool_call_id:
                             # This indicates broken sequencing!
                             pytest.fail(
@@ -208,7 +212,9 @@ class TestMessageSequencing:
                     )
 
                     # Tool response should match the tool call
-                    assert next_msg.tool_call_id == msg.tool_calls[0].id, (
+                    tool_calls = msg.tool_calls
+                    assert tool_calls is not None
+                    assert next_msg.tool_call_id == tool_calls[0].id, (
                         f"Tool response ID mismatch at position {i + 1}"
                     )
 
@@ -247,8 +253,10 @@ class TestMessageSequencing:
             )
 
             # With all three tool calls
-            assert len(assistant_msgs[0].tool_calls) == 3, (
-                f"Expected 3 tool calls in message, got {len(assistant_msgs[0].tool_calls)}"
+            tool_calls = assistant_msgs[0].tool_calls
+            assert tool_calls is not None
+            assert len(tool_calls) == 3, (
+                f"Expected 3 tool calls in message, got {len(tool_calls)}"
             )
 
             # Followed by three tool responses

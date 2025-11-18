@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+from typing import cast
+
 import pytest
 
+from good_agent.agent import Agent
 from good_agent.agent.events import AgentEventsFacade
 from good_agent.components import AgentComponent
 from good_agent.core.event_router import EventContext, EventRouter, on
@@ -11,7 +14,7 @@ from good_agent.core.event_router import EventContext, EventRouter, on
 class DummyAgent(EventRouter):
     def __init__(self) -> None:
         super().__init__()
-        self.events = AgentEventsFacade(self)
+        self.events = AgentEventsFacade(cast(Agent, self))
 
 
 class DemoComponent(AgentComponent):
@@ -24,7 +27,7 @@ def test_component_setup_registers_handlers() -> None:
     agent = DummyAgent()
     component = DemoComponent()
 
-    component.setup(agent)
+    component.setup(cast(Agent, agent))
     calls: list[tuple[str, int]] = []
 
     agent.do("component:test", calls=calls, value=7)

@@ -239,11 +239,15 @@ class TestBroadcastRouting:
 
         @consumer.on("forward:event")
         def handler_in_consumer(ctx: EventContext) -> None:
-            events_in_consumer.append(ctx.event)  # type: ignore[attr-defined]
+            event_name = ctx.event
+            assert event_name is not None
+            events_in_consumer.append(event_name)
 
         @source.on("backward:event")
         def handler_in_source(ctx: EventContext) -> None:
-            events_in_source.append(ctx.event)  # type: ignore[attr-defined]
+            event_name = ctx.event
+            assert event_name is not None
+            events_in_source.append(event_name)
 
         # Consumer consumes from source (unidirectional)
         consumer.consume_from(source)
@@ -271,15 +275,21 @@ class TestBroadcastRouting:
 
         @target1.on("multi:event")
         def handler1(ctx: EventContext) -> None:
-            received["t1"].append(ctx.event)  # type: ignore[attr-defined]
+            event_name = ctx.event
+            assert event_name is not None
+            received["t1"].append(event_name)
 
         @target2.on("multi:event")
         def handler2(ctx: EventContext) -> None:
-            received["t2"].append(ctx.event)  # type: ignore[attr-defined]
+            event_name = ctx.event
+            assert event_name is not None
+            received["t2"].append(event_name)
 
         @target3.on("multi:event")
         def handler3(ctx: EventContext) -> None:
-            received["t3"].append(ctx.event)  # type: ignore[attr-defined]
+            event_name = ctx.event
+            assert event_name is not None
+            received["t3"].append(event_name)
 
         # Broadcast to all three
         source.broadcast_to(target1)

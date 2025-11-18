@@ -11,6 +11,7 @@ from unittest.mock import patch
 import pytest
 from good_agent import Agent, tool
 from good_agent.agent import AgentState
+from good_agent.components.component import AgentComponent
 from good_agent.core.signal_handler import SignalHandler, _global_handler
 
 # Mark all tests in this file as requiring signal handling
@@ -34,11 +35,11 @@ def signal_handler_spy():
         )
         return original_handle(signum, frame)
 
-    _global_handler._handle_signal = spy_handle
+    setattr(_global_handler, "_handle_signal", spy_handle)
     try:
         yield calls
     finally:
-        _global_handler._handle_signal = original_handle
+        setattr(_global_handler, "_handle_signal", original_handle)
 
 
 class TestSignalHandlerInstallation:
@@ -62,8 +63,9 @@ class TestSignalHandlerInstallation:
 
         # Verify it's the SignalHandler
         if sys.platform != "win32":
-            assert hasattr(agent_sigint, "__self__"), "Handler should be a bound method"
-            assert isinstance(agent_sigint.__self__, SignalHandler), (
+            assert callable(agent_sigint), "Handler should be callable"
+            handler_self = getattr(agent_sigint, "__self__", None)
+            assert isinstance(handler_self, SignalHandler), (
                 "Should be SignalHandler instance"
             )
 
@@ -422,8 +424,9 @@ class TestEdgeCases:
         """Test handling signals during agent initialization."""
         slow_init_called = False
 
-        class SlowComponent:
+        class SlowComponent(AgentComponent):
             async def install(self, agent):
+                await super().install(agent)
                 nonlocal slow_init_called
                 slow_init_called = True
                 await asyncio.sleep(0.5)
@@ -442,10 +445,10 @@ class TestEdgeCases:
 
         # Verify partial initialization
         assert slow_init_called
-        assert agent._state < AgentState.READY
+        assert agent.state < AgentState.READY
 
         # Clean up
-        if agent._state >= AgentState.READY:
+        if agent.state >= AgentState.READY:
             await agent.events.async_close()
         else:
             agent.events.close()

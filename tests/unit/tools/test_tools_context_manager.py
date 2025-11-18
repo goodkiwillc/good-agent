@@ -1,5 +1,16 @@
 import pytest
-from good_agent import Agent, tool
+from typing import Any, cast
+
+from good_agent import Agent, Tool, tool
+from good_agent.tools import BoundTool
+
+
+ToolLike = Tool[Any, Any] | BoundTool[Any, Any, Any]
+
+
+def as_tool(tool_obj: ToolLike) -> Tool[Any, Any]:
+    assert isinstance(tool_obj, Tool)
+    return cast(Tool[Any, Any], tool_obj)
 
 
 # Define test tools for use in tests
@@ -9,10 +20,16 @@ async def original_tool(value: str) -> str:
     return f"original: {value}"
 
 
+original_tool = as_tool(original_tool)
+
+
 @tool
 async def replacement_tool(value: str) -> str:
     """A replacement tool."""
     return f"replacement: {value}"
+
+
+replacement_tool = as_tool(replacement_tool)
 
 
 @tool
@@ -21,10 +38,16 @@ async def additional_tool(value: str) -> str:
     return f"additional: {value}"
 
 
+additional_tool = as_tool(additional_tool)
+
+
 @tool
 async def another_original_tool(value: str) -> str:
     """Another original tool."""
     return f"another: {value}"
+
+
+another_original_tool = as_tool(another_original_tool)
 
 
 class TestToolsContextManager:
@@ -258,10 +281,13 @@ class TestToolsContextManager:
         """Test that append mode overwrites tools with same name."""
 
         # Create a modified version of original_tool
-        @tool(name="original_tool")
-        async def modified_original(value: str) -> str:
+        async def modified_original_impl(value: str) -> str:
             """Modified version of original tool."""
             return f"modified: {value}"
+
+        modified_original = as_tool(
+            tool(name="original_tool")(cast(Any, modified_original_impl))
+        )
 
         async with Agent("Test agent", tools=[original_tool]) as agent:
             # Test original behavior

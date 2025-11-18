@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 import pytest
 from good_agent import Agent, tool
 
@@ -24,7 +26,7 @@ class TestStatefulResourceBase:
 
         # Cannot instantiate abstract class
         with pytest.raises(TypeError) as excinfo:
-            StatefulResource("test")
+            cast(type[Any], StatefulResource)("test")
 
         assert "Can't instantiate abstract class" in str(excinfo.value)
 
@@ -135,21 +137,21 @@ class TestStatefulResourceBase:
             from contextlib import asynccontextmanager
 
             @asynccontextmanager
-            async def mock_thread_context():
+            async def mock_thread_context(truncate_at: int | None = None):
                 nonlocal context_called
                 context_called = True
-                async with original_thread_context() as messages:
+                async with original_thread_context(truncate_at) as messages:
                     yield messages
 
             # Replace thread_context temporarily
-            agent.context_manager.thread_context = mock_thread_context
+            setattr(agent.context_manager, "thread_context", mock_thread_context)
 
             async with resource(agent):
                 # thread_context should have been called
                 assert context_called
 
             # Restore original
-            agent.context_manager.thread_context = original_thread_context
+            setattr(agent.context_manager, "thread_context", original_thread_context)
 
     @pytest.mark.asyncio
     async def test_stateful_resource_only_initializes_once(self):

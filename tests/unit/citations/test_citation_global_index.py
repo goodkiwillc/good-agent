@@ -216,10 +216,12 @@ class TestSparseIndexHandling:
         message = agent.messages[-1]
 
         # Message citations are sequential
-        assert len(message.citations) == 3
-        assert str(message.citations[0]) == "https://example.com/doc1"
-        assert str(message.citations[1]) == "https://example.com/doc5"
-        assert str(message.citations[2]) == "https://example.com/doc10"
+        citations = message.citations
+        assert citations is not None
+        assert len(citations) == 3
+        assert str(citations[0]) == "https://example.com/doc1"
+        assert str(citations[1]) == "https://example.com/doc5"
+        assert str(citations[2]) == "https://example.com/doc10"
 
         await agent.events.async_close()
 

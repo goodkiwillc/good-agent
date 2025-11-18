@@ -114,7 +114,7 @@ class TestMessageTokenCounting:
 
     def test_tool_message(self):
         """Test counting tokens in tool message."""
-        msg = ToolMessage(
+        msg: ToolMessage = ToolMessage(
             '{"temperature": 72, "conditions": "sunny"}',
             tool_call_id="call_123",
             tool_name="get_weather",

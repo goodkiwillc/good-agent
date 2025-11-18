@@ -77,7 +77,11 @@ class TestAgentRenderEvents:
             # Verify content was modified
             assert rendered == "HELLO WORLD"
             # Original text content part should be unchanged
-            assert msg.content_parts[0].text == "hello world"
+            from good_agent.content import TextContentPart
+
+            first_part = msg.content_parts[0]
+            assert isinstance(first_part, TextContentPart)
+            assert first_part.text == "hello world"
 
     async def test_render_after_event_triggered(self):
         """Test that MESSAGE_RENDER_AFTER event is triggered after render."""

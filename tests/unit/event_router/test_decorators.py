@@ -1,8 +1,20 @@
+from collections.abc import Callable
+from typing import Any, Protocol, TypeVar, cast
+
 import pytest
 
 from good_agent.core.event_router.context import EventContext
 from good_agent.core.event_router.core import EventRouter
 from good_agent.core.event_router.decorators import emit, on, typed_on
+
+
+T_Handler = TypeVar("T_Handler", bound=Callable[..., Any])
+EmitDecorator = Callable[[T_Handler], T_Handler]
+emit_default = cast(EmitDecorator, emit)
+
+
+class _HandlerWithConfig(Protocol):
+    _event_handler_config: dict[str, Any]
 
 
 def test_on_and_typed_on_store_metadata():
@@ -14,9 +26,12 @@ def test_on_and_typed_on_store_metadata():
     def typed_handler(ctx):
         return ctx
 
-    assert handler._event_handler_config["events"] == ("demo:event",)
-    assert typed_handler._event_handler_config["events"] == ("demo:event",)
-    assert handler._event_handler_config["priority"] == 50
+    handler_config = cast(_HandlerWithConfig, handler)
+    typed_handler_config = cast(_HandlerWithConfig, typed_handler)
+
+    assert handler_config._event_handler_config["events"] == ("demo:event",)
+    assert typed_handler_config._event_handler_config["events"] == ("demo:event",)
+    assert handler_config._event_handler_config["priority"] == 50
 
 
 class _DummyRouter(EventRouter):
@@ -33,7 +48,7 @@ class _DummyRouter(EventRouter):
         self.async_calls.append((event, kwargs))
         return EventContext(parameters=kwargs, event=event)
 
-    @emit
+    @emit_default
     def sync_method(self, value: int) -> int:
         return value * 2
 

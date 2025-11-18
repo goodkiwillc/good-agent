@@ -91,16 +91,24 @@ class TestAddToolInvocations:
             assert len(agent) == initial_len + 4
 
             # Check first invocation pair
-            assert isinstance(agent.messages[initial_len], AssistantMessage)
-            assert len(agent.messages[initial_len].tool_calls) == 1
-            assert isinstance(agent.messages[initial_len + 1], ToolMessage)
-            assert agent.messages[initial_len + 1].content == "2"
+            first_assistant = agent.messages[initial_len]
+            assert isinstance(first_assistant, AssistantMessage)
+            tool_calls = first_assistant.tool_calls
+            assert tool_calls is not None
+            assert len(tool_calls) == 1
+            first_tool = agent.messages[initial_len + 1]
+            assert isinstance(first_tool, ToolMessage)
+            assert first_tool.content == "2"
 
             # Check second invocation pair
-            assert isinstance(agent.messages[initial_len + 2], AssistantMessage)
-            assert len(agent.messages[initial_len + 2].tool_calls) == 1
-            assert isinstance(agent.messages[initial_len + 3], ToolMessage)
-            assert agent.messages[initial_len + 3].content == "10"
+            second_assistant = agent.messages[initial_len + 2]
+            assert isinstance(second_assistant, AssistantMessage)
+            second_tool_calls = second_assistant.tool_calls
+            assert second_tool_calls is not None
+            assert len(second_tool_calls) == 1
+            second_tool = agent.messages[initial_len + 3]
+            assert isinstance(second_tool, ToolMessage)
+            assert second_tool.content == "10"
 
     @pytest.mark.asyncio
     async def test_add_tool_invocations_skip_assistant_message(self, monkeypatch):
@@ -214,12 +222,18 @@ class TestAddToolInvocations:
             assert len(agent) == initial_len + 3  # 1 assistant + 2 tool messages
 
             # Check successful response
-            assert agent.messages[initial_len + 1].content == "Processed: input1"
-            assert agent.messages[initial_len + 1].tool_response.success is True
+            success_msg = agent.messages[initial_len + 1]
+            assert isinstance(success_msg, ToolMessage)
+            assert success_msg.content == "Processed: input1"
+            assert success_msg.tool_response is not None
+            assert success_msg.tool_response.success is True
 
             # Check error response
-            assert agent.messages[initial_len + 2].content == "Error: Failed to process"
-            assert agent.messages[initial_len + 2].tool_response.success is False
+            error_msg = agent.messages[initial_len + 2]
+            assert isinstance(error_msg, ToolMessage)
+            assert error_msg.content == "Error: Failed to process"
+            assert error_msg.tool_response is not None
+            assert error_msg.tool_response.success is False
 
     @pytest.mark.asyncio
     async def test_add_tool_invocations_empty_list(self):
@@ -263,5 +277,8 @@ class TestAddToolInvocations:
 
             # Should work the same way
             assert len(agent) == initial_len + 3  # 1 assistant + 2 tool messages
-            assert isinstance(agent.messages[initial_len], AssistantMessage)
-            assert len(agent.messages[initial_len].tool_calls) == 2
+            assistant_msg = agent.messages[initial_len]
+            assert isinstance(assistant_msg, AssistantMessage)
+            tool_calls = assistant_msg.tool_calls
+            assert tool_calls is not None
+            assert len(tool_calls) == 2

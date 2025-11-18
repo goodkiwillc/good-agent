@@ -1,5 +1,6 @@
 import asyncio
 import time
+from typing import Any, cast
 
 import pytest
 from good_agent import Agent, tool
@@ -66,15 +67,18 @@ async def test_agent_initialization_with_many_tools():
     """Test agent initialization with many tools to check for bottlenecks."""
 
     # Create many tools programmatically
-    tools = []
+    tools: list[Any] = []
     for i in range(50):
 
-        @tool(name=f"tool_{i}")
-        def test_tool(x: int, _i=i) -> int:
-            """A test tool."""
-            return x + _i
+        def make_tool(offset: int):
+            def test_tool_impl(x: int) -> int:
+                """A test tool."""
+                return x + offset
 
-        tools.append(test_tool)
+            tool_decorator = cast(Any, tool)
+            return tool_decorator(name=f"tool_{offset}")(test_tool_impl)
+
+        tools.append(make_tool(i))
 
     start_time = time.time()
 
@@ -217,9 +221,14 @@ async def test_concurrent_agent_initialization():
         """Create an agent and measure initialization time."""
         start = time.time()
 
-        @tool(name=f"agent_{idx}_tool")
-        def agent_tool(x: int) -> int:
-            return x + idx
+        def agent_tool_factory(offset: int):
+            def agent_tool_impl(x: int) -> int:
+                return x + offset
+
+            tool_decorator = cast(Any, tool)
+            return tool_decorator(name=f"agent_{offset}_tool")(agent_tool_impl)
+
+        agent_tool = agent_tool_factory(idx)
 
         agent = Agent(f"Agent {idx}", tools=[agent_tool, simple_tool])
         await agent.initialize()

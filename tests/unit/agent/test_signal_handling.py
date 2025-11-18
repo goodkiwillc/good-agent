@@ -7,12 +7,15 @@ import threading
 import time
 import weakref
 from contextlib import contextmanager
+from typing import Any, Sequence, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
 from good_agent import Agent, tool
 from good_agent.agent import AgentState
+from good_agent.components.component import AgentComponent
 from good_agent.core.signal_handler import SignalHandler, _global_handler
+from litellm.types.completion import ChatCompletionMessageParam
 
 # Mark all tests in this file as requiring signal handling
 pytestmark = pytest.mark.requires_signals
@@ -35,11 +38,11 @@ def signal_handler_spy():
         )
         return original_handle(signum, frame)
 
-    _global_handler._handle_signal = spy_handle
+    setattr(_global_handler, "_handle_signal", spy_handle)
     try:
         yield calls
     finally:
-        _global_handler._handle_signal = original_handle
+        setattr(_global_handler, "_handle_signal", original_handle)
 
 
 def capture_signal_handlers():
@@ -255,8 +258,8 @@ class TestMultiAgentSignalSharing:
     @pytest.mark.asyncio
     async def test_signal_cancels_all_agents_tasks(self):
         """Verify SIGINT cancels tasks across all agents."""
-        agents = []
-        cancellation_tracking = {"cancelled": []}
+        agents: list[Agent] = []
+        cancellation_tracking: dict[str, list[int]] = {"cancelled": []}
 
         @tool
         async def tracked_operation(agent_id: int) -> str:
@@ -313,8 +316,9 @@ class TestSignalHandlerEdgeCases:
         initialization_interrupted = False
 
         # Mock a slow component initialization
-        class SlowComponent:
+        class SlowComponent(AgentComponent):
             async def install(self, agent):
+                await super().install(agent)
                 try:
                     await asyncio.sleep(2)
                 except asyncio.CancelledError:
@@ -337,12 +341,12 @@ class TestSignalHandlerEdgeCases:
             pass
 
         # Cleanup
-        if agent._state >= AgentState.READY:
+        if agent.state >= AgentState.READY:
             await agent.events.async_close()
         else:
             agent.events.close()
 
-        assert initialization_interrupted or agent._state < AgentState.READY
+        assert initialization_interrupted or agent.state < AgentState.READY
 
     @pytest.mark.asyncio
     async def test_weak_reference_cleanup(self):
@@ -471,7 +475,13 @@ class TestRealWorldScenarios:
         with patch.object(agent.model, "stream", mock_stream):
 
             async def consume_stream():
-                async for _ in agent.model.stream(agent.messages):
+                formatted = await agent.model.format_message_list_for_llm(
+                    agent.messages
+                )
+                formatted_sequence = cast(
+                    Sequence[ChatCompletionMessageParam], formatted
+                )
+                async for _ in agent.model.stream(formatted_sequence):
                     pass
 
             stream_task = asyncio.create_task(consume_stream())

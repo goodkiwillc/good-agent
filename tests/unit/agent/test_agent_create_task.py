@@ -1,7 +1,8 @@
 import asyncio
+from typing import Any
 
 import pytest
-from good_agent import Agent
+from good_agent import Agent, tool
 from good_agent.components import AgentComponent
 
 
@@ -174,7 +175,7 @@ class TestAgentCreateTask:
 
     async def test_custom_cleanup_callback(self):
         """Test custom cleanup callback functionality."""
-        cleanup_called = {"called": False, "task": None}
+        cleanup_called: dict[str, Any] = {"called": False, "task": None}
 
         def cleanup_callback(task: asyncio.Task) -> None:
             cleanup_called["called"] = True

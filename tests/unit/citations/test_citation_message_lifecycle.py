@@ -124,10 +124,12 @@ class TestLocalCitationStorage:
         message = agent.messages[-1]
 
         # Sparse indices should be compacted to sequential
-        assert len(message.citations) == 3
-        assert str(message.citations[0]) == "https://example.com/doc1"
-        assert str(message.citations[1]) == "https://example.com/doc3"
-        assert str(message.citations[2]) == "https://example.com/doc5"
+        citations = message.citations
+        assert citations is not None
+        assert len(citations) == 3
+        assert str(citations[0]) == "https://example.com/doc1"
+        assert str(citations[1]) == "https://example.com/doc3"
+        assert str(citations[2]) == "https://example.com/doc5"
 
         await agent.events.async_close()
 
@@ -148,8 +150,10 @@ class TestLocalCitationStorage:
         message = agent.messages[-1]
 
         # Only one citation despite multiple references
-        assert len(message.citations) == 1
-        assert str(message.citations[0]) == "https://example.com/doc"
+        citations = message.citations
+        assert citations is not None
+        assert len(citations) == 1
+        assert str(citations[0]) == "https://example.com/doc"
 
         await agent.events.async_close()
 

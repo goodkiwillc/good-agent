@@ -5,6 +5,7 @@ import pytest
 from good_agent import Agent
 from good_agent.mcp import MCPClientManager, MCPToolAdapter
 from good_agent.mcp.adapter import MCPToolSpec
+from good_agent.mcp.client import MCPServerConfig
 from good_agent.tools import ToolResponse
 from mcp import ClientSession
 from mcp.types import ListToolsResult
@@ -43,7 +44,7 @@ class TestMCPToolAdapter:
 
     def test_adapter_creation(self, mock_mcp_client, mock_mcp_tool_spec):
         """Test creating an MCP tool adapter."""
-        adapter = MCPToolAdapter(
+        adapter: MCPToolAdapter = MCPToolAdapter(
             mcp_client=mock_mcp_client,
             tool_spec=mock_mcp_tool_spec,
             name="custom_name",
@@ -55,7 +56,7 @@ class TestMCPToolAdapter:
 
     def test_adapter_schema_generation(self, mock_mcp_client, mock_mcp_tool_spec):
         """Test that adapter generates correct schema."""
-        adapter = MCPToolAdapter(
+        adapter: MCPToolAdapter = MCPToolAdapter(
             mcp_client=mock_mcp_client,
             tool_spec=mock_mcp_tool_spec,
         )
@@ -71,7 +72,7 @@ class TestMCPToolAdapter:
     @pytest.mark.asyncio
     async def test_adapter_execution(self, mock_mcp_client, mock_mcp_tool_spec):
         """Test executing a tool through the adapter."""
-        adapter = MCPToolAdapter(
+        adapter: MCPToolAdapter = MCPToolAdapter(
             mcp_client=mock_mcp_client,
             tool_spec=mock_mcp_tool_spec,
         )
@@ -96,7 +97,7 @@ class TestMCPToolAdapter:
     @pytest.mark.asyncio
     async def test_adapter_validation_error(self, mock_mcp_client, mock_mcp_tool_spec):
         """Test that adapter validates input."""
-        adapter = MCPToolAdapter(
+        adapter: MCPToolAdapter = MCPToolAdapter(
             mcp_client=mock_mcp_client,
             tool_spec=mock_mcp_tool_spec,
         )
@@ -124,7 +125,7 @@ class TestMCPToolAdapter:
 
         mock_mcp_client.call_tool = slow_call
 
-        adapter = MCPToolAdapter(
+        adapter: MCPToolAdapter = MCPToolAdapter(
             mcp_client=mock_mcp_client,
             tool_spec=mock_mcp_tool_spec,
             timeout=0.1,  # Very short timeout
@@ -170,7 +171,7 @@ class TestMCPClientManager:
             mock_create.return_value = mock_session
 
             # Connect to a server
-            config = {"url": "test://server"}
+            config: MCPServerConfig = {"url": "test://server"}
             connection = await manager.connect(config)
 
             assert connection.server_id == "server"
@@ -207,7 +208,7 @@ class TestMCPClientManager:
             mock_create.return_value = mock_session
 
             # Connect and discover tools
-            config = {"url": "test://server"}
+            config: MCPServerConfig = {"url": "test://server"}
             connection = await manager.connect(config)
 
             # Check tools were discovered
@@ -240,7 +241,7 @@ class TestMCPClientManager:
             mock_create.return_value = mock_session
 
             # Connect with namespace
-            config = {"url": "test://server", "namespace": "custom"}
+            config: MCPServerConfig = {"url": "test://server", "namespace": "custom"}
             connection = await manager.connect(config)
 
             # Tool should be namespaced

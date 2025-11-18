@@ -104,7 +104,7 @@ class ManualRegistrationComponent(AgentComponent):
     def __init__(self, custom_priority: int = 100):
         super().__init__()
         self.custom_priority = custom_priority
-        self.events = []
+        self.events: list[str] = []
         self.handler_count = 0
 
     def setup(self, agent):

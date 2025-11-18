@@ -1,5 +1,7 @@
 """Tests for utilities/retries.py module."""
 
+from typing import Any
+
 import pytest
 
 from good_agent.utilities.retries import (
@@ -19,7 +21,7 @@ class TestWaitStrategies:
     def test_wait_none(self):
         """Test wait_none strategy returns zero wait time."""
         wait = wait_none()
-        state = RetryState(
+        state: RetryState[Any] = RetryState(
             parent=Retry(),
             attempt=1,
             function=lambda: None,
@@ -31,7 +33,7 @@ class TestWaitStrategies:
     def test_wait_fixed(self):
         """Test wait_fixed strategy returns fixed wait time."""
         wait = wait_fixed(2)
-        state = RetryState(
+        state: RetryState[Any] = RetryState(
             parent=Retry(),
             attempt=1,
             function=lambda: None,
@@ -43,7 +45,7 @@ class TestWaitStrategies:
     def test_wait_random_range(self):
         """Test wait_random strategy returns value in range."""
         wait = wait_random(min=1, max=3)
-        state = RetryState(
+        state: RetryState[Any] = RetryState(
             parent=Retry(),
             attempt=1,
             function=lambda: None,
@@ -61,21 +63,21 @@ class TestWaitStrategies:
         wait = wait_exponential(multiplier=1, exp_base=2)
 
         # Create states for different attempts
-        state1 = RetryState(
+        state1: RetryState[Any] = RetryState(
             parent=Retry(),
             attempt=1,
             function=lambda: None,
             args=(),
             kwargs={},
         )
-        state2 = RetryState(
+        state2: RetryState[Any] = RetryState(
             parent=Retry(),
             attempt=2,
             function=lambda: None,
             args=(),
             kwargs={},
         )
-        state3 = RetryState(
+        state3: RetryState[Any] = RetryState(
             parent=Retry(),
             attempt=3,
             function=lambda: None,
@@ -95,8 +97,8 @@ class TestRetryState:
 
     def test_retry_state_initialization(self):
         """Test RetryState initializes correctly."""
-        parent = Retry()
-        state = RetryState(
+        parent: Retry[Any] = Retry()
+        state: RetryState[Any] = RetryState(
             parent=parent,
             attempt=1,
             function=lambda: None,
@@ -111,10 +113,10 @@ class TestRetryState:
 
     def test_retry_state_success_property(self):
         """Test success property."""
-        parent = Retry()
+        parent: Retry[Any] = Retry()
 
         # Successful state
-        state_success = RetryState(
+        state_success: RetryState[Any] = RetryState(
             parent=parent,
             attempt=1,
             function=lambda: None,
@@ -125,7 +127,7 @@ class TestRetryState:
         assert state_success.success is True
 
         # Failed state
-        state_failed = RetryState(
+        state_failed: RetryState[Any] = RetryState(
             parent=parent,
             attempt=1,
             function=lambda: None,
@@ -137,12 +139,12 @@ class TestRetryState:
 
     def test_retry_state_first_attempt(self):
         """Test first_attempt property."""
-        parent = Retry()
+        parent: Retry[Any] = Retry()
 
-        state1 = RetryState(
+        state1: RetryState[Any] = RetryState(
             parent=parent, attempt=1, function=lambda: None, args=(), kwargs={}
         )
-        state2 = RetryState(
+        state2: RetryState[Any] = RetryState(
             parent=parent, attempt=2, function=lambda: None, args=(), kwargs={}
         )
 
@@ -151,12 +153,12 @@ class TestRetryState:
 
     def test_retry_state_final_attempt(self):
         """Test final_attempt property."""
-        parent = Retry(max_attempts=3)
+        parent: Retry[Any] = Retry(max_attempts=3)
 
-        state2 = RetryState(
+        state2: RetryState[Any] = RetryState(
             parent=parent, attempt=2, function=lambda: None, args=(), kwargs={}
         )
-        state3 = RetryState(
+        state3: RetryState[Any] = RetryState(
             parent=parent, attempt=3, function=lambda: None, args=(), kwargs={}
         )
 
@@ -174,7 +176,7 @@ class TestRetryBasic:
         async def successful_func():
             return "success"
 
-        retry = Retry(max_attempts=3)
+        retry: Retry[Any] = Retry(max_attempts=3)
         async for state in retry(successful_func):
             assert state.result == "success"
             assert state.exception is None
@@ -190,7 +192,7 @@ class TestRetryBasic:
             attempt_count += 1
             raise ValueError("Failed")
 
-        retry = Retry(max_attempts=3)
+        retry: Retry[Any] = Retry(max_attempts=3)
         final_state = None
 
         async for state in retry(failing_func):
@@ -213,7 +215,7 @@ class TestRetryBasic:
                 raise ValueError("Not yet")
             return "success"
 
-        retry = Retry(max_attempts=5)
+        retry: Retry[Any] = Retry(max_attempts=5)
         final_state = None
 
         async for state in retry(eventually_successful):
@@ -235,7 +237,7 @@ class TestRetryBasic:
             attempt_count += 1
             raise ValueError("Always fails")
 
-        retry = Retry(max_attempts=5)
+        retry: Retry[Any] = Retry(max_attempts=5)
 
         async for state in retry(always_fails):
             pass
@@ -249,7 +251,7 @@ class TestRetryBasic:
         def sync_func():
             return "sync result"
 
-        retry = Retry(max_attempts=3)
+        retry: Retry[Any] = Retry(max_attempts=3)
         async for state in retry(sync_func):
             assert state.result == "sync result"
             assert state.success is True

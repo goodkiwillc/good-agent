@@ -1,4 +1,5 @@
 import copy
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -8,6 +9,20 @@ from good_agent.components.tool_adapter import (
     AdapterMetadata,
     ConflictStrategy,
 )
+from good_agent.tools import BoundTool, Tool, ToolResponse
+
+
+ToolLike = Tool[Any, Any] | BoundTool[Any, Any, Any]
+
+
+def as_tool(tool_obj: ToolLike) -> Tool[Any, Any]:
+    assert isinstance(tool_obj, Tool)
+    return cast(Tool[Any, Any], tool_obj)
+
+
+async def run_tool(tool_obj: ToolLike, *args: Any, **kwargs: Any) -> ToolResponse[Any]:
+    callable_tool = as_tool(tool_obj)
+    return await cast(Any, callable_tool)(*args, **kwargs)
 
 
 # Test tools
@@ -17,10 +32,16 @@ async def fetch_url(url: str, timeout: int = 30) -> str:
     return f"Content from {url}"
 
 
+fetch_url = as_tool(fetch_url)
+
+
 @tool
 async def process_data(input_url: str, output_url: str) -> dict:
     """Process data from input URL to output URL."""
     return {"input": input_url, "output": output_url}
+
+
+process_data = as_tool(process_data)
 
 
 class SimpleAdapter(ToolAdapter):
@@ -158,6 +179,8 @@ class TestToolAdapter:
         @tool
         async def other_tool():
             pass
+
+        other_tool = as_tool(other_tool)
 
         assert adapter.should_adapt(other_tool, agent) is False
 
@@ -508,6 +531,6 @@ async def test_end_to_end_adapter_flow():
     assert adapted == {"url": "http://example.com", "timeout": 5}
 
     # Tool would execute successfully with adapted parameters
-    result = await fetch_url(**adapted)
+    result = await run_tool(fetch_url, **adapted)
     assert result.response == "Content from http://example.com"
     assert result.success is True

@@ -1,16 +1,19 @@
 import asyncio
 import random
 import time
-from datetime import date
+from datetime import date, datetime
+from typing import Sequence
 
 import pytest
 from good_agent import Agent
+from good_agent.core.types import URL
 from good_agent.extensions.search import (
     AgentSearch,
     BaseSearchProvider,
     DataDomain,
     OperationType,
     ProviderCapability,
+    SearchProvider,
     SearchResult,
 )
 
@@ -44,10 +47,10 @@ class VariableSpeedProvider(BaseSearchProvider):
             SearchResult(
                 platform=self.name,
                 id=f"{self.name}_{i}",
-                url=f"https://{self.name}.com/{i}",
+                url=URL(f"https://{self.name}.com/{i}"),
                 content=f"Result {i} from {self.name} (took {elapsed:.2f}s)",
                 content_type="text",
-                created_at=date.today(),
+                created_at=datetime.combine(date.today(), datetime.min.time()),
             )
             for i in range(self.result_count)
         ]

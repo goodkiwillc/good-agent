@@ -6,7 +6,7 @@ from good_agent.core.templating import (
     add_named_template,
     get_named_template,
 )
-from jinja2 import TemplateNotFound
+from jinja2 import Environment, TemplateNotFound
 
 
 @pytest.fixture(autouse=True)
@@ -38,7 +38,8 @@ def test_template_registry_parent_lookup():
     assert "Global: {{ value }}" == template
 
     # Should also work via get_source (Jinja2 loader interface)
-    source, _, _ = local_registry.get_source(None, "global_test")
+    env = Environment()
+    source, _, _ = local_registry.get_source(env, "global_test")
     assert "Global: {{ value }}" == source
 
 
@@ -122,8 +123,9 @@ def test_template_not_found_with_parent():
     with pytest.raises(TemplateNotFound):
         local_registry["nonexistent"]
 
+    env = Environment()
     with pytest.raises(TemplateNotFound):
-        local_registry.get_source(None, "nonexistent")
+        local_registry.get_source(env, "nonexistent")
 
 
 def test_template_registry_no_parent():

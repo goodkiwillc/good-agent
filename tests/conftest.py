@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 import pytest_asyncio
-import vcr
+import vcr  # type: ignore[import-untyped]
 from pydantic import PydanticDeprecatedSince20, PydanticDeprecatedSince211
 
 from good_agent.core.event_router import current_test_nodeid
@@ -158,7 +158,7 @@ async def _patched_to_serialized_response(resp, aread):
 # Helper function needed by our patch
 def _transform_headers(resp):
     """Transform headers to VCR format."""
-    out = {}
+    out: dict[str, list[str]] = {}
     for key, var in resp.headers.raw:
         decoded_key = key.decode("utf-8")
         if decoded_key not in out:
@@ -169,7 +169,7 @@ def _transform_headers(resp):
 
 # Apply the monkey-patch to handle _decoder assertion issue
 try:
-    from vcr.stubs import httpx_stubs
+    from vcr.stubs import httpx_stubs  # type: ignore[import-untyped]
 
     httpx_stubs._to_serialized_response = _patched_to_serialized_response
     httpx_stubs._transform_headers = _transform_headers

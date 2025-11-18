@@ -18,7 +18,7 @@ class TestContextValueDescriptor:
         cv = ContextValue("test_value")
         assert cv.name == "test_value"
         assert cv.required is True
-        assert cv.default is ContextValue._MISSING
+        assert cv.default is cv._MISSING
         assert cv.default_factory is None
 
     def test_context_value_with_default(self):
@@ -41,7 +41,7 @@ class TestContextValueDescriptor:
         cv = ContextValue("test_value", required=False)
         assert cv.name == "test_value"
         assert cv.required is False
-        assert cv.default is ContextValue._MISSING
+        assert cv.default is cv._MISSING
 
     def test_context_value_default_and_factory_exclusive(self):
         """Test that default and default_factory are mutually exclusive."""
@@ -70,7 +70,7 @@ class TestContextResolver:
     @pytest.mark.asyncio
     async def test_cached_value_resolution(self, resolver):
         """Test that resolved values are cached."""
-        base_context = {}
+        base_context: dict[str, str] = {}
         provider = AsyncMock(return_value="cached_value")
         resolver.get_provider = Mock(return_value=provider)
 
@@ -87,7 +87,7 @@ class TestContextResolver:
     @pytest.mark.asyncio
     async def test_circular_dependency_detection(self, resolver):
         """Test that circular dependencies are detected."""
-        base_context = {}
+        base_context: dict[str, str] = {}
 
         # Setup circular providers
         async def provider_a():

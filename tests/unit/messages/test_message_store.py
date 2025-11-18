@@ -157,8 +157,10 @@ class TestInMemoryMessageStore:
 
         # Mock Redis client with cached message
         mock_redis = AsyncMock()
+        redis_id = ULID()
+
         message_data = {
-            "id": "test-123",
+            "id": str(redis_id),
             "content": "From Redis",
             "role": "user",
             "type": "user",
@@ -168,13 +170,13 @@ class TestInMemoryMessageStore:
         store = InMemoryMessageStore(redis_client=mock_redis)
 
         # Message not in memory initially
-        assert not store.exists("test-123")
+        assert not store.exists(redis_id)
 
         # Get should fetch from Redis and populate memory
         with pytest.raises(MessageNotFoundError):
             # This will fail because we don't have MessageFactory implemented yet
             # But it tests the Redis fetch path
-            await store.aget("test-123")
+            await store.aget(redis_id)
 
     @pytest.mark.asyncio
     async def test_redis_error_handling(self):
@@ -248,6 +250,7 @@ class TestGlobalMessageStore:
 
         retrieved_store = get_message_store()
         assert retrieved_store is custom_store
+        assert isinstance(retrieved_store, InMemoryMessageStore)
         assert retrieved_store._ttl == 7200
 
     def test_global_convenience_functions(self):

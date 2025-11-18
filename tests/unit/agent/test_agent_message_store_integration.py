@@ -5,6 +5,7 @@ from good_agent.messages.store import (
     message_store,
     set_message_store,
 )
+from ulid import ULID
 
 
 class TestAgentMessageStoreIntegration:
@@ -208,7 +209,7 @@ class TestMessageStoreErrorHandling:
         from good_agent.messages.store import MessageNotFoundError
 
         with pytest.raises(MessageNotFoundError):
-            message_store.get("non-existent-id")
+            message_store.get(ULID())
 
     def test_agent_continues_on_store_error(self):
         """Test that agent operations continue even if store has issues"""
