@@ -9,7 +9,7 @@ def test_apply_sync_runs_async_handlers() -> None:
     router = EventRouter()
 
     @router.on("bridge:test")
-    async def handler(ctx: EventContext) -> str:
+    async def handler(ctx: EventContext):
         await asyncio.sleep(0)
         ctx.output = "async-complete"
         return ctx.output

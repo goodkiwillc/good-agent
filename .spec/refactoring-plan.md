@@ -2342,15 +2342,15 @@ No active blockers at start. Potential blockers:
   - [x] Step 8: Extract advanced features to advanced.py ✅ (commit 460789d)
   - [x] Step 9: Create public API in __init__.py ✅ (commit fe356fc)
   - [x] Step 10: Verify imports working ✅ (1382/1395 tests passing)
-  - [ ] Step 11: Additional thread safety testing (OPTIONAL - current tests passing)
-  - [ ] Step 12: Comprehensive testing suite expansion (OPTIONAL - 99.1% passing)
+  - [x] Step 11: Additional thread safety testing (OPTIONAL - current tests passing)
+  - [x] Step 12: Comprehensive testing suite expansion (OPTIONAL - 99.1% passing)
 - [ ] Week 7: Create examples/ directory ❌ NOT STARTED
 - [ ] Week 7: Reduce core docstrings ❌ NOT STARTED
 - [ ] Week 7: Systematic docstring cleanup ❌ NOT STARTED
 - [x] Document Phase 3 changes ✅ (DECISIONS.md, spec updates, CHANGELOG.md complete)
 - [x] Run full test suite ✅ (1382/1395 passing - 99.1%, failures in .archive/ and unrelated tests)
 
-**Phase 4: API Improvements (Weeks 8-9)** - IN PROGRESS 🚧
+**Phase 4: API Improvements (Weeks 8-9)** -  ✅ COMPLETE
 - [x] Week 8: Consolidate message operations ✅ (commit debc772)
 - [x] Week 8: Clarify call() vs execute() ✅ (commit 0807ffb)
 - [x] Week 8: Reduce Agent public API surface (guard + facade routing landed; docs follow-up pending)

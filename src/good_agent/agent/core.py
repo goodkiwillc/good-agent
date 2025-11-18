@@ -62,13 +62,6 @@ from ..components.template_manager import (
     Template,
     TemplateManager,
 )
-from .config import (
-    AGENT_CONFIG_KEYS,
-    AgentConfigManager,
-    AgentOnlyConfig,
-    Context as AgentContext,
-    LLMCommonConfig,
-)
 from ..events import (  # Import typed event parameters
     AgentEvents,
     AgentInitializeParams,
@@ -87,10 +80,10 @@ from ..messages import (
     ToolMessage,
     UserMessage,
 )
+from ..messages.store import put_message
+from ..messages.validation import MessageSequenceValidator, ValidationMode
 from ..mock import AgentMockInterface
 from ..model.llm import LanguageModel
-from .pool import AgentPool
-from ..messages.store import put_message
 from ..tools import (
     BoundTool,
     Tool,
@@ -101,7 +94,16 @@ from ..tools import (
     ToolSignature,
 )
 from ..utilities import print_message
-from ..messages.validation import MessageSequenceValidator, ValidationMode
+from .config import (
+    AGENT_CONFIG_KEYS,
+    AgentConfigManager,
+    AgentOnlyConfig,
+    LLMCommonConfig,
+)
+from .config import (
+    Context as AgentContext,
+)
+from .pool import AgentPool
 
 if TYPE_CHECKING:
     from .conversation import Conversation
@@ -300,6 +302,7 @@ class Agent(EventRouter):
             "add_tool_invocation",
             "add_tool_invocations",
             "add_tool_response",
+            # events
             "apply",
             "apply_async",
             "apply_sync",
@@ -307,9 +310,10 @@ class Agent(EventRouter):
             "apply_typed_sync",
             "async_close",
             "broadcast_to",
-            "chat",
-            "close",
             "consume_from",
+            # lifecycle
+            "close",
+            "chat",
             "context_provider",
             "context_providers",
             "copy",
@@ -1790,7 +1794,7 @@ class Agent(EventRouter):
             Complete resolved context dictionary
         """
         warnings.warn(
-            "Agent.get_rendering_context_async() is deprecated. Use agent.template.resolve_context_async() instead.",
+            "Agent.get_rendering_context_async() is deprecated. Use agent.template.resolve_context() instead.",
             DeprecationWarning,
             stacklevel=2,
         )
