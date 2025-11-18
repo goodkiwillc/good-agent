@@ -22,3 +22,18 @@ def test_auto_registration_still_occurs() -> None:
     component = SampleComponent()
     ctx = component.apply_sync("component:test")
     assert ctx.output == "auto-works"
+
+
+class SampleAsyncComponent(EventRouter):
+    def __init__(self) -> None:
+        super().__init__()
+
+    @on("component:async_test")
+    async def auto_registered_async(self, ctx: EventContext) -> None:
+        ctx.output = "auto-works-async"
+
+
+def test_auto_registration_still_occurs_async() -> None:
+    component = SampleAsyncComponent()
+    ctx = component.apply_sync("component:async_test")
+    assert ctx.output == "auto-works-async"
