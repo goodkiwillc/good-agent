@@ -26,7 +26,8 @@ from __future__ import annotations
 import functools
 import inspect
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Awaitable, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
+from collections.abc import Awaitable
 
 from .context import EventContext
 from .protocols import ApplyInterrupt, EventName, F
@@ -94,7 +95,12 @@ class emit:
     ERROR = LifecyclePhase.ERROR
     FINALLY = LifecyclePhase.FINALLY
 
-    def __new__(cls, lifecycle=None, *args, **kwargs):
+    def __new__(
+        cls,
+        lifecycle: LifecyclePhase | str | Callable[..., Any] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
         """Handle special case of @emit without parentheses."""
         # If lifecycle is a callable (function), it means @emit was used without parentheses
         if callable(lifecycle) and not isinstance(lifecycle, (LifecyclePhase, str)):
