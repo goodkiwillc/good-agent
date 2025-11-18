@@ -375,9 +375,7 @@ async def test_stream_wrapper_interface():
     mock_router.acompletion = AsyncMock(return_value=mock_stream())
     lm._router = mock_router
 
-    messages: list[ChatCompletionMessageParam] = [
-        {"role": "user", "content": "Test"}
-    ]
+    messages: list[ChatCompletionMessageParam] = [{"role": "user", "content": "Test"}]
     wrapper = StreamingWrapper(lm, messages)
 
     # Stream and collect

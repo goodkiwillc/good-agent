@@ -176,9 +176,7 @@ class TestMessageProperties:
 
         msg = AssistantMessageStructuredOutput[WeatherResponse](
             content_parts=[
-                TextContentPart(
-                    text="The weather in New York is 25.0°C with sunny."
-                )
+                TextContentPart(text="The weather in New York is 25.0°C with sunny.")
             ],
             output=weather,
         )

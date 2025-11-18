@@ -19,9 +19,7 @@ def pytest_configure(config):
     # Patch asyncio to add more context to task destruction warnings
     original_task_del = getattr(asyncio.Task, "__del__", None)
     task_destructor: TaskDestructor | None = (
-        cast(TaskDestructor, original_task_del)
-        if callable(original_task_del)
-        else None
+        cast(TaskDestructor, original_task_del) if callable(original_task_del) else None
     )
 
     def enhanced_task_del(self: asyncio.Task[Any]) -> None:
@@ -45,6 +43,7 @@ def pytest_configure(config):
     if not _is_patched(task_destructor):
         setattr(asyncio.Task, "__del__", enhanced_task_del)
         setattr(enhanced_task_del, "_patched", True)
+
 
 def pytest_runtest_setup(item):
     """Track current test"""

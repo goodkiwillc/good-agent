@@ -19,7 +19,9 @@ fields:
     assert r_get.success is True
     assert r_get.response.strip().startswith("o.id")
 
-    r_set = cast(ToolResponse[str], await ed.set("fields.created_at", {"path": "o.created_at"}))
+    r_set = cast(
+        ToolResponse[str], await ed.set("fields.created_at", {"path": "o.created_at"})
+    )
     assert r_set.success is True and r_set.response == "ok"
     full = cast(ToolResponse[str], await ed.text())
     y = yaml.safe_load(full.response) or {}
@@ -133,12 +135,17 @@ fields:
     ed = EditableYAML(doc, validator=validator)
     await ed.initialize()
 
-    r_fail = cast(ToolResponse[str], await ed.set("fields.invalid_col", {"path": "o.x"}, validate=True))
+    r_fail = cast(
+        ToolResponse[str],
+        await ed.set("fields.invalid_col", {"path": "o.x"}, validate=True),
+    )
     assert r_fail.success is True and r_fail.response.startswith("ERROR:")
     g = cast(ToolResponse[str], await ed.get("fields.invalid_col"))
     assert g.response.strip() == ""
 
-    r_bad = cast(ToolResponse[str], await ed.replace(r"fields:\n", "fields\n", validate=True))
+    r_bad = cast(
+        ToolResponse[str], await ed.replace(r"fields:\n", "fields\n", validate=True)
+    )
     assert r_bad.success is True and r_bad.response.startswith("ERROR:")
     t = cast(ToolResponse[str], await ed.read())
     assert "ok:" in t.response

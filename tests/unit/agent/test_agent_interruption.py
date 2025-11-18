@@ -67,9 +67,7 @@ class TestAgentInterruption:
         async def consume_stream():
             """Helper to consume the async generator."""
             formatted = await agent.model.format_message_list_for_llm(agent.messages)
-            formatted_sequence = cast(
-                Sequence[ChatCompletionMessageParam], formatted
-            )
+            formatted_sequence = cast(Sequence[ChatCompletionMessageParam], formatted)
             async for chunk in agent.model.stream(formatted_sequence):
                 pass  # Just consume chunks
 

@@ -7,7 +7,7 @@ import threading
 import time
 import weakref
 from contextlib import contextmanager
-from typing import Any, Sequence, cast
+from typing import Sequence, cast
 from unittest.mock import MagicMock, patch
 
 import pytest

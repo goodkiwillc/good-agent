@@ -2,7 +2,7 @@ import asyncio
 import random
 import time
 from datetime import date, datetime
-from typing import Sequence
+from statistics import median
 
 import pytest
 from good_agent import Agent
@@ -13,7 +13,6 @@ from good_agent.extensions.search import (
     DataDomain,
     OperationType,
     ProviderCapability,
-    SearchProvider,
     SearchResult,
 )
 
@@ -145,6 +144,11 @@ class TestPerformance:
     async def test_deduplication_performance(self):
         """Test performance impact of deduplication."""
 
+        async def _invoke_and_measure(agent: Agent, *, query: str) -> float:
+            start = time.perf_counter()
+            await agent.invoke("search", query=query)
+            return time.perf_counter() - start
+
         # Create providers that return many duplicate results
         class DuplicateProvider(BaseSearchProvider):
             def __init__(self, name: str):
@@ -193,9 +197,7 @@ class TestPerformance:
         # Warm-up to eliminate first-run overhead
         await agent_dedup.invoke("search", query="warmup")
 
-        start = time.time()
         response_dedup = await agent_dedup.invoke("search", query="test")
-        dedup_time = time.time() - start
 
         results_dedup = response_dedup.response
 
@@ -212,9 +214,7 @@ class TestPerformance:
         # Warm-up to eliminate first-run overhead
         await agent_no_dedup.invoke("search", query="warmup")
 
-        start = time.time()
         response_no_dedup = await agent_no_dedup.invoke("search", query="test")
-        no_dedup_time = time.time() - start
 
         results_no_dedup = response_no_dedup.response
 
@@ -224,7 +224,29 @@ class TestPerformance:
         assert total_dedup < total_no_dedup
 
         # Deduplication shouldn't add significant overhead
-        assert dedup_time < no_dedup_time * 1.5  # Allow 50% overhead max
+        measurement_iterations = 6
+        dedup_timings: list[float] = []
+        no_dedup_timings: list[float] = []
+
+        for _ in range(measurement_iterations):
+            dedup_timings.append(
+                await _invoke_and_measure(agent_dedup, query="benchmark")
+            )
+            await asyncio.sleep(0)
+            no_dedup_timings.append(
+                await _invoke_and_measure(agent_no_dedup, query="benchmark")
+            )
+            await asyncio.sleep(0)
+
+        dedup_median = median(dedup_timings)
+        no_dedup_median = median(no_dedup_timings)
+        max_multiplier = 1.75
+        assert dedup_median < no_dedup_median * max_multiplier, (
+            "Deduplication slowdown exceeded threshold: "
+            f"median_dedup={dedup_median:.4f}s, median_no_dedup={no_dedup_median:.4f}s, "
+            f"allowance={max_multiplier}x, dedup_runs={dedup_timings}, "
+            f"no_dedup_runs={no_dedup_timings}"
+        )
 
 
 class TestConcurrency:

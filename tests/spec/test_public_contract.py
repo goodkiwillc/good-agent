@@ -85,9 +85,7 @@ class TestBasicUsage:
                 f'Weather: temp_c={structured_message.output.temp_c}, summary="{structured_message.output.summary}"'
             )
             # Can continue longer interactions; structured output just for this turn
-            follow_up = await agent.call(
-                "Is that warm for Paris at this time of year?"
-            )
+            follow_up = await agent.call("Is that warm for Paris at this time of year?")
 
             logger.info(follow_up)
 

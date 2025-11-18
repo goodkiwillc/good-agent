@@ -84,9 +84,7 @@ class TestAgentInjection:
 
         async with Agent("Test system", tools=[get_session_info]) as agent:
             # Test direct invocation
-            result: ToolResponse[str] = await agent.tool_calls.invoke(
-                get_session_info
-            )
+            result: ToolResponse[str] = await agent.tool_calls.invoke(get_session_info)
 
             assert result.success
             response_text = cast(str, result.response)
