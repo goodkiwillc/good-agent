@@ -188,15 +188,24 @@ class ToolExecutor:
                     error=None,
                 )
 
-            # Emit success event
-            self.agent.do(
-                AgentEvents.TOOL_CALL_AFTER,
-                tool_name=resolved_name,
-                tool_call_id=tool_call_id,
-                response=tool_response,  # Pass the full ToolResponse object
-                parameters=visible_params,
-                success=tool_response.success,
-            )
+            # Emit event based on success status
+            if tool_response.success:
+                self.agent.do(
+                    AgentEvents.TOOL_CALL_AFTER,
+                    tool_name=resolved_name,
+                    tool_call_id=tool_call_id,
+                    response=tool_response,  # Pass the full ToolResponse object
+                    parameters=visible_params,
+                    success=True,
+                )
+            else:
+                self.agent.do(
+                    AgentEvents.TOOL_CALL_ERROR,
+                    tool_name=resolved_name,
+                    tool_call_id=tool_call_id,
+                    error=tool_response.error,
+                    parameters=visible_params,
+                )
 
         except Exception as e:
             logger.exception(f"Error invoking tool {resolved_name}: {e}")
@@ -906,6 +915,10 @@ class ToolExecutor:
 
         coerced = dict(parameters)
         param_schemas = schema["parameters"].get("properties", {})
+        
+        # Debug: print parameter schemas
+        # import json
+        # print(f"DEBUG: Coercing parameters for tool. Schema params: {json.dumps(param_schemas, indent=2)}")
 
         # Helper to resolve nested tool schemas
         def _resolve_tool_for_schema(t: Any) -> Any:
@@ -925,7 +938,35 @@ class ToolExecutor:
 
             # Handle string values that should be coerced
             if isinstance(param_value, str):
-                param_type = param_schema.get("type")
+                # Check if parameter has a type definition
+                if "anyOf" in param_schema:
+                    # Handle anyOf types (e.g. Optional[T])
+                    types = [t.get("type") for t in param_schema["anyOf"]]
+                    if "boolean" in types:
+                        param_type = "boolean"
+                    elif "integer" in types:
+                        param_type = "integer"
+                    elif "number" in types:
+                        param_type = "number"
+                    elif "object" in types:
+                        param_type = "object"
+                    elif "array" in types:
+                        param_type = "array"
+                    else:
+                        # Default to string but try to infer if it looks like JSON
+                        param_type = "string"
+                        if (param_value.startswith("{") and param_value.endswith("}")) or \
+                           (param_value.startswith("[") and param_value.endswith("]")):
+                            # Check if object or array are allowed types in anyOf
+                            if "object" in types or "array" in types:
+                                try:
+                                    coerced[param_name] = orjson.loads(param_value)
+                                    # Skip further coercion if successful
+                                    continue
+                                except Exception:
+                                    pass
+                else:
+                    param_type = param_schema.get("type")
 
                 # Coerce based on schema type
                 if param_type == "boolean":
@@ -946,6 +987,35 @@ class ToolExecutor:
                 elif param_type in ("object", "array"):
                     try:
                         coerced[param_name] = orjson.loads(param_value)
+                    except Exception:
+                        pass
+                
+                # Fallback: If schema has type=object or type=array but wasn't caught above
+                # e.g. because it wasn't processed correctly
+                elif param_schema.get("type") in ("object", "array"):
+                     if (param_value.startswith("{") and param_value.endswith("}")) or \
+                        (param_value.startswith("[") and param_value.endswith("]")):
+                        try:
+                            coerced[param_name] = orjson.loads(param_value)
+                        except Exception:
+                            pass
+                # Handle simple types that might be wrapped in anyOf
+                # Or handle generic string inputs that look like JSON but have no explicit type (or unknown type)
+                elif (param_value.startswith("{") and param_value.endswith("}")) or \
+                     (param_value.startswith("[") and param_value.endswith("]")):
+                    # Check if the schema *allows* object/array via anyOf/oneOf/allOf even if type isn't set
+                    allows_complex = False
+                    if "anyOf" in param_schema:
+                        types = [t.get("type") for t in param_schema["anyOf"]]
+                        if "object" in types or "array" in types:
+                            allows_complex = True
+                    
+                    # If no type constraint is strictly against it, try parsing
+                    # (This is aggressive but needed for some LLM outputs that send JSON strings for everything)
+                    try:
+                        parsed = orjson.loads(param_value)
+                        if isinstance(parsed, (dict, list)):
+                            coerced[param_name] = parsed
                     except Exception:
                         pass
 
