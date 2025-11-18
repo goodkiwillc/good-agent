@@ -227,6 +227,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
     # Legacy support
     _raw_content: str | None = PrivateAttr(default=None)
     _rendered_content: str | None = PrivateAttr(default=None)
+    _legacy_content_fallback: str | None = PrivateAttr(default=None)
 
     # Execution context attributes
     _ok: bool = PrivateAttr(default=True)
@@ -244,6 +245,9 @@ class Message(PrivateAttrBase, GoodBase, ABC):
         **kwargs,
     ):
         # Process content normally
+        legacy_content_arg = kwargs.pop("legacy_content", None)
+        _content: list[Any] = []
+
         if "_content" in kwargs:
             # Legacy private attribute no longer supported
             raise ValueError(
@@ -251,8 +255,6 @@ class Message(PrivateAttrBase, GoodBase, ABC):
             )
         else:
             content = kwargs.pop("content", None) or content
-
-            _content = []
 
             if content:
                 if isinstance(content, str):
@@ -285,10 +287,18 @@ class Message(PrivateAttrBase, GoodBase, ABC):
                     *_content, template_detection=kwargs.pop("template_detection", True)
                 )
 
+        fallback_seed: str | None = None
+        if not kwargs.get("content_parts") and _content:
+            fallback_seed = "\n".join(str(part) for part in _content if part is not None)
+
         super().__init__(**kwargs)
 
         # Finalize content parts (extract template variables if agent is set)
         self._finalize_content_parts()
+
+        fallback_value = legacy_content_arg if legacy_content_arg is not None else fallback_seed
+        if fallback_value:
+            self._legacy_content_fallback = str(fallback_value)
 
     def _finalize_content_parts(self) -> None:
         """Finalize content parts after message creation."""
@@ -347,7 +357,14 @@ class Message(PrivateAttrBase, GoodBase, ABC):
             # Ensure we have content parts to render
             if not self.content_parts:
                 logger.debug(f"No content parts to render for message {self.id}")
-                return ""
+
+                fallback_content = self._legacy_content_fallback or self._raw_content
+                if fallback_content is None:
+                    legacy_attr = getattr(self, "legacy_content", None)
+                    if isinstance(legacy_attr, str):
+                        fallback_content = legacy_attr
+
+                return fallback_content or ""
 
             # Fire BEFORE event to allow components to modify content_parts
             content_parts = self.content_parts
@@ -787,6 +804,13 @@ class Message(PrivateAttrBase, GoodBase, ABC):
 
         # Update with remaining values
         data.update(kwargs)
+
+        if (
+            "legacy_content" not in data
+            and "content" not in data
+            and not data.get("content_parts")
+        ):
+            data["legacy_content"] = self.render(RenderMode.DISPLAY)
 
         # Create new instance of the same type
         return self.__class__(**data)
