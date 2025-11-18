@@ -1,9 +1,14 @@
 """Tests for utilities/printing.py module."""
 
+from rich.console import Console
+
+from good_agent.messages import AssistantMessage, ToolMessage
+from good_agent.tools import ToolCall, ToolCallFunction, ToolResponse
 from good_agent.utilities.printing import (
     _detect_markdown,
     _format_tool_calls,
     _preprocess_xml_tags,
+    print_message,
 )
 
 
@@ -209,3 +214,59 @@ class TestFormatToolCalls:
         result = _format_tool_calls([], "plain")
         # Should return empty string
         assert result == ""
+
+
+class TestPrintMessageIntegration:
+    """Integration tests for print_message helper."""
+
+    def test_print_message_plain_includes_tool_calls(self, capfd):
+        tool_call = ToolCall(
+            id="call-1",
+            type="function",
+            function=ToolCallFunction(name="search", arguments="{}"),
+        )
+        message = AssistantMessage(content="Hello", tool_calls=[tool_call])
+
+        print_message(message, console=None, format="plain", include_tool_calls=True)
+
+        captured = capfd.readouterr().out
+        assert "Hello" in captured
+        assert "Tool: search" in captured
+
+    def test_print_message_truncates_and_uses_markdown_console(self):
+        console = Console(record=True)
+        message = AssistantMessage(content="Long content here", tool_calls=None)
+
+        print_message(
+            message,
+            console=console,
+            format="markdown",
+            include_tool_calls=False,
+            truncate=True,
+            max_length=4,
+        )
+
+        rendered = console.export_text()
+        assert "Long" in rendered
+        assert "Long..." in rendered
+
+    def test_print_message_tool_message_wraps_xml(self):
+        console = Console(record=True)
+        response = ToolResponse(
+            tool_name="xml_tool",
+            tool_call_id="1",
+            response="<tag>value</tag>",
+            parameters={},
+            success=True,
+            error=None,
+        )
+        tool_message = ToolMessage(
+            content="<tag>value</tag>",
+            tool_call_id="1",
+            tool_name="xml_tool",
+            tool_response=response,
+        )
+
+        print_message(tool_message, console=console, format="rich")
+        rendered = console.export_text()
+        assert "<tag>value</tag>" in rendered

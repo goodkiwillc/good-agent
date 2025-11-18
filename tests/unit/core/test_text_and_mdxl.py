@@ -1,3 +1,5 @@
+import pytest
+
 from good_agent.core.mdxl import MDXL
 from good_agent.core.text import StringFormatter
 
@@ -58,3 +60,92 @@ def test_mdxl_references_and_sort_children():
         assert date is not None
         dates.append(date)
     assert dates == sorted(dates)
+
+
+def test_mdxl_version_yaml_and_templates():
+    content = """<?mdxl version=\"2\"?>
+    <doc>
+      <data yaml>
+      foo: bar
+      </data>
+      <templates>
+        <template name=\"greeting\">Hello</template>
+      </templates>
+    </doc>
+    """
+    mdxl = MDXL(content, convert_legacy=False)
+
+    assert mdxl.version == "2"
+    data_elem = mdxl.select("./doc/data")
+    assert data_elem.attributes["yaml"] is True
+    box_data = data_elem.data
+    assert box_data["foo"] == "bar"
+
+    assert mdxl.select("./doc").templates == {"greeting": "Hello"}
+
+
+def test_mdxl_select_behaviour_and_children():
+    content = """<doc>
+      <item id=\"a\" />
+      <item id=\"b\" />
+    </doc>"""
+    mdxl = MDXL(content, convert_legacy=False)
+
+    assert len(mdxl) == 1  # auto-wrapped root contains a single <doc> element
+    doc = mdxl[0]
+    assert doc.tag == "doc"
+    assert len(doc.children) == 2
+    assert doc.children[0].get("id") == "a"
+
+    with pytest.raises(IndexError):
+        _ = doc[5]
+
+    with pytest.raises(ValueError):
+        doc.select("./missing")
+
+    assert doc.select("./missing", raise_if_none=False) is None
+
+
+def test_mdxl_data_setter_updates_text():
+    mdxl = MDXL("<root></root>", convert_legacy=False)
+    mdxl.data = {"answer": 42}
+    assert mdxl.get("yaml") == "yaml"
+    assert "answer" in mdxl.text
+    # Updating through Box should persist
+    data_box = mdxl.data
+    data_box["answer"] = 84
+    assert "84" in mdxl.text
+
+
+def test_string_formatter_auto_groupers_and_cleaning():
+    formatter = StringFormatter()
+    dense = "Line one\nLine two\nLine three"
+    assert formatter.auto_paragraph_grouper(dense).count("\n\n") == 2
+
+    sparse = "Paragraph one\n\nParagraph two\n\n\nParagraph three"
+    grouped = formatter.auto_paragraph_grouper(sparse)
+    assert grouped.count("\n\n") >= 2
+
+    cleaned = formatter.clean(
+        "Item 1.     BUSINESS-",
+        extra_whitespace=True,
+        dashes=True,
+        trailing_punctuation=True,
+    )
+    assert cleaned == "Item 1. BUSINESS"
+
+    quoted = formatter.replace_unicode_quotes("\x93Test\x94")
+    assert quoted == "“Test”"
+
+
+def test_string_formatter_bytes_and_index_adjustment():
+    formatter = StringFormatter()
+    converted = formatter.bytes_string_to_string("ABC")
+    assert converted == "ABC"
+
+    cleaned, indices = formatter.clean_extra_whitespace_with_index_run(
+        "Hello   world"
+    )
+    assert cleaned == "Hello world"
+    adjusted = StringFormatter.index_adjustment_after_clean_extra_whitespace(5, indices)
+    assert adjusted <= 5
