@@ -34,3 +34,25 @@ def test_task_manager_complete_item_validations():
         manager.complete_item("Ops", item_index=None, item_text=None)
     with pytest.raises(IndexError):
         manager.complete_item("Ops", item_index=5)
+
+
+@pytest.mark.asyncio
+async def test_task_manager_tool_wrappers_delegate_calls():
+    manager = TaskManager()
+    create_resp = await manager.create_list_tool(name="Backlog", items=["todo"])
+    assert create_resp.response.name == "Backlog"
+
+    add_resp = await manager.add_item_tool("Backlog", "ship")
+    assert "ship" in add_resp.response
+
+    complete_resp = await manager.complete_item_tool("Backlog", item_text="ship")
+    assert "ship" in complete_resp.response
+
+    view_resp = await manager.view_list_tool("Backlog")
+    assert view_resp.response.items[-1].complete is True
+
+
+def test_task_manager_view_list_missing_list():
+    manager = TaskManager()
+    with pytest.raises(ValueError):
+        manager.view_list("unknown")

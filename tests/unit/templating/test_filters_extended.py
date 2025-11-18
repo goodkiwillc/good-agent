@@ -1,6 +1,8 @@
 import datetime
 
 from good_agent.core.templating._filters import (
+    _filter_nulls,
+    curly,
     dedent,
     format_date,
     format_datetime,
@@ -58,3 +60,14 @@ def test_renderable_invokes_render_method_when_available():
     dummy = DummyRenderable("value")
     assert renderable(dummy, format="json") == "value:json"
     assert renderable("plain") == "plain"
+
+
+def test_filter_nulls_and_curly_helpers():
+    payload = {"a": 1, "b": None}
+    assert _filter_nulls(payload) == {"a": 1}
+    assert curly("{{ literal }}") == "{{ literal }}"
+
+
+def test_format_datetime_iso_fallback():
+    dt = datetime.datetime(2024, 1, 1, 9, 30, 0)
+    assert format_datetime(dt, "") == dt.isoformat()
