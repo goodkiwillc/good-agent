@@ -660,7 +660,6 @@ class Agent(EventRouter):
     async def apply(self, *args: Any, **kwargs: Any) -> EventContext[Any, Any]:
         """Deprecated wrapper delegating to :attr:`events`."""
 
-        self._warn_event_facade("apply")
         return await self.events.apply(*args, **kwargs)
 
     async def apply_async(
@@ -668,13 +667,11 @@ class Agent(EventRouter):
     ) -> EventContext[Any, Any]:
         """Deprecated wrapper delegating to :attr:`events`."""
 
-        self._warn_event_facade("apply_async")
         return await self.events.apply_async(event, **kwargs)
 
     def apply_sync(self, event: EventName, **kwargs: Any) -> EventContext[Any, Any]:
         """Deprecated wrapper delegating to :attr:`events`."""
 
-        self._warn_event_facade("apply_sync")
         return self.events.apply_sync(event, **kwargs)
 
     async def apply_typed(
@@ -684,7 +681,6 @@ class Agent(EventRouter):
         return_type: type[Any] | None = None,
         **kwargs: Any,
     ) -> EventContext[Any, Any]:
-        self._warn_event_facade("apply_typed")
         return await self.events.apply_typed(event, params_type, return_type, **kwargs)
 
     def apply_typed_sync(
@@ -694,7 +690,6 @@ class Agent(EventRouter):
         return_type: type[Any] | None = None,
         **kwargs: Any,
     ) -> EventContext[Any, Any]:
-        self._warn_event_facade("apply_typed_sync")
         return self.events.apply_typed_sync(event, params_type, return_type, **kwargs)
 
     def typed(
@@ -702,47 +697,37 @@ class Agent(EventRouter):
         params_type: type[Any] | None = None,
         return_type: type[Any] | None = None,
     ) -> TypedApply[Any, Any]:
-        self._warn_event_facade("typed")
         return self.events.typed(params_type, return_type)
 
     def broadcast_to(self, obs: EventRouter) -> int:
-        self._warn_event_facade("broadcast_to")
         return self.events.broadcast_to(obs)
 
     def consume_from(self, obs: EventRouter) -> None:
-        self._warn_event_facade("consume_from")
         self.events.consume_from(obs)
 
     def set_event_trace(
         self, enabled: bool, verbosity: int = 1, use_rich: bool = True
     ) -> None:
-        self._warn_event_facade("set_event_trace")
         self.events.set_event_trace(enabled, verbosity=verbosity, use_rich=use_rich)
 
     @property
     def event_trace_enabled(self) -> bool:
-        self._warn_event_facade("event_trace_enabled")
         return self.events.event_trace_enabled
 
     @property
     def ctx(self) -> EventContext:
-        self._warn_event_facade("ctx")
         return self.events.ctx
 
     def join(self, timeout: float = 5.0):
-        self._warn_event_facade("join")
         self.events.join(timeout=timeout)
 
     async def join_async(self, timeout: float = 5.0):
-        self._warn_event_facade("join_async")
         await self.events.join_async(timeout=timeout)
 
     def close(self):
-        self._warn_event_facade("close")
         self.events.close()
 
     async def async_close(self):
-        self._warn_event_facade("async_close")
         await self.events.async_close()
 
     @property
@@ -857,11 +842,6 @@ class Agent(EventRouter):
         Args:
             version_index: The version index to revert to
         """
-        warnings.warn(
-            "Agent.revert_to_version() is deprecated. Use agent.versioning.revert_to_version() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         self.versioning.revert_to_version(version_index)
 
     def fork_context(self, truncate_at: int | None = None, **fork_kwargs):
@@ -879,11 +859,6 @@ class Agent(EventRouter):
                 response = await forked.call("Summarize")
                 # Response only exists in fork
         """
-        warnings.warn(
-            "Agent.fork_context() is deprecated. Use agent.context_manager.fork_context().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self.context_manager.fork_context(truncate_at, **fork_kwargs)
 
     def thread_context(self, truncate_at: int | None = None):
@@ -900,11 +875,6 @@ class Agent(EventRouter):
                 response = await ctx_agent.call("Summarize")
                 # After context, agent has original messages + response
         """
-        warnings.warn(
-            "Agent.thread_context() is deprecated. Use agent.context_manager.thread_context().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self._context_manager.thread_context(truncate_at)
 
     async def initialize(self) -> None:
@@ -1160,13 +1130,8 @@ class Agent(EventRouter):
         wait_on_ready: bool = True,
         cleanup_callback: Callable[[asyncio.Task], None] | None = None,
     ) -> asyncio.Task[T]:
-        """Deprecated shim that forwards to :meth:`Agent.tasks.create`."""
+        """Create and track an asyncio task tied to this agent."""
 
-        warnings.warn(
-            "Agent.create_task() is deprecated. Use agent.tasks.create(...) instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self.tasks.create(
             coro,
             name=name,
@@ -1176,23 +1141,13 @@ class Agent(EventRouter):
         )
 
     def get_task_count(self) -> int:
-        """Deprecated shim for :attr:`Agent.task_count`."""
+        """Number of active managed tasks."""
 
-        warnings.warn(
-            "Agent.get_task_count() is deprecated. Use agent.task_count instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self.task_count
 
     def get_task_stats(self) -> dict[str, Any]:
-        """Deprecated shim for :meth:`Agent.tasks.stats`."""
+        """Return task statistics with component breakdowns."""
 
-        warnings.warn(
-            "Agent.get_task_stats() is deprecated. Use agent.tasks.stats() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self.tasks.stats()
 
     async def wait_for_tasks(self, timeout: float | None = None) -> None:
@@ -1204,11 +1159,6 @@ class Agent(EventRouter):
         Raises:
             asyncio.TimeoutError: If timeout is exceeded
         """
-        warnings.warn(
-            "Agent.wait_for_tasks() is deprecated. Use agent.tasks.wait_for_all() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         await self.tasks.wait_for_all(timeout=timeout)
 
     def _append_message(self, message: Message) -> None:
@@ -1633,11 +1583,6 @@ class Agent(EventRouter):
             self.print(message, mode=self.config.print_messages_mode)
 
     def copy(self, include_messages: bool = True, **config):
-        warnings.warn(
-            "Agent.copy() is deprecated. Use agent.context_manager.copy().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self.context_manager.copy(include_messages=include_messages, **config)
 
     @ensure_ready
@@ -1670,11 +1615,6 @@ class Agent(EventRouter):
             include_messages: Whether to copy messages to the forked agent
             **kwargs: Configuration overrides for the new agent
         """
-        warnings.warn(
-            "Agent.fork() is deprecated. Use agent.context_manager.fork().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self._context_manager.fork(include_messages, **kwargs)
 
     @ensure_ready
@@ -1695,20 +1635,10 @@ class Agent(EventRouter):
         Returns:
             AgentPool containing spawned agents
         """
-        warnings.warn(
-            "Agent.spawn() is deprecated. Use agent.context_manager.spawn().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return await self.context_manager.spawn(n=n, prompts=prompts, **configuration)
 
     def context_provider(self, name: str):
         """Register an instance-specific context provider"""
-        warnings.warn(
-            "Agent.context_provider() is deprecated. Use agent.context_manager.context_provider().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self.context_manager.context_provider(name)
 
     @ensure_ready
@@ -1728,11 +1658,6 @@ class Agent(EventRouter):
                 - "interleaved": Interleave all messages from source agents (not implemented)
             **kwargs: Additional merge options
         """
-        warnings.warn(
-            "Agent.merge() is deprecated. Use agent.context_manager.merge().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         await self.context_manager.merge(*agents, method=method, **kwargs)
 
     def get_rendering_context(
@@ -1750,11 +1675,6 @@ class Agent(EventRouter):
         Returns:
             Complete resolved context dictionary
         """
-        warnings.warn(
-            "Agent.get_rendering_context() is deprecated. Use agent.template.resolve_context_sync() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         # 1. Start with config context (lowest priority)
         context = {}
 
@@ -1793,11 +1713,6 @@ class Agent(EventRouter):
         Returns:
             Complete resolved context dictionary
         """
-        warnings.warn(
-            "Agent.get_rendering_context_async() is deprecated. Use agent.template.resolve_context() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         # 1. Start with config context (lowest priority)
         context = {}
 
@@ -1982,11 +1897,11 @@ class Agent(EventRouter):
     ) -> None:
         """Record a tool invocation via the tool execution manager."""
 
-        warnings.warn(
-            "Agent.add_tool_invocation() is deprecated. Use agent.tool_calls.record_invocation().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+        # warnings.warn(
+        #     "Agent.add_tool_invocation() is deprecated. Use agent.tool_calls.record_invocation().",
+        #     DeprecationWarning,
+        #     stacklevel=2,
+        # )
         self.tool_calls.record_invocation(
             tool,
             response,
@@ -2003,11 +1918,11 @@ class Agent(EventRouter):
     ) -> None:
         """Record multiple tool invocations via the tool execution manager."""
 
-        warnings.warn(
-            "Agent.add_tool_invocations() is deprecated. Use agent.tool_calls.record_invocations().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+        # warnings.warn(
+        #     "Agent.add_tool_invocations() is deprecated. Use agent.tool_calls.record_invocations().",
+        #     DeprecationWarning,
+        #     stacklevel=2,
+        # )
         self.tool_calls.record_invocations(
             tool,
             invocations,
@@ -2070,11 +1985,7 @@ class Agent(EventRouter):
         Returns:
             ToolResponse with execution result
         """
-        warnings.warn(
-            "Agent.invoke() is deprecated. Use agent.tool_calls.invoke().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+
         return await self.tool_calls.invoke(
             tool,
             tool_name=tool_name,
@@ -2096,11 +2007,7 @@ class Agent(EventRouter):
         Returns:
             List of ToolResponse objects in invocation order
         """
-        warnings.warn(
-            "Agent.invoke_many() is deprecated. Use agent.tool_calls.invoke_many().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+
         return await self.tool_calls.invoke_many(invocations)
 
     def invoke_func(
@@ -2112,13 +2019,8 @@ class Agent(EventRouter):
         tool_call_id: str | None = None,
         **bound_parameters: Any,
     ) -> Callable[..., Awaitable[ToolResponse]]:
-        """Deprecated wrapper delegating to tool execution manager."""
+        """Create a bound function that invokes a tool with preset parameters."""
 
-        warnings.warn(
-            "Agent.invoke_func() is deprecated. Use agent.tool_calls.invoke_func().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self.tool_calls.invoke_func(
             tool,
             tool_name=tool_name,
@@ -2131,13 +2033,8 @@ class Agent(EventRouter):
         self,
         invocations: Sequence[tuple[Tool | str | Callable, dict[str, Any]]],
     ) -> Callable[[], Awaitable[list[ToolResponse]]]:
-        """Deprecated wrapper delegating to tool execution manager."""
+        """Create a bound coroutine that executes a batch of tool invocations."""
 
-        warnings.warn(
-            "Agent.invoke_many_func() is deprecated. Use agent.tool_calls.invoke_many_func().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self.tool_calls.invoke_many_func(invocations)
 
     def get_pending_tool_calls(self) -> list[ToolCall]:
@@ -2146,11 +2043,7 @@ class Agent(EventRouter):
         Returns:
             List of ToolCall objects that are pending execution
         """
-        warnings.warn(
-            "Agent.get_pending_tool_calls() is deprecated. Use agent.tool_calls.get_pending_tool_calls().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+
         return self.tool_calls.get_pending_tool_calls()
 
     def has_pending_tool_calls(self) -> bool:
@@ -2159,11 +2052,6 @@ class Agent(EventRouter):
         Returns:
             True if there are pending tool calls
         """
-        warnings.warn(
-            "Agent.has_pending_tool_calls() is deprecated. Use agent.tool_calls.has_pending_tool_calls().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self.tool_calls.has_pending_tool_calls()
 
     async def resolve_pending_tool_calls(self) -> AsyncIterator[ToolMessage]:
@@ -2172,11 +2060,6 @@ class Agent(EventRouter):
         Yields:
             ToolMessage for each resolved tool call
         """
-        warnings.warn(
-            "Agent.resolve_pending_tool_calls() is deprecated. Use agent.tool_calls.resolve_pending_tool_calls().",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         async for msg in self.tool_calls.resolve_pending_tool_calls():
             yield msg
 
@@ -2425,11 +2308,7 @@ class Agent(EventRouter):
         Returns:
             Total token count across specified messages
         """
-        warnings.warn(
-            "Agent.get_token_count() is deprecated. Use agent.token_count or good_agent.utilities.tokens helpers instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+
         from ..utilities.tokens import get_message_token_count
 
         # Use provided messages or all agent messages
@@ -2462,11 +2341,7 @@ class Agent(EventRouter):
         Returns:
             Dictionary mapping role to token count
         """
-        warnings.warn(
-            "Agent.get_token_count_by_role() is deprecated. Use good_agent.utilities.tokens.get_message_token_count() per role instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+
         from ..utilities.tokens import get_message_token_count
 
         counts: dict[str, int] = {

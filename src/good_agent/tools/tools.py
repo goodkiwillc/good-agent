@@ -886,6 +886,10 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
             ),
         )
 
+    def get_schema(self) -> dict[str, Any]:
+        """Get the tool schema (wrapper for model_json_schema)"""
+        return self.model.model_json_schema(schema_generator=BaseToolGenerateJsonSchema)
+
     @property
     def model(self) -> type[BaseModel]:
         """Generate Pydantic model from function signature (only visible parameters)"""

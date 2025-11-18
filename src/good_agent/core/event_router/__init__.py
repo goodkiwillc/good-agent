@@ -2,27 +2,23 @@
 
 from __future__ import annotations
 
-# Core protocols and types
-from .protocols import (
-    ApplyInterrupt,
-    EventName,
-    EventPriority,
-)
+# Advanced features
+from .advanced import TypedApply
 
 # Event context
 from .context import EventContext, event_ctx
 
-# Handler registration and lifecycle
-from .registration import HandlerRegistration, LifecyclePhase, current_test_nodeid
+# Main EventRouter class
+from .core import EventRouter
 
 # Decorators
 from .decorators import EventHandlerDecorator, emit, emit_event, on, typed_on
 
-# Main EventRouter class
-from .core import EventRouter
+# Core protocols and types
+from .protocols import ApplyInterrupt, EventName, EventPriority, PredicateHandler
 
-# Advanced features
-from .advanced import TypedApply
+# Handler registration and lifecycle
+from .registration import HandlerRegistration, LifecyclePhase, current_test_nodeid
 
 # Public API - maintains backward compatibility with original event_router.py
 __all__ = [
@@ -42,6 +38,7 @@ __all__ = [
     # Type aliases
     "EventName",
     "EventPriority",
+    "PredicateHandler",
     "EventHandlerDecorator",
     # Test infrastructure
     "current_test_nodeid",

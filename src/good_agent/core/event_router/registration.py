@@ -273,11 +273,33 @@ class HandlerRegistry:
 
         with self._lock:
             # Get handlers from this registry
+            # Collect handlers for both exact match and wildcard
+            matches = []
             if event in self._events:
-                # Sort priorities in descending order (high to low)
-                priorities = sorted(self._events[event].keys(), reverse=True)
+                matches.append(self._events[event])
+            
+            # Add wildcard handlers if this isn't already a wildcard lookup
+            if event != "*" and "*" in self._events:
+                matches.append(self._events["*"])
+
+            # Merge and sort priorities
+            if matches:
+                # Use a set to collect all unique priority levels
+                all_priorities = set()
+                for match in matches:
+                    all_priorities.update(match.keys())
+                
+                # Sort priorities descending
+                priorities = sorted(all_priorities, reverse=True)
+                
                 for priority in priorities:
-                    handlers.extend(self._events[event][priority])
+                    # Add exact match handlers first
+                    if event in self._events and priority in self._events[event]:
+                        handlers.extend(self._events[event][priority])
+                    
+                    # Then add wildcard handlers
+                    if event != "*" and "*" in self._events and priority in self._events["*"]:
+                        handlers.extend(self._events["*"][priority])
 
             # Get handlers from broadcast targets
             if include_broadcasts:
