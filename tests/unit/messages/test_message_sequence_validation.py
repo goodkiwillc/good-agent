@@ -404,9 +404,11 @@ class TestAgentMessageSequenceValidation:
     async def test_config_parameter_validation_mode(self):
         """Test that validation mode can be set via config parameter."""
         # Test each mode
-        modes: tuple[
-            Literal["strict"], Literal["warn"], Literal["silent"]
-        ] = ("strict", "warn", "silent")
+        modes: tuple[Literal["strict"], Literal["warn"], Literal["silent"]] = (
+            "strict",
+            "warn",
+            "silent",
+        )
         for mode in modes:
             async with Agent("Test", message_validation_mode=mode) as agent:
                 assert agent._sequence_validator.mode == ValidationMode(mode)

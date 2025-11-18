@@ -289,14 +289,18 @@ class Message(PrivateAttrBase, GoodBase, ABC):
 
         fallback_seed: str | None = None
         if not kwargs.get("content_parts") and _content:
-            fallback_seed = "\n".join(str(part) for part in _content if part is not None)
+            fallback_seed = "\n".join(
+                str(part) for part in _content if part is not None
+            )
 
         super().__init__(**kwargs)
 
         # Finalize content parts (extract template variables if agent is set)
         self._finalize_content_parts()
 
-        fallback_value = legacy_content_arg if legacy_content_arg is not None else fallback_seed
+        fallback_value = (
+            legacy_content_arg if legacy_content_arg is not None else fallback_seed
+        )
         if fallback_value:
             self._legacy_content_fallback = str(fallback_value)
 

@@ -184,14 +184,13 @@ async def test_component_tool_type_checking():
         # The decorated methods should preserve their signatures
         sync_descriptor = manager.__class__.__dict__["sync_method"]
         async_descriptor = manager.__class__.__dict__["async_method"]
-        sync_tool_typed: BoundTool[AgentComponent, Any, Any] = sync_descriptor
-        async_tool_typed: BoundTool[AgentComponent, Any, Any] = async_descriptor
+        cast(BoundTool[AgentComponent, Any, Any], sync_descriptor)
+        cast(BoundTool[AgentComponent, Any, Any], async_descriptor)
 
 
 @pytest.mark.asyncio
 async def test_component_tool_with_hide_parameter():
     """Test that component tools can hide parameters from the schema."""
-    from good_agent import tool  # Import tool locally to avoid scope issues
 
     class SecureManager(AgentComponent):
         @component_tool(hide=["api_key"])

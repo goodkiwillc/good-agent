@@ -49,7 +49,9 @@ async def test_tool_methods_become_tool_instances():
     component = SampleComponent()
 
     # Access from instance should return Tool instance
-    tool_instance: Tool[Any, Any] = cast(Tool[Any, Any], getattr(component, "increment"))
+    tool_instance: Tool[Any, Any] = cast(
+        Tool[Any, Any], getattr(component, "increment")
+    )
     assert isinstance(tool_instance, Tool), "Expected Tool instance at instance level"
 
     # Verify Tool properties
@@ -66,7 +68,9 @@ async def test_tool_methods_become_tool_instances():
 async def test_bound_tools_maintain_component_state():
     """Test that Tool instances maintain access to component state."""
     component = SampleComponent()
-    tool_instance: Tool[Any, Any] = cast(Tool[Any, Any], getattr(component, "increment"))
+    tool_instance: Tool[Any, Any] = cast(
+        Tool[Any, Any], getattr(component, "increment")
+    )
 
     # Call the tool directly
     result = await tool_instance(amount=5)

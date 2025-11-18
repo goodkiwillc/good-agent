@@ -44,7 +44,9 @@ class TestAgentInvoke:
             # Assistant message was created by invoke
             assistant_msg = agent[-2]
             assert isinstance(assistant_msg, AssistantMessage)
-            assert assistant_msg.content == ""  # Tool calls typically have empty content
+            assert (
+                assistant_msg.content == ""
+            )  # Tool calls typically have empty content
             tool_calls = assistant_msg.tool_calls
             assert tool_calls is not None
             assert len(tool_calls) == 1

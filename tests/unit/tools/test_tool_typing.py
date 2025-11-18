@@ -15,9 +15,7 @@ def as_tool(tool_obj: ToolLike) -> Tool[Any, Any]:
     return cast(Tool[Any, Any], tool_obj)
 
 
-async def run_tool(
-    tool_obj: ToolLike, *args: Any, **kwargs: Any
-) -> ToolResponse[Any]:
+async def run_tool(tool_obj: ToolLike, *args: Any, **kwargs: Any) -> ToolResponse[Any]:
     callable_tool = as_tool(tool_obj)
     return await cast(Any, callable_tool)(*args, **kwargs)
 
@@ -244,8 +242,7 @@ class TestComplexTypes:
         process_collections = as_tool(process_collections)
 
         result = await run_tool(
-            process_collections,
-            items=["a", "b", "c"], mapping={"x": 1, "y": 2, "z": 3}
+            process_collections, items=["a", "b", "c"], mapping={"x": 1, "y": 2, "z": 3}
         )
 
         assert result.response["item_count"] == 3

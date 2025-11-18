@@ -1,6 +1,6 @@
 import datetime
 from datetime import timezone
-from typing import Any, Iterable, Sequence, cast
+from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
@@ -1050,7 +1050,9 @@ class TestErrorHandling:
         import weakref
         from weakref import ReferenceType
 
-        msg._agent_ref = cast(ReferenceType[Agent], weakref.ref(cast(Agent, mock_agent)))
+        msg._agent_ref = cast(
+            ReferenceType[Agent], weakref.ref(cast(Agent, mock_agent))
+        )
 
         # Verify it works
         assert msg.agent is mock_agent

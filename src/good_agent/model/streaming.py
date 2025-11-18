@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from litellm.types.completion import ChatCompletionMessageParam
 
     from ..agent.config import ModelConfig
-    from .llm import LanguageModel
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +28,9 @@ class SupportsStreamingLanguageModel(Protocol):
     api_responses: list[Any]
     api_errors: list[Any]
 
-    def _prepare_request_config(self, **kwargs: Unpack["ModelConfig"]) -> dict[str, Any]: ...
+    def _prepare_request_config(
+        self, **kwargs: Unpack["ModelConfig"]
+    ) -> dict[str, Any]: ...
 
     def _update_usage(self, response_obj: Any) -> None: ...
 
