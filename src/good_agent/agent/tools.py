@@ -1003,19 +1003,31 @@ class ToolExecutor:
                 # Or handle generic string inputs that look like JSON but have no explicit type (or unknown type)
                 elif (param_value.startswith("{") and param_value.endswith("}")) or \
                      (param_value.startswith("[") and param_value.endswith("]")):
-                    # Check if the schema *allows* object/array via anyOf/oneOf/allOf even if type isn't set
-                    allows_complex = False
-                    if "anyOf" in param_schema:
-                        types = [t.get("type") for t in param_schema["anyOf"]]
-                        if "object" in types or "array" in types:
-                            allows_complex = True
-                    
                     # If no type constraint is strictly against it, try parsing
                     # (This is aggressive but needed for some LLM outputs that send JSON strings for everything)
                     try:
                         parsed = orjson.loads(param_value)
+                        # Only coerce if it looks like a complex type (dict/list)
                         if isinstance(parsed, (dict, list)):
-                            coerced[param_name] = parsed
+                            # Check if schema allows this structure
+                            should_coerce = False
+                            
+                            # Case 1: Schema is ambiguous (no type specified)
+                            if "type" not in param_schema:
+                                should_coerce = True
+                            # Case 2: Schema type is explicitly complex
+                            elif param_schema.get("type") in ("object", "array"):
+                                should_coerce = True
+                            # Case 3: Schema uses anyOf/oneOf
+                            elif "anyOf" in param_schema or "oneOf" in param_schema:
+                                should_coerce = True
+                            # Case 4: Schema says string but it looks like JSON (risky but sometimes needed)
+                            # But wait, Pydantic v2 is strict. If we pass a dict to a str field, it might work if it stringifies?
+                            # No, Tool execution will fail if type mismatch.
+                            # Let's stick to safe coercions.
+                            
+                            if should_coerce:
+                                coerced[param_name] = parsed
                     except Exception:
                         pass
 
