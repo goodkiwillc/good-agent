@@ -148,5 +148,3 @@ async with (researcher | writer) as workflow:
     final_response = await writer.call()
     print(final_response.content)
 ```
-
-Test 6
