@@ -65,13 +65,32 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - "Documentation":
-    - "API Reference": api-reference.md
-    - "Style Guide": STYLEGUIDE.md
-  - "Project Info":
-    - "Changelog": CHANGELOG.md
-    - "Decisions": DECISIONS.md
-    - "Tech Debt": TECH_DEBT.md
+  - Getting Started:
+    - Quickstart: getting-started/quickstart.md
+    - Configuration: getting-started/configuration.md
+  - Core Concepts:
+    - Agents: core/agents.md
+    - Messages & History: core/messages.md
+    - Tools: core/tools.md
+    - Events: core/events.md
+  - Key Features:
+    - Structured Output: features/structured-output.md
+    - Streaming: features/streaming.md
+    - Agent Modes: features/modes.md
+    - Multi-Agent: features/multi-agent.md
+    - Resources: features/resources.md
+    - Human-in-the-Loop: features/human-in-the-loop.md
+    - Tasks: features/tasks.md
+  - Extensibility:
+    - Agent Components: extensibility/components.md
+    - Custom Tools: extensibility/custom-tools.md
+  - Reference:
+    - API Reference: api-reference.md
+    - Style Guide: STYLEGUIDE.md
+  - Project Info:
+    - Changelog: CHANGELOG.md
+    - Decisions: DECISIONS.md
+    - Tech Debt: TECH_DEBT.md
 
 watch:
   - ./assets/

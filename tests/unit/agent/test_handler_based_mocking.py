@@ -5,6 +5,8 @@ custom mock logic while maintaining backwards compatibility with the
 existing queue-based API.
 """
 
+from typing import TYPE_CHECKING
+
 import pytest
 from good_agent import Agent
 from good_agent.mock import (
@@ -12,25 +14,19 @@ from good_agent.mock import (
     mock_message,
 )
 
+# Import new handler types
+from good_agent.mock import (
+    ConditionalHandler,
+    MockContext,
+    QueuedResponseHandler,
+    TranscriptHandler,
+)
 
-# Import new handler types (will be implemented)
-try:
-    from good_agent.mock import (
-        MockContext,
-        MockHandler,
-        QueuedResponseHandler,
-        ConditionalHandler,
-        TranscriptHandler,
-    )
+if TYPE_CHECKING:
+    # Always available for type checking
+    pass
 
-    HANDLERS_AVAILABLE = True
-except ImportError:
-    HANDLERS_AVAILABLE = False
-    MockContext = None  # type: ignore[assignment,misc]
-    MockHandler = None  # type: ignore[assignment,misc]
-    QueuedResponseHandler = None  # type: ignore[assignment,misc]
-    ConditionalHandler = None  # type: ignore[assignment,misc]
-    TranscriptHandler = None  # type: ignore[assignment,misc]
+HANDLERS_AVAILABLE = True
 
 
 pytestmark = pytest.mark.asyncio

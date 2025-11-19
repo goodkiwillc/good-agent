@@ -135,7 +135,7 @@ def create_app(agent_factory: Callable[[], Agent]) -> FastAPI:
         return ChatCompletionResponse(
             id=f"chatcmpl-{uuid.uuid4()}",
             created=int(time.time()),
-            model=request.model or base_agent.model.model_name,
+            model=request.model or base_agent.config.model,
             choices=[choice],
             # usage=... # TODO: extract usage
         )

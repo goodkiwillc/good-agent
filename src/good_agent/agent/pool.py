@@ -8,6 +8,10 @@ if TYPE_CHECKING:
 class AgentPool:
     """Immutable collection of pre-initialized Agents for fan-out workloads.
 
+    This is a read-only container. It does not manage locks or concurrency for
+    the contained agents. The caller must ensure that concurrent tasks utilize
+    distinct agent instances.
+
     Access is index-based and thread-safe for reads; see
     ``examples/pool/agent_pool.py`` for round-robin dispatching.
     """

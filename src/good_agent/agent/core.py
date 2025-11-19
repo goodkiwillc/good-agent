@@ -56,6 +56,7 @@ from .versioning import AgentVersioningManager
 
 if TYPE_CHECKING:
     from litellm.types.utils import Choices
+    from ..mock import AgentMockInterface
 
 from ..components import AgentComponent
 from ..content import FileContentPart, ImageContentPart
@@ -84,7 +85,6 @@ from ..messages import (
 )
 from ..messages.store import put_message
 from ..messages.validation import MessageSequenceValidator, ValidationMode
-from ..mock import AgentMockInterface
 from ..model.llm import LanguageModel
 from ..tools import (
     BoundTool,
@@ -265,7 +265,8 @@ class Agent(EventRouter):
         ...     response = await agent.call("Hello!")
 
     Note:
-        Not thread-safe. Use AgentPool for concurrent operations.
+        Not thread-safe. Use separate Agent instances (e.g. via AgentPool) for
+        concurrent workloads.
     """
 
     __registry__: ClassVar[dict[ULID, weakref.ref[Agent]]] = {}
@@ -614,6 +615,9 @@ class Agent(EventRouter):
         # Get sandbox config, defaulting to True for security
         use_sandbox = config.get("use_template_sandbox", True)
 
+        # Import AgentMockInterface locally to avoid circular import
+        from ..mock import AgentMockInterface
+
         extensions.extend(
             [
                 language_model or LanguageModel(),
@@ -658,6 +662,8 @@ class Agent(EventRouter):
     @property
     def mock(self) -> AgentMockInterface:
         """Access the mock interface"""
+        from ..mock import AgentMockInterface
+
         return self[AgentMockInterface]
 
     @property

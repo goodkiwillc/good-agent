@@ -115,20 +115,29 @@ class TestContentParts:
 
     def test_file_content_part(self):
         """Test file content part."""
+        # file_path and file_content are mutually exclusive
+        # Test with file_path
         part = FileContentPart(
             file_path="/path/to/file.txt",
-            file_content="File contents",
             mime_type="text/plain",
         )
 
         # Display rendering
         rendered = part.render(RenderMode.DISPLAY)
-        assert "/path/to/file.txt" in rendered or "File contents" in rendered
+        assert "/path/to/file.txt" in rendered
 
         # Serialization
         storage = part.model_dump()
         assert storage["type"] == "file"
         assert storage["file_path"] == "/path/to/file.txt"
+
+        # Test with file_content
+        part_content = FileContentPart(
+            file_content="File contents",
+            mime_type="text/plain",
+        )
+        rendered_content = part_content.render(RenderMode.DISPLAY)
+        assert "File contents" in rendered_content
 
 
 class TestTemplateDetection:

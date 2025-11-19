@@ -285,7 +285,7 @@ class HandlerRegistry:
             # Merge and sort priorities
             if matches:
                 # Use a set to collect all unique priority levels
-                all_priorities = set()
+                all_priorities: set["EventPriority"] = set()
                 for match in matches:
                     all_priorities.update(match.keys())
 
