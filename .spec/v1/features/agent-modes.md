@@ -943,13 +943,13 @@ async def test_mode_self_switching():
 
 **Goal**: Support nested modes with state inheritance
 
-- [ ] `ModeStack` class for stack management
-- [ ] Scoped state: read inheritance, write shadowing
-- [ ] `agent.mode_stack` property
-- [ ] Updated `in_mode()` to check entire stack
-- [ ] Automatic cleanup on mode exit
-- [ ] State restoration when popping modes
-- [ ] Tests for nested modes and state scoping
+- [x] `ModeStack` class for stack management
+- [x] Scoped state: read inheritance, write shadowing
+- [x] `agent.mode_stack` property
+- [x] Updated `in_mode()` to check entire stack
+- [x] Automatic cleanup on mode exit
+- [x] State restoration when popping modes
+- [x] Tests for nested modes and state scoping
 
 **Success Criteria**:
 - Nested modes work correctly
@@ -961,15 +961,15 @@ async def test_mode_self_switching():
 
 **Goal**: Support programmatic mode switching and agent self-direction
 
-- [ ] `agent.schedule_mode_switch(name)` for tool-based switching
-- [ ] `agent.enter_mode(name, **params)` direct entry
-- [ ] `agent.exit_mode()` direct exit
-- [ ] `ctx.switch_mode(name)` from within handlers
-- [ ] `ctx.exit_mode()` from within handlers
-- [ ] Mode-switching tools interface
-- [ ] Pending mode switch handling in `call()`
-- [ ] Mode transition events
-- [ ] Tests for all transition methods
+- [x] `agent.schedule_mode_switch(name)` for tool-based switching
+- [x] `agent.enter_mode(name, **params)` direct entry
+- [x] `agent.exit_mode()` direct exit
+- [x] `ctx.switch_mode(name)` from within handlers
+- [x] `ctx.exit_mode()` from within handlers
+- [x] Mode-switching tools interface
+- [x] Pending mode switch handling in `call()`
+- [x] Mode transition events
+- [x] Tests for all transition methods
 
 **Success Criteria**:
 - Agents can switch modes via tools

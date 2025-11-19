@@ -4,17 +4,21 @@ Demonstrates how to:
 - Register modes using decorators
 - Enter/exit modes via context managers
 - Stack modes for nested behavior
-- Access mode state
+- Access and mutate mode state
+- Execute handlers before `agent.call()` invocations
+- Transition between modes programmatically
 """
 
 import asyncio
 
 from good_agent import Agent, ModeContext
+from good_agent.messages import SystemMessage
 
 
 async def main():
     # Create an agent
-    agent = Agent("You are a helpful assistant.", model="gpt-4o-mini")
+    agent = Agent(model="gpt-4o-mini")
+    agent.messages.append(SystemMessage("You are a helpful assistant."))
 
     # Register a research mode
     @agent.modes("research")
@@ -24,7 +28,7 @@ async def main():
             "You are in research mode. Focus on finding accurate, "
             "authoritative sources and provide detailed citations."
         )
-        return await ctx.call()
+        ctx.state["handler_runs"] = ctx.state.get("handler_runs", 0) + 1
 
     # Register a summary mode
     @agent.modes("summary")
@@ -34,7 +38,23 @@ async def main():
             "You are in summary mode. Provide concise, "
             "bullet-pointed summaries."
         )
-        return await ctx.call()
+        ctx.state.setdefault("summary_notes", []).append("summaries stay short")
+
+    # Register a mode that transitions on its own
+    @agent.modes("ideation")
+    async def ideation_mode(ctx: ModeContext):
+        """Brainstorm ideas before drafting a response."""
+        ctx.add_system_message("List three approaches before writing a draft.")
+        if ctx.state.get("ideas_ready"):
+            return ctx.switch_mode("drafting")
+        ctx.state["ideas_ready"] = True
+
+    @agent.modes("drafting")
+    async def drafting_mode(ctx: ModeContext):
+        """Draft a final answer, then exit back to normal mode."""
+        topic = ctx.state.get("topic", "the user's request")
+        ctx.add_system_message(f"Drafting mode: write a polished summary about {topic}.")
+        return ctx.exit_mode()
 
     async with agent:
         print("=== Normal Mode ===")
@@ -67,6 +87,28 @@ async def main():
 
         # List all available modes
         print(f"\nAvailable modes: {agent.modes.list_modes()}")
+
+        # Demonstrate handler execution with a mocked LLM response
+        print("\n=== Handler Execution Demo ===")
+        with agent.mock("[mock] research output"):
+            async with agent.modes["research"]:
+                response = await agent.call("How do mode handlers run?")
+                print(f"Assistant (mocked): {response.content}")
+                print(f"Handler runs in research: {agent.modes.get_state('handler_runs')}")
+
+        # Demonstrate automatic transitions between modes
+        print("\n=== Mode Transition Demo ===")
+        with agent.mock(
+            agent.mock.create("Brainstorm complete", role="assistant"),
+            agent.mock.create("Draft finalized", role="assistant"),
+        ):
+            await agent.enter_mode("ideation", topic="mode transitions 101")
+            print(f"Current mode before calls: {agent.current_mode}")
+            await agent.call("Prepare outline")
+            await agent.call("Write draft")
+            print(f"Current mode after transitions: {agent.current_mode}")
+            if agent.current_mode:
+                await agent.exit_mode()
 
 
 if __name__ == "__main__":

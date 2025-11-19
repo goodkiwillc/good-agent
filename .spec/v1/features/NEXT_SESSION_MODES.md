@@ -248,6 +248,15 @@ uv run python examples/modes/self_switching.py  # Example should work
 
 ---
 
+## Status Update (2025-11-19)
+
+- ✅ Mode handlers now execute automatically before each `agent.call()` and can return `ModeTransition` values (`switch`, `exit`, `push`).
+- ✅ `Agent` gained `enter_mode`, `exit_mode`, `schedule_mode_switch`, and `schedule_mode_exit` helpers that delegate to the mode manager.
+- ✅ `ModeContext` exposes `switch_mode`, `push_mode`, `exit_mode`, and routes its `state` mapping to the scoped stack so writes persist as expected.
+- ✅ Pending mode switches/exits are applied at the start of `call()`/`execute()`, ensuring the correct handler runs before the LLM request.
+- ✅ Tools and examples now demonstrate scheduling switches (`examples/modes/mode_switching_tools.py`, `examples/modes/self_switching.py`, and updates to `basic_modes.py`).
+- ✅ New tests cover handler execution, transitions, scheduled switches/exits, and ordering guarantees (`tests/test_modes.py`).
+
 ## Future Phases (Not Yet Started)
 
 ### Phase 4: Dependency Injection (After Phase 3)

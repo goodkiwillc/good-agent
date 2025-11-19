@@ -22,6 +22,7 @@ if TYPE_CHECKING:
         AgentState,
         ModeContext,
         ModeManager,
+        ModeTransition,
     )
     from .components import (
         AgentComponentType,
@@ -141,6 +142,7 @@ _LAZY_IMPORTS = {
     # Mode system
     "ModeManager": "agent",
     "ModeContext": "agent",
+    "ModeTransition": "agent",
     # Content parts (beyond the eager imports)
     "BaseContentPart": "content",
     "ContentPartType": "content",
@@ -296,6 +298,7 @@ __all__ = [
     # Mode system
     "ModeManager",
     "ModeContext",
+    "ModeTransition",
     # Component system
     "AgentComponentType",
     "MessageInjectorComponent",

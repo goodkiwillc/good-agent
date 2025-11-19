@@ -48,7 +48,7 @@ from .context import ContextManager
 from .events import AgentEventsFacade
 from .llm import LLMCoordinator
 from .messages import MessageManager
-from .modes import ModeManager
+from .modes import MODE_HANDLER_SKIP_KWARG, ModeManager, ModeTransition
 from .state import AgentState, AgentStateMachine
 from .tasks import AgentTaskManager
 from .tools import ToolExecutor
@@ -274,6 +274,10 @@ class Agent(EventRouter):
         "context_manager",
         "current_mode",
         "do",
+        "enter_mode",
+        "exit_mode",
+        "schedule_mode_exit",
+        "schedule_mode_switch",
         "events",
         "execute",
         "extensions",
@@ -355,6 +359,8 @@ class Agent(EventRouter):
             "wait_for_tasks",
         }
     )
+
+    _MAX_MODE_TRANSITIONS_PER_CALL: ClassVar[int] = 8
 
     @classmethod
     def public_attribute_names(cls) -> tuple[str, ...]:
@@ -772,6 +778,26 @@ class Agent(EventRouter):
             True if mode is in stack
         """
         return self._mode_manager.in_mode(mode_name)
+
+    async def enter_mode(self, mode_name: str, **params: Any) -> None:
+        """Enter a mode directly without using the context manager helper."""
+
+        await self._mode_manager.enter_mode(mode_name, **params)
+
+    async def exit_mode(self) -> None:
+        """Exit the current mode directly."""
+
+        await self._mode_manager.exit_mode()
+
+    def schedule_mode_switch(self, mode_name: str, **params: Any) -> None:
+        """Schedule switching to a different mode before the next call."""
+
+        self._mode_manager.schedule_mode_switch(mode_name, **params)
+
+    def schedule_mode_exit(self) -> None:
+        """Schedule exiting the current mode before the next call."""
+
+        self._mode_manager.schedule_mode_exit()
 
     @property
     def tasks(self) -> AgentTaskManager:
@@ -1494,9 +1520,19 @@ class Agent(EventRouter):
         control use ``execute`` instead. ``examples/agent/basic_chat.py`` shows both
         entry points side-by-side.
         """
+        skip_mode_handler = kwargs.pop(MODE_HANDLER_SKIP_KWARG, False)
+
+        if not skip_mode_handler:
+            await self._mode_manager.apply_scheduled_mode_changes()
+
         # Append input message if provided
         if content_parts:
             self.append(*content_parts, role=role, context=context)
+
+        if not skip_mode_handler:
+            handler_response = await self._run_active_mode_handlers()
+            if handler_response is not None:
+                return handler_response
 
         # If auto_execute_tools is False or we have structured output,
         # use the simple single-call approach
@@ -1506,7 +1542,9 @@ class Agent(EventRouter):
         # Otherwise, use execute() to handle tool calls automatically
         final_message = None
         last_assistant_message = None
-        async for message in self.execute(**kwargs):
+        execute_kwargs = dict(kwargs)
+        execute_kwargs[MODE_HANDLER_SKIP_KWARG] = True
+        async for message in self.execute(**execute_kwargs):
             match message:
                 case AssistantMessage() | AssistantMessageStructuredOutput():
                     last_assistant_message = message
@@ -1531,6 +1569,68 @@ class Agent(EventRouter):
 
         return final_message
 
+    async def _run_active_mode_handlers(
+        self,
+    ) -> AssistantMessage | AssistantMessageStructuredOutput | None:
+        """Execute mode handlers before making an LLM call."""
+
+        transition_count = 0
+        while True:
+            current_mode = self.current_mode
+            if current_mode is None:
+                return None
+
+            handler = self._mode_manager.get_handler(current_mode)
+            if handler is None:
+                return None
+
+            ctx = self._mode_manager.create_context()
+            result = await handler(ctx)
+
+            if isinstance(result, ModeTransition):
+                transition_count += 1
+                if transition_count > self._MAX_MODE_TRANSITIONS_PER_CALL:
+                    raise RuntimeError(
+                        "Mode handlers triggered too many transitions in a single call"
+                    )
+                await self._handle_mode_transition(result)
+                continue
+
+            if result is None:
+                return None
+
+            if isinstance(result, (AssistantMessage, AssistantMessageStructuredOutput)):
+                return result
+
+            raise TypeError(
+                "Mode handler returned unsupported type "
+                f"{type(result).__name__}; expected AssistantMessage, "
+                "AssistantMessageStructuredOutput, ModeTransition, or None."
+            )
+
+    async def _handle_mode_transition(self, transition: ModeTransition) -> None:
+        """Apply a transition instruction returned from a mode handler."""
+
+        params = dict(transition.parameters or {})
+
+        if transition.transition_type == "exit":
+            await self._mode_manager.exit_mode()
+            return
+
+        if transition.transition_type in {"switch", "push"}:
+            if not transition.target_mode:
+                raise ValueError(
+                    f"Mode transition '{transition.transition_type}' requires a target mode"
+                )
+
+            if transition.transition_type == "switch":
+                await self._mode_manager.exit_mode()
+
+            await self._mode_manager.enter_mode(transition.target_mode, **params)
+            return
+
+        raise ValueError(f"Unknown mode transition type: {transition.transition_type}")
+
     @ensure_ready
     async def execute(
         self,
@@ -1544,6 +1644,15 @@ class Agent(EventRouter):
         ``agent.call`` for the one-shot variant. Demonstrated in
         ``examples/agent/basic_chat.py``.
         """
+        skip_mode_handler = kwargs.pop(MODE_HANDLER_SKIP_KWARG, False)
+
+        if not skip_mode_handler:
+            await self._mode_manager.apply_scheduled_mode_changes()
+            handler_response = await self._run_active_mode_handlers()
+            if handler_response is not None:
+                yield handler_response
+                return
+
         # Emit execute:start event
         self.do(AgentEvents.EXECUTE_BEFORE, agent=self, max_iterations=max_iterations)
 
