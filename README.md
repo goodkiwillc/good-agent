@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.svg" width="180" alt="Good Agent Logo">
+</p>
+
 # A Good Agent
 
 Composable agent orchestration toolkit with a deliberately small public API
