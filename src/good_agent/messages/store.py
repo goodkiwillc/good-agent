@@ -50,7 +50,7 @@ class InMemoryMessageStore:
     In-memory message store with optional Redis backing.
 
     Provides fast access to messages with optional persistence layer.
-    Thread-safe operations using asyncio locks.
+    Task-safe operations using asyncio locks.
     """
 
     def __init__(self, redis_client: Any = None, ttl: int = 3600):

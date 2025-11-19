@@ -12,12 +12,12 @@ class ComponentA(AgentComponent):
 
 class ComponentB(AgentComponent):
     name = "component_b"
-    __depends__ = {"ComponentA"}
+    __depends__ = ["ComponentA"]
 
 
 class ComponentC(AgentComponent):
     name = "component_c"
-    __depends__ = {"MissingComponent"}
+    __depends__ = ["MissingComponent"]
 
 
 class FailingComponent(AgentComponent):

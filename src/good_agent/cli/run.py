@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 
 from prompt_toolkit import PromptSession
@@ -19,7 +21,7 @@ async def run_interactive_loop(agent: Agent):
 
     console = Console()
     history = InMemoryHistory()
-    session = PromptSession(history=history)
+    session: PromptSession[str] = PromptSession(history=history)
 
     # Style for the prompt
     style = Style.from_dict({"prompt": "#ansigreen bold"})
@@ -147,19 +149,17 @@ def run_agent(
             return
 
     # Apply runtime configuration overrides
+    overrides: dict[str, float | str] = {}
     if model:
-        # We can't easily change the model of an instantiated agent if it's deeply nested
-        # But for good-agent Agent, we can update config or re-instantiate language model
-        # Agent config is immutable-ish but let's see
-        # agent_obj.config is a AgentConfigManager
-        # We can update the language model directly
-        if hasattr(agent_obj, "model") and hasattr(agent_obj.model, "model_name"):
-            # Check if we can update it
-            # For now, let's try to update configuration if possible
-            pass
-        # If the agent exposes a way to update config:
-        # agent_obj.config.update(model=model)
-        pass
+        overrides["model"] = model
+    if temperature is not None:
+        overrides["temperature"] = temperature
+
+    if overrides:
+        try:
+            agent_obj.config.update(overrides)
+        except Exception as exc:  # noqa: BLE001
+            print(f"Warning: unable to apply overrides {overrides}: {exc}")
 
     # Run the async loop
     try:

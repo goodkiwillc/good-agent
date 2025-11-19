@@ -21,6 +21,8 @@ class TestVersioningWithAgentOperations:
         message.content = "Test response"
         message.tool_calls = None
         message.model_extra = {}
+        message.citations = None  # Explicitly set None to satisfy validation
+        message.annotations = None  # Explicitly set None to satisfy validation
 
         # Create mock choice
         choice = Mock()
@@ -188,6 +190,8 @@ class TestVersioningWithAgentOperations:
         tool_message.content = ""
         tool_message.tool_calls = [tool_call]
         tool_message.model_extra = {}
+        tool_message.citations = None  # Explicitly set None
+        tool_message.annotations = None  # Explicitly set None
 
         tool_choice = Mock()
         tool_choice.__class__.__name__ = "Choices"
@@ -208,6 +212,8 @@ class TestVersioningWithAgentOperations:
             final_message.content = "Tool executed successfully"
             final_message.tool_calls = None
             final_message.model_extra = {}
+            final_message.citations = None  # Explicitly set None
+            final_message.annotations = None  # Explicitly set None
 
             final_choice = Mock()
             final_choice.__class__.__name__ = "Choices"
@@ -264,6 +270,8 @@ class TestVersioningWithAgentOperations:
         recovery_message.content = "Recovery response"
         recovery_message.tool_calls = None
         recovery_message.model_extra = {}
+        recovery_message.citations = None  # Explicitly set None
+        recovery_message.annotations = None  # Explicitly set None
 
         recovery_choice = Mock()
         recovery_choice.__class__.__name__ = "Choices"

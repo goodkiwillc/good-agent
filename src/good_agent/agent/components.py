@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any
 from good_agent.components import AgentComponent
 from good_agent.components.template_manager import TemplateManager
 from good_agent.events import AgentEvents
-from good_agent.mock import AgentMockInterface
 from good_agent.model.llm import LanguageModel
 from good_agent.tools import ToolManager
 
@@ -199,6 +198,10 @@ class ComponentRegistry:
         unique_extensions = list(
             {id(ext): ext for ext in self._extensions.values()}.values()
         )
+
+        # Import here to avoid circular dependency
+        from good_agent.mock import AgentMockInterface
+
         core_types = (LanguageModel, AgentMockInterface, ToolManager, TemplateManager)
 
         if "language_model" not in skip:

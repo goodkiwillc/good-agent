@@ -1,8 +1,15 @@
-from collections.abc import AsyncIterator, Callable
+from __future__ import annotations
+
+import inspect
+import logging
+from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
     Any,
+    Self,
+    runtime_checkable,
+    TypeAlias,
     Literal,
     Protocol,
     TypedDict,
@@ -10,15 +17,13 @@ from typing import (
     cast,
 )
 from unittest.mock import MagicMock
-import asyncio
-import logging
 
 import orjson
 from pydantic import BaseModel
 from ulid import ULID
 
-from .components import AgentComponent
 from .agent.config import AgentConfigManager
+from .components import AgentComponent
 from .content import TextContentPart
 from .messages import (
     Annotation,
@@ -32,16 +37,17 @@ from .messages import (
     ToolMessage,
     UserMessage,
 )
-from .model.llm import StreamChunk
+from .model.protocols import StreamChunk
 from .tools import ToolCall, ToolCallFunction, ToolResponse
 
 # Lazy loading litellm types - moved to TYPE_CHECKING
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from litellm.utils import Usage
+    from litellm.types.utils import Usage
 
     from .agent import Agent
+    from .model.llm import LanguageModel
 
 __all__ = [
     # Main mock classes
@@ -110,8 +116,111 @@ class MockResponse:
     annotations: list[Annotation] | None = None
     refusal: str | None = None
     reasoning: str | None = None
-    usage: "Usage | None" = None
+    usage: Usage | None = None
     metadata: dict[str, Any] | None = None
+
+
+TranscriptEntry = (
+    tuple[Literal["assistant", "user", "system", "tool"], str]
+    | tuple[Literal["assistant", "user", "system", "tool"], str, dict[str, Any]]
+)
+
+
+@dataclass(slots=True)
+class _MockModelConfig:
+    model: str = "mock-model"
+
+
+@dataclass(slots=True)
+class _MockToolCallFunctionPayload:
+    name: str
+    arguments: str
+
+
+@dataclass(slots=True)
+class _MockToolCallPayload:
+    id: str
+    function: _MockToolCallFunctionPayload
+
+
+@dataclass(slots=True)
+class _MockLiteLLMMessage:
+    content: str
+    tool_calls: list[_MockToolCallPayload] | None = None
+    citations: list[CitationURL] | None = None
+    annotations: list[Annotation] | None = None
+    refusal: str | None = None
+    reasoning: str | None = None
+    model_extra: dict[str, Any] | None = None
+
+
+@dataclass(slots=True)
+class Choices:
+    message: _MockLiteLLMMessage
+    provider_specific_fields: dict[str, Any]
+
+
+@dataclass(slots=True)
+class _MockLLMResponse:
+    choices: list[Choices]
+    usage: Usage
+    model: str
+    id: str
+    created: int
+
+
+def _build_tool_call_payloads(
+    mock_tool_calls: Sequence[MockToolCall],
+) -> list[_MockToolCallPayload]:
+    return [
+        _MockToolCallPayload(
+            id=str(ULID()),
+            function=_MockToolCallFunctionPayload(
+                name=tool_call["tool_name"],
+                arguments=orjson.dumps(tool_call["arguments"]).decode(),
+            ),
+        )
+        for tool_call in mock_tool_calls
+    ]
+
+
+def _mock_response_to_llm_response(
+    mock_response: MockResponse, model_name: str
+) -> _MockLLMResponse:
+    tool_calls = (
+        _build_tool_call_payloads(mock_response.tool_calls)
+        if mock_response.tool_calls
+        else None
+    )
+
+    message = _MockLiteLLMMessage(
+        content=mock_response.content or "",
+        tool_calls=tool_calls,
+        citations=mock_response.citations,
+        annotations=mock_response.annotations,
+        refusal=mock_response.refusal,
+        reasoning=mock_response.reasoning,
+        model_extra=mock_response.metadata,
+    )
+
+    choice = Choices(
+        message=message,
+        provider_specific_fields={},
+    )
+
+    usage = mock_response.usage
+    if usage is None:
+        from litellm.types.utils import Usage
+
+        usage = Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15)
+
+    return _MockLLMResponse(
+        choices=[choice],
+        usage=usage,
+        model=model_name,
+        id=f"mock-{ULID()}",
+        created=1234567890,
+    )
 
 
 def mock_message(
@@ -122,7 +231,7 @@ def mock_message(
     annotations: list[Annotation] | None = None,
     refusal: str | None = None,
     reasoning: str | None = None,
-    usage: "Usage | None" = None,
+    usage: Usage | None = None,
     metadata: dict[str, Any] | None = None,
 ) -> MockResponse:
     """Create a mock message response with full parameter support"""
@@ -173,8 +282,8 @@ class MockContext:
     to help handlers decide what response to return.
     """
 
-    agent: "Agent"
-    """The agent making the LLM call"""
+    agent: Agent | None
+    """Agent making the LLM call, if available."""
 
     messages: list[Message]
     """Messages being sent to LLM"""
@@ -189,6 +298,12 @@ class MockContext:
     """Additional kwargs passed to LLM (temperature, model, etc.)"""
 
 
+SyncHandlerCallable: TypeAlias = Callable[[MockContext], MockResponse | str]
+AsyncHandlerCallable: TypeAlias = Callable[[MockContext], Awaitable[MockResponse | str]]
+HandlerCallable: TypeAlias = SyncHandlerCallable | AsyncHandlerCallable
+
+
+@runtime_checkable
 class MockHandler(Protocol):
     """Protocol for mock response handlers
 
@@ -223,9 +338,11 @@ def _ensure_mock_response(payload: MockResponse | str) -> MockResponse:
 class QueuedResponseHandler:
     """Simple FIFO queue of responses (implements current mock behavior as handler)"""
 
-    def __init__(self, *responses: MockResponse | str):
-        self.responses = [_ensure_mock_response(r) for r in responses]
-        self.index = 0
+    def __init__(self, *responses: MockResponse | str) -> None:
+        self.responses: list[MockResponse] = [
+            _ensure_mock_response(r) for r in responses
+        ]
+        self.index: int = 0
 
     async def handle(self, context: MockContext) -> MockResponse:
         if self.index >= len(self.responses):
@@ -242,19 +359,19 @@ class QueuedResponseHandler:
 class ConditionalHandler:
     """Match responses based on conditions (content, iteration, etc.)"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.rules: list[tuple[Callable[[MockContext], bool], MockResponse]] = []
         self.default_response: MockResponse | None = None
 
     def when(
         self, condition: Callable[[MockContext], bool], respond: str | MockResponse
-    ) -> "ConditionalHandler":
+    ) -> Self:
         """Add conditional rule"""
         response = _ensure_mock_response(respond)
         self.rules.append((condition, response))
         return self
 
-    def default(self, respond: str | MockResponse) -> "ConditionalHandler":
+    def default(self, respond: str | MockResponse) -> Self:
         """Set fallback response"""
         self.default_response = _ensure_mock_response(respond)
         return self
@@ -275,7 +392,7 @@ class ConditionalHandler:
 class TranscriptHandler:
     """Follow a predefined conversation transcript"""
 
-    def __init__(self, transcript: list[tuple]):
+    def __init__(self, transcript: list[TranscriptEntry]) -> None:
         """
         Args:
             transcript: List of (role, content, **extras) tuples
@@ -284,8 +401,8 @@ class TranscriptHandler:
                     ("assistant", "It's sunny"),
                 ]
         """
-        self.transcript = transcript
-        self.position = 0
+        self.transcript: list[TranscriptEntry] = transcript
+        self.position: int = 0
 
     async def handle(self, context: MockContext) -> MockResponse:
         if self.position >= len(self.transcript):
@@ -301,40 +418,49 @@ class TranscriptHandler:
         return MockResponse(content=content, role=role, **kwargs)
 
 
-class MockHandlerLanguageModel:
+class MockHandlerLanguageModel(AgentComponent):
     """Language model that delegates to a handler for mock responses"""
 
-    def __init__(self, handler: MockHandler | Callable, agent=None):
-        self.handler = handler
-        self.agent = agent
-        self.call_count = 0
-        self.config = MagicMock()
-        self.config.model = "mock-model"
+    name = "language_model"
+
+    def __init__(
+        self,
+        handler: MockHandler | HandlerCallable,
+        agent: Agent | None = None,
+    ) -> None:
+        self.handler: MockHandler | HandlerCallable = handler
+        self._agent: Agent | None = agent
+        self.call_count: int = 0
+        self._local_config: _MockModelConfig = _MockModelConfig()
 
         # Track API requests/responses like the real LanguageModel
-        self.api_requests: list[Any] = []
+        self.api_requests: list[dict[str, Any]] = []
         self.api_responses: list[Any] = []
         # Aliases with underscores to match real LanguageModel
-        self._api_requests = self.api_requests
-        self._api_responses = self.api_responses
+        self._api_requests: list[dict[str, Any]] = self.api_requests
+        self._api_responses: list[Any] = self.api_responses
 
-    async def install(self, agent):
+    @property
+    def config(self) -> Any:
+        return self._local_config
+
+    async def install(self, agent: Agent) -> None:
         """Install method to satisfy component interface"""
-        self.agent = agent
+        self._agent = agent
 
-    async def complete(self, messages: list[dict[str, Any]], **kwargs) -> Any:
+    async def complete(self, messages: list[dict[str, Any]], **kwargs: Any) -> Any:
         """Mock complete that delegates to handler"""
         self.call_count += 1
 
         # Track the request
-        request_data = {"messages": messages, **kwargs}
+        request_data: dict[str, Any] = {"messages": messages, **kwargs}
         self.api_requests.append(request_data)
 
         # Fire llm:complete:before event
-        if self.agent:
+        if self._agent:
             from .events import AgentEvents
 
-            await self.agent.events.apply(
+            await self._agent.events.apply(
                 AgentEvents.LLM_COMPLETE_BEFORE,
                 messages=messages,
                 config=kwargs,
@@ -343,30 +469,14 @@ class MockHandlerLanguageModel:
 
         # Build context
         context = MockContext(
-            agent=self.agent,
-            messages=self.agent.messages if self.agent else [],
-            iteration=getattr(self.agent, "_iteration_index", 0) if self.agent else 0,
+            agent=self._agent,
+            messages=self._agent.messages if self._agent else [],
+            iteration=getattr(self._agent, "_iteration_index", 0) if self._agent else 0,
             call_count=self.call_count,
             kwargs=kwargs,
         )
 
-        # Get response from handler
-        if asyncio.iscoroutinefunction(getattr(self.handler, "handle", self.handler)):
-            if hasattr(self.handler, "handle"):
-                mock_response = await self.handler.handle(context)
-            else:
-                mock_response = await self.handler(context)
-        else:
-            if hasattr(self.handler, "handle"):
-                mock_response = self.handler.handle(context)
-            else:
-                mock_response = self.handler(context)
-
-        # Ensure we got a MockResponse
-        if not isinstance(mock_response, MockResponse):
-            raise TypeError(
-                f"Handler must return MockResponse, got {type(mock_response)}"
-            )
+        mock_response = await self._invoke_handler(context)
 
         # Convert to LiteLLM format
         llm_response = self._to_litellm_response(mock_response)
@@ -375,10 +485,10 @@ class MockHandlerLanguageModel:
         self.api_responses.append(llm_response)
 
         # Fire llm:complete:after event
-        if self.agent:
+        if self._agent:
             from .events import AgentEvents
 
-            self.agent.do(
+            await self._agent.events.apply(
                 AgentEvents.LLM_COMPLETE_AFTER,
                 response=llm_response,
                 messages=messages,
@@ -387,53 +497,41 @@ class MockHandlerLanguageModel:
 
         return llm_response
 
+    async def _invoke_handler(self, context: MockContext) -> MockResponse:
+        """Execute the configured handler and normalise the return value."""
+        handler = self.handler
+        candidate: Any
+
+        if isinstance(handler, MockHandler):
+            candidate = handler.handle(context)
+        else:
+            # It's a callable (function or lambda)
+            candidate = handler(context)
+
+        resolved: MockResponse | str
+        if inspect.isawaitable(candidate):
+            resolved = await candidate
+        else:
+            resolved = candidate
+
+        return _ensure_mock_response(resolved)
+
     def _to_litellm_response(self, mock_response: MockResponse) -> Any:
         """Convert MockResponse to LiteLLM format"""
-        from litellm.utils import Choices, Message as LiteLLMMessage, Usage
-
-        message = LiteLLMMessage()
-        message.content = mock_response.content or ""
-
-        # Add tool calls if present
-        if mock_response.tool_calls:
-            tool_calls = []
-            for tc in mock_response.tool_calls:
-                tool_call = MagicMock()
-                tool_call.id = str(ULID())
-                tool_call.function = MagicMock()
-                tool_call.function.name = tc["tool_name"]
-                tool_call.function.arguments = orjson.dumps(tc["arguments"]).decode()
-                tool_calls.append(tool_call)
-            message.tool_calls = tool_calls  # type: ignore[assignment]
-        else:
-            message.tool_calls = None
-
-        # Create choice
-        choice = Choices()
-        choice.message = message
-        choice.provider_specific_fields = {}
-
-        # Create response
-        mock_llm_response = MagicMock()
-        mock_llm_response.choices = [choice]
-        mock_llm_response.usage = (
-            mock_response.usage
-            if mock_response.usage
-            else Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15)
-        )
-        mock_llm_response.model = self.config.model
-        mock_llm_response.id = f"mock-{str(ULID())}"
-        mock_llm_response.created = 1234567890
-
-        return mock_llm_response
+        return _mock_response_to_llm_response(mock_response, self.config.model)
 
     async def extract(
-        self, messages: list[dict[str, Any]], response_model: type[Any], **kwargs
+        self,
+        messages: list[dict[str, Any]],
+        response_model: type[Any],
+        **kwargs: Any,
     ) -> Any:
         """Mock extract for structured output - not implemented yet"""
         raise NotImplementedError("Structured output mocking not yet implemented")
 
-    async def stream(self, messages: list[dict[str, Any]], **kwargs) -> AsyncIterator:
+    async def stream(
+        self, messages: list[dict[str, Any]], **kwargs: Any
+    ) -> AsyncIterator[StreamChunk]:
         """Mock stream - not implemented yet"""
         raise NotImplementedError("Streaming mock not yet implemented")
 
@@ -443,9 +541,12 @@ class MockHandlerLanguageModel:
         role: MessageRole = "user",
         output: BaseModel | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> Message:
         """Create a message based on role type - mimics LanguageModel.create_message"""
-        content_parts = []
+        # Cast kwargs to dict[str, Any] to avoid mypy inference issues
+        params: dict[str, Any] = kwargs
+
+        content_parts: list[TextContentPart] = []
         for item in content:
             if isinstance(item, dict):
                 if item.get("type") == "text":
@@ -454,10 +555,10 @@ class MockHandlerLanguageModel:
                 content_parts.append(TextContentPart(text=str(item)))
 
         # Convert tool_calls if present
-        if role == "assistant" and "tool_calls" in kwargs:
-            tool_calls = kwargs["tool_calls"]
+        if role == "assistant" and "tool_calls" in params:
+            tool_calls = params["tool_calls"]
             if tool_calls and not isinstance(tool_calls[0], ToolCall):
-                converted_tool_calls = []
+                converted_tool_calls: list[ToolCall] = []
                 for tc in tool_calls:
                     if isinstance(tc, dict):
                         tool_call = ToolCall(
@@ -468,84 +569,98 @@ class MockHandlerLanguageModel:
                             ),
                         )
                         converted_tool_calls.append(tool_call)
-                    else:
-                        if hasattr(tc, "function"):
-                            tool_call = ToolCall(
-                                id=str(tc.id) if hasattr(tc, "id") else str(ULID()),
-                                function=ToolCallFunction(
-                                    name=tc.function.name,
-                                    arguments=tc.function.arguments,
-                                ),
-                            )
-                            converted_tool_calls.append(tool_call)
-                kwargs["tool_calls"] = converted_tool_calls
+                    elif hasattr(tc, "function"):
+                        tool_call = ToolCall(
+                            id=str(getattr(tc, "id", ULID())),
+                            function=ToolCallFunction(
+                                name=tc.function.name,
+                                arguments=tc.function.arguments,
+                            ),
+                        )
+                        converted_tool_calls.append(tool_call)
+                params["tool_calls"] = converted_tool_calls
 
         # Create appropriate message type
         if role == "system":
-            return SystemMessage(*content_parts, **kwargs)
+            return SystemMessage(*content_parts, **params)
         elif role == "user":
-            return UserMessage(*content_parts, **kwargs)
+            return UserMessage(*content_parts, **params)
         elif role == "assistant":
             if output:
                 return AssistantMessageStructuredOutput(
-                    *content_parts, output=output, **kwargs
+                    *content_parts, output=output, **params
                 )
-            return AssistantMessage(*content_parts, **kwargs)
+            return AssistantMessage(*content_parts, **params)
         elif role == "tool":
-            return ToolMessage(*content_parts, **kwargs)
+            return ToolMessage(*content_parts, **params)
         else:
             raise ValueError(f"Unknown role: {role}")
 
-    def transform_message_list(self, messages: list) -> list[dict[str, Any]]:
+    def transform_message_list(
+        self, messages: Sequence[Message]
+    ) -> list[dict[str, Any]]:
         """Transform agent messages to LLM format"""
-        messages_for_llm = []
+        messages_for_llm: list[dict[str, Any]] = []
         for message in messages:
-            msg_dict = {
+            # Simple transformation to dict format expected by LLMs
+            msg_dict: dict[str, Any] = {
                 "role": message.role,
                 "content": message.content if hasattr(message, "content") else "",
             }
-            if hasattr(message, "tool_calls") and message.tool_calls:
+            # Add tool calls if present
+            if isinstance(message, AssistantMessage) and message.tool_calls:
                 msg_dict["tool_calls"] = message.tool_calls
             messages_for_llm.append(msg_dict)
         return messages_for_llm
 
-    async def format_message_list_for_llm(self, messages: list) -> list[dict[str, Any]]:
+    async def format_message_list_for_llm(
+        self, messages: Sequence[Message]
+    ) -> list[dict[str, Any]]:
         """Async version of transform_message_list"""
         return self.transform_message_list(messages)
 
 
-class MockQueuedLanguageModel:
+class MockQueuedLanguageModel(AgentComponent):
     """Mock language model that returns queued responses instead of calling LLM"""
 
-    def __init__(self, responses: list[MockResponse], agent=None):
-        self.responses = responses
-        self.response_index = 0
-        self.config = MagicMock()
-        self.config.model = "mock-model"
-        self.agent = agent  # Store agent reference for event firing
+    name = "language_model"
+
+    def __init__(
+        self, responses: Sequence[MockResponse], agent: Agent | None = None
+    ) -> None:
+        self.responses: list[MockResponse] = list(responses)
+        self.response_index: int = 0
+        self._local_config: _MockModelConfig = _MockModelConfig()
+        self._agent: Agent | None = agent  # Store agent reference for event firing
 
         # Track API requests/responses like the real LanguageModel
-        self.api_requests: list[Any] = []
-        self.api_responses: list[Any] = []
+        self.api_requests: list[dict[str, Any]] = []
+        self.api_responses: list[_MockLLMResponse] = []
         # Aliases with underscores to match real LanguageModel
-        self._api_requests = self.api_requests
-        self._api_responses = self.api_responses
+        self._api_requests: list[dict[str, Any]] = self.api_requests
+        self._api_responses: list[_MockLLMResponse] = self.api_responses
 
-    async def install(self, agent):
+    @property
+    def config(self) -> Any:
+        return self._local_config
+
+    async def install(self, agent: Agent) -> None:
         """Install method to satisfy component interface"""
-        self.agent = agent
+        self._agent = agent
 
-    async def complete(self, messages: list[dict[str, Any]], **kwargs) -> Any:
+    async def complete(
+        self, messages: list[dict[str, Any]], **kwargs: Any
+    ) -> _MockLLMResponse:
         """Mock complete that returns the next queued response"""
         # Track the request just like real LanguageModel does
-        request_data = {"messages": messages, **kwargs}
+        request_data: dict[str, Any] = {"messages": messages, **kwargs}
         self.api_requests.append(request_data)
 
         # Fire llm:complete:before event to match real LanguageModel
-        if self.agent:
+        if self._agent:
             from .events import AgentEvents
 
-            self.agent.do(
+            await self._agent.events.apply(
                 AgentEvents.LLM_COMPLETE_BEFORE,
                 messages=messages,
                 config=kwargs,
@@ -590,72 +705,16 @@ class MockQueuedLanguageModel:
                 f"Expected assistant message, got {response.type}:{response.role}"
             )
 
-        # Create a mock LLM response structure that matches what the agent expects
-        # Create a proper Choices object and Message
-        # Create mock message object
-        from litellm.utils import Message as LiteLLMMessage
-
-        message = LiteLLMMessage()
-        message.content = response.content or ""
-
-        # Add tool calls if present
-        if response.tool_calls:
-            tool_calls = []
-            for tc in response.tool_calls:
-                tool_call = MagicMock()
-                tool_call.id = str(ULID())
-                tool_call.function = MagicMock()
-                tool_call.function.name = tc["tool_name"]
-                tool_call.function.arguments = orjson.dumps(tc["arguments"]).decode()
-                tool_calls.append(tool_call)
-            message.tool_calls = tool_calls  # type: ignore[assignment]
-        else:
-            message.tool_calls = None
-
-        # Add refusal if present (using setattr for dynamic attribute)
-        if response.refusal:
-            message.refusal = response.refusal  # type: ignore[attr-defined]
-
-        # Create the Choices object
-        # Create mock choice object
-        from litellm.utils import Choices
-
-        choice = Choices()
-        choice.message = message
-        choice.provider_specific_fields = {}
-
-        # Debug logging
-        logger.debug(
-            f"Created choice type: {type(choice)}, isinstance Choices: {isinstance(choice, Choices)}"
-        )
-
-        # Create the response object
-        mock_llm_response = MagicMock()
-        mock_llm_response.choices = [choice]
-
-        # Add usage if present
-        if response.usage:
-            mock_llm_response.usage = response.usage
-        else:
-            # Default usage for mocks
-            from litellm.utils import Usage
-
-            usage = Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15)
-            mock_llm_response.usage = usage
-
-        # Add metadata that might be expected
-        mock_llm_response.model = self.config.model
-        mock_llm_response.id = f"mock-{str(ULID())}"
-        mock_llm_response.created = 1234567890  # Mock timestamp
+        mock_llm_response = _mock_response_to_llm_response(response, self.config.model)
 
         # Track the response just like real LanguageModel does
         self.api_responses.append(mock_llm_response)
 
         # Fire llm:complete:after event to match real LanguageModel
-        if self.agent:
+        if self._agent:
             from .events import AgentEvents
 
-            self.agent.do(
+            await self._agent.events.apply(
                 AgentEvents.LLM_COMPLETE_AFTER,
                 response=mock_llm_response,
                 messages=messages,
@@ -664,13 +723,30 @@ class MockQueuedLanguageModel:
 
         return mock_llm_response
 
+    @property
+    def agent(self) -> Agent:
+        """
+        Returns the agent this component is installed on.
+        """
+        assert self._agent is not None, "This component is not installed on an agent"
+        return self._agent
+
+    @agent.setter
+    def agent(self, value: Agent) -> None:
+        self._agent = value
+
     async def extract(
-        self, messages: list[dict[str, Any]], response_model: type[Any], **kwargs
+        self,
+        messages: list[dict[str, Any]],
+        response_model: type[Any],
+        **kwargs: Any,
     ) -> Any:
         """Mock extract for structured output - not implemented yet"""
         raise NotImplementedError("Structured output mocking not yet implemented")
 
-    async def stream(self, messages: list[dict[str, Any]], **kwargs) -> AsyncIterator:
+    async def stream(
+        self, messages: list[dict[str, Any]], **kwargs: Any
+    ) -> AsyncIterator[StreamChunk]:
         """Mock stream - not implemented yet"""
         raise NotImplementedError("Streaming mock not yet implemented")
 
@@ -680,11 +756,14 @@ class MockQueuedLanguageModel:
         role: MessageRole = "user",
         output: BaseModel | None = None,
         **kwargs: Any,
-    ) -> Any:
+    ) -> Message:
         """Create a message based on role type - mimics LanguageModel.create_message"""
 
+        # Cast kwargs to dict[str, Any] to avoid mypy inference issues
+        params: dict[str, Any] = kwargs
+
         # Extract content from response
-        content_parts = []
+        content_parts: list[TextContentPart] = []
         for item in content:
             if isinstance(item, dict):
                 if item.get("type") == "text":
@@ -695,14 +774,12 @@ class MockQueuedLanguageModel:
                 content_parts.append(TextContentPart(text=str(item)))
 
         # Convert tool_calls if present and it's an assistant message
-        if role == "assistant" and "tool_calls" in kwargs:
-            tool_calls = kwargs["tool_calls"]
+        if role == "assistant" and "tool_calls" in params:
+            tool_calls = params["tool_calls"]
             if tool_calls and not isinstance(tool_calls[0], ToolCall):
-                # Convert MagicMock or dict tool_calls to proper ToolCall objects
-                converted_tool_calls = []
+                converted_tool_calls: list[ToolCall] = []
                 for tc in tool_calls:
                     if isinstance(tc, dict):
-                        # Handle dict format: {"name": "func", "arguments": {...}}
                         tool_call = ToolCall(
                             id=str(ULID()),
                             function=ToolCallFunction(
@@ -711,51 +788,53 @@ class MockQueuedLanguageModel:
                             ),
                         )
                         converted_tool_calls.append(tool_call)
-                    else:
-                        # Handle MagicMock objects (convert from existing structure)
-                        if hasattr(tc, "function"):
-                            tool_call = ToolCall(
-                                id=str(tc.id) if hasattr(tc, "id") else str(ULID()),
-                                function=ToolCallFunction(
-                                    name=tc.function.name,
-                                    arguments=tc.function.arguments,
-                                ),
-                            )
-                            converted_tool_calls.append(tool_call)
-                kwargs["tool_calls"] = converted_tool_calls
+                    elif hasattr(tc, "function"):
+                        tool_call = ToolCall(
+                            id=str(getattr(tc, "id", ULID())),
+                            function=ToolCallFunction(
+                                name=tc.function.name,
+                                arguments=tc.function.arguments,
+                            ),
+                        )
+                        converted_tool_calls.append(tool_call)
+                params["tool_calls"] = converted_tool_calls
 
         # Create appropriate message type based on role
         if role == "system":
-            return SystemMessage(*content_parts, **kwargs)
+            return SystemMessage(*content_parts, **params)
         elif role == "user":
-            return UserMessage(*content_parts, **kwargs)
+            return UserMessage(*content_parts, **params)
         elif role == "assistant":
             if output:
                 return AssistantMessageStructuredOutput(
-                    *content_parts, output=output, **kwargs
+                    *content_parts, output=output, **params
                 )
-            return AssistantMessage(*content_parts, **kwargs)
+            return AssistantMessage(*content_parts, **params)
         elif role == "tool":
-            return ToolMessage(*content_parts, **kwargs)
+            return ToolMessage(*content_parts, **params)
         else:
             raise ValueError(f"Unknown role: {role}")
 
-    def transform_message_list(self, messages: list) -> list[dict[str, Any]]:
+    def transform_message_list(
+        self, messages: Sequence[Message]
+    ) -> list[dict[str, Any]]:
         """Transform agent messages to LLM format - mimics LanguageModel.transform_message_list"""
-        messages_for_llm = []
+        messages_for_llm: list[dict[str, Any]] = []
         for message in messages:
             # Simple transformation to dict format expected by LLMs
-            msg_dict = {
+            msg_dict: dict[str, Any] = {
                 "role": message.role,
                 "content": message.content if hasattr(message, "content") else "",
             }
             # Add tool calls if present
-            if hasattr(message, "tool_calls") and message.tool_calls:
+            if isinstance(message, AssistantMessage) and message.tool_calls:
                 msg_dict["tool_calls"] = message.tool_calls
             messages_for_llm.append(msg_dict)
         return messages_for_llm
 
-    async def format_message_list_for_llm(self, messages: list) -> list[dict[str, Any]]:
+    async def format_message_list_for_llm(
+        self, messages: Sequence[Message]
+    ) -> list[dict[str, Any]]:
         """Async version of transform_message_list to match LanguageModel interface"""
         # For the mock, we just call the sync version
         return self.transform_message_list(messages)
@@ -766,20 +845,22 @@ class MockAgent:
 
     def __init__(
         self,
-        agent: "Agent",
+        agent: Agent,
         *responses: MockResponse,
-        handler: MockHandler | Callable | None = None,
-    ):
+        handler: MockHandler | HandlerCallable | None = None,
+    ) -> None:
         self.agent = agent
-        self.responses = list(
+        self.responses: list[MockResponse] = list(
             responses
         )  # Internal queue - primarily for testing/debugging
-        self._response_index = 0
-        self._original_model: Any = None
-        self._mock_model: Any = None
-        self._handler = handler  # Store handler if provided
+        self._response_index: int = 0
+        self._original_model: LanguageModel | None = None
+        self._mock_model: MockQueuedLanguageModel | MockHandlerLanguageModel | None = (
+            None
+        )
+        self._handler: MockHandler | HandlerCallable | None = handler
 
-    def __enter__(self):
+    def __enter__(self) -> MockAgent:
         """Enter context manager - replace agent's model with mock"""
         from .model.llm import LanguageModel
 
@@ -800,9 +881,10 @@ class MockAgent:
             )
 
         # Replace the LanguageModel component in the agent's extensions
-        self.agent._component_registry._extensions[LanguageModel] = self._mock_model
+        mock_component = cast(AgentComponent, self._mock_model)
+        self.agent._component_registry._extensions[LanguageModel] = mock_component
         self.agent._component_registry._extension_names["LanguageModel"] = (
-            self._mock_model
+            mock_component
         )
 
         logger.debug(
@@ -811,14 +893,24 @@ class MockAgent:
 
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any,
+    ) -> Literal[False]:
         """Exit context manager - restore original model"""
         from .model.llm import LanguageModel
 
+        if self._original_model is None:
+            raise RuntimeError("MockAgent exited before being entered")
+
+        original_component: AgentComponent = self._original_model
+
         # Restore the original LanguageModel component
-        self.agent._component_registry._extensions[LanguageModel] = self._original_model
+        self.agent._component_registry._extensions[LanguageModel] = original_component
         self.agent._component_registry._extension_names["LanguageModel"] = (
-            self._original_model
+            original_component
         )
 
         # Log appropriate message based on mock type
@@ -840,18 +932,23 @@ class MockAgent:
 
         return False
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> MockAgent:
         """Async context manager entry"""
         return self.__enter__()
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: Any,
+    ) -> Literal[False]:
         """Async context manager exit"""
         return self.__exit__(exc_type, exc_val, exc_tb)
 
     @property
     def responses_used(self) -> int:
         """Number of responses that have been consumed."""
-        if self._mock_model:
+        if isinstance(self._mock_model, MockQueuedLanguageModel):
             return self._mock_model.response_index
         return 0
 
@@ -865,28 +962,28 @@ class MockAgent:
         return self.responses_used >= len(self.responses)
 
     @property
-    def api_requests(self) -> list[Any]:
+    def api_requests(self) -> list[dict[str, Any]]:
         """Get API requests made during mocking."""
-        if self._mock_model:
-            return self._mock_model.api_requests
-        return []
+        if self._mock_model is None:
+            return []
+        return list(self._mock_model.api_requests)
 
     @property
-    def api_responses(self) -> list[Any]:
+    def api_responses(self) -> list[_MockLLMResponse]:
         """Get API responses returned during mocking."""
-        if self._mock_model:
-            return self._mock_model.api_responses
-        return []
+        if self._mock_model is None:
+            return []
+        return list(self._mock_model.api_responses)
 
     async def execute(
         self,
         *content_parts: MessageContent,
         role: Literal["user", "assistant", "system", "tool"] = "user",
-        context: dict | None = None,
+        context: dict[str, Any] | None = None,
         streaming: bool = False,
         max_iterations: int = 10,
         **kwargs: Any,
-    ):
+    ) -> AsyncIterator[Message]:
         """Execute the agent with mocked responses"""
         # Append input message if provided (matching Agent.execute behavior)
         if content_parts:
@@ -894,7 +991,7 @@ class MockAgent:
 
         # Yield messages based on queued responses following conversation flow rules
         for response in self.responses:
-            msg: Any  # Declare variable type once
+            msg: Message
             if response.type == "message":
                 # Create appropriate message type
                 if response.role == "assistant":
@@ -951,24 +1048,32 @@ class MockAgent:
         self,
         *content_parts: MessageContent,
         role: Literal["user", "assistant", "system", "tool"] = "user",
-        context: dict | None = None,
+        context: dict[str, Any] | None = None,
         **kwargs: Any,
-    ):
+    ) -> Message:
         """Call the agent with a mocked response
 
         Delegates to the agent's call() method which will use the mocked LLM.
+        Defaults to auto_execute_tools=False to return the first mocked response.
         """
+        # Default to not auto-executing tools for predictable mocking
+        if "auto_execute_tools" not in kwargs:
+            kwargs["auto_execute_tools"] = False
+
         # Delegate to agent's call() which will use the mocked LanguageModel
-        return await self.agent.call(
+        result = await self.agent.call(
             *content_parts, role=role, context=context, **kwargs
         )
+        return cast(Message, result)
 
-    def _convert_tool_calls(self, mock_tool_calls):
+    def _convert_tool_calls(
+        self, mock_tool_calls: Sequence[MockToolCall] | None
+    ) -> list[ToolCall] | None:
         """Convert MockToolCall objects to ToolCall objects"""
         if not mock_tool_calls:
             return None
 
-        converted = []
+        converted: list[ToolCall] = []
         for mtc in mock_tool_calls:
             tool_call = ToolCall(
                 id=str(ULID()),
@@ -1012,14 +1117,14 @@ class AgentMockInterface(AgentComponent):
         if len(responses) == 1:
             item = responses[0]
             # Check if it's a handler instance (has .handle method) or a callable function
-            if hasattr(item, "handle") or (
-                callable(item) and not isinstance(item, (str, MockResponse, type))
-            ):
-                # It's a handler - use MockHandlerLanguageModel
+            if isinstance(item, MockHandler):
                 return MockAgent(self.agent, handler=item)
+            if callable(item) and not isinstance(item, (str, MockResponse, type)):
+                handler = cast(HandlerCallable, item)
+                return MockAgent(self.agent, handler=handler)
 
         # Multiple args or strings/MockResponses -> use queue handler
-        processed_responses = []
+        processed_responses: list[MockResponse] = []
         for resp in responses:
             if isinstance(resp, str):
                 processed_responses.append(mock_message(resp))
@@ -1040,7 +1145,7 @@ class AgentMockInterface(AgentComponent):
         annotations: list[Annotation] | None = None,
         refusal: str | None = None,
         reasoning: str | None = None,
-        usage: "Usage | None" = None,
+        usage: Usage | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> MockResponse:
         """
@@ -1119,11 +1224,13 @@ class AgentMockInterface(AgentComponent):
 T = TypeVar("T", bound=BaseModel)
 
 
-class MockLanguageModel:
+class MockLanguageModel(AgentComponent):
     """Mock implementation of LanguageModel for testing"""
 
+    name = "language_model"
+
     def __init__(self, config, **kwargs):
-        self.config = (
+        self._local_config = (
             config
             if isinstance(config, AgentConfigManager)
             else MockAgentConfigManager(config)
@@ -1157,6 +1264,10 @@ class MockLanguageModel:
         # Request/response tracking
         self._api_requests = []
         self._api_responses = []
+
+    @property
+    def config(self) -> Any:
+        return self._local_config
 
     def _get_config_value(self, key: str, default: Any = None) -> Any:
         """Mock config value getter"""
@@ -1222,7 +1333,7 @@ class MockLanguageModel:
             self.mock_complete_response = mock_response
 
         # Mock usage tracking
-        from litellm.utils import Usage
+        from litellm.types.utils import Usage
 
         self.last_usage = Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15)
         self.total_tokens += self.last_usage.total_tokens
@@ -1355,7 +1466,7 @@ def create_annotation(
 
 def create_usage(
     prompt_tokens: int = 10, completion_tokens: int = 5, total_tokens: int | None = None
-) -> "Usage":
+) -> Usage:
     """Create a usage object for mock messages.
 
     Args:
@@ -1368,7 +1479,7 @@ def create_usage(
     """
     if total_tokens is None:
         total_tokens = prompt_tokens + completion_tokens
-    from litellm.utils import Usage
+    from litellm.types.utils import Usage
 
     return Usage(
         prompt_tokens=prompt_tokens,
