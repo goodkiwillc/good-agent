@@ -107,6 +107,7 @@ from .pool import AgentPool
 
 if TYPE_CHECKING:
     from .conversation import Conversation
+    from .thread_context import ForkContext, ThreadContext
 
 logger = logging.getLogger(__name__)
 
@@ -903,7 +904,9 @@ class Agent(EventRouter):
         """
         self.versioning.revert_to_version(version_index)
 
-    def fork_context(self, truncate_at: int | None = None, **fork_kwargs):
+    def fork_context(
+        self, truncate_at: int | None = None, **fork_kwargs
+    ) -> ForkContext:
         """Create a fork context for isolated operations.
 
         Args:
@@ -920,7 +923,7 @@ class Agent(EventRouter):
         """
         return self.context_manager.fork_context(truncate_at, **fork_kwargs)
 
-    def thread_context(self, truncate_at: int | None = None):
+    def thread_context(self, truncate_at: int | None = None) -> ThreadContext:
         """Create a thread context for temporary modifications.
 
         Args:
@@ -1520,54 +1523,59 @@ class Agent(EventRouter):
         control use ``execute`` instead. ``examples/agent/basic_chat.py`` shows both
         entry points side-by-side.
         """
-        skip_mode_handler = kwargs.pop(MODE_HANDLER_SKIP_KWARG, False)
+        # Strategy: Delegate to execute() if standard tool execution is requested.
+        # If manual control is needed (single call or structured output), handle setup manually.
 
-        if not skip_mode_handler:
-            await self._mode_manager.apply_scheduled_mode_changes()
+        if auto_execute_tools and not response_model:
+            # Delegate fully to execute()
+            # It handles message appending, mode scheduling, and mode handlers
+            final_message = None
+            last_assistant_message = None
 
-        # Append input message if provided
-        if content_parts:
-            self.append(*content_parts, role=role, context=context)
+            async for message in self.execute(
+                *content_parts, role=role, context=context, **kwargs
+            ):
+                match message:
+                    case AssistantMessage() | AssistantMessageStructuredOutput():
+                        last_assistant_message = message
 
-        if not skip_mode_handler:
-            handler_response = await self._run_active_mode_handlers()
-            if handler_response is not None:
-                return handler_response
+                final_message = message
 
-        # If auto_execute_tools is False or we have structured output,
-        # use the simple single-call approach
-        if not auto_execute_tools or response_model:
+            # If the last message is a tool message (e.g., max_iterations hit during tool execution),
+            # return the last assistant message instead
+            if not isinstance(
+                final_message, (AssistantMessage, AssistantMessageStructuredOutput)
+            ):
+                if last_assistant_message is not None:
+                    return last_assistant_message
+                # If we don't have any assistant message, something went wrong
+                raise RuntimeError(
+                    f"No assistant response received (last message type: {type(final_message)})"
+                )
+
+            # Return the final assistant message
+            if final_message is None:
+                raise RuntimeError("No response received from execute()")
+
+            return final_message
+
+        else:
+            # Manual setup for single call or structured output
+            skip_mode_handler = kwargs.pop(MODE_HANDLER_SKIP_KWARG, False)
+
+            if not skip_mode_handler:
+                await self._mode_manager.apply_scheduled_mode_changes()
+
+            # Append input message if provided
+            if content_parts:
+                self.append(*content_parts, role=role, context=context)
+
+            if not skip_mode_handler:
+                handler_response = await self._run_active_mode_handlers()
+                if handler_response is not None:
+                    return handler_response
+
             return await self._llm_call(response_model=response_model, **kwargs)
-
-        # Otherwise, use execute() to handle tool calls automatically
-        final_message = None
-        last_assistant_message = None
-        execute_kwargs = dict(kwargs)
-        execute_kwargs[MODE_HANDLER_SKIP_KWARG] = True
-        async for message in self.execute(**execute_kwargs):
-            match message:
-                case AssistantMessage() | AssistantMessageStructuredOutput():
-                    last_assistant_message = message
-
-            final_message = message
-
-        # If the last message is a tool message (e.g., max_iterations hit during tool execution),
-        # return the last assistant message instead
-        if not isinstance(
-            final_message, (AssistantMessage, AssistantMessageStructuredOutput)
-        ):
-            if last_assistant_message is not None:
-                return last_assistant_message
-            # If we don't have any assistant message, something went wrong
-            raise RuntimeError(
-                f"No assistant response received (last message type: {type(final_message)})"
-            )
-
-        # Return the final assistant message
-        if final_message is None:
-            raise RuntimeError("No response received from execute()")
-
-        return final_message
 
     async def _run_active_mode_handlers(
         self,
@@ -1634,6 +1642,9 @@ class Agent(EventRouter):
     @ensure_ready
     async def execute(
         self,
+        *content_parts: MessageContent,
+        role: Literal["user", "assistant", "system", "tool"] = "user",
+        context: dict | None = None,
         streaming: bool = False,
         max_iterations: int = 10,
         **kwargs: Any,
@@ -1644,10 +1655,19 @@ class Agent(EventRouter):
         ``agent.call`` for the one-shot variant. Demonstrated in
         ``examples/agent/basic_chat.py``.
         """
+        if streaming:
+            raise NotImplementedError("Streaming mode is not yet implemented.")
+
         skip_mode_handler = kwargs.pop(MODE_HANDLER_SKIP_KWARG, False)
 
         if not skip_mode_handler:
             await self._mode_manager.apply_scheduled_mode_changes()
+
+        # Append input message if provided
+        if content_parts:
+            self.append(*content_parts, role=role, context=context)
+
+        if not skip_mode_handler:
             handler_response = await self._run_active_mode_handlers()
             if handler_response is not None:
                 yield handler_response

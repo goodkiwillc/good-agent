@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!--
+    Good Agent Logo - "Bureaucrat Bot" (Light Mode)
+    Design Philosophy: "Aggressively Adequate"
+    Palette: Chassis Grey (#E0E0E0), Swanson Brown (#4A3728), Charcoal (#2D2D2D)
+  -->
+
+  <!-- Antenna -->
+  <line x1="256" y1="50" x2="256" y2="110" stroke="#2D2D2D" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="256" cy="40" r="20" fill="#E0E0E0" stroke="#2D2D2D" stroke-width="10"/>
+
+  <!-- Head -->
+  <rect x="106" y="106" width="300" height="300" rx="40" fill="#E0E0E0" stroke="#2D2D2D" stroke-width="12"/>
+
+  <!-- Eyes (Deadpan) -->
+  <circle cx="195" cy="220" r="18" fill="#2D2D2D"/>
+  <circle cx="317" cy="220" r="18" fill="#2D2D2D"/>
+
+  <!-- Mustache (The Swanson) -->
+  <!-- A thick, authoritative shape -->
+  <path d="M 256 290
+           C 230 280, 140 280, 140 350
+           C 140 380, 190 390, 256 330
+           C 322 390, 372 380, 372 350
+           C 372 280, 282 280, 256 290 Z"
+        fill="#4A3728" stroke="#2D2D2D" stroke-width="5" stroke-linejoin="round"/>
+
+</svg>

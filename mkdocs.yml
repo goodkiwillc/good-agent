@@ -6,14 +6,14 @@ repo_name: "goodkiwi/good-agent"
 
 theme:
   name: material
-  logo: assets/logo/good-agent-logo.svg
+  logo: assets/logo/good-agent-logo-light.svg
   favicon: assets/logo/good-agent-logo.svg
   palette:
     # Light Mode ("Office Hours")
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: blue-grey
-      accent: brown 
+      accent: brown
       toggle:
         icon: material/briefcase
         name: Switch to Night Shift
@@ -34,9 +34,21 @@ theme:
     - content.code.copy
     - content.action.edit
 
+site_dir: site
+
 plugins:
   - search
   - include-markdown
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_root_heading: true
+            show_source: true
+            show_symbol_type_heading: true
+            merge_init_into_class: true
 
 extra_css:
   - stylesheets/extra.css
@@ -53,9 +65,6 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - "Getting Started":
-    - "Installation": index.md
-    - "Migration Guide": MIGRATION.md
   - "Documentation":
     - "API Reference": api-reference.md
     - "Style Guide": STYLEGUIDE.md
@@ -63,3 +72,8 @@ nav:
     - "Changelog": CHANGELOG.md
     - "Decisions": DECISIONS.md
     - "Tech Debt": TECH_DEBT.md
+
+watch:
+  - ./assets/
+  - ./src/good_agent
+  - README.md
