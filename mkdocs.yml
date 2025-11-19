@@ -1,0 +1,65 @@
+site_name: Good Agent
+site_description: "An adequate library for agent orchestration."
+site_url: "https://goodkiwi.github.io/good-agent/"
+repo_url: "https://github.com/goodkiwi/good-agent"
+repo_name: "goodkiwi/good-agent"
+
+theme:
+  name: material
+  logo: assets/logo/good-agent-logo.svg
+  favicon: assets/logo/good-agent-logo.svg
+  palette:
+    # Light Mode ("Office Hours")
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue-grey
+      accent: brown 
+      toggle:
+        icon: material/briefcase
+        name: Switch to Night Shift
+
+    # Dark Mode ("Night Shift")
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue-grey
+      accent: brown
+      toggle:
+        icon: material/briefcase-outline
+        name: Switch to Office Hours
+
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - content.action.edit
+
+plugins:
+  - search
+  - include-markdown
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - tables
+
+nav:
+  - Home: index.md
+  - "Getting Started":
+    - "Installation": index.md
+    - "Migration Guide": MIGRATION.md
+  - "Documentation":
+    - "API Reference": api-reference.md
+    - "Style Guide": STYLEGUIDE.md
+  - "Project Info":
+    - "Changelog": CHANGELOG.md
+    - "Decisions": DECISIONS.md
+    - "Tech Debt": TECH_DEBT.md
