@@ -6,9 +6,10 @@ transformations, and capabilities. Modes are optional, stackable, and composable
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, MutableMapping
+from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypeVar
 
 
 if TYPE_CHECKING:
@@ -17,6 +18,47 @@ if TYPE_CHECKING:
 
 P = ParamSpec("P")
 T = TypeVar("T")
+
+MODE_HANDLER_SKIP_KWARG = "__good_agent_internal_skip_mode_handler__"
+
+
+@dataclass(slots=True)
+class ModeTransition:
+    """Instruction returned from a mode handler to change mode state."""
+
+    transition_type: Literal["switch", "exit", "push"]
+    target_mode: str | None = None
+    parameters: dict[str, Any] | None = None
+
+
+class ModeStateView(MutableMapping[str, Any]):
+    """Mutable mapping facade that proxies state operations to ModeManager."""
+
+    def __init__(self, manager: "ModeManager"):
+        self._manager = manager
+
+    def __getitem__(self, key: str) -> Any:
+        sentinel = object()
+        value = self._manager.get_state(key, sentinel)
+        if value is sentinel:
+            raise KeyError(key)
+        return value
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self._manager.set_state(key, value)
+
+    def __delitem__(self, key: str) -> None:
+        if not self._manager.delete_state(key):
+            raise KeyError(key)
+
+    def __iter__(self):
+        return iter(self._manager.get_all_state())
+
+    def __len__(self) -> int:
+        return len(self._manager.get_all_state())
+
+    def __repr__(self) -> str:  # pragma: no cover - trivial
+        return f"ModeStateView({self._manager.get_all_state()!r})"
 
 
 class ModeContext:
@@ -30,7 +72,8 @@ class ModeContext:
         agent: Agent,
         mode_name: str,
         mode_stack: list[str],
-        state: dict[str, Any],
+        state: MutableMapping[str, Any] | None = None,
+        manager: "ModeManager" | None = None,
     ):
         """Initialize mode context.
 
@@ -38,12 +81,18 @@ class ModeContext:
             agent: The agent instance
             mode_name: Name of the current mode
             mode_stack: Current mode stack (bottom to top)
-            state: Scoped state dictionary
+            state: Scoped state mapping (defaults to proxy view)
         """
         self.agent = agent
         self.mode_name = mode_name
         self.mode_stack = mode_stack
-        self.state = state
+        self._manager = manager
+        if state is not None:
+            self.state = state
+        elif manager is not None:
+            self.state = ModeStateView(manager)
+        else:
+            self.state = {}
         self._entered_at = datetime.now()
 
     async def call(self, *content_parts: Any, **kwargs: Any) -> AssistantMessage:
@@ -56,7 +105,8 @@ class ModeContext:
         Returns:
             Assistant response message
         """
-        return await self.agent.call(*content_parts, **kwargs)
+        call_kwargs = {**kwargs, MODE_HANDLER_SKIP_KWARG: True}
+        return await self.agent.call(*content_parts, **call_kwargs)
 
     def add_system_message(self, content: str) -> None:
         """Add a system message to the conversation.
@@ -65,6 +115,29 @@ class ModeContext:
             content: System message content
         """
         self.agent.append(content, role="system")
+
+    def switch_mode(self, mode_name: str, **parameters: Any) -> ModeTransition:
+        """Request switching to another mode before continuing the call."""
+
+        return ModeTransition(
+            transition_type="switch",
+            target_mode=mode_name,
+            parameters=parameters or None,
+        )
+
+    def push_mode(self, mode_name: str, **parameters: Any) -> ModeTransition:
+        """Request pushing an additional mode on top of the current stack."""
+
+        return ModeTransition(
+            transition_type="push",
+            target_mode=mode_name,
+            parameters=parameters or None,
+        )
+
+    def exit_mode(self) -> ModeTransition:
+        """Request exiting the current mode before continuing the call."""
+
+        return ModeTransition(transition_type="exit")
 
     @property
     def duration(self) -> timedelta:
@@ -160,6 +233,15 @@ class ModeStack:
             result.update(state)
         return result
 
+    def delete_state(self, key: str) -> bool:
+        """Delete state value from the first (inner-most) scope containing it."""
+
+        for _, state in reversed(self._stack):
+            if key in state:
+                del state[key]
+                return True
+        return False
+
 
 # Type for mode handler functions
 ModeHandler = Callable[[ModeContext], Awaitable[Any]]
@@ -236,6 +318,8 @@ class ModeManager:
         self._agent = agent
         self._registry: dict[str, ModeInfo] = {}
         self._mode_stack = ModeStack()
+        self._pending_mode_switch: tuple[str, dict[str, Any]] | None = None
+        self._pending_mode_exit = False
 
     def __call__(self, name: str) -> Callable[[ModeHandler], ModeHandler]:
         """Decorator for registering a mode handler.
@@ -331,6 +415,14 @@ class ModeManager:
         """
         return self._mode_stack.in_mode(mode_name)
 
+    def get_handler(self, mode_name: str) -> ModeHandler | None:
+        """Get the handler for a mode, if registered."""
+
+        info = self._registry.get(mode_name)
+        if info is None:
+            return None
+        return info.handler
+
     async def _enter_mode(self, mode_name: str, **params: Any) -> None:
         """Enter a mode (internal).
 
@@ -346,7 +438,7 @@ class ModeManager:
             return
 
         # Push mode onto stack
-        self._mode_stack.push(mode_name, params)
+        self._mode_stack.push(mode_name, dict(params))
 
         # Emit mode:entered event
         from good_agent.events.agent import AgentEvents
@@ -397,6 +489,49 @@ class ModeManager:
         """Exit current mode directly (non-context-manager)."""
         await self._exit_mode()
 
+    def schedule_mode_switch(self, mode_name: str, **params: Any) -> None:
+        """Schedule switching to another mode before the next agent call."""
+
+        if mode_name not in self._registry:
+            raise KeyError(f"Mode '{mode_name}' is not registered")
+        self._ensure_no_pending_mode_change()
+        self._pending_mode_switch = (mode_name, dict(params))
+
+    def schedule_mode_exit(self) -> None:
+        """Schedule exiting the current mode before the next agent call."""
+
+        if not self.current_mode:
+            raise RuntimeError("Cannot schedule a mode exit when no mode is active")
+        self._ensure_no_pending_mode_change()
+        self._pending_mode_exit = True
+
+    async def apply_scheduled_mode_changes(self) -> None:
+        """Apply any pending scheduled mode exits or switches."""
+
+        if self._pending_mode_exit:
+            self._pending_mode_exit = False
+            await self._exit_mode()
+
+        if self._pending_mode_switch:
+            mode_name, params = self._pending_mode_switch
+            self._pending_mode_switch = None
+            if self.current_mode:
+                await self._exit_mode()
+            await self._enter_mode(mode_name, **params)
+
+    def create_context(self) -> ModeContext:
+        """Create a ModeContext for the current active mode."""
+
+        current_mode = self.current_mode
+        if current_mode is None:
+            raise RuntimeError("Cannot create mode context without an active mode")
+        return ModeContext(
+            agent=self._agent,
+            mode_name=current_mode,
+            mode_stack=self.mode_stack.copy(),
+            manager=self,
+        )
+
     def get_state(self, key: str, default: Any = None) -> Any:
         """Get mode state value.
 
@@ -425,3 +560,22 @@ class ModeManager:
             Merged state from all mode stack levels
         """
         return self._mode_stack.get_all_state()
+
+    def delete_state(self, key: str) -> bool:
+        """Delete a state value from the stack.
+
+        Args:
+            key: State key to delete
+
+        Returns:
+            True if the key was removed from any scope
+        """
+
+        return self._mode_stack.delete_state(key)
+
+    def _ensure_no_pending_mode_change(self) -> None:
+        if self._pending_mode_switch or self._pending_mode_exit:
+            raise RuntimeError(
+                "A mode change is already scheduled for the next call; "
+                "wait for it to complete before scheduling another."
+            )

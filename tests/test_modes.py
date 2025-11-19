@@ -216,23 +216,20 @@ async def test_mode_context_add_system_message():
     @agent.modes("research")
     async def research_mode(ctx: ModeContext):
         ctx.add_system_message("You are in research mode. Focus on accuracy.")
-        # Don't actually call LLM in test
         return None
 
     async with agent:
-        async with agent.modes["research"]:
-            # Manually test adding system message
-            mode_ctx = ModeContext(agent, "research", ["research"], {})
-            mode_ctx.add_system_message("You are in research mode. Focus on accuracy.")
+        with agent.mock("Mock response"):
+            async with agent.modes["research"]:
+                await agent.call("Trigger handler")
 
-        # Check that system message was added
-        system_messages = [m for m in agent.messages if m.role == "system"]
-        assert len(system_messages) >= 1
-        assert any(
-            "research mode" in str(m.content).lower()
-            for m in system_messages
-            if m.content
-        )
+    system_messages = [m for m in agent.messages if m.role == "system"]
+    assert system_messages
+    assert any(
+        "research mode" in str(m.content).lower()
+        for m in system_messages
+        if m.content
+    )
 
 
 @pytest.mark.asyncio
@@ -268,3 +265,148 @@ async def test_mode_info():
     assert info["name"] == "test"
     assert "Test mode with description" in info["description"]
     assert info["handler"] is test_mode
+
+
+@pytest.mark.asyncio
+async def test_mode_handler_execution():
+    """Mode handler should run before LLM call and update scoped state."""
+    agent = Agent("Test agent")
+    handler_runs: list[tuple[str, tuple[str, ...]]] = []
+
+    @agent.modes("research")
+    async def research_mode(ctx: ModeContext):
+        handler_runs.append((ctx.mode_name, tuple(ctx.mode_stack)))
+        ctx.state["ran"] = ctx.state.get("ran", 0) + 1
+
+    async with agent:
+        with agent.mock("Mock response"):
+            async with agent.modes["research"]:
+                result = await agent.call("Hello")
+                assert agent.modes.get_state("ran") == 1
+                assert "Mock response" in str(result.content)
+            assert agent.modes.get_state("ran") is None
+
+    assert handler_runs == [("research", ("research",))]
+
+
+@pytest.mark.asyncio
+async def test_mode_transition_switch():
+    """Handler can request switching to another mode before the call."""
+    agent = Agent("Test agent")
+    sequence: list[tuple[str, tuple[str, ...]]] = []
+
+    @agent.modes("analysis")
+    async def analysis_mode(ctx: ModeContext):
+        sequence.append((ctx.mode_name, tuple(ctx.mode_stack)))
+        return ctx.switch_mode("execution")
+
+    @agent.modes("execution")
+    async def execution_mode(ctx: ModeContext):
+        sequence.append((ctx.mode_name, tuple(ctx.mode_stack)))
+        ctx.state["done"] = True
+
+    async with agent:
+        with agent.mock("ok"):
+            await agent.modes.enter_mode("analysis")
+            await agent.call("start")
+            assert agent.current_mode == "execution"
+            assert agent.modes.get_state("done") is True
+            await agent.modes.exit_mode()
+
+    assert sequence == [
+        ("analysis", ("analysis",)),
+        ("execution", ("execution",)),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_mode_transition_exit():
+    """Handler can exit to outer mode before continuing the call."""
+    agent = Agent("Test agent")
+    inner_runs: list[tuple[str, ...]] = []
+    outer_runs: list[tuple[str, ...]] = []
+
+    @agent.modes("outer")
+    async def outer_mode(ctx: ModeContext):
+        outer_runs.append(tuple(ctx.mode_stack))
+        ctx.state["outer_counter"] = ctx.state.get("outer_counter", 0) + 1
+
+    @agent.modes("inner")
+    async def inner_mode(ctx: ModeContext):
+        inner_runs.append(tuple(ctx.mode_stack))
+        return ctx.exit_mode()
+
+    async with agent:
+        with agent.mock("ok"):
+            await agent.modes.enter_mode("outer")
+            await agent.modes.enter_mode("inner")
+            await agent.call("trigger")
+            assert agent.current_mode == "outer"
+            assert agent.modes.get_state("outer_counter") == 1
+            await agent.modes.exit_mode()
+
+    assert inner_runs == [("outer", "inner")]
+    assert outer_runs == [("outer",)]
+
+
+@pytest.mark.asyncio
+async def test_scheduled_mode_switch():
+    """Scheduling a mode switch applies before the next call."""
+    agent = Agent("Test agent")
+    entries: list[str] = []
+
+    @agent.modes("research")
+    async def research_mode(ctx: ModeContext):
+        entries.append(ctx.mode_name)
+        ctx.state["entered"] = True
+
+    async with agent:
+        with agent.mock("ok"):
+            agent.modes.schedule_mode_switch("research")
+            await agent.call("next")
+            assert agent.current_mode == "research"
+            assert agent.modes.get_state("entered") is True
+            await agent.modes.exit_mode()
+
+    assert entries == ["research"]
+
+
+@pytest.mark.asyncio
+async def test_scheduled_mode_exit():
+    """Scheduling an exit leaves the mode before the next call."""
+    agent = Agent("Test agent")
+
+    @agent.modes("focus")
+    async def focus_mode(ctx: ModeContext):
+        ctx.state["hits"] = ctx.state.get("hits", 0) + 1
+
+    async with agent:
+        with agent.mock("ok"):
+            await agent.modes.enter_mode("focus")
+            agent.modes.schedule_mode_exit()
+            await agent.call("work")
+            assert agent.current_mode is None
+
+
+@pytest.mark.asyncio
+async def test_mode_switch_before_call():
+    """Pending switches happen before handlers for previous modes run."""
+    agent = Agent("Test agent")
+    events: list[str] = []
+
+    @agent.modes("first")
+    async def first_mode(ctx: ModeContext):
+        events.append("first")
+
+    @agent.modes("second")
+    async def second_mode(ctx: ModeContext):
+        events.append("second")
+
+    async with agent:
+        with agent.mock("ok"):
+            await agent.modes.enter_mode("first")
+            agent.modes.schedule_mode_switch("second")
+            await agent.call("go")
+            assert events == ["second"]
+            assert agent.current_mode == "second"
+            await agent.modes.exit_mode()
