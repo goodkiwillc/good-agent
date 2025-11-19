@@ -20,7 +20,17 @@ dependencies = [
     "pydantic>=2.12.3",
     "python-magic>=0.4.27",
     "types-lxml>=2025.8.25",
+    "prompt-toolkit>=3.0.52",
 ]
+
+[project.optional-dependencies]
+server = [
+    "fastapi>=0.121.3",
+    "uvicorn>=0.38.0",
+]
+
+[project.scripts]
+good-agent = "good_agent.cli.main:app"
 
 [build-system]
 requires = ["uv_build>=0.8.22,<0.9.0"]
@@ -44,7 +54,7 @@ dev = [
     "mkdocs-material>=9.7.0",
     "mkdocs-include-markdown-plugin>=7.2.0",
     "mkdocstrings[python]>=0.26.1",
-    "watchdog>=6.0.0",
+    "watchdog>=4.0.0,<6.0.0",
 ]
 
 
