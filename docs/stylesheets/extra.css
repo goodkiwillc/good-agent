@@ -1,0 +1,28 @@
+/* 
+   Good Agent Theme Tweaks 
+   "Aggressively Adequate"
+*/
+
+:root {
+  /* Override generic brand colors if needed */
+  --md-primary-fg-color:        #546E7A; /* Blue Grey 600 */
+  --md-primary-fg-color--light: #78909C; /* Blue Grey 400 */
+  --md-primary-fg-color--dark:  #37474F; /* Blue Grey 800 */
+  --md-accent-fg-color:         #4A3728; /* Swanson Brown */
+}
+
+/* Make the logo square-ish */
+.md-header__button.md-logo img, 
+.md-header__button.md-logo svg {
+    border-radius: 4px; /* Slight rounding, not circular */
+}
+
+/* Bureaucratic Font Tuning */
+body, input {
+    font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* Code blocks: Dark & Serious */
+code {
+    font-family: "Roboto Mono", "Courier New", Courier, monospace;
+}
