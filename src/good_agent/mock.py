@@ -1,14 +1,16 @@
-from collections.abc import AsyncIterator
-from dataclasses import dataclass
+from collections.abc import AsyncIterator, Callable
+from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    Protocol,
     TypedDict,
     TypeVar,
     cast,
 )
 from unittest.mock import MagicMock
+import asyncio
 import logging
 
 import orjson
@@ -23,6 +25,7 @@ from .messages import (
     AssistantMessage,
     AssistantMessageStructuredOutput,
     CitationURL,
+    Message,
     MessageContent,
     MessageRole,
     SystemMessage,
@@ -50,6 +53,13 @@ __all__ = [
     "MockLanguageModel",
     "MockQueuedLanguageModel",
     "MockAgentConfigManager",
+    # Handler-based mocking
+    "MockContext",
+    "MockHandler",
+    "MockHandlerLanguageModel",
+    "QueuedResponseHandler",
+    "ConditionalHandler",
+    "TranscriptHandler",
     # Mock creation functions
     "mock_message",
     "mock_tool_call",
@@ -87,7 +97,7 @@ class MockMessage(TypedDict):
 class MockResponse:
     """Represents a queued mock response"""
 
-    type: Literal["message", "tool_call"]
+    type: Literal["message", "tool_call"] = "message"
     content: str | None = None
     role: Literal["assistant", "user", "system", "tool"] = "assistant"
     tool_calls: list[MockToolCall] | None = None
@@ -150,6 +160,360 @@ def mock_tool_call(
     )
 
 
+# ============================================================================
+# Handler-Based Mocking Infrastructure
+# ============================================================================
+
+
+@dataclass
+class MockContext:
+    """Context passed to mock handlers on each LLM call
+
+    Provides access to agent state, message history, and call metadata
+    to help handlers decide what response to return.
+    """
+
+    agent: "Agent"
+    """The agent making the LLM call"""
+
+    messages: list[Message]
+    """Messages being sent to LLM"""
+
+    iteration: int
+    """Current execute() iteration number (0-indexed)"""
+
+    call_count: int
+    """Total number of LLM calls made during this mock session"""
+
+    kwargs: dict[str, Any] = field(default_factory=dict)
+    """Additional kwargs passed to LLM (temperature, model, etc.)"""
+
+
+class MockHandler(Protocol):
+    """Protocol for mock response handlers
+
+    Handlers are called on each LLM completion request and must return
+    a MockResponse based on the current context.
+    """
+
+    async def handle(self, context: MockContext) -> MockResponse:
+        """Generate mock response based on context
+
+        Args:
+            context: Full context about the current LLM call
+
+        Returns:
+            MockResponse to return instead of calling real LLM
+        """
+        ...
+
+
+def _ensure_mock_response(payload: MockResponse | str) -> MockResponse:
+    """Convert string or MockResponse to MockResponse"""
+    if isinstance(payload, MockResponse):
+        return payload
+    return MockResponse(content=payload, role="assistant")
+
+
+# ============================================================================
+# Built-in Handler Implementations
+# ============================================================================
+
+
+class QueuedResponseHandler:
+    """Simple FIFO queue of responses (implements current mock behavior as handler)"""
+
+    def __init__(self, *responses: MockResponse | str):
+        self.responses = [_ensure_mock_response(r) for r in responses]
+        self.index = 0
+
+    async def handle(self, context: MockContext) -> MockResponse:
+        if self.index >= len(self.responses):
+            raise ValueError(
+                f"Mock exhausted: needed response {self.index + 1} "
+                f"but only {len(self.responses)} were queued"
+            )
+
+        response = self.responses[self.index]
+        self.index += 1
+        return response
+
+
+class ConditionalHandler:
+    """Match responses based on conditions (content, iteration, etc.)"""
+
+    def __init__(self):
+        self.rules: list[tuple[Callable[[MockContext], bool], MockResponse]] = []
+        self.default_response: MockResponse | None = None
+
+    def when(
+        self, condition: Callable[[MockContext], bool], respond: str | MockResponse
+    ) -> "ConditionalHandler":
+        """Add conditional rule"""
+        response = _ensure_mock_response(respond)
+        self.rules.append((condition, response))
+        return self
+
+    def default(self, respond: str | MockResponse) -> "ConditionalHandler":
+        """Set fallback response"""
+        self.default_response = _ensure_mock_response(respond)
+        return self
+
+    async def handle(self, context: MockContext) -> MockResponse:
+        # Check rules in order
+        for condition, response in self.rules:
+            if condition(context):
+                return response
+
+        # Fallback
+        if self.default_response:
+            return self.default_response
+
+        raise ValueError("No condition matched and no default set")
+
+
+class TranscriptHandler:
+    """Follow a predefined conversation transcript"""
+
+    def __init__(self, transcript: list[tuple]):
+        """
+        Args:
+            transcript: List of (role, content, **extras) tuples
+                Example: [
+                    ("assistant", "I'll check weather", {"tool_calls": [...]}),
+                    ("assistant", "It's sunny"),
+                ]
+        """
+        self.transcript = transcript
+        self.position = 0
+
+    async def handle(self, context: MockContext) -> MockResponse:
+        if self.position >= len(self.transcript):
+            raise ValueError(f"Transcript exhausted at position {self.position}")
+
+        entry = self.transcript[self.position]
+        self.position += 1
+
+        # Parse entry
+        role, content, *extras = entry
+        kwargs = extras[0] if extras else {}
+
+        return MockResponse(content=content, role=role, **kwargs)
+
+
+class MockHandlerLanguageModel:
+    """Language model that delegates to a handler for mock responses"""
+
+    def __init__(self, handler: MockHandler | Callable, agent=None):
+        self.handler = handler
+        self.agent = agent
+        self.call_count = 0
+        self.config = MagicMock()
+        self.config.model = "mock-model"
+
+        # Track API requests/responses like the real LanguageModel
+        self.api_requests: list[Any] = []
+        self.api_responses: list[Any] = []
+        # Aliases with underscores to match real LanguageModel
+        self._api_requests = self.api_requests
+        self._api_responses = self.api_responses
+
+    async def install(self, agent):
+        """Install method to satisfy component interface"""
+        self.agent = agent
+
+    async def complete(self, messages: list[dict[str, Any]], **kwargs) -> Any:
+        """Mock complete that delegates to handler"""
+        self.call_count += 1
+
+        # Track the request
+        request_data = {"messages": messages, **kwargs}
+        self.api_requests.append(request_data)
+
+        # Fire llm:complete:before event
+        if self.agent:
+            from .events import AgentEvents
+
+            await self.agent.events.apply(
+                AgentEvents.LLM_COMPLETE_BEFORE,
+                messages=messages,
+                config=kwargs,
+                llm=self,
+            )
+
+        # Build context
+        context = MockContext(
+            agent=self.agent,
+            messages=self.agent.messages if self.agent else [],
+            iteration=getattr(self.agent, "_iteration_index", 0) if self.agent else 0,
+            call_count=self.call_count,
+            kwargs=kwargs,
+        )
+
+        # Get response from handler
+        if asyncio.iscoroutinefunction(getattr(self.handler, "handle", self.handler)):
+            if hasattr(self.handler, "handle"):
+                mock_response = await self.handler.handle(context)
+            else:
+                mock_response = await self.handler(context)
+        else:
+            if hasattr(self.handler, "handle"):
+                mock_response = self.handler.handle(context)
+            else:
+                mock_response = self.handler(context)
+
+        # Ensure we got a MockResponse
+        if not isinstance(mock_response, MockResponse):
+            raise TypeError(
+                f"Handler must return MockResponse, got {type(mock_response)}"
+            )
+
+        # Convert to LiteLLM format
+        llm_response = self._to_litellm_response(mock_response)
+
+        # Track response
+        self.api_responses.append(llm_response)
+
+        # Fire llm:complete:after event
+        if self.agent:
+            from .events import AgentEvents
+
+            self.agent.do(
+                AgentEvents.LLM_COMPLETE_AFTER,
+                response=llm_response,
+                messages=messages,
+                llm=self,
+            )
+
+        return llm_response
+
+    def _to_litellm_response(self, mock_response: MockResponse) -> Any:
+        """Convert MockResponse to LiteLLM format"""
+        from litellm.utils import Choices, Message as LiteLLMMessage, Usage
+
+        message = LiteLLMMessage()
+        message.content = mock_response.content or ""
+
+        # Add tool calls if present
+        if mock_response.tool_calls:
+            tool_calls = []
+            for tc in mock_response.tool_calls:
+                tool_call = MagicMock()
+                tool_call.id = str(ULID())
+                tool_call.function = MagicMock()
+                tool_call.function.name = tc["tool_name"]
+                tool_call.function.arguments = orjson.dumps(tc["arguments"]).decode()
+                tool_calls.append(tool_call)
+            message.tool_calls = tool_calls  # type: ignore[assignment]
+        else:
+            message.tool_calls = None
+
+        # Create choice
+        choice = Choices()
+        choice.message = message
+        choice.provider_specific_fields = {}
+
+        # Create response
+        mock_llm_response = MagicMock()
+        mock_llm_response.choices = [choice]
+        mock_llm_response.usage = (
+            mock_response.usage
+            if mock_response.usage
+            else Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15)
+        )
+        mock_llm_response.model = self.config.model
+        mock_llm_response.id = f"mock-{str(ULID())}"
+        mock_llm_response.created = 1234567890
+
+        return mock_llm_response
+
+    async def extract(
+        self, messages: list[dict[str, Any]], response_model: type[Any], **kwargs
+    ) -> Any:
+        """Mock extract for structured output - not implemented yet"""
+        raise NotImplementedError("Structured output mocking not yet implemented")
+
+    async def stream(self, messages: list[dict[str, Any]], **kwargs) -> AsyncIterator:
+        """Mock stream - not implemented yet"""
+        raise NotImplementedError("Streaming mock not yet implemented")
+
+    def create_message(
+        self,
+        *content: MessageContent,
+        role: MessageRole = "user",
+        output: BaseModel | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """Create a message based on role type - mimics LanguageModel.create_message"""
+        content_parts = []
+        for item in content:
+            if isinstance(item, dict):
+                if item.get("type") == "text":
+                    content_parts.append(TextContentPart(text=item.get("text", "")))
+            else:
+                content_parts.append(TextContentPart(text=str(item)))
+
+        # Convert tool_calls if present
+        if role == "assistant" and "tool_calls" in kwargs:
+            tool_calls = kwargs["tool_calls"]
+            if tool_calls and not isinstance(tool_calls[0], ToolCall):
+                converted_tool_calls = []
+                for tc in tool_calls:
+                    if isinstance(tc, dict):
+                        tool_call = ToolCall(
+                            id=str(ULID()),
+                            function=ToolCallFunction(
+                                name=tc["name"],
+                                arguments=orjson.dumps(tc["arguments"]).decode(),
+                            ),
+                        )
+                        converted_tool_calls.append(tool_call)
+                    else:
+                        if hasattr(tc, "function"):
+                            tool_call = ToolCall(
+                                id=str(tc.id) if hasattr(tc, "id") else str(ULID()),
+                                function=ToolCallFunction(
+                                    name=tc.function.name,
+                                    arguments=tc.function.arguments,
+                                ),
+                            )
+                            converted_tool_calls.append(tool_call)
+                kwargs["tool_calls"] = converted_tool_calls
+
+        # Create appropriate message type
+        if role == "system":
+            return SystemMessage(*content_parts, **kwargs)
+        elif role == "user":
+            return UserMessage(*content_parts, **kwargs)
+        elif role == "assistant":
+            if output:
+                return AssistantMessageStructuredOutput(
+                    *content_parts, output=output, **kwargs
+                )
+            return AssistantMessage(*content_parts, **kwargs)
+        elif role == "tool":
+            return ToolMessage(*content_parts, **kwargs)
+        else:
+            raise ValueError(f"Unknown role: {role}")
+
+    def transform_message_list(self, messages: list) -> list[dict[str, Any]]:
+        """Transform agent messages to LLM format"""
+        messages_for_llm = []
+        for message in messages:
+            msg_dict = {
+                "role": message.role,
+                "content": message.content if hasattr(message, "content") else "",
+            }
+            if hasattr(message, "tool_calls") and message.tool_calls:
+                msg_dict["tool_calls"] = message.tool_calls
+            messages_for_llm.append(msg_dict)
+        return messages_for_llm
+
+    async def format_message_list_for_llm(self, messages: list) -> list[dict[str, Any]]:
+        """Async version of transform_message_list"""
+        return self.transform_message_list(messages)
+
+
 class MockQueuedLanguageModel:
     """Mock language model that returns queued responses instead of calling LLM"""
 
@@ -166,6 +530,10 @@ class MockQueuedLanguageModel:
         # Aliases with underscores to match real LanguageModel
         self._api_requests = self.api_requests
         self._api_responses = self.api_responses
+
+    async def install(self, agent):
+        """Install method to satisfy component interface"""
+        self.agent = agent
 
     async def complete(self, messages: list[dict[str, Any]], **kwargs) -> Any:
         """Mock complete that returns the next queued response"""
@@ -396,7 +764,12 @@ class MockQueuedLanguageModel:
 class MockAgent:
     """Mock agent that returns pre-configured responses"""
 
-    def __init__(self, agent: "Agent", *responses: MockResponse):
+    def __init__(
+        self,
+        agent: "Agent",
+        *responses: MockResponse,
+        handler: MockHandler | Callable | None = None,
+    ):
         self.agent = agent
         self.responses = list(
             responses
@@ -404,6 +777,7 @@ class MockAgent:
         self._response_index = 0
         self._original_model: Any = None
         self._mock_model: Any = None
+        self._handler = handler  # Store handler if provided
 
     def __enter__(self):
         """Enter context manager - replace agent's model with mock"""
@@ -411,8 +785,19 @@ class MockAgent:
 
         self._original_model = self.agent.model
 
-        # Create a mock model that returns our queued responses
-        self._mock_model = MockQueuedLanguageModel(self.responses, agent=self.agent)
+        # Create appropriate mock model based on what was provided
+        if self._handler is not None:
+            # Handler-based mocking
+            self._mock_model = MockHandlerLanguageModel(self._handler, agent=self.agent)
+            logger.info(
+                f"MockAgent activated for agent {self.agent.id} with handler {self._handler.__class__.__name__}"
+            )
+        else:
+            # Queue-based mocking (original behavior)
+            self._mock_model = MockQueuedLanguageModel(self.responses, agent=self.agent)
+            logger.info(
+                f"MockAgent activated for agent {self.agent.id} with {len(self.responses)} queued responses"
+            )
 
         # Replace the LanguageModel component in the agent's extensions
         self.agent._component_registry._extensions[LanguageModel] = self._mock_model
@@ -420,11 +805,8 @@ class MockAgent:
             self._mock_model
         )
 
-        logger.info(
-            f"MockAgent activated for agent {self.agent.id} with {len(self.responses)} queued responses"
-        )
         logger.debug(
-            f"Replaced model {self._original_model.__class__.__name__} with MockQueuedLanguageModel"
+            f"Replaced model {self._original_model.__class__.__name__} with {self._mock_model.__class__.__name__}"
         )
 
         return self
@@ -439,11 +821,19 @@ class MockAgent:
             self._original_model
         )
 
-        responses_used = self._mock_model.response_index if self._mock_model else 0
-        logger.info(
-            f"MockAgent deactivated for agent {self.agent.id}. "
-            f"Used {responses_used}/{len(self.responses)} responses"
-        )
+        # Log appropriate message based on mock type
+        if isinstance(self._mock_model, MockHandlerLanguageModel):
+            logger.info(
+                f"MockAgent deactivated for agent {self.agent.id}. "
+                f"Handler processed {self._mock_model.call_count} LLM calls"
+            )
+        else:
+            responses_used = self._mock_model.response_index if self._mock_model else 0
+            logger.info(
+                f"MockAgent deactivated for agent {self.agent.id}. "
+                f"Used {responses_used}/{len(self.responses)} responses"
+            )
+
         logger.debug(
             f"Restored original model {self._original_model.__class__.__name__}"
         )
@@ -564,38 +954,14 @@ class MockAgent:
         context: dict | None = None,
         **kwargs: Any,
     ):
-        """Call the agent with a mocked response"""
-        # Append input message if provided (matching Agent.call behavior)
-        if content_parts:
-            self.agent.append(*content_parts, role=role, context=context)
+        """Call the agent with a mocked response
 
-        # Return the first queued response as appropriate message type
-        if not self.responses:
-            raise ValueError("No mock responses available")
-
-        response = self.responses[0]
-
-        if response.type == "message" and response.role == "assistant":
-            msg = AssistantMessage(
-                content=response.content or "",
-                tool_calls=self._convert_tool_calls(response.tool_calls)
-                if response.tool_calls
-                else None,
-                citations=response.citations,
-                annotations=response.annotations,
-                refusal=response.refusal,
-                reasoning=response.reasoning,
-            )
-
-            # Set execution properties
-            msg._i = 0
-            msg._set_agent(self.agent)
-
-            return msg
-        else:
-            raise ValueError(
-                f"call() expects assistant message response, got {response.type}:{response.role}"
-            )
+        Delegates to the agent's call() method which will use the mocked LLM.
+        """
+        # Delegate to agent's call() which will use the mocked LanguageModel
+        return await self.agent.call(
+            *content_parts, role=role, context=context, **kwargs
+        )
 
     def _convert_tool_calls(self, mock_tool_calls):
         """Convert MockToolCall objects to ToolCall objects"""
@@ -624,13 +990,35 @@ class AgentMockInterface(AgentComponent):
     - agent.mock.tool_call() to create mock tool calls
     """
 
-    def __call__(self, *responses: MockResponse | str):
+    def __call__(
+        self, *responses: MockResponse | str | MockHandler | Callable
+    ) -> MockAgent:
         """
         Create a mock agent context manager.
 
-        Usage: agent.mock(response1, response2, ...)
+        Supports:
+        - Strings/MockResponse objects: Uses QueuedResponseHandler (current behavior)
+        - Handler classes/functions: Uses MockHandlerLanguageModel
+
+        Usage:
+            agent.mock(response1, response2, ...)  # Queue-based
+            agent.mock(my_handler)  # Handler-based
         """
-        # Convert any raw strings to MockResponse objects
+        # No arguments -> empty queue
+        if not responses:
+            return MockAgent(self.agent)
+
+        # Single argument that's a handler (has .handle method or is a function)
+        if len(responses) == 1:
+            item = responses[0]
+            # Check if it's a handler instance (has .handle method) or a callable function
+            if hasattr(item, "handle") or (
+                callable(item) and not isinstance(item, (str, MockResponse, type))
+            ):
+                # It's a handler - use MockHandlerLanguageModel
+                return MockAgent(self.agent, handler=item)
+
+        # Multiple args or strings/MockResponses -> use queue handler
         processed_responses = []
         for resp in responses:
             if isinstance(resp, str):
@@ -716,6 +1104,14 @@ class AgentMockInterface(AgentComponent):
             tool_result=result,
             tool_call_id=str(ULID()),
         )
+
+    def conditional(self) -> ConditionalHandler:
+        """Create a ConditionalHandler for pattern-based responses"""
+        return ConditionalHandler()
+
+    def transcript(self, transcript: list[tuple]) -> MockAgent:
+        """Create a mock agent using a TranscriptHandler"""
+        return MockAgent(self.agent, handler=TranscriptHandler(transcript))
 
 
 # LLM-specific mocking

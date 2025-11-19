@@ -153,74 +153,103 @@ T = TypeVar("T")
 P = ParamSpec("P")
 
 
-# Overload for async generators (methods that yield)
+# Overload for async generators (methods that yield) - direct decoration
 @overload
 def ensure_ready(
     func: Callable[P, AsyncIterator[T]],
 ) -> Callable[P, AsyncIterator[T]]: ...
 
 
-# Overload for regular async functions (methods that return)
+# Overload for regular async functions (methods that return) - direct decoration
 @overload
 def ensure_ready(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]: ...
 
 
-def ensure_ready(func: Callable[P, Any]) -> Callable[P, Any]:
+# Overload for factory usage with arguments
+@overload
+def ensure_ready(
+    *,
+    wait_for_tasks: bool = False,
+    wait_for_events: bool = False,
+    timeout: float | None = None,
+) -> Callable[[Callable[P, Any]], Callable[P, Any]]: ...
+
+
+def ensure_ready(
+    func: Callable[P, Any] | None = None,
+    *,
+    wait_for_tasks: bool = False,
+    wait_for_events: bool = False,
+    timeout: float | None = None,
+) -> Callable[P, Any] | Callable[[Callable[P, Any]], Callable[P, Any]]:
     """
     Decorator that ensures the agent is ready before executing the async method.
 
+    Can be used as `@ensure_ready` or `@ensure_ready(wait_for_tasks=True)`.
+
+    Args:
+        func: The function to decorate (when used without parens)
+        wait_for_tasks: If True, wait for managed tasks to complete
+        wait_for_events: If True, wait for pending events to complete
+        timeout: Timeout for waiting operations
+
     This decorator automatically calls await self.initialize() before executing
-    the decorated method, eliminating the need for repetitive initialize() calls
-    at the start of each public async method.
+    the decorated method. Optionally, it can also wait for tasks and events.
 
-    The decorator preserves the original function's metadata through functools.wraps,
-    maintaining proper type hints, signatures, and docstrings.
-
-    Handles both regular async functions and async generators with proper type preservation:
-    - For async generators (AsyncIterator[T]), returns AsyncIterator[T]
-    - For async functions (Awaitable[T]), returns Awaitable[T]
-
-    Examples:
-        @ensure_ready
-        async def call(self, ...) -> Message:
-            # No need for await self.initialize()
-            ...
-
-        @ensure_ready
-        async def execute(self, ...) -> AsyncIterator[Message]:
-            # No need for await self.initialize()
-            yield message
+    The decorator preserves the original function's metadata through functools.wraps.
     """
     import inspect
 
-    # Check if the function is an async generator
-    if inspect.isasyncgenfunction(func):
-        # Create wrapper for async generators
-        @functools.wraps(func)
-        async def async_gen_wrapper(
-            self: Agent, *args: Any, **kwargs: Any
-        ) -> AsyncIterator[Any]:
-            # Ensure agent is ready before proceeding
-            await self.initialize()
-            # Yield from the generator
-            # Use getattr to bypass type checker's argument analysis
-            method = getattr(func, "__call__", func)  # noqa: B004
-            async for item in method(self, *args, **kwargs):  # type: ignore[misc, arg-type]
-                yield item
+    def decorator(f: Callable[P, Any]) -> Callable[P, Any]:
+        # Check if the function is an async generator
+        if inspect.isasyncgenfunction(f):
+            # Create wrapper for async generators
+            @functools.wraps(f)
+            async def async_gen_wrapper(
+                self: Agent, *args: Any, **kwargs: Any
+            ) -> AsyncIterator[Any]:
+                # Ensure agent is ready before proceeding
+                await self.initialize()
 
-        return async_gen_wrapper  # type: ignore[return-value]
+                # Optional waits
+                if wait_for_tasks:
+                    await self.wait_for_tasks(timeout=timeout)
+
+                if wait_for_events:
+                    await self.join(timeout=timeout or 5.0)
+
+                # Yield from the generator
+                # Use getattr to bypass type checker's argument analysis
+                method = getattr(f, "__call__", f)  # noqa: B004
+                async for item in method(self, *args, **kwargs):  # type: ignore[misc, arg-type]
+                    yield item
+
+            return async_gen_wrapper  # type: ignore[return-value]
+        else:
+            # Create wrapper for regular async functions
+            @functools.wraps(f)
+            async def async_wrapper(self: Agent, *args: Any, **kwargs: Any) -> Any:
+                # Ensure agent is ready before proceeding
+                await self.initialize()
+
+                # Optional waits
+                if wait_for_tasks:
+                    await self.wait_for_tasks(timeout=timeout)
+
+                if wait_for_events:
+                    await self.join(timeout=timeout or 5.0)
+
+                # Await and return the result
+                # Use getattr to bypass type checker's argument analysis
+                method = getattr(f, "__call__", f)  # noqa: B004
+                return await method(self, *args, **kwargs)  # type: ignore[misc, arg-type]
+
+            return async_wrapper  # type: ignore[return-value]
+
+    if func is None:
+        return decorator
     else:
-        # Create wrapper for regular async functions
-        @functools.wraps(func)
-        async def async_wrapper(self: Agent, *args: Any, **kwargs: Any) -> Any:
-            # Ensure agent is ready before proceeding
-            await self.initialize()
-            # Await and return the result
-            # Use getattr to bypass type checker's argument analysis
-            method = getattr(func, "__call__", func)  # noqa: B004
-            return await method(self, *args, **kwargs)  # type: ignore[misc, arg-type]
-
-        return async_wrapper  # type: ignore[return-value]
+        return decorator(func)
 
 
 class Agent(EventRouter):
