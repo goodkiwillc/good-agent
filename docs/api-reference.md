@@ -59,6 +59,3 @@ suite executes all examples to prevent `DeprecationWarning` regressions.
   request.
 - **Deprecation guard** – If you rely on an attribute that no longer appears
   here, expect it to emit a `DeprecationWarning` and disappear in v1.0.0.
-
-
-### Test 2
