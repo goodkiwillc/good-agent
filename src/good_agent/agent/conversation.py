@@ -106,13 +106,16 @@ class Conversation:
             self._original_append_methods.clear()
 
     async def execute(
-        self, max_iterations: int | None = None
+        self,
+        max_iterations: int | None = None,
+        **kwargs: Any,
     ) -> AsyncIterator[Message]:
         """
         Execute the conversation by alternating between agents.
 
         Args:
             max_iterations: Maximum number of iterations to prevent infinite loops
+            **kwargs: Additional arguments passed to agent.execute()
 
         Yields:
             Messages generated during the conversation
@@ -128,7 +131,7 @@ class Conversation:
 
             # Execute current agent
             message_generated = False
-            async for message in current_agent.execute():
+            async for message in current_agent.execute(**kwargs):
                 yield message
                 message_generated = True
 

@@ -488,8 +488,20 @@ class MockAgent:
             return self._mock_model.api_responses
         return []
 
-    async def execute(self):
+    async def execute(
+        self,
+        *content_parts: MessageContent,
+        role: Literal["user", "assistant", "system", "tool"] = "user",
+        context: dict | None = None,
+        streaming: bool = False,
+        max_iterations: int = 10,
+        **kwargs: Any,
+    ):
         """Execute the agent with mocked responses"""
+        # Append input message if provided (matching Agent.execute behavior)
+        if content_parts:
+            self.agent.append(*content_parts, role=role, context=context)
+
         # Yield messages based on queued responses following conversation flow rules
         for response in self.responses:
             msg: Any  # Declare variable type once
@@ -545,8 +557,18 @@ class MockAgent:
 
             self._response_index += 1
 
-    async def call(self, **kwargs):
+    async def call(
+        self,
+        *content_parts: MessageContent,
+        role: Literal["user", "assistant", "system", "tool"] = "user",
+        context: dict | None = None,
+        **kwargs: Any,
+    ):
         """Call the agent with a mocked response"""
+        # Append input message if provided (matching Agent.call behavior)
+        if content_parts:
+            self.agent.append(*content_parts, role=role, context=context)
+
         # Return the first queued response as appropriate message type
         if not self.responses:
             raise ValueError("No mock responses available")

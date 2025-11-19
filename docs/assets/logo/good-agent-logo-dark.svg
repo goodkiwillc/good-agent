@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!--
+    Good Agent Logo - "Bureaucrat Bot" (Dark Mode)
+    Design Philosophy: "Aggressively Adequate"
+    Palette: Chassis Grey (#E0E0E0), Swanson Brown (#4A3728), White Strokes (#FFFFFF)
+  -->
+
+  <!-- Antenna -->
+  <line x1="256" y1="50" x2="256" y2="110" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="256" cy="40" r="20" fill="#E0E0E0" stroke="#FFFFFF" stroke-width="10"/>
+
+  <!-- Head -->
+  <rect x="106" y="106" width="300" height="300" rx="40" fill="#E0E0E0" stroke="#FFFFFF" stroke-width="12"/>
+
+  <!-- Eyes (Deadpan) - Keep dark because face is light -->
+  <circle cx="195" cy="220" r="18" fill="#2D2D2D"/>
+  <circle cx="317" cy="220" r="18" fill="#2D2D2D"/>
+
+  <!-- Mustache (The Swanson) -->
+  <!-- A thick, authoritative shape. Stroke changed to white to pop against dark BG? 
+       Wait, mustache is ON the face (#E0E0E0). 
+       The original stroke was dark (#2D2D2D) to define it against the face. 
+       If I make the mustache stroke WHITE, it might look weird on the light face.
+       BUT the user said "brown border... isn't very visible against dark background".
+       Actually, the mustache is INSIDE the robot face. The robot face is light grey.
+       So the mustache stroke doesn't need to change for background contrast, it needs to contrast with the FACE.
+       
+       Wait. If the logo is transparent, and the robot head is filled with #E0E0E0, 
+       then the mustache is sitting on #E0E0E0.
+       So the Dark Mode of the website is behind the robot.
+       The problem "detail of the logo gets lost... brown border" implies the *edge of the robot* against the background.
+       OR the user thinks the mustache is the border?
+       
+       Let's assume the user means the outer border of the robot.
+       The internal features (mustache, eyes) are on the light face, so they don't need changing.
+       So I will ONLY change the Outer Head Rect stroke and Antenna stroke to White/Light.
+       I will KEEP the mustache stroke dark (#2D2D2D) because it sits on the light face.
+  -->
+  <path d="M 256 290
+           C 230 280, 140 280, 140 350
+           C 140 380, 190 390, 256 330
+           C 322 390, 372 380, 372 350
+           C 372 280, 282 280, 256 290 Z"
+        fill="#4A3728" stroke="#2D2D2D" stroke-width="5" stroke-linejoin="round"/>
+
+</svg>

@@ -15,11 +15,14 @@ Files are organized using the naming convention: `YYYY-MM-DD_type_description.md
 ## Documents by Type
 
 ### Phase Summaries
-- [2025-11-13_summary_phase1summary.md](2025-11-13_summary_phase1summary.md) - Phase 1 of the good-agent library refactoring focused on eliminating code duplication and establi...
-- [2025-11-13_summary_phase2summary.md](2025-11-13_summary_phase2summary.md) - Phase 2 focused on extracting manager classes from the monolithic Agent class and creating a clea...
+- [2025-11-18_summary_phase5-completion.md](2025-11-18_summary_phase5-completion.md) - Phase 5 focused on hardening the test suite, improving coverage for critical subsystems, and imp...
 - [2025-11-16_summary_phase3-4-audit.md](2025-11-16_summary_phase3-4-audit.md) - - Audit the implementation status of Phases 3 and 4 in `.spec/refactoring-plan.md`.
 - [2025-11-16_summary_phase3-4-audit.md](2025-11-16_summary_phase3-4-audit.md) - **Date:** 2025-11-16
 - [2025-11-16_summary_phase4sessionsummary.md](2025-11-16_summary_phase4sessionsummary.md) - Successfully completed verification of Phase 3, merged to main, created Phase 4 branch, and compl...
+- [2025-11-15_summary_template-consolidation.md](2025-11-15_summary_template-consolidation.md) - Successfully completed Phase 1, Step 6 of the refactoring plan: Consolidate Template Duplication.
+- [2025-11-13_summary_phase1summary.md](2025-11-13_summary_phase1summary.md) - Phase 1 of the good-agent library refactoring focused on eliminating code duplication and establi...
+- [2025-11-13_summary_phase2summary.md](2025-11-13_summary_phase2summary.md) - Phase 2 focused on extracting manager classes from the monolithic Agent class and creating a clea...
+
 
 ### Specifications
 - [2025-11-13_spec_missing-goodintel-core-import.md](2025-11-13_spec_missing-goodintel-core-import.md) - Historical citation tests located in `tests/unit/citations/.archive` still depend on the legacy `...
@@ -43,6 +46,7 @@ Files are organized using the naming convention: `YYYY-MM-DD_type_description.md
 - [2025-11-17_fix_streaming-reference.md](2025-11-17_fix_streaming-reference.md) - No, the LLMCoordinator does not actually support streaming responses, despite what the
 
 ### Reference Documents
+- [2025-11-19_ref_changelog-archive.md](2025-11-19_ref_changelog-archive.md) - All notable changes to the good-agent library will be documented in this file.
 - [2025-11-16_ref_phase4messageapiproposal.md](2025-11-16_ref_phase4messageapiproposal.md) - 
 
 ### Audits
@@ -50,6 +54,8 @@ Files are organized using the naming convention: `YYYY-MM-DD_type_description.md
 ## Chronological Index
 
 Files are listed in chronological order (newest first):
+- **2025-11-19** [REF] [2025-11-19_ref_changelog-archive.md](2025-11-19_ref_changelog-archive.md)
+- **2025-11-18** [SUMMARY] [2025-11-18_summary_phase5-completion.md](2025-11-18_summary_phase5-completion.md)
 - **2025-11-18** [SUMMARY] [2025-11-18_summary_refactoring-plan.md](2025-11-18_summary_refactoring-plan.md)
 - **2025-11-18** [SPEC] [2025-11-18_spec_search-dedup-performance-benchmark.md](2025-11-18_spec_search-dedup-performance-benchmark.md)
 - **2025-11-17** [SPEC] [2025-11-17_spec_sync-bridge-stress-hang.md](2025-11-17_spec_sync-bridge-stress-hang.md)
@@ -72,6 +78,7 @@ Files are listed in chronological order (newest first):
 - **2025-11-16** [SUMMARY] [2025-11-16_summary_migration-guide.md](2025-11-16_summary_migration-guide.md)
 - **2025-11-16** [SPEC] [2025-11-16_spec_prompts-cli-path-normalization.md](2025-11-16_spec_prompts-cli-path-normalization.md)
 - **2025-11-16** [REF] [2025-11-16_ref_phase4messageapiproposal.md](2025-11-16_ref_phase4messageapiproposal.md)
+- **2025-11-15** [SUMMARY] [2025-11-15_summary_template-consolidation.md](2025-11-15_summary_template-consolidation.md)
 - **2025-11-13** [SUMMARY] [2025-11-13_summary_readme.md](2025-11-13_summary_readme.md)
 - **2025-11-13** [SUMMARY] [2025-11-13_summary_phase2summary.md](2025-11-13_summary_phase2summary.md)
 - **2025-11-13** [SUMMARY] [2025-11-13_summary_phase1summary.md](2025-11-13_summary_phase1summary.md)
@@ -79,4 +86,4 @@ Files are listed in chronological order (newest first):
 
 ---
 
-*Generated on 2025-11-19 07:42:23. Total documents: 26.*
+*Generated on 2025-11-19 07:42:23. Total documents: 29.*

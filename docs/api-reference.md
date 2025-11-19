@@ -1,15 +1,12 @@
 # Agent API Reference
 
-Phase 4 reduced `Agent` to a hard-capped surface of **30 public entries**. The
-table below mirrors the allow-list returned by
-`good_agent.agent.Agent.public_attribute_names()` so feature work can stay within
-the agreed budget.
+This document provides a comprehensive reference for the public API of the `Agent` class.
 
-Each row links to a runnable example (living under `examples/`) or includes a
+Each row in the summary table links to a runnable example (living under `examples/`) or includes a
 plain snippet illustrating preferred usage. The new `tests/test_examples.py`
 suite executes all examples to prevent `DeprecationWarning` regressions.
 
-## Stable Surface (30 entries)
+## Public API Summary
 
 | Symbol | Kind | Summary | Examples |
 | --- | --- | --- | --- |
@@ -44,17 +41,24 @@ suite executes all examples to prevent `DeprecationWarning` regressions.
 | `version_id` | Property | ULID that increments when the message list mutates; use for optimistic concurrency. | `examples/resources/editable_mdxl.py` |
 | `versioning` | Facade | Access to `AgentVersioningManager` (revert, audit history). | `examples/resources/editable_mdxl.py` |
 
+## Detailed API Documentation
+
+::: good_agent.Agent
+    options:
+      show_root_heading: true
+      show_source: false
+
+
 ### Usage Notes
 
 - **Facades vs core methods** – The four facades (`events`, `context_manager`,
   `tasks`, `tool_calls`) now host the bulk of the advanced APIs. Keep new entry
-  points on those facades to avoid blowing the 30-item ceiling.
+  points on those facades.
 - **Message filters** – `assistant`, `user`, `system`, and `tool` each return a
   `FilteredMessageList`. They are inexpensive views and safe to access per
   request.
 - **Deprecation guard** – If you rely on an attribute that no longer appears
-  here, expect it to emit a `DeprecationWarning` and disappear in v1.0.0. Consult
-  `MIGRATION.md` for the exact replacement recipe.
+  here, expect it to emit a `DeprecationWarning` and disappear in v1.0.0.
 
-For a full migration narrative—including before/after snippets for each shim—see
-[`MIGRATION.md`](../MIGRATION.md#phase-4-agent-api-surface-reduction).
+
+### Test 2

@@ -30,3 +30,6 @@ venv/
 
 # Local overrides
 *.local
+
+# Documentation
+site/

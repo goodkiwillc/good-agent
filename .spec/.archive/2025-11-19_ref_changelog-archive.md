@@ -1,0 +1,424 @@
+# Changelog
+
+All notable changes to the good-agent library will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Phase 4: API Improvements (Started 2025-11-15)
+
+**Status**: 🚧 In Progress
+**Branch**: `refactor/phase-4-api-improvements`
+
+#### Task 1: Message API Consolidation (Completed 2025-11-15)
+
+##### Deprecated
+
+- **`Agent.add_tool_response()` method** (Removal planned for v1.0.0)
+  - Use `agent.append(content, role="tool", tool_call_id=...)` instead
+  - Provides clearer, more consistent API with existing `append()` method
+  - Deprecation warning guides migration to new pattern
+
+- **`MessageManager.add_tool_response()` method** (Removal planned for v1.0.0)
+  - Internal method also deprecated for consistency
+  - Forwards to `append()` with deprecation warning
+
+##### Migration Guide
+
+**Old pattern:**
+```python
+# Deprecated - will be removed in v1.0.0
+agent.add_tool_response("result", tool_call_id="123", tool_name="search")
+```
+
+**New pattern:**
+```python
+# Recommended
+agent.append("result", role="tool", tool_call_id="123", tool_name="search")
+```
+
+##### Rationale
+
+This consolidation reduces the Agent API surface from 74 to 72 public methods (target: <30) and provides a clearer, more consistent interface:
+
+- **Before**: 5+ different ways to add messages (confusing for new users)
+- **After**: 2 clear patterns:
+  1. `append()` for 90% of use cases (all message types)
+  2. `messages.append()` for advanced control (10% of cases)
+
+##### Technical Details
+
+- **Breaking Changes**: None (backward compatible via deprecation)
+- **Test Coverage**: All tests updated to use new pattern
+- **Documentation**: Deprecation notices added with migration examples
+
+#### Task 2: Clarified call() vs execute() Documentation (Completed 2025-11-15)
+
+##### Changed
+
+- **Improved `Agent.call()` docstring** (`src/good_agent/agent/core.py:1250`)
+  - Added clear "Use call() when" vs "Use execute() instead when" guidance
+  - Expanded examples showing simple conversation, structured output, and continuation
+  - Clarified automatic tool execution behavior and `auto_execute_tools` parameter
+  - Cross-referenced `execute()` method for streaming use cases
+
+- **Improved `Agent.execute()` docstring** (`src/good_agent/agent/core.py:1351`)
+  - Added clear "Use execute() when" vs "Use call() instead when" guidance
+  - Expanded examples showing basic streaming, chat UI building, and custom tool approval
+  - Clarified iteration behavior, message yielding order, and `max_iterations` limit
+  - Cross-referenced `call()` method for simple request-response cases
+
+##### Rationale
+
+Developers frequently asked when to use `call()` vs `execute()`, indicating documentation gap. These improvements provide:
+
+- **Clear decision criteria**: Explicit guidance on which method to use for different scenarios
+- **Practical examples**: Real-world use cases (chat UIs, tool approval, streaming)
+- **Bidirectional references**: Each method points to the other with clear context
+
+##### Technical Details
+
+- **Breaking Changes**: None (documentation-only changes)
+- **Test Coverage**: All 403 agent tests passing (100%)
+- **API Changes**: No behavioral changes, only improved documentation
+
+#### Task 3: Agent API Surface Reduction (Completed 2025-11-17)
+
+##### Added
+
+- Introduced `Agent.public_attribute_names()` listing the 30 officially supported public attributes (properties, methods, constants).
+- Added `tests/unit/agent/test_agent_public_api_surface.py` guard to ensure the surface remains ≤30 entries.
+- Added `tests/unit/agent/test_agent_legacy_warnings.py` to ensure every shim continues to emit a `DeprecationWarning` and provides guidance toward the preferred facade or helper.
+
+##### Changed
+
+- Routed all remaining legacy helpers through manager facades:
+  - Tool helpers now use `agent.tool_calls.*` (invoke, record_invocation, pending-call helpers, etc.).
+  - Event router helpers now live under `agent.events.*` (apply, broadcast_to, ctx, tracing, join/close).
+  - Context lifecycle helpers now route through `agent.context_manager.*` (fork, copy, spawn, merge, context providers).
+- Updated tests, fixtures, and examples to consume the manager facades instead of the deprecated Agent shortcuts.
+- Trimmed `dir(agent)` to hide legacy helpers while keeping them callable (with `DeprecationWarning`).
+- Extended shim coverage so message management (`set_system_message`, `replace_message`), context helpers (`fork`, `thread_context`), rendering helpers (`print`, `get_rendering_context*`), and token/version introspection (`get_token_count*`, `current_version`) all emit consistent `DeprecationWarning`s pointing to list assignment, template manager helpers, or `agent.versioning` accessors.
+
+##### Deprecated
+
+- Continued deprecation of legacy Agent helpers (`invoke`, `apply`, `broadcast_to`, `context_provider`, etc.) with guidance to use the respective facade accessors.
+- Newly deprecated: `Agent.fork()`, `Agent.thread_context()`, `Agent.print()`, `Agent.set_system_message()`, `Agent.replace_message()`, `Agent.get_rendering_context()`, `Agent.get_rendering_context_async()`, `Agent.get_token_count()`, `Agent.get_token_count_by_role()`, and `Agent.current_version` (replaced by `agent.context_manager.*`, `good_agent.utilities.print_message()`, message list assignment, template manager helpers, and `agent.versioning.current_version`).
+
+##### Testing
+
+- `uv run ruff check .`
+- `uv run pytest`
+- `uv run mypy src/good_agent` (known repo-wide issues persist; no new errors introduced)
+- Added `tests/unit/agent/test_agent_legacy_warnings.py` ensuring all shims are covered by warning assertions.
+
+#### Task 4: Readiness lifecycle & facade documentation (Completed 2025-11-17)
+
+##### Added
+
+- Introduced `Agent.initialize()` as the canonical async initializer, invoked automatically by `async with Agent(...)` and available for manual bootstrapping.
+- Added the synchronous `Agent.is_ready` property for inexpensive readiness checks.
+- Documented the preferred entry points for manager facades (`agent.tool_calls`, `agent.events`, `agent.context_manager`, `agent.tasks`, `agent.versioning`) alongside migration tips.
+
+##### Deprecated
+
+- `Agent.ready()` now emits a `DeprecationWarning` and will be removed in v1.0.0; the MIGRATION guide captures the `rg` search-and-replace steps to transition to `initialize()`/`is_ready`.
+- Legacy manager shims (`agent.invoke`, `agent.apply`, `agent.context_provider`, etc.) remain in place indefinitely while we evaluate the facade ergonomics—no removal timeline has been set yet.
+
+##### Documentation
+
+- Updated `MIGRATION.md` Phase 4 guidance with readiness lifecycle examples, replacement snippets, and facade summaries referencing `examples/agent/basic_chat.py`.
+- Refreshed the Phase 4 migration tables so downstream teams follow the new manager accessors instead of the legacy Agent shortcuts.
+
+#### Task 5: Documentation & Example Validation (Completed 2025-11-17)
+
+##### Added
+
+- `docs/api-reference.md` – authoritative table covering the 30 public `Agent`
+  attributes/facades enforced by `Agent.public_attribute_names()`.
+- `tests/test_examples.py` – parametrized smoke suite that imports and executes
+  every script under `examples/`, failing if a `DeprecationWarning` is raised.
+
+##### Changed
+
+- `README.md` now ships with a runnable quick-start snippet plus links to the API
+  reference and migration guide.
+- `MIGRATION.md` Phase 4 section gained a quick checklist, before/after code
+  blocks for `ready()`→`initialize()`, tool-call migrations, message editing, and
+  context/event facade usage.
+- Added facade-specific docstrings on `Agent.tool_calls`,
+  `Agent.context_manager`, `Agent.events`, and `Agent.tasks` so IDEs and
+  generated docs highlight the preferred entry points.
+
+##### Testing
+
+- `uv run pytest tests/test_examples.py` (also executed as part of the default
+  `pytest` run).
+
+### Phase 1: Template Consolidation (Completed 2025-11-15)
+
+**Status**: ✅ Complete (Step 6 of refactoring plan)
+**Branch**: `refactor/phase-3-simplification`
+**Commit**: a3d6a2c
+
+#### Changed
+
+- **Template Package Consolidation** (Commit: a3d6a2c)
+  - Moved `templating/` package → `components/template_manager/`
+  - Organized into 4 focused modules (2,521 total lines):
+    - `core.py` (980 lines) - TemplateManager AgentComponent
+    - `injection.py` (465 lines) - Context dependency injection with ContextValue
+    - `storage.py` (705 lines) - FileSystemStorage, template versioning, git integration
+    - `index.py` (371 lines) - TemplateMetadata and indexing
+  - Deleted wrapper `templating/environment.py` (74 lines) - functionality moved to core.templating
+  - Updated all imports across 16 files (tests and source)
+  - All 91 template tests passing ✅
+
+- **Import Path Changes**:
+  - `good_agent.templating` → `good_agent.components.template_manager`
+  - Public API unchanged via lazy imports in `good_agent.__init__.py`
+  - Core template infrastructure remains at `good_agent.core.templating`
+
+#### Benefits
+
+- Single canonical location for agent-specific template functionality
+- Clear separation of concerns:
+  - `core/templating/`: Low-level Jinja2 infrastructure (AbstractTemplate, TemplateRegistry)
+  - `components/template_manager/`: High-level agent features (TemplateManager, storage, injection)
+- Eliminated environment.py wrapper duplication
+- Improved code discoverability and maintainability
+
+### Phase 3: Event Router Package Reorganization (Completed 2025-11-15)
+
+**Status**: Core extraction complete (as of 2025-11-15)
+**Branch**: `refactor/phase-3-simplification`
+
+#### Changed
+
+- **Event Router Package Restructuring** (Commits: 4773a22 through fe356fc)
+  - Converted `event_router.py` monolith (2,035 lines) into modular `event_router/` package (3,192 lines)
+  - Created 8 focused modules with comprehensive documentation:
+    - `event_router/protocols.py` (170 lines) - Type definitions, Protocol classes, ApplyInterrupt exception
+    - `event_router/context.py` (173 lines) - EventContext[T_Parameters, T_Return] with contextvars support
+    - `event_router/registration.py` (295 lines) - HandlerRegistry with threading.RLock for thread safety
+    - `event_router/sync_bridge.py` (484 lines) - SyncBridge for async/sync interoperability (CRITICAL)
+    - `event_router/decorators.py` (404 lines) - @on, @emit, @typed_on decorators with lifecycle support
+    - `event_router/core.py` (1,405 lines) - Main EventRouter class with event dispatch logic
+    - `event_router/advanced.py` (171 lines) - TypedApply helper for type-safe event application
+    - `event_router/__init__.py` (90 lines) - Public API re-exports for backward compatibility
+  - **Thread Safety Improvements**:
+    - Added threading.RLock to HandlerRegistry for all handler access
+    - Added threading.RLock to SyncBridge for event loop operations
+    - Thread-safe handler registration, dispatch, and resource management
+  - **Documentation Enhancements**:
+    - Comprehensive PURPOSE, ROLE, LIFECYCLE documentation for all classes
+    - Thread safety notes for all modules
+    - Performance notes and integration points documented
+    - Usage examples with type hints
+  - All validation passing: pyupgrade ✅, ruff ✅, mypy ✅
+  - Test suite: 1382/1395 passing (99.1%)
+  - Full backward compatibility maintained via `__init__.py` re-exports
+  - Original `event_router.py` preserved as `event_router.py.bak`
+
+#### Technical Details
+
+- **Module Breakdown by Size**:
+  - core.py (1,405 lines) - EventRouter main class, event dispatch, lifecycle management
+  - sync_bridge.py (484 lines) - Background event loop, async/sync bridge
+  - decorators.py (404 lines) - Handler decorators with lifecycle phases
+  - registration.py (295 lines) - Thread-safe handler registry
+  - context.py (173 lines) - EventContext with type safety
+  - advanced.py (171 lines) - TypedApply for cleaner typed dispatch
+  - protocols.py (170 lines) - Type definitions and protocols
+  - __init__.py (90 lines) - Public API surface
+
+- **Key Features Preserved**:
+  - All async/sync compatibility features (SyncBridge)
+  - Observable-style lifecycle phases (BEFORE/AFTER/ERROR/FINALLY)
+  - Priority-based handler execution with predicates
+  - Event broadcasting to multiple routers
+  - Rich output formatting for event traces
+  - Fire-and-forget (do()) and blocking (apply_async/apply_sync) dispatch
+  - Type-safe event application with generics
+  - Background task and future tracking with cleanup
+
+#### Task: Reliability + Migration Completion (Completed 2025-11-16)
+
+- **Removed the legacy monolith** – deleted `src/good_agent/core/event_router.py` and `.bak`; the package version is now the single source of truth for all imports.
+- **Production wiring of HandlerRegistry + SyncBridge** – EventRouter now instantiates a dedicated `_handler_registry` (RLock protected) and delegates sync/async bridging to `SyncBridge`, removing bespoke `_events`, `_tasks`, `_thread_pool`, and `_event_loop` state.
+- **Thread-safety guarantees now enforced** – handler registration, broadcast fan-out, fire-and-forget execution, and sync bridging are all protected by HandlerRegistry/SyncBridge locks. `_events` remains available as a read-only compatibility view of the registry.
+- **Docstrings + examples trimmed** – EventRouter docstrings are concise (≤15 lines) and link to the new `examples/event_router/basic_usage.py` and `examples/event_router/async_sync_bridge.py` snippets.
+- **Comprehensive reliability test suite** – added `tests/unit/event_router/` covering:
+  - Registration & lifecycle dispatch
+  - Error handling (`ApplyInterrupt`, predicate failures)
+  - Sync bridge (sync→async, contextvars, `do` cleanup)
+  - Thread-safety (concurrent registration/emit, mixed workloads)
+  - Race conditions (dynamic registration, nested emit)
+  - Stress/perf (fire-and-forget bursts)
+  - Backward compatibility (imports, auto-registration)
+- **Downstream regression verification** – full `tests/unit/components` and `tests/unit/agent` suites now run cleanly on top of the new router implementation (464 tests).
+- **Lint + tooling** – `uv run ruff check .` is clean; pytest marker configuration gained an explicit `slow` entry to avoid warnings.
+
+- **Type Safety**:
+  - Full mypy validation passing for all modules
+  - Generic EventContext[T_Parameters, T_Return] for type-safe handlers
+  - TypedApply helper for cleaner typed event dispatch
+  - Protocol-based handler definitions
+  - Proper deferred imports to avoid circular dependencies
+
+#### Task: Docstring & Example Sweep (Completed 2025-11-16)
+
+- Trimmed every public docstring across the agent, tool, template, event-router, and citation modules to ≤15 lines, pointing each summary at a runnable script instead of embedding 200-line prose.
+- Added runnable reference snippets:
+  - `examples/agent/basic_chat.py`
+  - `examples/components/basic_component.py`
+  - `examples/context/thread_context.py`
+  - `examples/events/basic_events.py`
+  - `examples/pool/agent_pool.py`
+  - `examples/templates/render_template.py`
+  - `examples/tools/basic_tool.py`
+  - `examples/types/identifier.py`
+  - `examples/resources/editable_mdxl.py`
+  - `examples/extensions/citations_basic.py`
+- EventRouter docstrings now link to `examples/event_router/basic_usage.py` and `examples/event_router/async_sync_bridge.py`, matching the reliability plan in Phase 3.
+- Validation: automated docstring audit (`scripts`/ad-hoc AST check) now reports `Total long docstrings: 0`, ensuring we stay within the new documentation budget.
+
+### Phase 2: Break Up Large Files (Completed)
+
+**Status**: ✅ Complete (as of 2025-11-14)
+
+#### Changed
+
+- **Agent Package Restructuring** (Commits: 64e66db through ccddd0a)
+  - Converted `agent.py` monolith (4,174 lines) into modular `agent/` package
+  - Created 7 focused manager classes:
+    - `agent/messages.py` - MessageManager (333 lines)
+    - `agent/state.py` - AgentStateMachine (123 lines)
+    - `agent/tools.py` - ToolExecutor (655 lines)
+    - `agent/llm.py` - LLMCoordinator (282 lines)
+    - `agent/components.py` - ComponentRegistry (254 lines)
+    - `agent/context.py` - ContextManager (186 lines)
+    - `agent/versioning.py` - AgentVersioningManager (115 lines)
+  - `agent/core.py` - Main Agent class (2,684 lines)
+  - All manager classes use composition pattern with back-references to Agent
+  - Public Agent API unchanged - fully backward compatible
+  - 313/313 agent tests passing (100%)
+
+- **Messages Package Split** (Commit: 87142ec, 2025-11-14)
+  - Converted `messages.py` (1,813 lines) into `messages/` package (1,566 lines)
+  - Created 6 focused modules:
+    - `messages/base.py` (785 lines) - Message base class, Annotation, core functionality
+    - `messages/roles.py` (186 lines) - SystemMessage, UserMessage, AssistantMessage, ToolMessage
+    - `messages/message_list.py` (328 lines) - MessageList with versioning support
+    - `messages/filtering.py` (140 lines) - FilteredMessageList with role-specific filtering
+    - `messages/utilities.py` (58 lines) - MessageFactory and helper functions
+    - `messages/__init__.py` (69 lines) - Public API exports for backward compatibility
+  - Reduced total lines by 262 (14.4%) through docstring trimming
+  - Fixed FilteredMessageList initialization and event delegation
+  - 203/203 message tests passing (100%)
+  - Full backward compatibility maintained via `__init__.py` re-exports
+
+- **Model/LLM Package Split** (Commit: 0b4cdca, 2025-11-14)
+  - Converted `model/llm.py` (1,889 lines) into modular structure (1,966 total lines)
+  - Created 6 focused modules:
+    - `model/protocols.py` (79 lines) - Type protocols, TypedDicts, constants
+    - `model/capabilities.py` (184 lines) - ModelCapabilities with 13 supports_* methods
+    - `model/formatting.py` (437 lines) - MessageFormatter for LLM API conversion
+    - `model/structured.py` (141 lines) - StructuredOutputExtractor for Pydantic models
+    - `model/streaming.py` (205 lines) - StreamingHandler for async streaming
+    - `model/llm.py` (920 lines) - Core LanguageModel using helper composition
+  - Core LanguageModel reduced by 51% (1,889 → 920 lines)
+  - Uses composition pattern with lazy initialization of helpers
+  - All callback hooks and complete() logic preserved exactly
+  - 313/313 agent tests passing (100%)
+  - Full backward compatibility via lazy imports in `model/__init__.py`
+
+- **Design Documentation** (Commit: ccddd0a)
+  - Added comprehensive human-in-the-loop interaction design to `.spec/v1/DESIGN.md`
+  - Includes InteractionRequest/InteractionResult primitives
+  - Agent API for user_input() with typed responses
+  - InteractionManager for orchestration
+  - Multi-agent orchestration support
+  - Non-interactive testing patterns
+
+#### Removed
+
+- Removed 105 lines of commented-out code from `agent/core.py`
+  - Old `resolve_pending_tool_calls()` method (moved to ToolExecutor)
+
+#### Fixed
+
+- FilteredMessageList.append() now properly delegates to agent's message manager
+- MessageFactory supports legacy message format compatibility
+- Updated agent/llm.py import to use ResponseWithUsage from model/protocols
+
+### Phase 1: Foundation - Eliminate Code Duplication (Completed 2025-11-11)
+
+**Status**: ✅ Complete (Commit: bd403b8)
+
+#### Removed
+
+- **Wrapper Modules** - Eliminated ~3,000 lines of duplicate code
+  - Deleted `utilities/event_router.py` (wrapper to `core/event_router.py`)
+  - Deleted `utilities/ulid_monotonic.py` (wrapper to `core/ulid_monotonic.py`)
+  - Deleted `utilities/signal_handler.py` (wrapper to `core/signal_handler.py`)
+  - Deleted `utilities/text.py` (699 lines, identical copy of `core/text.py`)
+  - Deleted `models/__init__.py` (wrapper to `core/models`)
+  - Deleted `types/__init__.py` (wrapper to `core/types`)
+  - Moved 3 debug test files to `scripts/debug/`
+
+#### Changed
+
+- **Import Path Updates** - All imports updated to use canonical `core/` locations
+  - `good_agent.utilities.event_router` → `good_agent.core.event_router`
+  - `good_agent.utilities.ulid_monotonic` → `good_agent.core.ulid_monotonic`
+  - `good_agent.utilities.signal_handler` → `good_agent.core.signal_handler`
+  - `good_agent.utilities.text` → `good_agent.core.text`
+  - `good_agent.models` → `good_agent.core.models`
+  - `good_agent.types` → `good_agent.core.types`
+
+#### Added
+
+- **Test Coverage Improvements**
+  - Added 22 new tests for `pool.py` (100% coverage)
+  - Added 50 new tests for `utilities/` modules:
+    - 12 tests for `utilities/printing.py`
+    - 15 tests for `utilities/lxml.py`
+    - 15 tests for `utilities/retries.py`
+    - 8 tests for `utilities/logger.py`
+  - All 96 new tests passing (100% pass rate)
+  - Total test count increased to 1,375 tests
+
+#### Fixed
+
+- Template system verification (91 tests passing, no duplication found)
+- Import consistency across entire codebase
+
+---
+
+## Pre-Refactoring Versions
+
+### [0.2.0] and earlier
+
+See git history for changes prior to the comprehensive Phase 1-6 refactoring initiative.
+
+---
+
+## Breaking Changes Summary
+
+### Phase 2 (Current)
+- **None** - All changes are internal reorganization with full backward compatibility maintained
+
+### Phase 1
+- **Import Path Changes** - Update imports from `utilities.*` to `core.*`
+  - See MIGRATION.md for automated migration script
+
+---
+
+## Migration Notes
+
+For detailed migration instructions, see [MIGRATION.md](MIGRATION.md).
+
+For the complete refactoring plan, see [.spec/refactoring-plan.md](.spec/refactoring-plan.md).
