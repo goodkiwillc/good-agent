@@ -148,6 +148,11 @@ class AgentEvents(StrEnum):
     VALIDATION_AFTER = "validation:after"
     VALIDATION_ERROR = "validation:error"
 
+    # ===== Mode Events (NEW) =====
+    # Mode lifecycle
+    MODE_ENTERED = "mode:entered"
+    MODE_EXITED = "mode:exited"
+
     # ===== Citation Events (NEW) =====
     # Citation extraction events
     CITATIONS_EXTRACTED = "citations:extracted"

@@ -9,7 +9,7 @@
 - **Agent lifecycle**: `async with Agent(...)` is the canonical entry point; specs should assume context-managed resources and explicit startup/shutdown semantics.
 - **Message model**: History slices (`agent[-1]`, `agent.user`, `agent.assistant`) and structured messages (`AssistantMessage`, `ToolMessage`) enable deterministic flows; specs must preserve typed message access.
 - **Tooling system**: Tools can be async callables, `@tool`-decorated methods on `AgentComponent`s, or MCP-backed registries; favor declarative registration and dependency injection via FastDepends.
-- **Routing & modes**: Routes (`@agent.route`), context pipelines, transitions, and command exposure provide reusable behaviors. New specs should design around these primitives rather than bespoke orchestration.
+- **Routing & modes**: Modes (`@agent.mode`), context pipelines, transitions, and command exposure provide reusable behaviors. New specs should design around these primitives rather than bespoke orchestration.
 - **Stateful resources**: `EditableYAML`, planning documents, and similar context managers swap in scoped toolsets. Reference this pattern when a feature requires multi-step state mutation.
 - **Transcripts & testing**: Transcript recorder/replayer and pytest fixtures mock only the LLM layer. New features should specify how they integrate with transcripts and testing tiers.
 - **Multi-agent patterns**: Pipe operator (`agent_a | agent_b`), remote agent transports, and sub-agent modes allow composition—describe how a feature behaves within these graphs.

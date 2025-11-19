@@ -16,7 +16,13 @@ __version__ = "0.1.0"
 if TYPE_CHECKING:
     from good_agent.core.event_router import EventContext
 
-    from .agent import Agent, AgentConfigParameters, AgentState
+    from .agent import (
+        Agent,
+        AgentConfigParameters,
+        AgentState,
+        ModeContext,
+        ModeManager,
+    )
     from .components import (
         AgentComponentType,
         ToolAdapter,
@@ -132,6 +138,9 @@ _LAZY_IMPORTS = {
     "AgentConfigParameters": "agent",
     "AgentState": "agent",
     "AgentConfigManager": "agent.config",
+    # Mode system
+    "ModeManager": "agent",
+    "ModeContext": "agent",
     # Content parts (beyond the eager imports)
     "BaseContentPart": "content",
     "ContentPartType": "content",
@@ -284,6 +293,9 @@ __all__ = [
     "AgentConfigParameters",
     "AgentConfigManager",
     "AgentState",
+    # Mode system
+    "ModeManager",
+    "ModeContext",
     # Component system
     "AgentComponentType",
     "MessageInjectorComponent",

@@ -10,6 +10,7 @@ from .core import Agent, AgentConfigParameters, AgentInitialize
 from .events import AgentEventsFacade
 from .llm import LLMCoordinator
 from .messages import MessageManager
+from .modes import ModeContext, ModeManager
 from .state import AgentState, AgentStateMachine
 from .tasks import AgentTaskManager
 from .tools import ToolExecutor
@@ -29,4 +30,6 @@ __all__: list[str] = [
     "AgentEventsFacade",
     "AgentVersioningManager",
     "AgentInitialize",
+    "ModeManager",
+    "ModeContext",
 ]

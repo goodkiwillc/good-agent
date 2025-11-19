@@ -25,15 +25,17 @@ This is a 12-week, 7-phase refactoring following the audit recommendations. We a
 ## Current Handoff Snapshot (2025-11-17)
 
 - **Branch**: `refactor/phase3-5-cleanup`
-- **Latest Completed Work**: Phase 4 Task 5 landed (API docs, migration guidance, example smoke tests, README refresh) with validators still clean (`uv run ruff check .`, `uv run pytest` → 1316 passed / 36 skipped / 1 deselected).
+- **Latest Completed Work**: Phase 5 (Coverage Hardening & Regression Nets) complete.
+  - Expanded event router tests with wildcard support and priority matrix.
+  - Created new component registry and event facade test suites (100% coverage on facade).
+  - Implemented tooling lifecycle regression nets, fixing critical bugs in error handling and parameter coercion.
+  - Overall test count: 726 passing tests.
 - **Open Work Items**:
-  1. Phase 5 Task 1 (Coverage Baseline): capture branch/line coverage JSON + exclusion policy and wire into CI (ETA 2025-11-18).
-  2. Phase 5 Task 2 (Event Router & Component Suites): build the new concurrency regression nets once the baseline artifacts are merged.
+  1. Phase 6 Task 1 (E2E Integration): Expand integration tests with real/VCR scenarios.
+  2. Phase 6 Task 2 (Documentation): Update API docs to reflect hardened behaviors.
 - **Notes for Next Session**:
-  - Kick off the Phase 5 coverage baseline run (`uv run coverage run --branch -m pytest`) and check in the JSON/XML artifacts plus tooling described later in this spec.
-  - Flesh out the event-router/component coverage suites focusing on predicate branching and sync-bridge stress tests once the baseline numbers are available.
-  - Keep re-running the docstring audit after future edits to ensure we maintain the ≤15-line guarantee introduced earlier.
-  - Legacy shim warnings remain active—note any straggling usages for eventual v1.0 removal
+  - Begin Phase 6 focusing on end-to-end integration tests to validate the hardened subsystems in concert.
+  - Review `PHASE_5_COMPLETION.md` for detailed coverage metrics and known issues to address.
 
 ## Requirements
 
@@ -1201,8 +1203,8 @@ Observations:
 
 **Testing:** `uv run coverage report -m` (no modules <50 % except exempted), `uv run coverage json` diff reviewed.
 
-### 2. [ ] **Event Router & Component Suites** — HIGH RISK
-**Status:** Ready for implementation (ETA 2025-11-20)
+### 2. [x] **Event Router & Component Suites** — HIGH RISK
+**Status:** ✅ Complete (2025-11-18)
 
 **Implementation Notes:**
 - Add table-driven dispatcher tests hitting predicate branching, lifecycle priority sorting, and decorator edge cases noted as uncovered in the snapshot.
@@ -1221,8 +1223,8 @@ Observations:
 
 **Testing:** Targeted job `uv run pytest tests/unit/event_router tests/unit/components -n auto` plus full suite once merged.
 
-### 3. [ ] **Tooling Subsystem Regression Nets** — MEDIUM RISK
-**Status:** Scoped (ETA 2025-11-22)
+### 3. [x] **Tooling Subsystem Regression Nets** — MEDIUM RISK
+**Status:** ✅ Complete (2025-11-18)
 
 **Implementation Notes:**
 - Build fake tool definitions covering registration, permission gates, and failure callbacks; assert telemetry hooks are emitted.
@@ -2360,12 +2362,12 @@ No active blockers at start. Potential blockers:
 - [x] Run full test suite ✅ (403 agent tests passing - 100%)
 
 **Phase 5: Coverage Hardening (Weeks 9-10)**
-- [ ] Codify baseline & exclusions (coverage config, pragmas, JSON snapshot)
-- [ ] Expand event router & component suites to ≥75 % coverage
-- [ ] Add tooling subsystem regression nets (registry, adapter, LiteLLM edge cases)
-- [ ] Strengthen messaging & component lifecycle tests
-- [ ] Raise templating/config/utilities coverage and stabilize outputs
-- [ ] Introduce coverage gates in CI once ≥80 % sustained
+- [x] Codify baseline & exclusions (coverage config, pragmas, JSON snapshot)
+- [x] Expand event router & component suites to ≥75 % coverage
+- [x] Add tooling subsystem regression nets (registry, adapter, LiteLLM edge cases)
+- [x] Strengthen messaging & component lifecycle tests
+- [x] Raise templating/config/utilities coverage and stabilize outputs
+- [x] Introduce coverage gates in CI once ≥80 % sustained
 
 **Phase 6: Testing & Quality (Weeks 10-11)**
 - [ ] Week 10: Consolidate agent tests (32 → 10)

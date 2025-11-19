@@ -23,7 +23,6 @@ from typing import (
     TypedDict,
     TypeGuard,
     TypeVar,
-    Union,
     Unpack,
     cast,
     overload,
@@ -49,6 +48,7 @@ from .context import ContextManager
 from .events import AgentEventsFacade
 from .llm import LLMCoordinator
 from .messages import MessageManager
+from .modes import ModeManager
 from .state import AgentState, AgentStateMachine
 from .tasks import AgentTaskManager
 from .tools import ToolExecutor
@@ -120,7 +120,7 @@ class AgentConfigParameters(LLMCommonConfig, AgentOnlyConfig, TypedDict, total=F
     # temperature and max_tokens inherited from LLMCommonConfig
     max_retries: int
     fallback_models: list[str]
-    tools: Sequence[str | Callable[..., Any] | Tool | "Agent"]
+    tools: Sequence[str | Callable[..., Any] | Tool | Agent]
     # extensions: NotRequired[list[AgentComponent | type[AgentComponent]]]
 
 
@@ -130,7 +130,7 @@ ToolFuncParams = ParamSpec("ToolFuncParams")
 T_FuncResp = TypeVar("T_FuncResp")
 
 
-def _is_choices_instance(obj: Any) -> TypeGuard["Choices"]:
+def _is_choices_instance(obj: Any) -> TypeGuard[Choices]:
     """Type guard to check if an object is a Choices instance for type narrowing.
 
     This allows us to keep Choices behind TYPE_CHECKING while still
@@ -143,7 +143,7 @@ def _is_choices_instance(obj: Any) -> TypeGuard["Choices"]:
 # Legacy TypedDict kept for backward compatibility
 # New code should use AgentInitializeParams from event_types
 class AgentInitialize(TypedDict):
-    agent: "Agent"
+    agent: Agent
     tools: list[str | Callable[..., Any] | ToolCallFunction]
 
 
@@ -197,7 +197,7 @@ def ensure_ready(func: Callable[P, Any]) -> Callable[P, Any]:
         # Create wrapper for async generators
         @functools.wraps(func)
         async def async_gen_wrapper(
-            self: "Agent", *args: Any, **kwargs: Any
+            self: Agent, *args: Any, **kwargs: Any
         ) -> AsyncIterator[Any]:
             # Ensure agent is ready before proceeding
             await self.initialize()
@@ -211,7 +211,7 @@ def ensure_ready(func: Callable[P, Any]) -> Callable[P, Any]:
     else:
         # Create wrapper for regular async functions
         @functools.wraps(func)
-        async def async_wrapper(self: "Agent", *args: Any, **kwargs: Any) -> Any:
+        async def async_wrapper(self: Agent, *args: Any, **kwargs: Any) -> Any:
             # Ensure agent is ready before proceeding
             await self.initialize()
             # Await and return the result
@@ -236,10 +236,10 @@ class Agent(EventRouter):
         Not thread-safe. Use AgentPool for concurrent operations.
     """
 
-    __registry__: ClassVar[dict[ULID, weakref.ref["Agent"]]] = {}
+    __registry__: ClassVar[dict[ULID, weakref.ref[Agent]]] = {}
 
     @classmethod
-    def get(cls, agent_id: ULID) -> "Agent | None":
+    def get(cls, agent_id: ULID) -> Agent | None:
         """Retrieve an agent instance by its ID"""
         ref = cls.__registry__.get(agent_id)
         if ref:
@@ -252,7 +252,7 @@ class Agent(EventRouter):
         return None
 
     @classmethod
-    def get_by_name(cls, name: str) -> "Agent | None":
+    def get_by_name(cls, name: str) -> Agent | None:
         """Retrieve an agent instance by its name (first match)"""
         for ref in cls.__registry__.values():
             agent = ref()
@@ -272,12 +272,16 @@ class Agent(EventRouter):
         "config",
         "context",
         "context_manager",
+        "current_mode",
         "do",
         "events",
         "execute",
         "extensions",
         "id",
+        "in_mode",
         "messages",
+        "mode_stack",
+        "modes",
         "model",
         "name",
         "on",
@@ -378,13 +382,13 @@ class Agent(EventRouter):
         )
 
     _init_task: asyncio.Task | None = None
-    _conversation: "Conversation | None" = None
+    _conversation: Conversation | None = None
     _id: ULID
     _session_id: ULID
     _name: str | None = None
     _extensions: dict[type[AgentComponent], AgentComponent]
     _extension_names: dict[str, AgentComponent]
-    _agent_ref: "weakref.ref[Agent | None] | None" = None
+    _agent_ref: weakref.ref[Agent | None] | None = None
     _messages: MessageList[Message]
     _context: AgentContext
     _config_manager: AgentConfigManager
@@ -394,6 +398,7 @@ class Agent(EventRouter):
     _mock: AgentMockInterface
     _pool: AgentPool | None = None
     _state_machine: AgentStateMachine
+    _mode_manager: ModeManager
 
     @staticmethod
     def context_providers(name: str):
@@ -493,9 +498,9 @@ class Agent(EventRouter):
         self.context = agent_context or AgentContext()
         self.context._set_agent_config(self.config)
 
-        tools: Sequence[
-            str | Callable[..., Any] | Tool | ToolCallFunction | "Agent"
-        ] = config.pop("tools", []) or []
+        tools: Sequence[str | Callable[..., Any] | Tool | ToolCallFunction | Agent] = (
+            config.pop("tools", []) or []
+        )
 
         # Initialize message list
         self._messages = MessageList[Message]()
@@ -543,6 +548,9 @@ class Agent(EventRouter):
         self._task_manager = AgentTaskManager(self)
         # Back-compat: legacy code inspects _managed_tasks directly
         self._managed_tasks = self._task_manager._managed_tasks
+
+        # Initialize mode manager
+        self._mode_manager = ModeManager(self)
 
         # Initialize message sequence validator
         validation_mode = config.get("message_validation_mode", "warn")
@@ -734,6 +742,36 @@ class Agent(EventRouter):
     def versioning(self) -> AgentVersioningManager:
         """Access the versioning manager."""
         return self._versioning_manager
+
+    @property
+    def modes(self) -> ModeManager:
+        """Mode management facade (``agent.modes``).
+
+        Use ``@agent.modes('name')`` to register modes and
+        ``async with agent.modes['name']:`` to enter them.
+        """
+        return self._mode_manager
+
+    @property
+    def current_mode(self) -> str | None:
+        """Get the current active mode name (top of stack)."""
+        return self._mode_manager.current_mode
+
+    @property
+    def mode_stack(self) -> list[str]:
+        """Get list of active modes (bottom to top)."""
+        return self._mode_manager.mode_stack
+
+    def in_mode(self, mode_name: str) -> bool:
+        """Check if mode is active (anywhere in stack).
+
+        Args:
+            mode_name: Mode name to check
+
+        Returns:
+            True if mode is in stack
+        """
+        return self._mode_manager.in_mode(mode_name)
 
     @property
     def tasks(self) -> AgentTaskManager:
@@ -1121,7 +1159,7 @@ class Agent(EventRouter):
         coro: Coroutine[Any, Any, T],
         *,
         name: str | None = None,
-        component: Union["AgentComponent", str, None] = None,
+        component: AgentComponent | str | None = None,
         wait_on_ready: bool = True,
         cleanup_callback: Callable[[asyncio.Task], None] | None = None,
     ) -> asyncio.Task[T]:
@@ -1197,7 +1235,7 @@ class Agent(EventRouter):
         """
         self._component_registry.track_component_task(component, task)
 
-    async def _fork_with_messages(self, messages: list[Message]) -> "Agent":
+    async def _fork_with_messages(self, messages: list[Message]) -> Agent:
         """Helper method to fork with specific messages"""
         # Get current config
         config = self.config.as_dict()
@@ -1596,7 +1634,7 @@ class Agent(EventRouter):
         self,
         include_messages: bool = True,
         **kwargs: Any,
-    ) -> "Agent":
+    ) -> Agent:
         """
         Fork the agent into a new agent with the same configuration (or modified).
 
@@ -1618,7 +1656,7 @@ class Agent(EventRouter):
         n: int | None = None,
         prompts: list[str] | None = None,
         **configuration: Any,
-    ) -> "AgentPool":
+    ) -> AgentPool:
         """
         Spawn multiple forks as an agent pool.
 
@@ -2236,7 +2274,7 @@ class Agent(EventRouter):
         """
         return iter(self.messages)
 
-    def __or__(self, other: "Agent") -> "Conversation":
+    def __or__(self, other: Agent) -> Conversation:
         """
         Create a conversation between this agent and another using the | operator.
 
@@ -2255,7 +2293,7 @@ class Agent(EventRouter):
 
         return Conversation(self, other)
 
-    async def __aenter__(self) -> "Agent":
+    async def __aenter__(self) -> Agent:
         """
         Async context manager entry. Returns self.
 
