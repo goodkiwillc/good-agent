@@ -27,7 +27,7 @@ class TestGlobalIndexConsistency:
         # Check that index only appears once
         assert len(manager.index) == 1
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_different_urls_different_indices(self):
@@ -48,7 +48,7 @@ class TestGlobalIndexConsistency:
         assert idx1 != idx2
         assert len(manager.index) == 2
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_global_index_sequential(self):
@@ -89,7 +89,7 @@ class TestLocalToGlobalMapping:
         global_idx = manager.index.lookup(str(msg2.citations[0]))
         assert global_idx == 2
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_message_with_multiple_citations_maps_correctly(self):
@@ -118,7 +118,7 @@ class TestLocalToGlobalMapping:
         assert manager.index.lookup("https://example.com/doc1") == 1
         assert manager.index.lookup("https://example.com/doc2") == 2
 
-        await agent.events.async_close()
+        await agent.events.close()
 
 
 class TestCitationLookup:
@@ -191,7 +191,7 @@ class TestCitationLookup:
         assert str(message.citations[1]) == "https://example.com/source2"
         assert str(message.citations[2]) == "https://example.com/source3"
 
-        await agent.events.async_close()
+        await agent.events.close()
 
 
 class TestSparseIndexHandling:
@@ -223,7 +223,7 @@ class TestSparseIndexHandling:
         assert str(citations[1]) == "https://example.com/doc5"
         assert str(citations[2]) == "https://example.com/doc10"
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_sparse_references_remapped_in_content(self):

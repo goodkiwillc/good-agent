@@ -35,7 +35,7 @@ async def test_all_citation_scenarios():
     print(f"Global index: {dict(cm1.index.items())}")
     print(f"Content transformed: {'[!CITE_' in msg1.content_parts[0].text}")
     print()
-    await agent1.async_close()
+    await agent1.close()
 
     # Test 2: Citation preservation when order is jumbled
     print("TEST 2: Non-sequential citation ordering")
@@ -64,7 +64,7 @@ async def test_all_citation_scenarios():
     msg2b = agent2[-1]
     print(f"Referenced citations: {msg2b.citations}")
     print()
-    await agent2.async_close()
+    await agent2.close()
 
     # Test 3: Mixed citation formats in same message
     print("TEST 3: Mixed citation formats")
@@ -88,7 +88,7 @@ async def test_all_citation_scenarios():
     print(f"Message citations: {msg3.citations}")
     print(f"Global index: {dict(cm3.index.items())}")
     print()
-    await agent3.async_close()
+    await agent3.close()
 
     # Test 4: Citation lookup from pre-populated index
     print("TEST 4: Citation lookup from existing index")
@@ -112,7 +112,7 @@ async def test_all_citation_scenarios():
 
     print(f"Looked up citations: {msg4.citations}")
     print()
-    await agent4.async_close()
+    await agent4.close()
 
     # Test 5: Citation rendering in different modes
     print("TEST 5: Citation rendering modes")
@@ -132,7 +132,7 @@ async def test_all_citation_scenarios():
     print(f"Rendered for LLM: {final_msg.render(RenderMode.LLM)[:50]}...")
     print(f"Rendered for DISPLAY: {final_msg.render(RenderMode.DISPLAY)[:50]}...")
     print()
-    await agent5.async_close()
+    await agent5.close()
 
     # Test 6: WebFetcher-like scenario (adding citations from tools)
     print("TEST 6: Tool-added citations scenario")
@@ -154,7 +154,7 @@ async def test_all_citation_scenarios():
 
     print(f"Tool citation lookup: {msg6.citations}")
     print()
-    await agent6.async_close()
+    await agent6.close()
 
     # Test 7: Citation index order preservation
     print("TEST 7: Index order preservation")
@@ -180,7 +180,7 @@ async def test_all_citation_scenarios():
         url = cm7.index[idx]
         print(f"Index {idx} -> {url}")
     print()
-    await agent7.async_close()
+    await agent7.close()
 
     print("=" * 80)
     print("ALL TESTS COMPLETE")

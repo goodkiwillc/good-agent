@@ -36,7 +36,7 @@ class TestVersioningWithRealLLM:
         # Response should be reasonable
         assert "4" in response.content.lower() or "four" in response.content.lower()
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -74,7 +74,7 @@ class TestVersioningWithRealLLM:
             or "paris" in str(agent.messages[-1]).lower()
         )
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -119,7 +119,7 @@ class TestVersioningWithRealLLM:
         for msg in agent.messages[initial_count:]:
             assert agent._message_registry.get(msg.id) is not None
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -170,7 +170,7 @@ class TestVersioningWithRealLLM:
         str(agent.messages[-1]).lower()
         assert len(agent.messages[-1].content) > 0  # Non-empty response
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -203,7 +203,7 @@ class TestVersioningWithRealLLM:
         assert str(agent.messages[-1]) == original_response
         assert "javascript" not in str(agent.messages[-1]).lower()
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -247,7 +247,7 @@ class TestVersioningWithRealLLM:
         # New messages appended
         assert "characteristics" in str(agent.messages[-2]).lower()
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -293,7 +293,7 @@ class TestVersioningWithRealLLM:
                 if retrieved:
                     assert retrieved.id == msg.id
 
-        await agent.events.async_close()
+        await agent.events.close()
 
 
 class TestVersioningEdgeCasesWithVCR:
@@ -320,7 +320,7 @@ class TestVersioningEdgeCasesWithVCR:
         # LLM might not follow instruction perfectly, just check we got something
         assert len(response.content) >= 0
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -359,4 +359,4 @@ class TestVersioningEdgeCasesWithVCR:
         # Should have fewer messages than full conversation
         assert len(agent.messages) < 11
 
-        await agent.events.async_close()
+        await agent.events.close()

@@ -36,6 +36,6 @@ def test_nested_event_emissions_do_not_deadlock() -> None:
         order.append("inner")
 
     router.do("race:outer")
-    router.join()
+    router.join_sync()
 
     assert order == ["outer", "inner"]

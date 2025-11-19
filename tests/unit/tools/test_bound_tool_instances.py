@@ -154,7 +154,7 @@ async def test_bound_tools_work_with_agent():
     assert result.response == "Counter reset"
     assert component.state["counter"] == 0
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 @pytest.mark.asyncio

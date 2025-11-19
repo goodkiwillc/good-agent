@@ -99,7 +99,7 @@ class TestComponentInitializationEdgeCases:
 
         assert agent.state == AgentState.READY
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_failing_initialization_task_handling(self):
@@ -121,7 +121,7 @@ class TestComponentInitializationEdgeCases:
         # Tools should still be registered despite init failure
         assert "failing_tool" in agent.tools
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_component_with_no_tools(self):
@@ -135,7 +135,7 @@ class TestComponentInitializationEdgeCases:
         assert component.installed
         assert len(agent.tools._tools) == 0
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_multiple_components_mixed_success_failure(self):
@@ -162,7 +162,7 @@ class TestComponentInitializationEdgeCases:
         # No-tools component should be installed
         assert no_tools.installed
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_component_task_exception_handling(self):
@@ -177,7 +177,7 @@ class TestComponentInitializationEdgeCases:
         assert component.install_failed
         assert agent.state.value >= 1  # AgentState.READY
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_agent_ready_idempotency(self):
@@ -205,7 +205,7 @@ class TestComponentInitializationEdgeCases:
         await agent.initialize()
         assert "simple_tool" in agent.tools
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_component_tasks_cleared_on_exception(self):
@@ -219,7 +219,7 @@ class TestComponentInitializationEdgeCases:
         # Component should still be accessible
         assert component._agent is agent
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_no_event_loop_fallback_behavior(self):
@@ -249,7 +249,7 @@ class TestComponentInitializationEdgeCases:
         # Tool should still be registered
         assert "test_tool" in agent.tools
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_agent_state_consistency_with_component_failures(self):
@@ -270,7 +270,7 @@ class TestComponentInitializationEdgeCases:
         # Should be able to transition to other states normally
         # (This would be tested more thoroughly in integration tests)
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_component_task_cleanup_on_agent_close(self):
@@ -279,7 +279,7 @@ class TestComponentInitializationEdgeCases:
         agent = Agent("Test agent", extensions=[component])
 
         # Don't wait for ready - close while tasks might still be running
-        await agent.events.async_close()
+        await agent.events.close()
 
         # Should not leave dangling tasks
         # (In practice, this would be tested by monitoring for task cleanup)
@@ -314,8 +314,8 @@ class TestComponentInitializationEdgeCases:
         assert "tool_a" in agent1.tools and "tool_b" in agent1.tools
         assert "tool_a" in agent2.tools and "tool_b" in agent2.tools
 
-        await agent1.async_close()
-        await agent2.async_close()
+        await agent1.close()
+        await agent2.close()
 
     @pytest.mark.asyncio
     async def test_memory_cleanup_after_component_initialization(self):
@@ -342,4 +342,4 @@ class TestComponentInitializationEdgeCases:
         # But tools should remain registered
         assert "cleanup_tool" in agent.tools
 
-        await agent.events.async_close()
+        await agent.events.close()

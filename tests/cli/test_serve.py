@@ -68,7 +68,9 @@ def test_serve_with_args(mock_agent):
     # without blocking. We'll just verify factory creation logic.
     
     extra_args = ["--foo", "bar"]
-    agent_factory = lambda: factory_mock(*extra_args)
+
+    def agent_factory():
+        return factory_mock(*extra_args)
     
     # Run factory
     agent = agent_factory()

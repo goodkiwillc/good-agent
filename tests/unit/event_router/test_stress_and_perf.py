@@ -18,6 +18,6 @@ def test_fire_and_forget_under_load_cleans_up_tasks() -> None:
     for _ in range(200):
         router.do("stress:async")
 
-    router.join()
+    router.join_sync()
 
     assert router._sync_bridge.task_count == 0

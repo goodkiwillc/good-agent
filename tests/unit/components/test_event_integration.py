@@ -66,9 +66,9 @@ async def test_agent_events_facade_join_handles_background_tasks() -> None:
 
     seen: list[str] = []
     agent.do("facade:async", seen=seen)
-    await agent.events.join_async()
+    await agent.events.join()
 
     assert seen == ["async"]
 
     # Ensure sync join is safe after async join drained tasks
-    agent.events.join()
+    agent.events.join_sync()

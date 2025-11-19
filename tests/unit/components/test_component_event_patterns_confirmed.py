@@ -291,7 +291,7 @@ async def test_eventrouter_inheritance_final_proof():
         test_events.append("direct_eventrouter_usage")
 
     component.do("test:event")
-    await component.join_async(timeout=1.0)  # Wait for background tasks
+    await component.join(timeout=1.0)  # Wait for background tasks
 
     assert "direct_eventrouter_usage" in test_events
 

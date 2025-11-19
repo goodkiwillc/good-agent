@@ -37,7 +37,7 @@ class TestCitationManagerInitialization:
         assert agent[CitationManager] is manager
         assert agent[CitationManager].agent is agent
 
-        await agent.events.async_close()
+        await agent.events.close()
 
 
 class TestCitationManagerPublicAPI:

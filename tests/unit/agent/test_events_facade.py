@@ -204,55 +204,55 @@ class TestAgentEventsFacade:
         assert res == "context"
 
     @patch("good_agent.agent.events.EventRouter")
-    def test_join(
+    @pytest.mark.asyncio
+    async def test_join(
         self,
         mock_event_router: MagicMock,
         events_facade: AgentEventsFacade,
         mock_agent: Agent,
     ) -> None:
-        events_facade.join(timeout=10.0)
+        mock_event_router.join = AsyncMock()
 
-        mock_event_router.join.assert_called_once_with(
+        await events_facade.join(timeout=10.0)
+
+        mock_event_router.join.assert_awaited_once_with(
+            mock_agent, timeout=10.0
+        )
+
+    @patch("good_agent.agent.events.EventRouter")
+    def test_join_sync(
+        self,
+        mock_event_router: MagicMock,
+        events_facade: AgentEventsFacade,
+        mock_agent: Agent,
+    ) -> None:
+        events_facade.join_sync(timeout=10.0)
+
+        mock_event_router.join_sync.assert_called_once_with(
             mock_agent, timeout=10.0
         )
 
     @patch("good_agent.agent.events.EventRouter")
     @pytest.mark.asyncio
-    async def test_join_async(
+    async def test_close(
         self,
         mock_event_router: MagicMock,
         events_facade: AgentEventsFacade,
         mock_agent: Agent,
     ) -> None:
-        mock_event_router.join_async = AsyncMock()
+        mock_event_router.close = AsyncMock()
 
-        await events_facade.join_async(timeout=10.0)
+        await events_facade.close()
 
-        mock_event_router.join_async.assert_called_once_with(
-            mock_agent, timeout=10.0
-        )
+        mock_event_router.close.assert_awaited_once_with(mock_agent)
 
     @patch("good_agent.agent.events.EventRouter")
-    def test_close(
+    def test_close_sync(
         self,
         mock_event_router: MagicMock,
         events_facade: AgentEventsFacade,
         mock_agent: Agent,
     ) -> None:
-        events_facade.close()
+        events_facade.close_sync()
 
-        mock_event_router.close.assert_called_once_with(mock_agent)
-
-    @patch("good_agent.agent.events.EventRouter")
-    @pytest.mark.asyncio
-    async def test_async_close(
-        self,
-        mock_event_router: MagicMock,
-        events_facade: AgentEventsFacade,
-        mock_agent: Agent,
-    ) -> None:
-        mock_event_router.async_close = AsyncMock()
-
-        await events_facade.async_close()
-
-        mock_event_router.async_close.assert_called_once_with(mock_agent)
+        mock_event_router.close_sync.assert_called_once_with(mock_agent)

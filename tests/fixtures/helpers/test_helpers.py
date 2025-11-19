@@ -65,16 +65,16 @@ class _MockAgentEvents:
 
         return EventContext(parameters={}, output=None)
 
-    def join(self, timeout: float = 5.0):  # pragma: no cover - no-op
+    async def join(self, timeout: float = 5.0):  # pragma: no cover - no-op
         return None
 
-    async def join_async(self, timeout: float = 5.0):  # pragma: no cover - no-op
+    def join_sync(self, timeout: float = 5.0):  # pragma: no cover - no-op
         return None
 
-    def close(self):  # pragma: no cover - no-op
+    async def close(self):  # pragma: no cover - no-op
         return None
 
-    async def async_close(self):  # pragma: no cover - no-op
+    def close_sync(self):  # pragma: no cover - no-op
         return None
 
 

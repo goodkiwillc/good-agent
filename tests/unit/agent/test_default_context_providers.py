@@ -29,7 +29,7 @@ async def test_today_context_provider():
     # Should be today's date
     assert today_value.date() == date.today()
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 @pytest.mark.asyncio
@@ -51,7 +51,7 @@ async def test_now_context_provider():
     # Should have timezone info (UTC)
     assert now_value.tzinfo is not None
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 @pytest.mark.asyncio
@@ -79,7 +79,7 @@ async def test_context_providers_in_tool_templates():
     # Should contain time in HH:MM format
     assert ":" in result.response
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 @pytest.mark.asyncio
@@ -97,7 +97,7 @@ async def test_context_providers_with_agent_context():
     assert "value" in rendered
     assert str(agent.id) in rendered
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 @pytest.mark.asyncio
@@ -116,7 +116,7 @@ async def test_context_providers_priority():
     assert "2024-01-01" in rendered
     assert str(date.today()) not in rendered
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 def test_global_providers_registered():

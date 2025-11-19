@@ -25,7 +25,7 @@ async def test_agent_available_in_template_context():
     rendered = agent.messages[-1].render()
     assert "test123" in rendered
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 @pytest.mark.asyncio
@@ -55,7 +55,7 @@ async def test_agent_in_rendering_context_methods():
     context = agent.get_rendering_context({"agent": "overridden"})
     assert context["agent"] == "overridden"
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 @pytest.mark.asyncio
@@ -80,7 +80,7 @@ async def test_agent_in_template_content_part():
     assert str(agent.id) in rendered
     assert "2 messages" in rendered  # System + this message
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 @pytest.mark.asyncio
@@ -103,7 +103,7 @@ async def test_agent_available_in_tool_templates():
     assert str(agent.id) in result.response
     assert "Search from agent" in result.response
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 @pytest.mark.asyncio
@@ -124,7 +124,7 @@ async def test_agent_with_context_providers():
     assert str(agent.id) in rendered
     assert "dynamic123" in rendered
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 @pytest.mark.asyncio
@@ -148,4 +148,4 @@ async def test_agent_in_nested_template_context():
     assert "Level: message" in rendered  # Message context takes precedence
     assert str(agent.id) in rendered  # Agent still available
 
-    await agent.events.async_close()
+    await agent.events.close()

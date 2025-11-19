@@ -26,7 +26,7 @@ async def test_datetime_strftime_formatting():
     rendered = agent.messages[-1].render()
     assert ":" in rendered  # Contains time separator
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 @pytest.mark.asyncio
@@ -45,7 +45,7 @@ async def test_datetime_attribute_access():
     assert str(today.month) in rendered
     assert str(today.day) in rendered
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 @pytest.mark.asyncio
@@ -64,7 +64,7 @@ async def test_datetime_methods():
     rendered = agent.messages[-1].render()
     assert "T" in rendered  # ISO format includes T separator
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 @pytest.mark.asyncio
@@ -88,7 +88,7 @@ async def test_datetime_with_timedelta():
     yesterday = date.today() - timedelta(days=1)
     assert yesterday.strftime("%Y-%m-%d") in rendered
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 @pytest.mark.asyncio
@@ -115,7 +115,7 @@ Week: {{ today.strftime('%U') }}
     day_names = list(calendar.day_name)
     assert any(day in rendered for day in day_names)
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 @pytest.mark.asyncio

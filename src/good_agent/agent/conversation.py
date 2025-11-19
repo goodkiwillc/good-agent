@@ -1,13 +1,16 @@
 import uuid
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any, Self, TypeVar, Union
+
 from ulid import ULID
 
 if TYPE_CHECKING:
     ConversationSelf = TypeVar("ConversationSelf", bound="Conversation")
 
-from .core import Agent
+from good_agent.events import AgentEvents
 from good_agent.messages import AssistantMessage, Message, UserMessage
+
+from .core import Agent
 
 
 class Conversation:
@@ -29,7 +32,7 @@ class Conversation:
         self.participants = list(agents)
         self.conversation_id: str = str(uuid.uuid4())
         self._active = False
-        self._original_append_methods: dict[Agent, Any] = {}
+        self._handler_ids: dict[Agent, list[int]] = {}
 
     def __or__(self, other: Union[Agent, "Conversation"]) -> "Conversation":
         """Chain agents or conversations together using the | operator."""
@@ -50,48 +53,11 @@ class Conversation:
         """Enter the conversation context and set up message forwarding."""
         self._active = True
 
-        # Set up direct message forwarding by wrapping append methods
+        # Register event handlers for message forwarding
+        self._handler_ids.clear()
+
         for source_agent in self.participants:
-            # Store original append method
-            self._original_append_methods[source_agent] = source_agent.append
-
-            # Get other agents (all except current)
-            target_agents = [a for a in self.participants if a != source_agent]
-
-            # Create a wrapper for this specific agent
-            def create_wrapper(src: Agent, targets: list[Agent], original_append: Any):
-                def wrapped_append(*args, **kwargs):
-                    # Call original append method
-                    original_append(*args, **kwargs)
-
-                    # If active and it's an assistant message, forward it
-                    if self._active and src.messages:
-                        last_message = src.messages[-1]
-                        if isinstance(last_message, AssistantMessage):
-                            # Check if already forwarded
-                            if not getattr(
-                                last_message, "_conversation_forwarded", False
-                            ):
-                                # Mark as forwarded
-                                last_message._conversation_forwarded = True  # type: ignore[attr-defined]
-
-                                # Forward to all other agents
-                                for target in targets:
-                                    user_msg = UserMessage(content=last_message.content)
-                                    user_msg._conversation_forwarded = True  # type: ignore[attr-defined]
-
-                                    # Use the original append method of the target
-                                    if target in self._original_append_methods:
-                                        self._original_append_methods[target](user_msg)
-                                    else:
-                                        target.append(user_msg)
-
-                return wrapped_append
-
-            # Replace append method with wrapper
-            source_agent.append = create_wrapper(  # type: ignore[method-assign]
-                source_agent, target_agents, self._original_append_methods[source_agent]
-            )
+            self._register_forwarding_handler(source_agent)
 
         return self
 
@@ -99,11 +65,58 @@ class Conversation:
         """Exit the conversation context and clean up message forwarding."""
         self._active = False
 
-        # Restore original append methods
-        if hasattr(self, "_original_append_methods"):
-            for agent, original_append in self._original_append_methods.items():
-                agent.append = original_append  # type: ignore[method-assign]
-            self._original_append_methods.clear()
+        # Deregister event handlers
+        for agent, handler_ids in list(self._handler_ids.items()):
+            for handler_id in handler_ids:
+                try:
+                    agent._handler_registry.deregister(handler_id)  # type: ignore[attr-defined]
+                except Exception:
+                    continue
+
+        self._handler_ids.clear()
+
+    def _register_forwarding_handler(self, source_agent: Agent) -> None:
+        """Register an event handler that forwards assistant messages from source_agent."""
+
+        def handle_append(ctx):
+            self._handle_message_append(source_agent, ctx)
+
+        registered_handler = source_agent.on(AgentEvents.MESSAGE_APPEND_AFTER)(
+            handle_append
+        )
+
+        handler_id = getattr(registered_handler, "_handler_id", None)
+        if handler_id is None:
+            raise RuntimeError("Failed to register conversation handler")
+
+        self._handler_ids.setdefault(source_agent, []).append(handler_id)
+
+    def _handle_message_append(self, source_agent: Agent, ctx: Any) -> None:
+        """Forward assistant messages from source_agent to other participants."""
+
+        if not self._active:
+            return
+
+        if ctx.parameters.get("agent") is not source_agent:
+            return
+
+        message = ctx.parameters.get("message")
+        if not isinstance(message, AssistantMessage):
+            return
+
+        if getattr(message, "_conversation_forwarded", False):
+            return
+
+        # Mark source message to avoid re-forwarding
+        message._conversation_forwarded = True  # type: ignore[attr-defined]
+
+        for target_agent in self.participants:
+            if target_agent is source_agent:
+                continue
+
+            forwarded_message = UserMessage(content=message.content)
+            forwarded_message._conversation_forwarded = True  # type: ignore[attr-defined]
+            target_agent.append(forwarded_message)
 
     async def execute(
         self,

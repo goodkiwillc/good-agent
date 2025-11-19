@@ -116,7 +116,7 @@ async def test_citation_lookup_comprehensive():
     for idx, url in citation_manager.index.items():
         print(f"  [{idx}]: {url}")
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 if __name__ == "__main__":

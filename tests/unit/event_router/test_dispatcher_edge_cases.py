@@ -35,12 +35,12 @@ class TestHandlerRegistration:
 
         # First call should work
         router.do("self:remove")
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
         assert handler_ran["count"] == 1
 
         # Second call should not execute (handler removed)
         router.do("self:remove")
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
         assert handler_ran["count"] == 1
 
     def test_register_handler_with_none_predicate(self) -> None:
@@ -54,7 +54,7 @@ class TestHandlerRegistration:
 
         router.do("test:event", condition=True)
         router.do("test:event", condition=False)
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
 
         # Should execute both times (no predicate filtering)
         assert calls["count"] == 2
@@ -77,7 +77,7 @@ class TestHandlerRegistration:
             results.append("handler3")
 
         router.do("same:priority")
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
 
         # All should execute (order within same priority may vary)
         assert len(results) == 3
@@ -100,17 +100,17 @@ class TestHandlerRegistration:
 
         # Should not execute: value too low
         router.do("complex:check", value=5, flag=True)
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
         assert len(results) == 0
 
         # Should not execute: flag is False
         router.do("complex:check", value=15, flag=False)
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
         assert len(results) == 0
 
         # Should execute: both conditions met
         router.do("complex:check", value=20, flag=True)
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
         assert results == [20]
 
 
@@ -171,7 +171,7 @@ class TestEventContextManipulation:
             results.append(ctx.parameters["value"])
 
         router.do("mutable:params", value=5)
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
 
         # Reader should see modified value
         assert results == [10]
@@ -219,14 +219,14 @@ class TestBroadcastRouting:
 
         # Event from router1 should reach router2
         router1.do("test:event")
-        router1._sync_bridge.join()
-        router2._sync_bridge.join()
+        router1._sync_bridge.join_sync()
+        router2._sync_bridge.join_sync()
         assert "test:event" in events_in_router2
 
         # Event from router2 should reach router1
         router2.do("reverse:event")
-        router2._sync_bridge.join()
-        router1._sync_bridge.join()
+        router2._sync_bridge.join_sync()
+        router1._sync_bridge.join_sync()
         assert "reverse:event" in events_in_router1
 
     def test_consume_from_is_unidirectional(self) -> None:
@@ -254,14 +254,14 @@ class TestBroadcastRouting:
 
         # Event from source should reach consumer
         source.do("forward:event")
-        source._sync_bridge.join()
-        consumer._sync_bridge.join()
+        source._sync_bridge.join_sync()
+        consumer._sync_bridge.join_sync()
         assert "forward:event" in events_in_consumer
 
         # Event from consumer should NOT reach source
         consumer.do("backward:event")
-        consumer._sync_bridge.join()
-        source._sync_bridge.join()
+        consumer._sync_bridge.join_sync()
+        source._sync_bridge.join_sync()
         assert "backward:event" not in events_in_source
 
     def test_multiple_broadcast_targets(self) -> None:
@@ -297,10 +297,10 @@ class TestBroadcastRouting:
         source.broadcast_to(target3)
 
         source.do("multi:event")
-        source._sync_bridge.join()
-        target1._sync_bridge.join()
-        target2._sync_bridge.join()
-        target3._sync_bridge.join()
+        source._sync_bridge.join_sync()
+        target1._sync_bridge.join_sync()
+        target2._sync_bridge.join_sync()
+        target3._sync_bridge.join_sync()
 
         # All targets should receive
         assert "multi:event" in received["t1"]
@@ -379,7 +379,7 @@ class TestPredicateEvaluation:
 
         # Should not crash, handler should not execute
         router.do("predicate:fail")
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
 
         assert handler_calls["count"] == 0
 
@@ -398,12 +398,12 @@ class TestPredicateEvaluation:
 
         # Without required_param
         router.do("safe:predicate")
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
         assert handler_calls["count"] == 0
 
         # With required_param
         router.do("safe:predicate", required_param="expected")
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
         assert handler_calls["count"] == 1
 
     def test_predicate_returning_non_bool_is_truthy(self) -> None:
@@ -423,12 +423,12 @@ class TestPredicateEvaluation:
         router.do("truthy:test", value=0)
         router.do("truthy:test", value="")
         router.do("truthy:test", value=None)
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
         assert len(results) == 0
 
         # Truthy values
         router.do("truthy:test", value=1)
         router.do("truthy:test", value="hello")
         router.do("truthy:test", value=[1, 2])
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
         assert len(results) == 3

@@ -39,6 +39,6 @@ def test_do_with_async_handler_finishes_after_join() -> None:
         calls.append("done")
 
     router.do("bridge:do")
-    router.join()
+    router.join_sync()
 
     assert calls == ["done"]

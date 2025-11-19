@@ -74,7 +74,7 @@ class TestSyncBridgeConcurrency:
                 future.result()
 
         # Wait for all tasks to complete
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
 
         # All 50 events should have been processed
         assert call_count["value"] == 50
@@ -140,7 +140,7 @@ class TestSyncBridgeConcurrency:
             asyncio.run(async_worker())
             sync_future.result()
 
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
 
         # Both paths should complete
         assert len(sync_results) == 10
@@ -207,7 +207,7 @@ class TestSyncBridgeErrorHandling:
 
         # do() should return immediately without raising
         router.do("fire:fail")
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
 
         # Success handler should have run
         assert success_count["value"] == 1
@@ -243,7 +243,7 @@ class TestSyncBridgeTaskCleanup:
 
         # Allow task to complete
         task_can_finish.set()
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
 
         # No tasks should remain
         assert router._sync_bridge.task_count == 0
@@ -267,7 +267,7 @@ class TestSyncBridgeTaskCleanup:
 
         # At this point, tasks may not be done
         # But join should wait for all
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
 
         # All should be completed
         assert sorted(completed) == list(range(10))
@@ -299,7 +299,7 @@ class TestSyncBridgeTaskCleanup:
         thread.join()
 
         # Close should cancel the long-running task
-        router._sync_bridge.close()
+        router._sync_bridge.close_sync()
 
         # Handler should have been cancelled
         # Note: This is best-effort; some tasks may complete before cancellation
@@ -366,7 +366,7 @@ class TestSyncBridgeEdgeCases:
         router.apply_sync("restart:test", value=1)
 
         # Manually close and recreate loop (simulates restart)
-        router._sync_bridge.close()
+        router._sync_bridge.close_sync()
         router._sync_bridge = type(router._sync_bridge)()
 
         # Should work after restart

@@ -85,7 +85,7 @@ async def demo_citation_access():
         else:
             print(f"  Citation [{idx}]: No metadata")
 
-    await agent.events.async_close()
+    await agent.events.close()
     print("\n✅ Demo completed")
 
     return agent, citation_manager

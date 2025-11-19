@@ -234,7 +234,7 @@ class TestEmitConfiguration:
             router.event_names.append(ctx.event)
 
         router.my_method()
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
         assert router.event_names == ["my_method:before"]
 
     def test_emit_custom_event_name(self) -> None:
@@ -256,7 +256,7 @@ class TestEmitConfiguration:
             router.event_names.append(ctx.event)
 
         router.some_method()
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
         assert router.event_names == ["custom_event:before"]
 
     def test_emit_include_args_false(self) -> None:
@@ -328,7 +328,7 @@ class TestEmitConfiguration:
 
         result = router.simple_method(5)  # type: ignore[type-var]
         assert result == 10
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
         assert router.events == ["before", "after"]
 
 
@@ -383,7 +383,7 @@ class TestEmitEdgeCases:
             router.events.append(ctx.event)
 
         router.legacy_method(42)
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
         assert "legacy:before" in router.events
         assert "legacy:after" in router.events
 
@@ -410,7 +410,7 @@ class TestEmitEdgeCases:
             router.events.append("after")
 
         router.method()
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
         assert router.events == ["before", "after"]
 
     def test_emit_after_can_transform_result(self) -> None:
@@ -429,7 +429,7 @@ class TestEmitEdgeCases:
             ctx.stop(output=original * 2)
 
         result = router.get_value()
-        router._sync_bridge.join()
+        router._sync_bridge.join_sync()
         # The emit decorator checks ctx.output and uses it if not None
         assert result == 20  # Transformed by handler
 
