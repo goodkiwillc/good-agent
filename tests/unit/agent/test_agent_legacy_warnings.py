@@ -28,7 +28,7 @@
 #         forked = _assert_warns(lambda: agent.fork(include_messages=False))
 #         assert forked is not None
 #         # Clean up forked agent to avoid leaked tasks
-#         await forked.events.async_close()
+#         await forked.events.close()
 
 #         ctx = _assert_warns(lambda: agent.thread_context())
 #         assert ctx is not None

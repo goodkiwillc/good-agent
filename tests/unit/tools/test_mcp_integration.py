@@ -318,7 +318,7 @@ class TestAgentMCPIntegration:
             await agent.initialize()
 
             # Clean up agent (should disconnect MCP)
-            await agent.events.async_close()
+            await agent.events.close()
 
             # Verify MCP servers were disconnected
             # Note: This might need adjustment based on actual cleanup implementation

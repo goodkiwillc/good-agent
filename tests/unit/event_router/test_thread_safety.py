@@ -52,7 +52,7 @@ def test_concurrent_emit_calls_do_not_deadlock() -> None:
     for thread in threads:
         thread.join()
 
-    router.join()
+    router.join_sync()
     assert len(hits) == 800
 
 
@@ -85,6 +85,6 @@ def test_emit_and_register_concurrently() -> None:
     t2.start()
     t1.join()
     t2.join()
-    router.join()
+    router.join_sync()
 
     assert len(recorded) == 100

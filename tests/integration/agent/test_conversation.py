@@ -126,13 +126,15 @@ class TestConversation:
             assert conversation.conversation_id is not None
             assert len(conversation.participants) == 2
 
-            # Track original append methods are stored
             async with conversation:
                 # Verify conversation is active
                 assert conversation._active is True
+                assert agent1 in conversation._handler_ids
+                assert agent2 in conversation._handler_ids
 
                 # Send a message
                 agent1.append(AssistantMessage(content="Test message"))
+                await asyncio.sleep(0.01)
 
                 # Verify message was forwarded
                 assert len(agent2.messages) == 2  # system + forwarded message
@@ -141,26 +143,19 @@ class TestConversation:
 
             # Verify conversation is cleaned up
             assert conversation._active is False
+            assert conversation._handler_ids == {}
 
     @pytest.mark.asyncio
     async def test_conversation_cleanup(self):
-        """Test that append methods are properly restored after conversation."""
+        """Test that event handlers are cleaned up after conversation."""
         async with Agent("Agent 1") as agent1, Agent("Agent 2") as agent2:
-            # Store original append methods
-            original_append1 = agent1.append
-            original_append2 = agent2.append
-
             async with agent1 | agent2 as conversation:
-                # During conversation, append methods should be wrapped
-                assert agent1.append != original_append1
-                assert agent2.append != original_append2
-                # The originals should be stored
-                assert conversation._original_append_methods[agent1] == original_append1
-                assert conversation._original_append_methods[agent2] == original_append2
+                assert agent1 in conversation._handler_ids
+                assert agent2 in conversation._handler_ids
+                assert len(conversation._handler_ids[agent1]) == 1
+                assert len(conversation._handler_ids[agent2]) == 1
 
-            # After conversation, append methods should be restored
-            assert agent1.append == original_append1
-            assert agent2.append == original_append2
+            assert conversation._handler_ids == {}
 
     @pytest.mark.asyncio
     async def test_conversation_execution(self):
@@ -175,8 +170,25 @@ class TestConversation:
                         if len(messages) >= 4:  # Prevent infinite loop
                             break
 
+                    # Give forwarding handlers time to run
+                    await asyncio.sleep(0.01)
+
                     # Should have collected messages from both agents
                     assert len(messages) > 0
+
+                    user_messages_agent2 = [
+                        m for m in agent2.messages if isinstance(m, UserMessage)
+                    ]
+                    user_messages_agent1 = [
+                        m for m in agent1.messages if isinstance(m, UserMessage)
+                    ]
+
+                    assert any(
+                        msg.content == "Hello from agent 1" for msg in user_messages_agent2
+                    )
+                    assert any(
+                        msg.content == "Hello from agent 2" for msg in user_messages_agent1
+                    )
 
     @pytest.mark.asyncio
     async def test_conversation_messages_property(self):
@@ -233,3 +245,33 @@ class TestConversation:
                 ]
                 assert len(user_messages_in_agent2) == 1
                 assert user_messages_in_agent2[0].content == "Assistant message"
+
+    @pytest.mark.asyncio
+    async def test_llm_generated_messages_forwarded(self):
+        """Test that LLM (mocked) assistant messages are forwarded via events."""
+        async with Agent("Agent 1") as agent1, Agent("Agent 2") as agent2:
+            with agent1.mock("LLM response from agent 1"), agent2.mock(
+                "LLM response from agent 2"
+            ):
+                async with agent1 | agent2:
+                    await agent1.call("Hello there")
+                    await asyncio.sleep(0.01)
+
+                    agent2_user_messages = [
+                        m for m in agent2.messages if isinstance(m, UserMessage)
+                    ]
+                    assert any(
+                        msg.content == "LLM response from agent 1"
+                        for msg in agent2_user_messages
+                    )
+
+                    await agent2.call("Replying now")
+                    await asyncio.sleep(0.01)
+
+                    agent1_user_messages = [
+                        m for m in agent1.messages if isinstance(m, UserMessage)
+                    ]
+                    assert any(
+                        msg.content == "LLM response from agent 2"
+                        for msg in agent1_user_messages
+                    )

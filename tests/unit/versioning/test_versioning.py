@@ -51,7 +51,7 @@ class TestMessageRegistry:
         assert owner == agent
 
         # Clean up
-        await agent.events.async_close()
+        await agent.events.close()
 
     def test_agent_weakref_cleanup(self):
         """Test that agent references are weak and can be garbage collected."""

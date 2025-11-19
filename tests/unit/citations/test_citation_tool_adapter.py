@@ -49,7 +49,7 @@ class TestToolAdapterIdentification:
         should_adapt = adapter.should_adapt(tool, agent)
         assert should_adapt is True
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_adapter_identifies_urls_parameter(self):
@@ -68,7 +68,7 @@ class TestToolAdapterIdentification:
         should_adapt = adapter.should_adapt(tool, agent)
         assert should_adapt is True
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_adapter_identifies_alternate_url_param(self):
@@ -84,7 +84,7 @@ class TestToolAdapterIdentification:
         should_adapt = adapter.should_adapt(tool, agent)
         assert should_adapt is True
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_adapter_ignores_non_url_tools(self):
@@ -100,7 +100,7 @@ class TestToolAdapterIdentification:
         should_adapt = adapter.should_adapt(tool, agent)
         assert should_adapt is False
 
-        await agent.events.async_close()
+        await agent.events.close()
 
 
 class TestToolSignatureTransformation:
@@ -135,7 +135,7 @@ class TestToolSignatureTransformation:
         # citation_idx should be integer
         assert params["citation_idx"]["type"] == "integer"
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_urls_parameter_becomes_citation_idxs(self):
@@ -167,7 +167,7 @@ class TestToolSignatureTransformation:
             == "List of citation indices (0-based)"
         )
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_alternate_url_param_becomes_citation_idx(self):
@@ -188,7 +188,7 @@ class TestToolSignatureTransformation:
         assert "citation_idx_to_fetch" in params  # adapted from url_to_fetch
         assert "url_to_fetch" not in params
 
-        await agent.events.async_close()
+        await agent.events.close()
 
 
 class TestParameterTranslation:
@@ -218,7 +218,7 @@ class TestParameterTranslation:
         assert translated["url"] == url
         assert "citation_idx" not in translated
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_citation_idxs_translated_to_urls(self):
@@ -246,7 +246,7 @@ class TestParameterTranslation:
         assert url2 in translated["urls"]
         assert "citation_idxs" not in translated
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_invalid_citation_idx_preserved(self, caplog):
@@ -277,7 +277,7 @@ class TestParameterTranslation:
 
         # The resulting tool call will (and should) fail
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_non_url_tool_params_unchanged(self):
@@ -296,7 +296,7 @@ class TestParameterTranslation:
         # Parameters should be unchanged
         assert translated == llm_params
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_alternate_param_name_translation(self):
@@ -320,7 +320,7 @@ class TestParameterTranslation:
         assert translated["url_to_fetch"] == url
         assert "citation_idx_to_fetch" not in translated
 
-        await agent.events.async_close()
+        await agent.events.close()
 
 
 class TestEndToEndToolIntegration:
@@ -348,7 +348,7 @@ class TestEndToEndToolIntegration:
         assert "Content from" in result
         assert url in result
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_adapter_analyze_transformation(self):
@@ -366,7 +366,7 @@ class TestEndToEndToolIntegration:
         assert "url" in metadata.removed_params
         assert "citation_idx" in metadata.added_params
 
-        await agent.events.async_close()
+        await agent.events.close()
 
 
 class TestAdapterDisabling:
@@ -382,7 +382,7 @@ class TestAdapterDisabling:
         # Adapter should not be installed
         assert manager._citation_adapter is None
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_tools_not_adapted_when_disabled(self):
@@ -401,4 +401,4 @@ class TestAdapterDisabling:
         assert "url" in params
         assert "citation_idx" not in params
 
-        await agent.events.async_close()
+        await agent.events.close()

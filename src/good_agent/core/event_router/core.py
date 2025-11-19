@@ -897,36 +897,31 @@ class EventRouter:
 
         return TypedApply(self, params_type, return_type)
 
-    def join(self, timeout: float = 5.0):
-        """
-        Wait for all background tasks to complete.
+    async def join(self, timeout: float = 5.0) -> None:
+        """Wait for all background tasks to complete."""
+        await self._sync_bridge.join(timeout=timeout)
 
-        This is the synchronous version - blocks until tasks complete or timeout.
-        """
-        self._sync_bridge.join(timeout=timeout)
+    def join_sync(self, timeout: float = 5.0) -> None:
+        """Synchronous helper that blocks until all background tasks complete."""
+        self._sync_bridge.join_sync(timeout=timeout)
 
-    async def join_async(self, timeout: float = 5.0):
-        """Async version of join."""
-        await self._sync_bridge.join_async(timeout=timeout)
-
-    def close(self):
-        """Clean up resources."""
+    async def close(self) -> None:
+        """Clean up resources and wait for outstanding tasks."""
         # Unregister from signal handling
         if self._signal_handling_enabled:
             from .signal_handler import unregister_from_signals  # type: ignore[import-not-found]
 
             unregister_from_signals(self)
-        self._sync_bridge.close()
+        await self._sync_bridge.close()
 
-    async def async_close(self):
-        """Async version of close - waits for tasks and cleans up."""
-        # Unregister from signal handling
+    def close_sync(self) -> None:
+        """Synchronous helper that performs immediate cleanup."""
         if self._signal_handling_enabled:
             from .signal_handler import unregister_from_signals  # type: ignore[import-not-found]
 
             unregister_from_signals(self)
 
-        await self._sync_bridge.async_close()
+        self._sync_bridge.close_sync()
 
     async def __aenter__(self):
         """Async context manager entry."""
@@ -934,7 +929,7 @@ class EventRouter:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit - waits for tasks."""
-        await self.async_close()
+        await self.close()
 
     def __enter__(self):
         """Sync context manager entry."""
@@ -942,7 +937,7 @@ class EventRouter:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Sync context manager exit - waits for tasks."""
-        self.close()
+        self.close_sync()
 
     @property
     def _events(self):

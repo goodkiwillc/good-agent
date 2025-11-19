@@ -91,7 +91,7 @@ async def test_llm_citation_lookup():
     Should be: message.citations = [url1, url2, url3] from global index
     """)
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 if __name__ == "__main__":

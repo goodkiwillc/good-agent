@@ -91,7 +91,7 @@ class TestThreadContextContentTruncation:
         assert "Flask specifically" in str(agent.messages[4])
         assert "Flask is a lightweight" in str(agent.messages[5])
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_thread_context_condense_multiple_tool_responses(self):
@@ -177,7 +177,7 @@ class TestThreadContextContentTruncation:
         assert "provide a summary" in str(agent.messages[-2])
         assert "ML basics -> Neural Networks" in str(agent.messages[-1])
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_fork_context_with_aggressive_truncation(self):
@@ -260,7 +260,7 @@ class TestThreadContextContentTruncation:
         assert "5000 words" in str(agent.messages[1])
         assert "2000 words" in str(agent.messages[3])
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_nested_contexts_with_progressive_truncation(self):
@@ -316,7 +316,7 @@ class TestThreadContextContentTruncation:
         assert "Applications?" in str(agent.messages[-2])
         assert "Crypto, drug discovery" in str(agent.messages[-1])
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_revert_after_truncation(self):
@@ -357,4 +357,4 @@ class TestThreadContextContentTruncation:
         assert "Verbose answer 1 with lots of details" in str(agent.messages[1])
         assert "[A1-condensed]" not in str(agent.messages[1])
 
-        await agent.events.async_close()
+        await agent.events.close()

@@ -99,7 +99,7 @@ class TestThreadContextMessageReplacement:
         assert "JavaScript" in str(agent.messages[-2])
         assert "JavaScript" in str(agent.messages[-1])
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_thread_context_replace_messages_before_fork(self):
@@ -157,7 +157,7 @@ class TestThreadContextMessageReplacement:
         assert "New Message in Context" in str(agent.messages[7])
         assert "New Response in Context" in str(agent.messages[8])
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_thread_context_multiple_truncations(self):
@@ -209,7 +209,7 @@ class TestThreadContextMessageReplacement:
         assert "Context 1 message" in str(agent.messages[11])
         assert "Context 2 message" in str(agent.messages[12])
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_thread_context_with_version_revert(self):
@@ -257,7 +257,7 @@ class TestThreadContextMessageReplacement:
         # at position 5, which is within the original message count
         assert "Added after revert" not in str(agent.messages)
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_fork_context_preserves_original(self):
@@ -301,7 +301,7 @@ class TestThreadContextMessageReplacement:
         # No contamination from fork
         assert "Completely different" not in str(agent.messages)
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_thread_context_with_system_message_replacement(self):
@@ -337,4 +337,4 @@ class TestThreadContextMessageReplacement:
         assert "Message with modified system" in str(agent.messages[-2])
         assert "Response with modified system" in str(agent.messages[-1])
 
-        await agent.events.async_close()
+        await agent.events.close()

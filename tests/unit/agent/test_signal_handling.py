@@ -86,7 +86,7 @@ class TestSignalHandlerInstallation:
             if hasattr(agent_handlers["SIGINT"], "__self__"):
                 assert isinstance(agent_handlers["SIGINT"].__self__, SignalHandler)
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_signal_handlers_restored_after_cleanup(self):
@@ -97,7 +97,7 @@ class TestSignalHandlerInstallation:
         # Create and destroy agent with signal handling enabled
         agent = Agent("Test assistant")
         await agent.initialize()
-        await agent.events.async_close()
+        await agent.events.close()
 
         # Give time for cleanup
         await asyncio.sleep(0.1)
@@ -135,7 +135,7 @@ class TestSignalHandlerInstallation:
         if sys.platform != "win32":
             assert agent_handlers["SIGTERM"] == original_handlers["SIGTERM"]
 
-        await agent.events.async_close()
+        await agent.events.close()
 
 
 class TestExternalSignalSimulation:
@@ -183,7 +183,7 @@ class TestExternalSignalSimulation:
                 pass
 
             handler_calls = list(calls)
-            await agent.events.async_close()
+            await agent.events.close()
 
         # Verify signal handler was called
         assert len(handler_calls) > 0
@@ -212,7 +212,7 @@ class TestExternalSignalSimulation:
                 # Verify sys.exit was called
                 mock_exit.assert_called_once_with(1)
 
-            await agent.events.async_close()
+            await agent.events.close()
 
 
 class TestMultiAgentSignalSharing:
@@ -243,7 +243,7 @@ class TestMultiAgentSignalSharing:
 
         # Clean up agents one by one
         for agent in agents:
-            await agent.events.async_close()
+            await agent.events.close()
 
         # All agents cleaned up - handlers should be restored
         await asyncio.sleep(0.1)
@@ -301,7 +301,7 @@ class TestMultiAgentSignalSharing:
 
         # Clean up
         for agent in agents:
-            await agent.events.async_close()
+            await agent.events.close()
 
         # Verify all agents' operations were cancelled
         assert len(cancellation_tracking["cancelled"]) == len(agents)
@@ -342,9 +342,9 @@ class TestSignalHandlerEdgeCases:
 
         # Cleanup
         if agent.state >= AgentState.READY:
-            await agent.events.async_close()
+            await agent.events.close()
         else:
-            agent.events.close()
+            agent.events.close_sync()
 
         assert initialization_interrupted or agent.state < AgentState.READY
 
@@ -358,7 +358,7 @@ class TestSignalHandlerEdgeCases:
             agent = Agent(f"Temp agent {i}")
             await agent.initialize()
             agent_refs.append(weakref.ref(agent))
-            await agent.events.async_close()
+            await agent.events.close()
             del agent
 
         # Force garbage collection
@@ -398,7 +398,7 @@ class TestSignalHandlerEdgeCases:
             assert active_count >= len(agents)
 
         # Clean up concurrently
-        await asyncio.gather(*[agent.events.async_close() for agent in agents])
+        await asyncio.gather(*[agent.events.close() for agent in agents])
 
         # Verify all unregistered
         await asyncio.sleep(0.1)
@@ -429,7 +429,7 @@ class TestPlatformSpecific:
             sigterm_handler = signal.getsignal(signal.SIGTERM)
             assert sigterm_handler == signal.SIG_DFL
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(sys.platform == "win32", reason="Unix-specific test")
@@ -446,7 +446,7 @@ class TestPlatformSpecific:
             await asyncio.sleep(0.1)
 
             handler_calls = list(calls)
-            await agent.events.async_close()
+            await agent.events.close()
 
         # Verify SIGTERM was handled
         assert len(handler_calls) > 0
@@ -498,7 +498,7 @@ class TestRealWorldScenarios:
             except (asyncio.CancelledError, KeyboardInterrupt):
                 pass
 
-        await agent.events.async_close()
+        await agent.events.close()
 
         # Should have received some but not all chunks
         assert 0 < len(chunks_received) < 100
@@ -533,7 +533,7 @@ class TestRealWorldScenarios:
         except (asyncio.CancelledError, KeyboardInterrupt):
             pass
 
-        await agent.events.async_close()
+        await agent.events.close()
 
         # Should have started but not completed all levels
         assert len(call_stack) > 0

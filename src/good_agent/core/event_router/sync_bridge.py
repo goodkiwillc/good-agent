@@ -254,7 +254,7 @@ class SyncBridge:
 
         return task_container[0]
 
-    def join(self, timeout: float = 5.0) -> None:
+    def join_sync(self, timeout: float = 5.0) -> None:
         """Wait for all background tasks to complete (synchronous).
 
         This method blocks until all background tasks created via
@@ -266,9 +266,9 @@ class SyncBridge:
         THREAD SAFETY: Thread-safe
 
         PERFORMANCE: Adds 10ms delay before waiting to handle race where
-        join() is called immediately after do().
+        join_sync() is called immediately after do().
         """
-        # Small delay to handle race condition where join() called immediately after do()
+        # Small delay to handle race condition where join_sync() called immediately after do()
         time.sleep(0.01)
 
         with self._lock:
@@ -294,10 +294,10 @@ class SyncBridge:
             )
             future.result()
 
-    async def join_async(self, timeout: float = 5.0) -> None:
+    async def join(self, timeout: float = 5.0) -> None:
         """Wait for all background tasks to complete (asynchronous).
 
-        Async version of join(). Use when calling from async context.
+        Async version of join_sync(). Use when calling from async context.
 
         Args:
             timeout: Maximum time to wait in seconds
@@ -316,7 +316,7 @@ class SyncBridge:
             if self._debug:
                 logger.warning(f"Timeout waiting for {len(self._tasks)} tasks")
 
-    def close(self) -> None:
+    def close_sync(self) -> None:
         """Clean up all resources (synchronous).
 
         Stops event loop, cancels tasks, shuts down thread pool. Use when
@@ -367,14 +367,14 @@ class SyncBridge:
             if self._debug:
                 logger.debug("Sync bridge closed")
 
-    async def async_close(self) -> None:
+    async def close(self) -> None:
         """Clean up all resources (asynchronous).
 
-        Async version of close(). Use when calling from async context.
+        Async version of close_sync(). Use when calling from async context.
         """
         with self._lock:
             # Wait for all tasks to complete
-            await self.join_async(timeout=1.0)
+            await self.join(timeout=1.0)
 
             # Cancel any remaining futures
             for future in list(self._futures):

@@ -189,7 +189,7 @@ async def test_agent_template_manager_inheritance():
         assert "agent_local" in names
 
     finally:
-        await agent.events.async_close()
+        await agent.events.close()
 
 
 @pytest.mark.asyncio
@@ -211,7 +211,7 @@ async def test_agent_template_rendering_with_inheritance():
         assert "Message: Hello World!" == rendered.strip()
 
     finally:
-        await agent.events.async_close()
+        await agent.events.close()
 
 
 @pytest.mark.asyncio
@@ -243,4 +243,4 @@ async def test_agent_local_template_override():
         assert "Global version: {{ value }}" == global_template
 
     finally:
-        await agent.events.async_close()
+        await agent.events.close()

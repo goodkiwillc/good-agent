@@ -317,14 +317,22 @@ class GracefulShutdownMixin:
                     task.cancel()
 
         # Wait for tasks to complete
-        if hasattr(self, "join_async"):
+        join_coro: Any = None
+        if hasattr(self, "join"):
+            join_coro = getattr(self, "join")()
+        elif hasattr(self, "join_async"):
+            join_coro = getattr(self, "join_async")()
+
+        if join_coro is not None:
             try:
-                await asyncio.wait_for(self.join_async(), timeout=timeout)
+                await asyncio.wait_for(join_coro, timeout=timeout)
             except TimeoutError:
                 logger.warning(f"Timeout waiting for tasks after {timeout}s")
 
         # Close the router
-        if hasattr(self, "async_close"):
+        if hasattr(self, "close"):
+            await self.close()
+        elif hasattr(self, "async_close"):
             await self.async_close()
 
     def __del__(self):

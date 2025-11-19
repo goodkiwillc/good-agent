@@ -27,7 +27,7 @@ class TestSystemMessageVersioningFix:
         assert retrieved is not None, "System message should be registered"
         assert retrieved.id == sys_msg.id
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_replace_system_message_creates_version(self):
@@ -65,7 +65,7 @@ class TestSystemMessageVersioningFix:
             "New system message should be in registry"
         )
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_add_system_message_to_empty_agent(self):
@@ -94,7 +94,7 @@ class TestSystemMessageVersioningFix:
         sys_msg = agent.messages[0]
         assert agent._message_registry.get(sys_msg.id) is not None
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_revert_preserves_system_message(self):
@@ -128,7 +128,7 @@ class TestSystemMessageVersioningFix:
         # System message should still be the same
         assert "System prompt" in str(agent.messages[0])
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_multiple_system_message_updates_tracked(self):
@@ -161,7 +161,7 @@ class TestSystemMessageVersioningFix:
         agent.revert_to_version(version_after_second - 1)
         assert "Second prompt" in str(agent.messages[0])
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_system_message_versioning_with_thread_context(self):
@@ -192,7 +192,7 @@ class TestSystemMessageVersioningFix:
             "Context message should be preserved"
         )
 
-        await agent.events.async_close()
+        await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_system_message_versioning_with_fork(self):
@@ -219,5 +219,5 @@ class TestSystemMessageVersioningFix:
         assert forked._version_manager.version_count > 0
         assert agent._version_manager.version_count >= 0
 
-        await agent.events.async_close()
-        await forked.async_close()
+        await agent.events.close()
+        await forked.close()

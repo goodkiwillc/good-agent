@@ -428,12 +428,6 @@ class Agent(EventRouter):
             message: Message to print (defaults to last message)
             mode: Render mode ('display', 'llm', 'raw'). If None, uses config.print_messages_mode
         """
-        warnings.warn(
-            "Agent.print() is deprecated. Use good_agent.utilities.print_message() or "
-            "agent.messages for rendering instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         from ..content import RenderMode
 
         # Determine which message to print
@@ -733,17 +727,17 @@ class Agent(EventRouter):
     def ctx(self) -> EventContext:
         return self.events.ctx
 
-    def join(self, timeout: float = 5.0):
-        self.events.join(timeout=timeout)
+    async def join(self, timeout: float = 5.0):
+        await self.events.join(timeout=timeout)
 
-    async def join_async(self, timeout: float = 5.0):
-        await self.events.join_async(timeout=timeout)
+    def join_sync(self, timeout: float = 5.0):
+        self.events.join_sync(timeout=timeout)
 
-    def close(self):
-        self.events.close()
+    async def close(self):
+        await self.events.close()
 
-    async def async_close(self):
-        await self.events.async_close()
+    def close_sync(self):
+        self.events.close_sync()
 
     @property
     def versioning(self) -> AgentVersioningManager:
@@ -1330,11 +1324,11 @@ class Agent(EventRouter):
             index: Index of message to replace
             new_message: New message to insert
         """
-        warnings.warn(
-            "Agent.replace_message() is deprecated. Assign directly via agent.messages[index] = message instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+        # warnings.warn(
+        #     "Agent.replace_message() is deprecated. Assign directly via agent.messages[index] = message instead.",
+        #     DeprecationWarning,
+        #     stacklevel=2,
+        # )
         self._message_manager.replace_message(index, new_message)
 
     def set_system_message(
@@ -1343,11 +1337,6 @@ class Agent(EventRouter):
         message: SystemMessage | None = None,
     ) -> None:
         """Set or update the system message"""
-        warnings.warn(
-            "Agent.set_system_message() is deprecated. Assign a new SystemMessage via agent.messages[0] = message instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         self._message_manager.set_system_message(*content, message=message)
 
     @overload
@@ -2438,7 +2427,7 @@ class Agent(EventRouter):
         """
         Async context manager exit. Ensures all pending tasks are cleaned up.
 
-        This automatically calls events.join_async() to wait for all EventRouter tasks to complete,
+        This automatically calls events.join() to wait for all EventRouter tasks to complete,
         preventing "Task was destroyed but it is pending!" warnings.
         """
         # Cancel init task if still running
@@ -2452,7 +2441,7 @@ class Agent(EventRouter):
         # Cancel managed tasks
         await self.tasks.cancel_all()
 
-        await self.events.join_async()
+        await self.events.join()
 
     def get_token_count(
         self,

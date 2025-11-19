@@ -108,7 +108,7 @@ async def test_citation_mapping_bug():
         print(f"  [{idx}]: {url}")
     print()
 
-    await agent.events.async_close()
+    await agent.events.close()
 
 
 if __name__ == "__main__":

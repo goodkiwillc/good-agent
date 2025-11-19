@@ -114,25 +114,25 @@ class AgentEventsFacade:
 
         return EventRouter.ctx.__get__(self._agent, type(self._agent))
 
-    def join(self, timeout: float = 5.0) -> None:
+    async def join(self, timeout: float = 5.0) -> None:
         """Delegate to :meth:`EventRouter.join`."""
 
-        EventRouter.join(self._agent, timeout=timeout)
+        await EventRouter.join(self._agent, timeout=timeout)
 
-    async def join_async(self, timeout: float = 5.0) -> None:
-        """Delegate to :meth:`EventRouter.join_async`."""
+    def join_sync(self, timeout: float = 5.0) -> None:
+        """Delegate to :meth:`EventRouter.join_sync`."""
 
-        await EventRouter.join_async(self._agent, timeout=timeout)
+        EventRouter.join_sync(self._agent, timeout=timeout)
 
-    def close(self) -> None:
+    async def close(self) -> None:
         """Delegate to :meth:`EventRouter.close`."""
 
-        EventRouter.close(self._agent)
+        await EventRouter.close(self._agent)
 
-    async def async_close(self) -> None:
-        """Delegate to :meth:`EventRouter.async_close`."""
+    def close_sync(self) -> None:
+        """Delegate to :meth:`EventRouter.close_sync`."""
 
-        await EventRouter.async_close(self._agent)
+        EventRouter.close_sync(self._agent)
 
 
 __all__ = ["AgentEventsFacade"]
