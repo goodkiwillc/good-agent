@@ -9,7 +9,9 @@ try:
     from fastapi import FastAPI, HTTPException
 except ImportError:
     print("Error: 'fastapi' and 'uvicorn' are required for the 'serve' command.")
-    print("Please install them with: pip install good-agent[server] or uv pip install good-agent[server]")
+    print(
+        "Please install them with: pip install good-agent[server] or uv pip install good-agent[server]"
+    )
     sys.exit(1)
 
 from pydantic import BaseModel
@@ -55,6 +57,7 @@ class ChatCompletionResponse(BaseModel):
     choices: list[ChatCompletionResponseChoice]
     usage: dict[str, int] | None = None
 
+
 # --- Server Implementation ---
 
 
@@ -73,7 +76,10 @@ def create_app(agent_factory: Callable[[], Agent]) -> FastAPI:
         # If it returns a fresh agent, great. If it returns a shared one, we fork it.
         base_agent = agent_factory()
         if not isinstance(base_agent, Agent):
-            raise HTTPException(status_code=500, detail="Server configuration error: Factory did not return an Agent")
+            raise HTTPException(
+                status_code=500,
+                detail="Server configuration error: Factory did not return an Agent",
+            )
 
         # 2. Convert Messages
         ga_messages: list[GAMessage] = []
@@ -88,7 +94,7 @@ def create_app(agent_factory: Callable[[], Agent]) -> FastAPI:
             elif msg.role == "tool":
                 # TODO: Map tool messages correctly
                 pass
-        
+
         # 3. Fork Agent with History
         # Use private method _fork_with_messages to get a fresh agent with this history
         try:
@@ -173,7 +179,9 @@ def serve_agent(
             def agent_factory() -> Agent:
                 return agent_obj()
     else:
-        print(f"Error: The object at '{agent_path}' is not an Agent instance or factory.")
+        print(
+            f"Error: The object at '{agent_path}' is not an Agent instance or factory."
+        )
         return
 
     # Create App

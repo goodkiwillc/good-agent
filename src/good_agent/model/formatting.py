@@ -13,6 +13,7 @@ from ..content import (
     TemplateContentPart,
     TextContentPart,
 )
+from ..utilities import url_to_base64
 from ..events import AgentEvents
 from ..messages import (
     AssistantMessage,
@@ -21,7 +22,6 @@ from ..messages import (
     ToolMessage,
     UserMessage,
 )
-from ..utilities import url_to_base64
 from good_agent.core.types import URL
 
 if TYPE_CHECKING:
@@ -90,42 +90,59 @@ class MessageFormatter:
                     ChatCompletionContentPartTextParam(text=rendered, type="text")
                 )
             elif isinstance(part, ImageContentPart):
-                if part.image_url:
-                    ChatCompletionContentPartImageParam = self.llm._get_litellm_type(
-                        "ChatCompletionContentPartImageParam"
+                ChatCompletionContentPartImageParam = self.llm._get_litellm_type(
+                    "ChatCompletionContentPartImageParam"
+                )
+                ImageURL = self.llm._get_litellm_type("ImageURL")
+                payload = part.to_llm_format().get("image_url", {})
+                image_url = payload.get("url")
+                detail = payload.get("detail", part.detail)
+                if image_url is None:
+                    continue
+                if part.image_base64 and not image_url.startswith("data:"):
+                    mime = part.mime_type or "image/jpeg"
+                    image_url = f"data:{mime};base64,{image_url}"
+                result.append(
+                    ChatCompletionContentPartImageParam(
+                        image_url=ImageURL(url=str(image_url), detail=detail),
+                        type="image_url",
                     )
-                    ImageURL = self.llm._get_litellm_type("ImageURL")
-                    result.append(
-                        ChatCompletionContentPartImageParam(
-                            image_url=ImageURL(url=str(part.image_url)),
-                            type="image_url",
-                        )
-                    )
-                elif part.image_base64:
-                    ChatCompletionContentPartImageParam = self.llm._get_litellm_type(
-                        "ChatCompletionContentPartImageParam"
-                    )
-                    ImageURL = self.llm._get_litellm_type("ImageURL")
-                    result.append(
-                        ChatCompletionContentPartImageParam(
-                            image_url=ImageURL(
-                                url=part.image_base64, detail=part.detail
-                            ),
-                            type="image_url",
-                        )
-                    )
+                )
             elif isinstance(part, FileContentPart):
-                if part.file_path:
+                formatted = part.to_llm_format()
+                if formatted.get("type") == "file":
+                    file_payload = formatted.get("file", {})
+                    file_id = file_payload.get("file_id")
+                    if not file_id:
+                        continue
                     ChatCompletionFileObject = self.llm._get_litellm_type(
                         "ChatCompletionFileObject"
                     )
                     ChatCompletionFileObjectFile = self.llm._get_litellm_type(
                         "ChatCompletionFileObjectFile"
                     )
+                    file_kwargs: dict[str, Any] = {"file_id": file_id}
+                    if file_payload.get("format"):
+                        file_kwargs["format"] = file_payload["format"]
+                    if file_payload.get("filename"):
+                        file_kwargs["filename"] = file_payload["filename"]
+                    try:
+                        result.append(
+                            ChatCompletionFileObject(
+                                file=ChatCompletionFileObjectFile(**file_kwargs),
+                                type="file",
+                            )
+                        )
+                    except Exception:
+                        # Fallback to raw dict if typed construction fails
+                        result.append(formatted)
+                elif formatted.get("type") == "text":
+                    ChatCompletionContentPartTextParam = self.llm._get_litellm_type(
+                        "ChatCompletionContentPartTextParam"
+                    )
                     result.append(
-                        ChatCompletionFileObject(
-                            file=ChatCompletionFileObjectFile(file_id=part.file_path),
-                            type="file",
+                        ChatCompletionContentPartTextParam(
+                            text=formatted.get("text", ""), type="text"
                         )
                     )
 

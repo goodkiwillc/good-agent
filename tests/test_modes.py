@@ -226,9 +226,7 @@ async def test_mode_context_add_system_message():
     system_messages = [m for m in agent.messages if m.role == "system"]
     assert system_messages
     assert any(
-        "research mode" in str(m.content).lower()
-        for m in system_messages
-        if m.content
+        "research mode" in str(m.content).lower() for m in system_messages if m.content
     )
 
 

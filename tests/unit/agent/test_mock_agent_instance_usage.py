@@ -71,14 +71,15 @@ async def test_mock_agent_direct_call():
     await agent.initialize()
 
     mock_response = mock_message("Direct call response", role="assistant")
-    mock_agent = MockAgent(agent, mock_response)
 
-    # Direct call on mock_agent (doesn't go through the agent)
-    msg = await mock_agent.call()
-    assert msg.content.strip() == "Direct call response"
+    # Must enter context for mock to be active
+    with MockAgent(agent, mock_response) as mock_agent:
+        msg = await mock_agent.call()
+        assert msg.content.strip() == "Direct call response"
 
-    # This also doesn't add to agent's history
-    assert len(agent.messages) == 1  # Just the system message
+        # Note: Now that mock_agent.call() delegates to agent.call(),
+        # the message IS added to agent's history (which is more correct)
+        assert len(agent.messages) == 2  # System message + assistant response
 
 
 @pytest.mark.asyncio

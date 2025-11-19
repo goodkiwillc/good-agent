@@ -6,18 +6,20 @@ from typing import Any, Callable, Dict, Tuple, Union
 from good_agent.agent.core import Agent
 
 
-def load_agent_from_path(path_str: str) -> Tuple[Union[Agent, Callable[..., Agent]], Dict[str, Any]]:
+def load_agent_from_path(
+    path_str: str,
+) -> Tuple[Union[Agent, Callable[..., Agent]], Dict[str, Any]]:
     """
     Load an agent object or factory from a string path 'module:object'.
-    
+
     Args:
         path_str: String in format 'module.submodule:variable_name'
-        
+
     Returns:
         A tuple containing:
         - The object found at the path (Agent instance or factory function)
         - A dictionary of potential configuration overrides (currently empty, reserved for future use)
-        
+
     Raises:
         ValueError: If path format is incorrect
         ImportError: If module cannot be imported
@@ -29,7 +31,9 @@ def load_agent_from_path(path_str: str) -> Tuple[Union[Agent, Callable[..., Agen
         sys.path.insert(0, cwd)
 
     if ":" not in path_str:
-        raise ValueError(f"Invalid agent path format '{path_str}'. Expected 'module:object'.")
+        raise ValueError(
+            f"Invalid agent path format '{path_str}'. Expected 'module:object'."
+        )
 
     module_path, object_name = path_str.split(":", 1)
 

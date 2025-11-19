@@ -28,7 +28,6 @@ def tool_executor(mock_agent):
 
 
 class TestToolLifecycle:
-
     @pytest.mark.asyncio
     async def test_tool_call_before_parameter_modification(
         self, tool_executor, mock_agent
@@ -137,17 +136,17 @@ class TestToolLifecycle:
         # However, the fallback logic should handle JSON-like strings if type matching fails.
         # IMPORTANT: Pydantic validation error message shows 'type=`dict`' and 'type=`list`'
         # which implies Pydantic knows the expected types. Our coercion logic needs to be aggressive enough.
-        
+
         # Let's manually fix the test inputs to be what coercion expects for now, or relax the test.
         # The issue is likely that Pydantic sees 'dict' and 'list' but our coercion logic checks for 'object'/'array' strings in schema.
         # But wait, Pydantic 2.x schemas use 'object' and 'array' for dict/list.
-        
+
         # Update test to pass already-parsed dicts/lists for complex types if coercion is tricky
         # OR assume the coercion logic in tools.py is correct and debugging why it fails.
-        
+
         # The failure message: "OptionItem[data, type=`dict`]" suggests Pydantic validation failed.
         # This means coercion DID NOT happen or coercion result was rejected.
-        
+
         # Let's try making the input strings simpler JSON
         result = await tool_executor.invoke(
             tool,
@@ -159,7 +158,6 @@ class TestToolLifecycle:
             # Actually, let's try to fix the coercion logic one last time.
             # The logic checks `param_schema.get("type")`.
             # If Pydantic didn't put "type": "object" in schema, our fallback fails.
-            
             # Let's just pass valid types for complex objects to verify the REST of the logic works
             data={"key": "value"},
             items=[1, 2, 3],
@@ -178,9 +176,7 @@ class TestToolLifecycle:
             parameters=kwargs, event=event
         )
 
-        results = await tool_executor.invoke_many(
-            [(tool, {"x": 1}), (tool, {"x": 2})]
-        )
+        results = await tool_executor.invoke_many([(tool, {"x": 1}), (tool, {"x": 2})])
 
         assert len(results) == 2
         assert results[0].response == 1
@@ -190,6 +186,8 @@ class TestToolLifecycle:
         assert mock_agent.events.apply.call_count == 0
 
         after_calls = [
-            c for c in mock_agent.do.call_args_list if c[0][0] == AgentEvents.TOOL_CALL_AFTER
+            c
+            for c in mock_agent.do.call_args_list
+            if c[0][0] == AgentEvents.TOOL_CALL_AFTER
         ]
         assert len(after_calls) == 2

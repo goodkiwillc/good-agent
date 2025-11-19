@@ -2,6 +2,7 @@ import warnings
 
 import pytest
 from good_agent import Agent
+from good_agent.content import FileContentPart, ImageContentPart, TextContentPart
 
 
 class TestAgentInitialization:
@@ -409,6 +410,66 @@ class TestAgentIndexing:
                 "Assistant response 1",
                 "Assistant response 2",
             ]
+
+    @pytest.mark.asyncio
+    async def test_attach_image_helpers(self):
+        async with Agent() as agent:
+            agent.attach_image(
+                "https://example.com/cat.png",
+                text="Check out this cat",
+                detail="high",
+            )
+
+            image_message = agent[-1]
+            assert image_message.role == "user"
+            assert isinstance(image_message.content_parts[0], TextContentPart)
+            assert isinstance(image_message.content_parts[1], ImageContentPart)
+            assert (
+                image_message.content_parts[1].image_url
+                == "https://example.com/cat.png"
+            )
+            assert image_message.content_parts[1].detail == "high"
+
+            agent.attach_image(
+                "rawbase64==",
+                detail="low",
+                mime_type="image/png",
+            )
+
+            base64_message = agent[-1]
+            image_part = base64_message.content_parts[0]
+            assert isinstance(image_part, ImageContentPart)
+            assert image_part.image_base64.startswith("data:image/png;base64,rawbase64")
+
+    @pytest.mark.asyncio
+    async def test_attach_file_helpers(self):
+        async with Agent() as agent:
+            agent.attach_file(
+                "file-123",
+                text="See attached",
+                mime_type="application/pdf",
+                file_name="report.pdf",
+            )
+
+            file_message = agent[-1]
+            assert isinstance(file_message.content_parts[0], TextContentPart)
+            file_part = file_message.content_parts[1]
+            assert isinstance(file_part, FileContentPart)
+            assert file_part.file_path == "file-123"
+            assert file_part.mime_type == "application/pdf"
+            assert file_part.file_name == "report.pdf"
+
+            agent.attach_file(
+                "Inline text content",
+                inline=True,
+                mime_type="text/plain",
+            )
+
+            inline_message = agent[-1]
+            inline_part = inline_message.content_parts[0]
+            assert isinstance(inline_part, FileContentPart)
+            assert inline_part.file_content == "Inline text content"
+            assert inline_part.mime_type == "text/plain"
 
     @pytest.mark.asyncio
     async def test_system_message_operations(self):

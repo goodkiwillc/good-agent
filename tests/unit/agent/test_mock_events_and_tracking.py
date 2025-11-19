@@ -1,6 +1,5 @@
-import asyncio
-
 import pytest
+
 from good_agent import Agent, AgentEvents
 from good_agent.mock import MockAgent, create_citation, mock_message
 
@@ -33,8 +32,8 @@ async def test_mock_triggers_llm_events():
         agent.append("Test question", role="user")
         await agent.call()
 
-        # Give events time to fire (they may be async)
-        await asyncio.sleep(0.1)
+        # Wait for events to complete
+        await agent.join()
 
     # Check that events were triggered
     assert llm_call_fired, "LLM_COMPLETE_BEFORE event should be triggered"
@@ -42,7 +41,7 @@ async def test_mock_triggers_llm_events():
 
 
 @pytest.mark.asyncio
-async def test_mock_tracks_api_requests():
+async def test_mock_tracksapi_requests():
     """Test that MockAgent tracks API requests like the real model."""
     agent = Agent("You are a helpful assistant")
     await agent.initialize()
@@ -127,7 +126,7 @@ async def test_mock_response_has_expected_structure():
 
 
 @pytest.mark.asyncio
-async def test_mock_preserves_model_api_tracking():
+async def test_mock_preserves_modelapi_tracking():
     """Test that the mock model's API tracking works like the real model."""
     agent = Agent("You are a helpful assistant")
     await agent.initialize()
@@ -139,27 +138,27 @@ async def test_mock_preserves_model_api_tracking():
 
     with MockAgent(agent, *responses) as mock:
         # The mock model should have API tracking attributes
-        assert hasattr(agent.model, "_api_requests")
-        assert hasattr(agent.model, "_api_responses")
+        assert hasattr(agent.model, "api_requests")
+        assert hasattr(agent.model, "api_responses")
 
         # Make calls
         agent.append("Q1", role="user")
         await agent.call()
 
         # Check model's internal tracking
-        assert len(agent.model._api_requests) == 1
-        assert len(agent.model._api_responses) == 1
+        assert len(agent.model.api_requests) == 1
+        assert len(agent.model.api_responses) == 1
 
         agent.append("Q2", role="user")
         await agent.call()
 
         # Check updated tracking
-        assert len(agent.model._api_requests) == 2
-        assert len(agent.model._api_responses) == 2
+        assert len(agent.model.api_requests) == 2
+        assert len(agent.model.api_responses) == 2
 
         # Verify these match what MockAgent exposes
-        assert mock.api_requests == agent.model._api_requests
-        assert mock.api_responses == agent.model._api_responses
+        assert mock.api_requests == agent.model.api_requests
+        assert mock.api_responses == agent.model.api_responses
 
     # After exiting, the original model is restored
     # (It won't have the mock's API tracking)
@@ -185,8 +184,8 @@ async def test_mock_message_events():
         # Append user message
         agent.append("Question", role="user")
 
-        # Give event time to fire
-        await asyncio.sleep(0.1)
+        # Wait for event to fire
+        await agent.join()
 
         # Should trigger MESSAGE_APPEND_AFTER for user message
         assert len(append_events) == 1
@@ -229,8 +228,8 @@ async def test_mock_error_events():
         with pytest.raises(ValueError, match="No more mock responses"):
             await agent.call()
 
-        # Give event time to fire
-        await asyncio.sleep(0.1)
+        # Wait for event to fire
+        await agent.join()
 
         # Should have triggered llm:error event
         assert len(error_events) == 1

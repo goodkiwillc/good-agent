@@ -131,9 +131,7 @@ class TestAgentEventsFacade:
         other_router = MagicMock(spec=EventRouter)
         res = events_facade.broadcast_to(other_router)
 
-        mock_event_router.broadcast_to.assert_called_once_with(
-            mock_agent, other_router
-        )
+        mock_event_router.broadcast_to.assert_called_once_with(mock_agent, other_router)
         assert res == 1
 
     @patch("good_agent.agent.events.EventRouter")
@@ -146,9 +144,7 @@ class TestAgentEventsFacade:
         other_router = MagicMock(spec=EventRouter)
         events_facade.consume_from(other_router)
 
-        mock_event_router.consume_from.assert_called_once_with(
-            mock_agent, other_router
-        )
+        mock_event_router.consume_from.assert_called_once_with(mock_agent, other_router)
 
     @patch("good_agent.agent.events.EventRouter")
     def test_set_event_trace(
@@ -180,9 +176,7 @@ class TestAgentEventsFacade:
         res = events_facade.event_trace_enabled
 
         # Because we patched the class method, we check calls there
-        mock_descriptor.__get__.assert_called_once_with(
-            mock_agent, type(mock_agent)
-        )
+        mock_descriptor.__get__.assert_called_once_with(mock_agent, type(mock_agent))
         assert res is True
 
     @patch("good_agent.agent.events.EventRouter")
@@ -198,9 +192,7 @@ class TestAgentEventsFacade:
         mock_event_router.ctx = mock_descriptor
         res = events_facade.ctx
 
-        mock_descriptor.__get__.assert_called_once_with(
-            mock_agent, type(mock_agent)
-        )
+        mock_descriptor.__get__.assert_called_once_with(mock_agent, type(mock_agent))
         assert res == "context"
 
     @patch("good_agent.agent.events.EventRouter")
@@ -215,9 +207,7 @@ class TestAgentEventsFacade:
 
         await events_facade.join(timeout=10.0)
 
-        mock_event_router.join.assert_awaited_once_with(
-            mock_agent, timeout=10.0
-        )
+        mock_event_router.join.assert_awaited_once_with(mock_agent, timeout=10.0)
 
     @patch("good_agent.agent.events.EventRouter")
     def test_join_sync(
@@ -228,9 +218,7 @@ class TestAgentEventsFacade:
     ) -> None:
         events_facade.join_sync(timeout=10.0)
 
-        mock_event_router.join_sync.assert_called_once_with(
-            mock_agent, timeout=10.0
-        )
+        mock_event_router.join_sync.assert_called_once_with(mock_agent, timeout=10.0)
 
     @patch("good_agent.agent.events.EventRouter")
     @pytest.mark.asyncio

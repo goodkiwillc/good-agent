@@ -66,7 +66,7 @@ def test_section_extension_nested_sections_preserve_indentation():
     rendered = _render(template)
     lines = [line.rstrip("\n") for line in rendered.splitlines() if line.strip()]
     assert lines[0] == "<content>"
-    assert lines[1] == "        <span class=\"highlight\">"
+    assert lines[1] == '        <span class="highlight">'
     assert lines[2].strip() == "Inner line"
     assert lines[3].strip() == "</span>"
     assert lines[3].startswith("    ")

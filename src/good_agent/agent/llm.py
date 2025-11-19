@@ -256,6 +256,12 @@ class LLMCoordinator:
                 if norm:
                     kwargs["reasoning"] = norm
 
+            # Extract citations and annotations from message if present
+            if hasattr(choice.message, "citations") and choice.message.citations:
+                kwargs["citations"] = choice.message.citations
+            if hasattr(choice.message, "annotations") and choice.message.annotations:
+                kwargs["annotations"] = choice.message.annotations
+
             if output:
                 response = self.agent.model.create_message(
                     role="assistant",

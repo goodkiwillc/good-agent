@@ -143,9 +143,7 @@ def test_string_formatter_bytes_and_index_adjustment():
     converted = formatter.bytes_string_to_string("ABC")
     assert converted == "ABC"
 
-    cleaned, indices = formatter.clean_extra_whitespace_with_index_run(
-        "Hello   world"
-    )
+    cleaned, indices = formatter.clean_extra_whitespace_with_index_run("Hello   world")
     assert cleaned == "Hello world"
     adjusted = StringFormatter.index_adjustment_after_clean_extra_whitespace(5, indices)
     assert adjusted <= 5

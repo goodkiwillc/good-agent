@@ -184,10 +184,12 @@ class TestConversation:
                     ]
 
                     assert any(
-                        msg.content == "Hello from agent 1" for msg in user_messages_agent2
+                        msg.content == "Hello from agent 1"
+                        for msg in user_messages_agent2
                     )
                     assert any(
-                        msg.content == "Hello from agent 2" for msg in user_messages_agent1
+                        msg.content == "Hello from agent 2"
+                        for msg in user_messages_agent1
                     )
 
     @pytest.mark.asyncio
@@ -250,8 +252,9 @@ class TestConversation:
     async def test_llm_generated_messages_forwarded(self):
         """Test that LLM (mocked) assistant messages are forwarded via events."""
         async with Agent("Agent 1") as agent1, Agent("Agent 2") as agent2:
-            with agent1.mock("LLM response from agent 1"), agent2.mock(
-                "LLM response from agent 2"
+            with (
+                agent1.mock("LLM response from agent 1"),
+                agent2.mock("LLM response from agent 2"),
             ):
                 async with agent1 | agent2:
                     await agent1.call("Hello there")

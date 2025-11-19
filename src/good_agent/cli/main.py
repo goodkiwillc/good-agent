@@ -8,14 +8,19 @@ app = typer.Typer(help="Good Agent CLI")
 # Register sub-commands
 register_prompt_commands(app)
 
+
 @app.command(
     context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
 )
 def run(
     ctx: typer.Context,
-    agent_path: str = typer.Argument(..., help="Path to the agent (e.g. module:agent_instance)"),
+    agent_path: str = typer.Argument(
+        ..., help="Path to the agent (e.g. module:agent_instance)"
+    ),
     model: str = typer.Option(None, "--model", "-m", help="Override agent model"),
-    temperature: float = typer.Option(None, "--temperature", "-t", help="Override agent temperature"),
+    temperature: float = typer.Option(
+        None, "--temperature", "-t", help="Override agent temperature"
+    ),
 ):
     """
     Run an agent interactively in the terminal.
@@ -25,12 +30,15 @@ def run(
     extra_args = ctx.args
     run_agent(agent_path, model=model, temperature=temperature, extra_args=extra_args)
 
+
 @app.command(
     context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
 )
 def serve(
     ctx: typer.Context,
-    agent_path: str = typer.Argument(..., help="Path to the agent (e.g. module:agent_instance)"),
+    agent_path: str = typer.Argument(
+        ..., help="Path to the agent (e.g. module:agent_instance)"
+    ),
     host: str = typer.Option("127.0.0.1", "--host", "-h", help="Host to bind to"),
     port: int = typer.Option(8000, "--port", "-p", help="Port to bind to"),
 ):
@@ -40,6 +48,7 @@ def serve(
     """
     extra_args = ctx.args
     serve_agent(agent_path, host=host, port=port, extra_args=extra_args)
+
 
 if __name__ == "__main__":
     app()

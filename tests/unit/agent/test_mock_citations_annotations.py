@@ -242,14 +242,14 @@ async def test_mock_call_with_citations():
         annotations=[create_annotation("Information", 0, 11)],
     )
 
-    # Use mock agent
-    mock_agent = MockAgent(agent, mock_response)
-    msg = await mock_agent.call()
+    # Use mock agent with context
+    with MockAgent(agent, mock_response) as mock_agent:
+        msg = await mock_agent.call()
 
-    # Verify the message has citations and annotations
-    assert isinstance(msg, AssistantMessage)
-    assert msg.citations is not None
-    assert len(msg.citations) == 2
-    assert msg.annotations is not None
-    assert len(msg.annotations) == 1
-    assert msg.annotations[0].text == "Information"
+        # Verify the message has citations and annotations
+        assert isinstance(msg, AssistantMessage)
+        assert msg.citations is not None
+        assert len(msg.citations) == 2
+        assert msg.annotations is not None
+        assert len(msg.annotations) == 1
+        assert msg.annotations[0].text == "Information"

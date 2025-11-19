@@ -102,6 +102,7 @@ async def run_interactive_loop(agent: Agent):
             except Exception as e:
                 console.print(f"[bold red]Error during execution:[/bold red] {e}")
                 import traceback
+
                 console.print(traceback.format_exc())
 
         except KeyboardInterrupt:
@@ -153,9 +154,9 @@ def run_agent(
         # agent_obj.config is a AgentConfigManager
         # We can update the language model directly
         if hasattr(agent_obj, "model") and hasattr(agent_obj.model, "model_name"):
-             # Check if we can update it
-             # For now, let's try to update configuration if possible
-             pass
+            # Check if we can update it
+            # For now, let's try to update configuration if possible
+            pass
         # If the agent exposes a way to update config:
         # agent_obj.config.update(model=model)
         pass
