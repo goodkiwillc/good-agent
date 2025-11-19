@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from good_agent.content import (
     FileContentPart,
     ImageContentPart,
@@ -186,8 +188,13 @@ class TestContentPartFormats:
 
         assert llm_format == {
             "type": "image_url",
-            "image_url": {"url": "data:image/jpeg;base64,base64data", "detail": "low"},
+            "image_url": {
+                "url": "data:image/jpeg;base64,base64data",
+                "detail": "low",
+                "mime_type": "image/jpeg",
+            },
         }
+        assert part.mime_type == "image/jpeg"
 
     def test_file_to_llm_format(self):
         """Test FileContentPart LLM format."""
@@ -195,6 +202,62 @@ class TestContentPartFormats:
         llm_format = part.to_llm_format()
 
         assert llm_format == {"type": "text", "text": "File contents here"}
+
+        reference = FileContentPart(
+            file_path="file-123", mime_type="application/pdf", file_name="spec.pdf"
+        )
+        llm_payload = reference.to_llm_format()
+
+        assert llm_payload == {
+            "type": "file",
+            "file": {
+                "file_id": "file-123",
+                "format": "application/pdf",
+                "filename": "spec.pdf",
+            },
+        }
+
+    def test_image_content_helpers(self):
+        part_from_url = ImageContentPart.from_url(
+            "https://example.com/test.png", detail="high"
+        )
+        assert part_from_url.image_url == "https://example.com/test.png"
+        assert part_from_url.detail == "high"
+
+        data_url = "data:image/png;base64,ZXhhbXBsZQ=="
+        part_from_base64 = ImageContentPart.from_base64(data_url, detail="low")
+        assert part_from_base64.image_base64 == data_url
+        assert part_from_base64.mime_type == "image/png"
+
+        part_from_bytes = ImageContentPart.from_bytes(
+            b"binarydata", mime_type="image/gif"
+        )
+        assert part_from_bytes.image_base64.startswith("data:image/gif;base64,")
+        assert part_from_bytes.mime_type == "image/gif"
+
+    def test_file_content_helpers(self):
+        part_from_id = FileContentPart.from_file_id(
+            "file-456", mime_type="application/json", file_name="data.json"
+        )
+        assert part_from_id.file_path == "file-456"
+        assert part_from_id.mime_type == "application/json"
+        assert part_from_id.file_name == "data.json"
+
+        part_from_content = FileContentPart.from_content(
+            "inline text", mime_type="text/plain", file_name="note.txt"
+        )
+        assert part_from_content.file_content == "inline text"
+        assert part_from_content.mime_type == "text/plain"
+        assert part_from_content.file_name == "note.txt"
+
+    def test_mutually_exclusive_fields(self):
+        with pytest.raises(ValueError):
+            ImageContentPart(
+                image_url="https://example.com/img.png", image_base64="abc"
+            )
+
+        with pytest.raises(ValueError):
+            FileContentPart(file_path="file-123", file_content="inline")
 
 
 class TestRenderModes:

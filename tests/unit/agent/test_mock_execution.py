@@ -54,7 +54,7 @@ class TestMockExecution:
         agent = Agent("System prompt")
 
         with agent.mock() as mock_agent:  # No responses
-            with pytest.raises(ValueError, match="No mock responses available"):
+            with pytest.raises(ValueError, match="No more mock responses available"):
                 await mock_agent.call()
 
     @pytest.mark.asyncio
@@ -63,9 +63,7 @@ class TestMockExecution:
         agent = Agent("System prompt")
 
         with agent.mock(agent.mock.create("User message", role="user")) as mock_agent:
-            with pytest.raises(
-                ValueError, match="call\\(\\) expects assistant message"
-            ):
+            with pytest.raises(ValueError, match="Expected assistant message"):
                 await mock_agent.call()
 
     @pytest.mark.asyncio

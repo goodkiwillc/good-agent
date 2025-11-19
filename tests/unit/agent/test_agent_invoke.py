@@ -833,7 +833,7 @@ class TestAgentInvokeEdgeCases:
             await agent.tool_calls.invoke(event_tool, x=10)
 
             # Wait for all events to be processed
-            await agent.events.join()
+            await agent.join()
 
             # Should have 2 events
             assert len(events) == 2

@@ -58,6 +58,7 @@ if TYPE_CHECKING:
     from litellm.types.utils import Choices
 
 from ..components import AgentComponent
+from ..content import FileContentPart, ImageContentPart
 from ..components.template_manager import (
     Template,
     TemplateManager,
@@ -75,6 +76,7 @@ from ..messages import (
     MessageContent,
     MessageList,
     MessageRole,
+    ImageDetail,
     SystemMessage,
     T_Output,
     ToolMessage,
@@ -297,6 +299,8 @@ class Agent(EventRouter):
     _PUBLIC_ATTRIBUTE_NAMES: ClassVar[tuple[str, ...]] = (
         "EVENTS",
         "append",
+        "attach_file",
+        "attach_image",
         "assistant",
         "call",
         "config",
@@ -1432,6 +1436,79 @@ class Agent(EventRouter):
         self._message_manager.append(
             *content_parts, role=role, context=context, citations=citations, **kwargs
         )
+
+    def attach_image(
+        self,
+        image: ImageContentPart | str | bytes,
+        *,
+        text: MessageContent | None = None,
+        detail: ImageDetail = "auto",
+        mime_type: str | None = None,
+        role: MessageRole = "user",
+        **kwargs: Any,
+    ) -> None:
+        """Append a user-facing message that includes an image content part."""
+
+        if isinstance(image, ImageContentPart):
+            part = image
+        elif isinstance(image, bytes):
+            part = ImageContentPart.from_bytes(
+                image, detail=detail, mime_type=mime_type
+            )
+        elif isinstance(image, str):
+            image_str = image.strip()
+            if image_str.startswith("data:"):
+                part = ImageContentPart.from_base64(
+                    image_str, detail=detail, mime_type=mime_type
+                )
+            elif image_str.startswith("http://") or image_str.startswith("https://"):
+                part = ImageContentPart.from_url(image_str, detail=detail)
+            else:
+                part = ImageContentPart.from_base64(
+                    image_str, detail=detail, mime_type=mime_type
+                )
+        else:
+            raise TypeError("image must be bytes, str, or ImageContentPart instance")
+
+        content: list[MessageContent] = []
+        if text is not None:
+            content.append(text)
+        content.append(part)
+        self.append(*content, role=role, **kwargs)
+
+    def attach_file(
+        self,
+        file: FileContentPart | str,
+        *,
+        text: MessageContent | None = None,
+        mime_type: str | None = None,
+        file_name: str | None = None,
+        inline: bool = False,
+        role: MessageRole = "user",
+        **kwargs: Any,
+    ) -> None:
+        """Append a user-facing message that includes a file attachment."""
+
+        if isinstance(file, FileContentPart):
+            part = file
+        elif inline:
+            if not isinstance(file, str):
+                raise TypeError("inline file content must be provided as a string")
+            part = FileContentPart.from_content(
+                file, mime_type=mime_type, file_name=file_name
+            )
+        elif isinstance(file, str):
+            part = FileContentPart.from_file_id(
+                file, mime_type=mime_type, file_name=file_name
+            )
+        else:
+            raise TypeError("file must be a str or FileContentPart instance")
+
+        content: list[MessageContent] = []
+        if text is not None:
+            content.append(text)
+        content.append(part)
+        self.append(*content, role=role, **kwargs)
 
     def add_tool_response(
         self,

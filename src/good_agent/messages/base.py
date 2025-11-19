@@ -63,7 +63,7 @@ ImageDetail = Literal["high", "low", "auto"]
 
 type IMAGE = URL | bytes
 type MessageContent = (
-    "Message" | SupportsLLM | SupportsDisplay | SupportsString | SupportsRender | str
+    "Message | SupportsLLM | SupportsDisplay | SupportsString | SupportsRender | str"
 )
 
 
@@ -524,6 +524,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
         """
         # Normalize response shape
         msg_dict: dict[str, Any] = response
+        msg_obj: Any = None  # Keep track of the actual message object
         usage_data: dict[str, Any] | None = None
 
         if isinstance(response, dict) and "choices" in response:
@@ -536,7 +537,19 @@ class Message(PrivateAttrBase, GoodBase, ABC):
                 # Fallback for object-like choices
                 try:
                     msg_obj = getattr(first_choice, "message", None)
-                    msg_dict = msg_obj if isinstance(msg_obj, dict) else {}
+                    if msg_obj:
+                        # If message is an object, convert relevant fields to dict
+                        msg_dict = {
+                            "content": getattr(msg_obj, "content", ""),
+                            "tool_calls": getattr(msg_obj, "tool_calls", None),
+                            "reasoning": getattr(msg_obj, "reasoning", None),
+                            "refusal": getattr(msg_obj, "refusal", None),
+                            "citations": getattr(msg_obj, "citations", None),
+                            "annotations": getattr(msg_obj, "annotations", None),
+                            "usage": getattr(msg_obj, "usage", None),
+                        }
+                    else:
+                        msg_dict = {}
                 except Exception:
                     msg_dict = {}
             # Extract usage from the top-level response if present
@@ -607,6 +620,8 @@ class Message(PrivateAttrBase, GoodBase, ABC):
                     msg_dict.get("reasoning", msg_dict.get("reasoning_content"))
                 ),
                 refusal=msg_dict.get("refusal"),
+                citations=msg_dict.get("citations"),
+                annotations=msg_dict.get("annotations"),
                 usage=usage_data if usage_data is not None else msg_dict.get("usage"),
             )
         elif role == "user":

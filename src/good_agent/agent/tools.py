@@ -915,7 +915,7 @@ class ToolExecutor:
 
         coerced = dict(parameters)
         param_schemas = schema["parameters"].get("properties", {})
-        
+
         # Debug: print parameter schemas
         # import json
         # print(f"DEBUG: Coercing parameters for tool. Schema params: {json.dumps(param_schemas, indent=2)}")
@@ -940,7 +940,7 @@ class ToolExecutor:
             if isinstance(param_value, str):
                 # DEBUG
                 # print(f"DEBUG: param={param_name} val={param_value} schema={param_schema}")
-                
+
                 # Check if parameter has a type definition
                 if "anyOf" in param_schema:
                     # Handle anyOf types (e.g. Optional[T])
@@ -958,8 +958,11 @@ class ToolExecutor:
                     else:
                         # Default to string but try to infer if it looks like JSON
                         param_type = "string"
-                        if (param_value.startswith("{") and param_value.endswith("}")) or \
-                           (param_value.startswith("[") and param_value.endswith("]")):
+                        if (
+                            param_value.startswith("{") and param_value.endswith("}")
+                        ) or (
+                            param_value.startswith("[") and param_value.endswith("]")
+                        ):
                             # Check if object or array are allowed types in anyOf
                             if "object" in types or "array" in types:
                                 try:
@@ -1007,20 +1010,22 @@ class ToolExecutor:
                             coerced[param_name] = parsed
                     except Exception:
                         pass
-                
+
                 # Fallback: If schema has type=object or type=array but wasn't caught above
                 # e.g. because it wasn't processed correctly
                 elif param_schema.get("type") in ("object", "array"):
-                     if (param_value.startswith("{") and param_value.endswith("}")) or \
-                        (param_value.startswith("[") and param_value.endswith("]")):
+                    if (param_value.startswith("{") and param_value.endswith("}")) or (
+                        param_value.startswith("[") and param_value.endswith("]")
+                    ):
                         try:
                             coerced[param_name] = orjson.loads(param_value)
                         except Exception:
                             pass
                 # Handle simple types that might be wrapped in anyOf
                 # Or handle generic string inputs that look like JSON but have no explicit type (or unknown type)
-                elif (param_value.startswith("{") and param_value.endswith("}")) or \
-                     (param_value.startswith("[") and param_value.endswith("]")):
+                elif (param_value.startswith("{") and param_value.endswith("}")) or (
+                    param_value.startswith("[") and param_value.endswith("]")
+                ):
                     # If no type constraint is strictly against it, try parsing
                     # (This is aggressive but needed for some LLM outputs that send JSON strings for everything)
                     try:
@@ -1029,7 +1034,7 @@ class ToolExecutor:
                         if isinstance(parsed, (dict, list)):
                             # Check if schema allows this structure
                             should_coerce = False
-                            
+
                             # Case 1: Schema is ambiguous (no type specified)
                             if "type" not in param_schema:
                                 should_coerce = True
@@ -1047,7 +1052,7 @@ class ToolExecutor:
                             elif param_schema.get("type") == "string":
                                 # Don't coerce to dict/list if schema explicitly wants a string
                                 should_coerce = False
-                            
+
                             if should_coerce:
                                 coerced[param_name] = parsed
                     except Exception:

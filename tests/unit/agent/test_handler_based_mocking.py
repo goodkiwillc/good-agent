@@ -815,11 +815,11 @@ class TestAPITracking:
         from good_agent.events import AgentEvents
 
         @agent.on(AgentEvents.LLM_COMPLETE_BEFORE)
-        def on_before(**kwargs):
+        def on_before(ctx):
             events_fired.append("before")
 
         @agent.on(AgentEvents.LLM_COMPLETE_AFTER)
-        def on_after(**kwargs):
+        def on_after(ctx):
             events_fired.append("after")
 
         async with agent:

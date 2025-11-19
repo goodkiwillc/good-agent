@@ -1,8 +1,16 @@
+import base64
 import re
 from enum import Enum
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Discriminator, Field
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Discriminator,
+    Field,
+    model_validator,
+)
 
 
 def is_template(text: str) -> bool:
@@ -165,6 +173,73 @@ class ImageContentPart(BaseContentPart):
     image_url: str | None = None
     image_base64: str | None = None
     detail: Literal["high", "low", "auto"] = "auto"
+    mime_type: str | None = None
+
+    @staticmethod
+    def _extract_mime_type(data_url: str) -> str | None:
+        if not data_url.startswith("data:"):
+            return None
+        header = data_url.split(";", 1)[0]
+        if header.startswith("data:"):
+            return header[5:] or None
+        return None
+
+    @model_validator(mode="after")
+    def _validate_and_normalize(self) -> "ImageContentPart":
+        if self.image_url and self.image_base64:
+            raise ValueError("image_url and image_base64 are mutually exclusive")
+
+        if self.image_base64:
+            normalized = self.image_base64.strip()
+            if not normalized.startswith("data:"):
+                mime = self.mime_type or "image/jpeg"
+                normalized = f"data:{mime};base64,{normalized}"
+            self.image_base64 = normalized
+            if not self.mime_type:
+                self.mime_type = type(self)._extract_mime_type(normalized)
+
+        return self
+
+    @classmethod
+    def from_url(
+        cls, url: str, *, detail: Literal["high", "low", "auto"] = "auto"
+    ) -> "ImageContentPart":
+        return cls(image_url=url, detail=detail)
+
+    @classmethod
+    def from_base64(
+        cls,
+        data: str,
+        *,
+        detail: Literal["high", "low", "auto"] = "auto",
+        mime_type: str | None = None,
+    ) -> "ImageContentPart":
+        return cls(image_base64=data, detail=detail, mime_type=mime_type)
+
+    @classmethod
+    def from_bytes(
+        cls,
+        data: bytes,
+        *,
+        detail: Literal["high", "low", "auto"] = "auto",
+        mime_type: str | None = None,
+    ) -> "ImageContentPart":
+        detected_mime = mime_type
+        if detected_mime is None:
+            try:
+                import magic
+
+                detected_mime = magic.Magic(mime=True).from_buffer(data)
+            except Exception:
+                detected_mime = "image/jpeg"
+
+        prefix = f"data:{detected_mime};base64,"
+        encoded = base64.b64encode(data).decode("utf-8")
+        return cls(
+            image_base64=f"{prefix}{encoded}",
+            detail=detail,
+            mime_type=detected_mime,
+        )
 
     def render(self, mode: RenderMode, context: dict[str, Any] | None = None) -> str:
         """Render image content as string description.
@@ -199,18 +274,28 @@ class ImageContentPart(BaseContentPart):
     def to_llm_format(self) -> dict[str, Any]:
         """Convert to LLM API format."""
         if self.image_url:
-            return {
+            payload: dict[str, Any] = {
                 "type": "image_url",
                 "image_url": {"url": self.image_url, "detail": self.detail},
             }
+            if self.mime_type:
+                payload["image_url"]["mime_type"] = self.mime_type
+            return payload
         elif self.image_base64:
-            return {
+            url = self.image_base64
+            if not url.startswith("data:"):
+                mime = self.mime_type or "image/jpeg"
+                url = f"data:{mime};base64,{url}"
+            payload = {
                 "type": "image_url",
                 "image_url": {
-                    "url": f"data:image/jpeg;base64,{self.image_base64}",
+                    "url": url,
                     "detail": self.detail,
                 },
             }
+            if self.mime_type:
+                payload["image_url"]["mime_type"] = self.mime_type
+            return payload
         raise ValueError("Image content must have either url or base64")
 
 
@@ -221,6 +306,25 @@ class FileContentPart(BaseContentPart):
     file_path: str | None = None
     file_content: str | None = None
     mime_type: str | None = None
+    file_name: str | None = None
+
+    @model_validator(mode="after")
+    def _validate_source(self) -> "FileContentPart":
+        if self.file_path and self.file_content:
+            raise ValueError("file_path and file_content are mutually exclusive")
+        return self
+
+    @classmethod
+    def from_file_id(
+        cls, file_id: str, *, mime_type: str | None = None, file_name: str | None = None
+    ) -> "FileContentPart":
+        return cls(file_path=file_id, mime_type=mime_type, file_name=file_name)
+
+    @classmethod
+    def from_content(
+        cls, content: str, *, mime_type: str | None = None, file_name: str | None = None
+    ) -> "FileContentPart":
+        return cls(file_content=content, mime_type=mime_type, file_name=file_name)
 
     def render(self, mode: RenderMode, context: dict[str, Any] | None = None) -> str:
         """Render file content as string description.
@@ -263,7 +367,15 @@ class FileContentPart(BaseContentPart):
         if self.file_content:
             return {"type": "text", "text": self.file_content}
         elif self.file_path:
-            return {"type": "text", "text": f"[File: {self.file_path}]"}
+            file_payload: dict[str, Any] = {
+                "type": "file",
+                "file": {"file_id": self.file_path},
+            }
+            if self.mime_type:
+                file_payload["file"]["format"] = self.mime_type
+            if self.file_name:
+                file_payload["file"]["filename"] = self.file_name
+            return file_payload
         return {"type": "text", "text": "[File: no content]"}
 
 

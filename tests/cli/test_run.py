@@ -32,9 +32,7 @@ def test_run_agent_executes_interactive_loop(mock_load, mock_loop, mock_asyncio_
 @patch("good_agent.cli.run.asyncio.run")
 @patch("good_agent.cli.run.run_interactive_loop", new_callable=AsyncMock)
 @patch("good_agent.cli.run.load_agent_from_path")
-def test_run_agent_factory_receives_extra_args(
-    mock_load, mock_loop, mock_asyncio_run
-):
+def test_run_agent_factory_receives_extra_args(mock_load, mock_loop, mock_asyncio_run):
     agent = MagicMock(spec=Agent)
     factory = MagicMock(return_value=agent)
     mock_load.return_value = (factory, {})
@@ -96,7 +94,8 @@ def test_run_agent_reports_factory_errors(
     run_agent("module:factory", extra_args=["--foo", "bar"])
 
     factory.assert_called_once_with("--foo", "bar")
-    mock_print.assert_called_once_with("Error instantiating agent factory: factory boom")
+    mock_print.assert_called_once_with(
+        "Error instantiating agent factory: factory boom"
+    )
     mock_loop.assert_not_called()
     mock_asyncio_run.assert_not_called()
-
