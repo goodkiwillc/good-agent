@@ -924,7 +924,7 @@ class TestAgentPipeConversation:
         class ContextTrackingHandler:
             def __init__(self, name: str):
                 self.name = name
-                self.calls = []
+                self.calls: list[dict[str, int]] = []
 
             async def handle(self, ctx: MockContext) -> MockResponse:
                 self.calls.append(
@@ -977,11 +977,15 @@ class TestCitationsAndAnnotations:
         """Test that citations from handler appear in final AssistantMessage"""
 
         def handler_with_citations(ctx: MockContext) -> MockResponse:
+            from typing import cast
+
+            from good_agent.types import URL
+
             return MockResponse(
                 content="Based on research, here are the findings.",
                 citations=[
-                    "https://example.com/paper1.pdf",
-                    "https://example.com/paper2.pdf",
+                    cast(URL, "https://example.com/paper1.pdf"),
+                    cast(URL, "https://example.com/paper2.pdf"),
                 ],
             )
 
@@ -1002,7 +1006,7 @@ class TestCitationsAndAnnotations:
         def handler_with_annotations(ctx: MockContext) -> MockResponse:
             return MockResponse(
                 content="The calculation shows 42 as the answer.",
-                annotations=[
+                annotations=[  # type: ignore[arg-type]
                     {"type": "calculation", "value": 42, "confidence": 0.95},
                     {"type": "source", "name": "Deep Thought"},
                 ],
@@ -1024,10 +1028,14 @@ class TestCitationsAndAnnotations:
         """Test that both citations and annotations work together"""
 
         def handler_with_both(ctx: MockContext) -> MockResponse:
+            from typing import cast
+
+            from good_agent.types import URL
+
             return MockResponse(
                 content="Research findings with sources.",
-                citations=["https://example.com/source.pdf"],
-                annotations=[{"confidence": 0.9, "verified": True}],
+                citations=[cast(URL, "https://example.com/source.pdf")],
+                annotations=[{"confidence": 0.9, "verified": True}],  # type: ignore[arg-type]
             )
 
         agent = Agent("You are helpful")
@@ -1043,14 +1051,18 @@ class TestCitationsAndAnnotations:
 
     async def test_citations_persist_across_turns(self):
         """Test that citations from different turns are tracked"""
+        from typing import cast
+
+        from good_agent.types import URL
+
         responses = [
             MockResponse(
                 content="First finding",
-                citations=["https://example.com/paper1.pdf"],
+                citations=[cast(URL, "https://example.com/paper1.pdf")],
             ),
             MockResponse(
                 content="Second finding",
-                citations=["https://example.com/paper2.pdf"],
+                citations=[cast(URL, "https://example.com/paper2.pdf")],
             ),
         ]
 
@@ -1100,7 +1112,7 @@ class TestToolExecutionInspection:
                     "call_count": ctx.call_count,
                     "total_messages": len(ctx.messages),
                     "tool_messages": [
-                        msg for msg in ctx.messages if msg.get("role") == "tool"
+                        msg for msg in ctx.messages if msg.role == "tool"
                     ],
                 }
             )
@@ -1121,7 +1133,7 @@ class TestToolExecutionInspection:
 
             # Second call: we should see tool result
             # Check if we can find the tool result
-            tool_msgs = [msg for msg in ctx.messages if msg.get("role") == "tool"]
+            tool_msgs = [msg for msg in ctx.messages if msg.role == "tool"]
             if tool_msgs:
                 return MockResponse(
                     content="Based on the data: Weather in Paris is Sunny!"
@@ -1158,7 +1170,7 @@ class TestToolExecutionInspection:
             ConditionalHandler()
             .when(
                 # First call - no tool results yet
-                lambda ctx: not any(msg.get("role") == "tool" for msg in ctx.messages),
+                lambda ctx: not any(msg.role == "tool" for msg in ctx.messages),
                 respond=MockResponse(
                     content="Checking inventory...",
                     tool_calls=[
@@ -1174,9 +1186,9 @@ class TestToolExecutionInspection:
             .when(
                 # After tool execution - check if we have stock
                 lambda ctx: any(
-                    '"quantity": 0' in str(msg.get("content", ""))
+                    '"quantity": 0' in str(msg.content)
                     for msg in ctx.messages
-                    if msg.get("role") == "tool"
+                    if msg.role == "tool"
                 ),
                 respond="Sorry, we're out of stock!",
             )
@@ -1208,7 +1220,7 @@ class TestToolExecutionInspection:
 
         def operation_tracking_handler(ctx: MockContext) -> MockResponse:
             # Check if there are any tool messages with results
-            tool_results = [msg for msg in ctx.messages if msg.get("role") == "tool"]
+            tool_results = [msg for msg in ctx.messages if msg.role == "tool"]
 
             if not tool_results:
                 # First call - request calculation
@@ -1226,7 +1238,7 @@ class TestToolExecutionInspection:
             else:
                 # We have tool results - extract the operation
                 for msg in ctx.messages:
-                    content = str(msg.get("content", ""))
+                    content = str(msg.content) if hasattr(msg, "content") else ""
                     if "multiply" in content:
                         seen_operations.append("multiply")
 
