@@ -23,6 +23,9 @@ good-agent run good-agent
 from good_agent.agents.meta import agent as good_agent_agent
 ```
 
+!!! note "Customize the template"
+    The generated file uses the default `gpt-4o` model. Edit the scaffolded Python file after creation if you need different defaults or to register extra tools.
+
 ## `research-agent`
 
 Purpose: perform lightweight web research with simple search and scraping helpers.
@@ -59,3 +62,9 @@ from good_agent.agents.research import agent as research_agent
 | `research-agent` | `good_agent.agents.research:agent` |
 
 Use these aliases with [`good-agent run`](../cli/run.md) to explore without writing import strings.
+
+## Best practices
+
+- Export any required API keys (for example `OPENAI_API_KEY`) before launching an agent; the CLI inherits your shell environment.
+- Treat these agents as reference implementations—copy and adapt the Python modules if you need to change prompts or tool wiring.
+- When running the research agent in constrained environments, wrap it with `agent.mock(...)` during tests to avoid network calls.

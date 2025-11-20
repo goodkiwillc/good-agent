@@ -53,6 +53,20 @@ good-agent run examples.sales:agent --model gpt-4o --temperature 0.1
 
 The overrides update `Agent.config` before the session starts. Additional CLI options are ignored, so stick to the documented flags above.
 
+## Passing factory arguments
+
+Arguments placed after the agent path are forwarded verbatim to factory callables:
+
+```bash
+good-agent run examples.factory:build_support_agent prod us-east "level=enterprise"
+```
+
+- Values remain strings; cast them inside your factory if you need other types.
+- Use shell quoting for values containing spaces.
+- Extra options (those starting with `--`) are ignored unless your shell passes them as positional arguments.
+
+If you provide extra arguments to an agent instance (rather than a callable), they are silently discarded.
+
 ## Interactive session controls
 
 `good-agent run` streams every event from `Agent.execute()`:
@@ -70,6 +84,9 @@ Session shortcuts:
 
 !!! tip "Re-running prompts"
     The prompt history remembers previous inputs. Use the up-arrow to repeat or tweak earlier questions.
+
+!!! note "Persisting session history"
+    The interactive shell uses an in-memory history. Export `PROMPT_TOOLKIT_HISTORY=~/.good-agent-history` before launching if you want entries saved between runs.
 
 ## Troubleshooting
 
