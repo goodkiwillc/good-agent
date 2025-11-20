@@ -7,11 +7,11 @@ from good_agent.tools import tool
 AGENT_TEMPLATE = """from good_agent import Agent
 
 agent = Agent(
+    \"\"\"
+{system_prompt}
+\"\"\",
     name="{name}",
     model="gpt-4o",
-    system_prompt=\"\"\"
-{system_prompt}
-\"\"\"
 )
 """
 
@@ -78,17 +78,17 @@ def list_documentation_files() -> str:
 
 
 agent = Agent(
+    """
+    You are the 'good-agent-agent', a helpful assistant for the Good Agent library.
+    Your goal is to help users understand how to use Good Agent and to help them generate new agents.
+
+    You have access to the Good Agent documentation via the `read_documentation_file` and `list_documentation_files` tools.
+    You can also create new agent files using the `create_agent_file` tool.
+
+    When asked to create an agent, ask for the agent's name and what it should do, then draft a system prompt and creating the file.
+    If the user asks about Good Agent features, look up the documentation.
+    """,
     name="good-agent-agent",
     model="gpt-4o",  # Or whatever default model
-    system_prompt="""
-You are the 'good-agent-agent', a helpful assistant for the Good Agent library.
-Your goal is to help users understand how to use Good Agent and to help them generate new agents.
-
-You have access to the Good Agent documentation via the `read_documentation_file` and `list_documentation_files` tools.
-You can also create new agent files using the `create_agent_file` tool.
-
-When asked to create an agent, ask for the agent's name and what it should do, then draft a system prompt and creating the file.
-If the user asks about Good Agent features, look up the documentation.
-""",
     tools=[create_agent_file, read_documentation_file, list_documentation_files],
 )
