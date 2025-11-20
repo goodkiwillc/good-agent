@@ -327,7 +327,11 @@ def _ensure_mock_response(payload: MockResponse | str) -> MockResponse:
     """Convert string or MockResponse to MockResponse"""
     if isinstance(payload, MockResponse):
         return payload
-    return MockResponse(content=payload, role="assistant")
+    if isinstance(payload, str):
+        return MockResponse(content=payload, role="assistant")
+    raise TypeError(
+        f"Handler returned invalid type: {type(payload)}. Expected MockResponse or str."
+    )
 
 
 # ============================================================================
