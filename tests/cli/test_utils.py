@@ -46,26 +46,26 @@ def test_load_agent_from_path_attribute_error(mock_importlib):
 def test_load_agent_from_path_adds_cwd_to_sys_path():
     with patch.object(sys, "path", []) as mock_path:
         with patch("importlib.import_module") as mock_import:
-             mock_import.return_value = Mock(agent=Mock())
-             load_agent_from_path("module:agent")
-             
-             # Should have added CWD to sys.path
-             assert len(mock_path) > 0
-             
+            mock_import.return_value = Mock(agent=Mock())
+            load_agent_from_path("module:agent")
+
+            # Should have added CWD to sys.path
+            assert len(mock_path) > 0
+
 
 def test_load_agent_from_path_built_in_aliases(mock_importlib):
     mock_agent = Mock()
     # Mock the good_agent.agents.meta module
     mock_meta_module = Mock(agent=mock_agent)
-    
+
     # Configure importlib to return our mock module when the alias path is imported
     def side_effect(name):
         if name == "good_agent.agents.meta":
             return mock_meta_module
         if name == "good_agent.agents.research":
-             return Mock(agent=mock_agent)
+            return Mock(agent=mock_agent)
         raise ImportError(f"Unknown module {name}")
-        
+
     mock_importlib.side_effect = side_effect
 
     # Test good-agent alias
@@ -76,7 +76,7 @@ def test_load_agent_from_path_built_in_aliases(mock_importlib):
     # Test good-agent-agent alias
     agent, _ = load_agent_from_path("good-agent-agent")
     assert agent == mock_agent
-    
+
     # Test research alias
     agent, _ = load_agent_from_path("research")
     assert agent == mock_agent
