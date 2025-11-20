@@ -4,6 +4,7 @@
 from .base import (
     IMAGE,
     Annotation,
+    AnnotationLike,
     ImageDetail,
     Message,
     MessageContent,
@@ -41,6 +42,7 @@ from .utilities import MessageFactory
 __all__ = [
     # Base types
     "Annotation",
+    "AnnotationLike",
     "Message",
     "MessageRole",
     "ImageDetail",
