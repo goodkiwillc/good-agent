@@ -223,6 +223,7 @@ class TestMockContext:
         """Test that handler can access user messages via ctx.agent.user[-1]"""
 
         def handler(ctx: MockContext) -> MockResponse:
+            assert ctx.agent is not None
             last_user = ctx.agent.user[-1]
 
             if "weather" in last_user.content.lower():
@@ -247,6 +248,7 @@ class TestMockContext:
                 return MockResponse(content="First response")
 
             # Second call - can see previous assistant message
+            assert ctx.agent is not None
             last_assistant = ctx.agent.assistant[-1]
             return MockResponse(content=f"After: {last_assistant.content}")
 
@@ -746,7 +748,7 @@ class TestErrorHandling:
         """Test that handler returning non-MockResponse raises error"""
 
         def bad_handler(ctx: MockContext):
-            return "Not a MockResponse"  # Wrong type
+            return 123  # Wrong type (not str or MockResponse)
 
         agent = Agent("You are helpful")
 
