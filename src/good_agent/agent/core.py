@@ -546,7 +546,7 @@ class Agent(EventRouter):
         self._session_id = (
             self._id
         )  # Session ID starts as agent ID, but can be overridden
-        self._name: str | None = None
+        self._name = self.config.get("name")
 
         # Initialize versioning infrastructure
         from ..messages.versioning import MessageRegistry

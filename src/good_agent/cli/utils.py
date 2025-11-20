@@ -30,6 +30,17 @@ def load_agent_from_path(
     if cwd not in sys.path:
         sys.path.insert(0, cwd)
 
+    # Check for built-in aliases
+    BUILT_IN_AGENTS = {
+        "good-agent": "good_agent.agents.meta:agent",
+        "good-agent-agent": "good_agent.agents.meta:agent",
+        "research": "good_agent.agents.research:agent",
+        "research-agent": "good_agent.agents.research:agent",
+    }
+
+    if path_str in BUILT_IN_AGENTS:
+        path_str = BUILT_IN_AGENTS[path_str]
+
     if ":" not in path_str:
         raise ValueError(
             f"Invalid agent path format '{path_str}'. Expected 'module:object'."
