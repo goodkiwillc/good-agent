@@ -69,7 +69,7 @@ from ..events import (  # Import typed event parameters
     AgentInitializeParams,
 )
 from ..messages import (
-    Annotation,
+    AnnotationLike,
     AssistantMessage,
     AssistantMessageStructuredOutput,
     FilteredMessageList,
@@ -1386,7 +1386,7 @@ class Agent(EventRouter):
         tool_calls: list[ToolCall] | None = None,
         reasoning: str | None = None,
         refusal: str | None = None,
-        annotations: list[Annotation] | None = None,
+        annotations: list[AnnotationLike] | None = None,
         **kwargs: Any,
     ) -> None: ...
 

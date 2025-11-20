@@ -76,6 +76,9 @@ class Annotation(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+type AnnotationLike = Annotation | dict[str, Any]
+
+
 class Message(PrivateAttrBase, GoodBase, ABC):
     """Base message class with content parts and multi-mode rendering.
 

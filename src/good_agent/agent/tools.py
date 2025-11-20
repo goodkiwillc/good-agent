@@ -43,6 +43,22 @@ class ToolExecutor:
         """
         self.agent = agent
 
+    def _format_tool_message_content(self, tool_response: ToolResponse) -> str:
+        """Render tool responses into message content strings."""
+
+        if not tool_response.success:
+            return f"Error: {tool_response.error}"
+
+        if hasattr(tool_response.response, "render") and callable(  # type: ignore[attr-defined]
+            tool_response.response.render  # type: ignore[attr-defined]
+        ):
+            try:
+                return tool_response.response.render()  # type: ignore[call-arg]
+            except Exception:  # pragma: no cover - defensive fallback
+                return str(tool_response.response)
+
+        return str(tool_response.response)
+
     @overload
     async def invoke(
         self,
@@ -238,7 +254,7 @@ class ToolExecutor:
 
         # Create and add tool message
         tool_message = self.agent.model.create_message(
-            content=self._convert_to_tool_response(tool_response),
+            content=self._format_tool_message_content(tool_response),
             tool_call_id=tool_call_id,
             tool_name=resolved_name,
             tool_response=tool_response,
@@ -439,7 +455,7 @@ class ToolExecutor:
                 pending_tool_call_ids.remove(tool_response.tool_call_id)
 
             tool_message = self.agent.model.create_message(
-                content=self._convert_to_tool_response(tool_response),
+                content=self._format_tool_message_content(tool_response),
                 tool_call_id=tool_response.tool_call_id,
                 tool_name=tool_response.tool_name,
                 tool_response=tool_response,
@@ -590,7 +606,7 @@ class ToolExecutor:
 
                 # Create and add tool message for the error
                 tool_message = self.agent.model.create_message(
-                    content=f"Error: {tool_response.error}",
+                    content=self._format_tool_message_content(tool_response),
                     tool_call_id=tool_call.id,
                     tool_name=tool_name,
                     tool_response=tool_response,
@@ -667,16 +683,8 @@ class ToolExecutor:
                 )
                 self.agent.append(assistant_msg)
 
-        content = (
-            tool_response.response.render()
-            if hasattr(tool_response.response, "render")
-            else str(tool_response.response)
-        )
-
         tool_msg = self.agent.model.create_message(
-            content=content
-            if tool_response.success
-            else f"Error: {tool_response.error}",
+            content=self._format_tool_message_content(tool_response),
             tool_call_id=tool_call_id,
             tool_name=tool_name,
             tool_response=tool_response,
@@ -750,9 +758,7 @@ class ToolExecutor:
             )
 
             tool_msg = self.agent.model.create_message(
-                content=str(tool_response.response)
-                if tool_response.success
-                else f"Error: {tool_response.error}",
+                content=self._format_tool_message_content(tool_response),
                 tool_call_id=tool_call_id,
                 tool_name=tool_name,
                 tool_response=tool_response,
@@ -1059,20 +1065,3 @@ class ToolExecutor:
                         pass
 
         return coerced
-
-    def _convert_to_tool_response(self, tool_response: ToolResponse) -> str:
-        """Convert ToolResponse to message content string.
-
-        Args:
-            tool_response: ToolResponse object
-
-        Returns:
-            String content for tool message
-        """
-        if tool_response.error:
-            return f"Error: {tool_response.error}"
-        elif isinstance(tool_response.response, str):
-            return tool_response.response
-        else:
-            # Convert non-string responses to string representation
-            return str(tool_response.response)

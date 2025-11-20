@@ -27,6 +27,7 @@ from .components import AgentComponent
 from .content import TextContentPart
 from .messages import (
     Annotation,
+    AnnotationLike,
     AssistantMessage,
     AssistantMessageStructuredOutput,
     CitationURL,
@@ -81,6 +82,80 @@ __all__ = [
 ]
 
 
+class _ToolMessageContextView:
+    """Lightweight wrapper exposing augmented tool message content."""
+
+    __slots__ = ("_original", "content", "role")
+
+    def __init__(self, original: ToolMessage, content: str) -> None:
+        self._original = original
+        self.content = content
+        self.role = original.role
+
+    def __getattr__(self, name: str) -> Any:  # pragma: no cover - passthrough
+        return getattr(self._original, name)
+
+
+def _format_tool_message_content(tool_response: ToolResponse) -> str:
+    """Render tool responses into message content strings."""
+
+    if not tool_response.success:
+        return f"Error: {tool_response.error}"
+
+    if hasattr(tool_response.response, "render") and callable(  # type: ignore[attr-defined]
+        tool_response.response.render  # type: ignore[attr-defined]
+    ):
+        try:
+            return tool_response.response.render()  # type: ignore[call-arg]
+        except Exception:  # pragma: no cover - defensive fallback
+            return str(tool_response.response)
+
+    return str(tool_response.response)
+
+
+def _augment_tool_message_for_context(message: ToolMessage) -> ToolMessage:
+    """Return a copy of a tool message with JSON metadata appended to content."""
+
+    tool_response = message.tool_response
+    if tool_response is None:
+        return message
+
+    payload: dict[str, Any] = {}
+    if tool_response.parameters:
+        payload["arguments"] = tool_response.parameters
+
+    result_payload: Any = tool_response.response
+    if hasattr(result_payload, "model_dump") and callable(  # type: ignore[attr-defined]
+        result_payload.model_dump  # type: ignore[attr-defined]
+    ):
+        try:
+            result_payload = result_payload.model_dump()  # type: ignore[call-arg]
+        except Exception:  # pragma: no cover - defensive fallback
+            result_payload = tool_response.response
+
+    payload["result"] = result_payload
+
+    try:
+        json_content = orjson.dumps(payload, option=orjson.OPT_INDENT_2).decode("utf-8")
+    except Exception:  # pragma: no cover - fallback when JSON serialization fails
+        return message
+
+    base_content = str(message.content)
+    if base_content:
+        augmented_content = (
+            base_content
+            if json_content in base_content
+            else f"{base_content}\n{json_content}"
+        )
+    else:
+        augmented_content = json_content
+
+    if augmented_content == base_content:
+        return message
+
+    return _ToolMessageContextView(message, augmented_content)
+
+
 class MockToolCall(TypedDict):
     """Configuration for a mock tool call"""
 
@@ -113,7 +188,7 @@ class MockResponse:
     tool_call_id: str | None = None
     # Additional message parameters
     citations: list[CitationURL] | None = None
-    annotations: list[Annotation] | None = None
+    annotations: list[AnnotationLike] | None = None
     refusal: str | None = None
     reasoning: str | None = None
     usage: Usage | None = None
@@ -148,7 +223,7 @@ class _MockLiteLLMMessage:
     content: str
     tool_calls: list[_MockToolCallPayload] | None = None
     citations: list[CitationURL] | None = None
-    annotations: list[Annotation] | None = None
+    annotations: list[AnnotationLike] | None = None
     refusal: str | None = None
     reasoning: str | None = None
     model_extra: dict[str, Any] | None = None
@@ -228,7 +303,7 @@ def mock_message(
     role: Literal["assistant", "user", "system"] = "assistant",
     tool_calls: list[tuple[str, dict[str, Any]]] | None = None,
     citations: list[CitationURL] | None = None,
-    annotations: list[Annotation] | None = None,
+    annotations: list[AnnotationLike] | None = None,
     refusal: str | None = None,
     reasoning: str | None = None,
     usage: Usage | None = None,
@@ -472,9 +547,17 @@ class MockHandlerLanguageModel(AgentComponent):
             )
 
         # Build context
+        agent_messages = self._agent.messages if self._agent else []
+        context_messages = [
+            _augment_tool_message_for_context(message)
+            if isinstance(message, ToolMessage)
+            else message
+            for message in agent_messages
+        ]
+
         context = MockContext(
             agent=self._agent,
-            messages=self._agent.messages if self._agent else [],
+            messages=context_messages,
             iteration=getattr(self._agent, "_iteration_index", 0) if self._agent else 0,
             call_count=self.call_count,
             kwargs=kwargs,
@@ -1034,7 +1117,7 @@ class MockAgent:
                 )
 
                 msg = ToolMessage(
-                    content=str(response.tool_result),
+                    content=_format_tool_message_content(tool_response),
                     tool_call_id=response.tool_call_id or "",
                     tool_name=response.tool_name or "",
                     tool_response=tool_response,
@@ -1146,7 +1229,7 @@ class AgentMockInterface(AgentComponent):
         role: Literal["assistant", "user", "system"] = "assistant",
         tool_calls: list[dict[str, Any]] | None = None,
         citations: list[CitationURL] | None = None,
-        annotations: list[Annotation] | None = None,
+        annotations: list[AnnotationLike] | None = None,
         refusal: str | None = None,
         reasoning: str | None = None,
         usage: Usage | None = None,

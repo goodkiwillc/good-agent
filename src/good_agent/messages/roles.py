@@ -7,7 +7,14 @@ from pydantic import BaseModel
 from good_agent.core.types import URL
 
 from ..tools import ToolCall, ToolResponse
-from .base import Annotation, IMAGE, ImageDetail, Message, MessageContent, RenderMode
+from .base import (
+    AnnotationLike,
+    IMAGE,
+    ImageDetail,
+    Message,
+    MessageContent,
+    RenderMode,
+)
 
 CitationURL: TypeAlias = URL
 
@@ -124,7 +131,7 @@ class AssistantMessage(Message):
         reasoning: str | None = None,
         refusal: str | None = None,
         citations: list[CitationURL] | None = None,
-        annotations: list[Annotation] | None = None,
+        annotations: list[AnnotationLike] | None = None,
         **data,
     ): ...
 
@@ -139,7 +146,7 @@ class AssistantMessage(Message):
     reasoning: str | None = None
     refusal: str | None = None
     citations: list[CitationURL] | None = None
-    annotations: list[Annotation] | None = None
+    annotations: list[AnnotationLike] | None = None
 
     @property
     def reasoning_content(self) -> str | None:

@@ -14,7 +14,7 @@ from good_agent.core.event_router import EventContext
 from good_agent.core.types import URL
 from good_agent.events import AgentEvents
 from good_agent.messages import (
-    Annotation,
+    AnnotationLike,
     AssistantMessage,
     FilteredMessageList,
     Message,
@@ -220,7 +220,7 @@ class MessageManager:
         tool_calls: list[ToolCall] | None = None,
         reasoning: str | None = None,
         refusal: str | None = None,
-        annotations: list[Annotation] | None = None,
+        annotations: list[AnnotationLike] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
