@@ -957,7 +957,7 @@ async def production_ready_mode(ctx: ModeContext):
 ## Next Steps
 
 - **[Multi-Agent](./multi-agent.md)** - Coordinate modes across multiple agents
-- **[Streaming](./streaming.md)** - Use modes in streaming execution contexts
+- **[Interactive Execution](./interactive-execution.md)** - Use modes in interactive execution contexts
 - **[Events](../core/events.md)** - Monitor and respond to mode changes
 - **[Tools](../core/tools.md)** - Build tools that interact with agent modes
 - **[Components](../extensibility/components.md)** - Create reusable mode-aware components

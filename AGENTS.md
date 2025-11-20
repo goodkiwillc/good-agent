@@ -67,7 +67,7 @@ print(response.content)
 from good_agent.messages import AssistantMessage, ToolMessage
 
 agent.append("Check system status")
-async for message in agent.execute(streaming=True):
+async for message in agent.execute():
     match message:
         case ToolMessage(tool_name=name, content=result):
             print(f"🛠️ Tool {name}: {result}")

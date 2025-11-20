@@ -575,7 +575,7 @@ async def stream_document_updates():
         async with editor(agent):
             agent.append("Expand this document with technical details")
             
-            async for message in agent.execute(streaming=True):
+            async for message in agent.execute():
                 if hasattr(message, 'tool_name') and message.tool_name:
                     print(f"🛠️ {message.tool_name}: {message.content[:100]}...")
                 elif hasattr(message, 'content'):

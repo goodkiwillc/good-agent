@@ -80,7 +80,7 @@ methods and improved qubit stability. Key research areas are:
 
 ### CLI Implementation
 
-The interactive loop handles streaming execution with rich display:
+The interactive loop handles step-by-step execution with rich display:
 
 --8<-- "src/good_agent/cli/run.py:58:95"
 
@@ -243,14 +243,14 @@ async def ready_with_confidence_check(ctx):
     return response
 ```
 
-### Streaming with Interruption
+### Interactive Execution with Interruption
 
 Allow users to interrupt long-running responses:
 
 ```python
-@agent.route('streaming')
-async def streaming_with_intervention(ctx):
-    """Stream response with option to interrupt"""
+@agent.route('interactive')
+async def interactive_with_intervention(ctx):
+    """Run interactively with option to interrupt"""
     
     chunks = []
     
