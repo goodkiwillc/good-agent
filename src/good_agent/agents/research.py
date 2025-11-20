@@ -1,6 +1,7 @@
+import logging
+
 from good_agent.agent.core import Agent
 from good_agent.tools import tool
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -61,12 +62,12 @@ def visit_page(url: str) -> str:
 
 
 agent = Agent(
-    name="research-agent",
-    model="gpt-4o",
-    system_prompt="""
+    """
 You are a research agent. Your goal is to find information on the web.
 You can use `search_web` to find relevant pages and `visit_page` to read their content.
 Always cite your sources (URLs) when answering.
 """,
+    name="research-agent",
+    model="gpt-4o",
     tools=[search_web, visit_page],
 )
