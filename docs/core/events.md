@@ -675,5 +675,5 @@ def event_logger(ctx):
 
 - **[Agent Modes](../features/modes.md)** - Use events in mode-specific contexts
 - **[Components](../extensibility/components.md)** - Build event-driven agent components
-- **[Streaming](../features/streaming.md)** - Handle streaming execution events
+- **[Interactive Execution](../features/interactive-execution.md)** - Handle execution events
 - **[Multi-Agent](../features/multi-agent.md)** - Event coordination across multiple agents

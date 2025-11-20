@@ -135,7 +135,7 @@ Use `call()` for straightforward interactions where you want a single response:
 - You don't need to observe intermediate steps
 - You're building a simple chatbot or Q&A system
 
-### `execute()` - Streaming & Iteration
+### `execute()` - Interactive Execution
 
 Use `execute()` to observe the agent's thought process, including tool calls and intermediate steps:
 
@@ -145,13 +145,13 @@ Use `execute()` to observe the agent's thought process, including tool calls and
 
 **Use `execute()` when:**
 
-- You need to display streaming responses
+- You need to display responses step-by-step
 - You want to log or monitor tool execution
 - You're building interactive UIs with real-time feedback
 - You need fine-grained control over the execution loop
 
 !!! tip "Pattern Matching"
-    Good Agent messages support Python's structural pattern matching for elegant event handling. See [Streaming](../features/streaming.md) for examples.
+    Good Agent messages support Python's structural pattern matching for elegant event handling. See [Interactive Execution](../features/interactive-execution.md) for examples.
 
 ## Multi-Turn Conversations
 
@@ -220,7 +220,7 @@ Now that you have a basic agent running, explore these features:
 - **[Configuration](configuration.md)** - Deep dive into agent configuration options
 - **[Tools](../core/tools.md)** - Give your agent custom capabilities with function calling
 - **[Structured Output](../features/structured-output.md)** - Extract typed data using Pydantic models
-- **[Streaming](../features/streaming.md)** - Build real-time interactive experiences
+- **[Interactive Execution](../features/interactive-execution.md)** - Build real-time interactive experiences
 - **[Agent Modes](../features/modes.md)** - Switch agent behaviors dynamically
 
 ## Troubleshooting

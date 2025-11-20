@@ -527,13 +527,13 @@ if isinstance(response, AssistantMessageStructuredOutput):
     print(f"Sentiment: {analysis.sentiment}")
 ```
 
-### Streaming & Messages
+### Interactive Execution & Messages
 
-Messages are emitted during streaming execution:
+Messages are emitted during interactive execution:
 
 ```python
 agent.append("Complex task")
-async for message in agent.execute(streaming=True):
+async for message in agent.execute():
     match message:
         case AssistantMessage(content=text):
             print(f"Assistant: {text}")
@@ -1370,4 +1370,4 @@ privacy_agent.export_safe_history("safe_conversation.json")
 - **[Tools](tools.md)** - Add function calling capabilities to your agents
 - **[Events](events.md)** - React to message lifecycle events  
 - **[Structured Output](../features/structured-output.md)** - Extract typed data from assistant messages
-- **[Streaming](../features/streaming.md)** - Process messages in real-time during execution
+- **[Interactive Execution](../features/interactive-execution.md)** - Process messages in real-time during execution

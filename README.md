@@ -123,7 +123,7 @@ from good_agent import Agent, ToolMessage, AssistantMessage
 
 async with Agent("Assistant", model="gpt-4o") as agent:
     # Pass the message directly to execute()
-    async for message in agent.execute("Calculate 2 + 2 * 4", streaming=True):
+    async for message in agent.execute("Calculate 2 + 2 * 4"):
         match message:
             case ToolMessage(tool_name=name, content=result):
                 print(f"Tool {name} output: {result}")

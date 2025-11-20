@@ -78,7 +78,7 @@ nav:
     - Events: core/events.md
   - Key Features:
     - Structured Output: features/structured-output.md
-    - Streaming: features/streaming.md
+    - Interactive Execution: features/interactive-execution.md
     - Agent Modes: features/modes.md
     - Multi-Agent: features/multi-agent.md
     - Resources: features/resources.md

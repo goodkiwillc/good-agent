@@ -1,23 +1,23 @@
-# Streaming & Iteration
+# Interactive Execution
 
-Good Agent provides real-time streaming capabilities through the `agent.execute()` method, enabling you to process messages as they're generated. This is essential for building responsive UIs, handling long-running workflows, and implementing custom tool approval flows.
+Good Agent provides granular control over the agent's execution lifecycle through the `agent.execute()` method, enabling you to process messages and events step-by-step as they are generated. This is essential for building responsive UIs, handling long-running workflows, and implementing custom tool approval flows.
 
 ## Overview
 
 ### Key Concepts
 
-- **Agent Execution Flow** - Stream each step of the agent's reasoning process
-- **Message-by-Message Processing** - Handle AssistantMessage, ToolMessage, and other message types as they occur
+- **Step-by-Step Execution** - Process the agent's reasoning loop one event at a time
+- **Event Iterator** - Iterate over `AssistantMessage`, `ToolMessage`, and other events
 - **Pattern Matching** - Use Python's `match/case` syntax for elegant message handling
-- **Interactive Control** - Implement approval workflows and custom tool handling
-- **Real-time UIs** - Build streaming interfaces that update as the agent works
+- **Interactive Control** - Pause execution for user input or tool approval
+- **Real-time UIs** - Update interfaces immediately as the agent thinks and acts
 
 ### Execute vs Call
 
 Good Agent provides two main execution methods:
 
-- **`agent.call()`** - One-shot method that returns the final result
-- **`agent.execute()`** - Streaming method that yields each message as it's generated
+- **`agent.call()`** - One-shot method that runs until completion and returns the final result
+- **`agent.execute()`** - Iterator method that yields each message as it is generated during the execution loop
 
 ```python
 from good_agent import Agent
@@ -27,16 +27,16 @@ async with Agent("You are a helpful assistant.") as agent:
     result = await agent.call("What's 2 + 2?")
     print(result.content)  # "4"
     
-    # Streaming: Process each message
+    # Interactive: Process each message
     async for message in agent.execute("Calculate 2 + 2 and explain"):
         print(f"{message.role}: {message.content}")
 ```
 
-## Basic Streaming
+## Basic Iteration
 
 ### Simple Message Processing
 
-Stream agent execution and handle each message:
+Iterate through the agent's execution and handle each message:
 
 ```python
 from good_agent import Agent, tool
@@ -216,7 +216,7 @@ async with Agent("Controlled assistant", tools=[search_web, calculate]) as agent
 
 ## Real-Time UI Updates
 
-### Building Streaming Interfaces
+### Building Responsive Interfaces
 
 Create responsive UIs that update as the agent works:
 
@@ -224,14 +224,14 @@ Create responsive UIs that update as the agent works:
 import asyncio
 from datetime import datetime
 
-class StreamingUI:
+class ConsoleUI:
     def __init__(self):
         self.message_count = 0
         self.start_time = datetime.now()
         
     def display_header(self):
         print("=" * 60)
-        print("🤖 GOOD AGENT STREAMING DEMO")
+        print("🤖 GOOD AGENT INTERACTIVE DEMO")
         print("=" * 60)
         
     def display_message(self, message, elapsed_time):
@@ -265,8 +265,8 @@ class StreamingUI:
         print("=" * 60)
 
 # Usage
-async def streaming_demo():
-    ui = StreamingUI()
+async def interactive_demo():
+    ui = ConsoleUI()
     ui.display_header()
     
     async with Agent("Demo assistant", tools=[calculate, search_web]) as agent:
@@ -280,7 +280,7 @@ async def streaming_demo():
     ui.display_footer()
 
 # Run the demo
-await streaming_demo()
+await interactive_demo()
 ```
 
 ### Progress Tracking
@@ -398,11 +398,11 @@ async with Agent("Assistant with dangerous tools",
                 print(f"🤖 {text}")
 ```
 
-## Error Handling in Streaming
+## Error Handling
 
 ### Graceful Error Recovery
 
-Handle errors during streaming execution:
+Handle errors during the execution loop:
 
 ```python
 import logging
@@ -418,8 +418,8 @@ async def unreliable_tool(data: str) -> str:
         raise Exception("Simulated tool failure")
     return f"Processed: {data}"
 
-async def robust_streaming(agent, query: str):
-    """Stream with comprehensive error handling."""
+async def robust_execution(agent, query: str):
+    """Run with comprehensive error handling."""
     try:
         message_count = 0
         successful_tools = 0
@@ -450,7 +450,7 @@ async def robust_streaming(agent, query: str):
         print(f"🚨 Critical tool error: {e}")
         
     except Exception as e:
-        logger.error(f"Unexpected error during streaming: {e}")
+        logger.error(f"Unexpected error during execution: {e}")
         print(f"🚨 Unexpected error: {e}")
         
     finally:
@@ -461,16 +461,16 @@ async def robust_streaming(agent, query: str):
 
 # Usage
 async with Agent("Error-prone assistant", tools=[unreliable_tool]) as agent:
-    await robust_streaming(agent, "Process this data and handle any error data")
+    await robust_execution(agent, "Process this data and handle any error data")
 ```
 
 ### Timeout Handling
 
-Implement timeouts for long-running streaming:
+Implement timeouts for long-running executions:
 
 ```python
-async def streaming_with_timeout(agent, query: str, timeout_seconds: int = 30):
-    """Stream with timeout protection."""
+async def execution_with_timeout(agent, query: str, timeout_seconds: int = 30):
+    """Run with timeout protection."""
     try:
         async with asyncio.timeout(timeout_seconds):
             async for message in agent.execute(query):
@@ -480,18 +480,18 @@ async def streaming_with_timeout(agent, query: str, timeout_seconds: int = 30):
                 await asyncio.sleep(0.1)
                 
     except asyncio.TimeoutError:
-        print(f"🕐 Streaming timed out after {timeout_seconds} seconds")
+        print(f"🕐 Execution timed out after {timeout_seconds} seconds")
         print("🛑 Stopping agent execution")
         
     except Exception as e:
-        print(f"🚨 Error during streaming: {e}")
+        print(f"🚨 Error during execution: {e}")
 
 # Usage with timeout
 async with Agent("Slow assistant") as agent:
-    await streaming_with_timeout(agent, "Process complex data", timeout_seconds=10)
+    await execution_with_timeout(agent, "Process complex data", timeout_seconds=10)
 ```
 
-## Advanced Streaming Patterns
+## Advanced Patterns
 
 ### Message Buffering and Batching
 
@@ -524,7 +524,7 @@ class MessageBuffer:
         self.last_flush = asyncio.get_event_loop().time()
         return messages
 
-async def buffered_streaming():
+async def buffered_execution():
     buffer = MessageBuffer(batch_size=3, flush_interval=1.5)
     
     async with Agent("Buffered assistant", tools=[calculate]) as agent:
@@ -547,19 +547,19 @@ async def buffered_streaming():
             final_batch = buffer.flush()
             print(f"📦 Final batch: {len(final_batch)} messages")
 
-await buffered_streaming()
+await buffered_execution()
 ```
 
 ### Concurrent Message Processing
 
-Process multiple message streams concurrently:
+Process multiple agent executions concurrently:
 
 ```python
 async def concurrent_agents():
-    """Run multiple agents concurrently and process their streams."""
+    """Run multiple agents concurrently and process their event loops."""
     
-    async def process_agent_stream(agent_name: str, agent, query: str):
-        """Process a single agent's stream."""
+    async def process_agent_loop(agent_name: str, agent, query: str):
+        """Process a single agent's execution loop."""
         print(f"🚀 Starting {agent_name}")
         
         async for message in agent.execute(query, max_iterations=3):
@@ -577,8 +577,8 @@ async def concurrent_agents():
     
     # Run agents concurrently
     await asyncio.gather(
-        process_agent_stream("MATH", math_agent, "Calculate 15 * 8"),
-        process_agent_stream("RESEARCH", research_agent, "Search for Python news"),
+        process_agent_loop("MATH", math_agent, "Calculate 15 * 8"),
+        process_agent_loop("RESEARCH", research_agent, "Search for Python news"),
     )
     
     await math_agent.close()
@@ -589,9 +589,9 @@ await concurrent_agents()
 
 ## Event System Integration
 
-### Streaming with Events
+### Monitoring Execution with Events
 
-Combine streaming with the event system for advanced monitoring:
+Combine the execution loop with the event system for advanced monitoring:
 
 ```python
 from good_agent.events import AgentEvents
@@ -617,16 +617,16 @@ async with Agent("Event-monitored assistant", tools=[calculate]) as agent:
         duration = ctx.parameters.get("duration", 0)
         print(f"⚙️  Tool {tool_name} {'✅' if success else '❌'} ({duration:.2f}s)")
     
-    # Stream with event monitoring
+    # Run execution with event monitoring
     async for message in agent.execute("Calculate 25 * 4 + 10"):
         print(f"📨 Message: {message.role} - {message.content}")
 ```
 
 ## Performance and Optimization
 
-### Streaming Performance Tips
+### Execution Performance Tips
 
-Optimize streaming performance for production use:
+Optimize execution speed for production use:
 
 ```python
 import time
@@ -657,8 +657,8 @@ class PerformanceMonitor:
             "messages_per_second": self.total_messages / (self.message_times[-1] or 1)
         }
 
-async def optimized_streaming(query: str) -> AsyncGenerator:
-    """Optimized streaming with performance monitoring."""
+async def optimized_execution(query: str) -> AsyncGenerator:
+    """Optimized execution with performance monitoring."""
     monitor = PerformanceMonitor()
     monitor.start()
     
@@ -675,13 +675,13 @@ async def optimized_streaming(query: str) -> AsyncGenerator:
                 print(f"📊 Performance: {stats['messages_per_second']:.1f} msg/sec")
 
 # Usage
-async for msg in optimized_streaming("Do complex calculations"):
+async for msg in optimized_execution("Do complex calculations"):
     print(f"Fast processing: {msg.role}")
 ```
 
 ## Complete Examples
 
-Here are comprehensive examples showing advanced streaming patterns:
+Here are comprehensive examples showing advanced execution patterns:
 
 ```python
 --8<-- "examples/streaming/advanced_streaming.py"
@@ -689,20 +689,20 @@ Here are comprehensive examples showing advanced streaming patterns:
 
 ## Best Practices
 
-### Streaming Architecture Guidelines
+### Architecture Guidelines
 
 - **Handle all message types** - Always include patterns for AssistantMessage and ToolMessage
 - **Implement timeouts** - Prevent infinite loops in production systems  
 - **Buffer appropriately** - Balance responsiveness with processing efficiency
 - **Monitor performance** - Track message rates and processing times
-- **Graceful error handling** - Continue streaming even when individual tools fail
+- **Graceful error handling** - Continue execution even when individual tools fail
 - **User experience** - Provide visual feedback for long-running operations
 
 ### Production Considerations
 
 ```python
-async def production_streaming(agent, query: str):
-    """Production-ready streaming with all best practices."""
+async def production_execution(agent, query: str):
+    """Production-ready execution with all best practices."""
     
     # Configuration
     MAX_ITERATIONS = 20
@@ -739,7 +739,7 @@ async def production_streaming(agent, query: str):
                             
                         case ToolMessage(tool_name=name, success=False, content=error):
                             print(f"❌ {name}: {error}")
-                            # Log error but continue streaming
+                            # Log error but continue execution
                             logger.warning(f"Tool {name} failed: {error}")
                             
                         case _:
@@ -750,9 +750,9 @@ async def production_streaming(agent, query: str):
                     continue  # Continue with next message
                     
     except asyncio.TimeoutError:
-        print(f"⏰ Streaming timeout after {MESSAGE_TIMEOUT}s")
+        print(f"⏰ Execution timeout after {MESSAGE_TIMEOUT}s")
     except Exception as e:
-        logger.error(f"Streaming error: {e}")
+        logger.error(f"Execution error: {e}")
     finally:
         total_time = time.time() - start_time
         print(f"📈 Final stats: {message_count} messages in {total_time:.1f}s")
@@ -760,8 +760,8 @@ async def production_streaming(agent, query: str):
 
 ## Next Steps
 
-- **[Agent Modes](./modes.md)** - Learn about streaming in different agent modes
-- **[Events](../core/events.md)** - Monitor streaming execution with events
-- **[Multi-Agent](./multi-agent.md)** - Stream coordination across multiple agents  
+- **[Agent Modes](./modes.md)** - Learn about execution in different agent modes
+- **[Events](../core/events.md)** - Monitor execution with events
+- **[Multi-Agent](./multi-agent.md)** - Coordinate execution across multiple agents  
 - **[Human-in-the-Loop](./human-in-the-loop.md)** - Build interactive approval workflows
-- **[Tools](../core/tools.md)** - Understand tool execution in streaming contexts
+- **[Tools](../core/tools.md)** - Understand tool execution in interactive contexts
