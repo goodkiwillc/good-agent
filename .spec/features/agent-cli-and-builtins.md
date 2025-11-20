@@ -27,10 +27,10 @@ Expand the public documentation to cover the `good-agent run` CLI workflow and t
 
 ## Todo List
 
-- [ ] Draft CLI documentation page with usage examples and interactive tips.
-- [ ] Draft built-in agents reference page covering purpose, tools, and dependencies.
-- [ ] Wire both pages into MkDocs navigation.
-- [ ] Run `uv run mkdocs build` (or equivalent) to ensure docs compile.
+- [x] Draft CLI documentation page with usage examples and interactive tips.
+- [x] Draft built-in agents reference page covering purpose, tools, and dependencies.
+- [x] Wire both pages into MkDocs navigation.
+- [x] Run `uv run mkdocs build` (or equivalent) to ensure docs compile.
 
 ## Testing Strategy
 

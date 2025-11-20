@@ -827,3 +827,416 @@ class TestAPITracking:
         # Should fire both events
         assert "before" in events_fired
         assert "after" in events_fired
+
+
+# ============================================================================
+# Test 11: Agent Pipe Conversation Pattern (agent | agent)
+# ============================================================================
+
+
+@pytest.mark.skipif(not HANDLERS_AVAILABLE, reason="Handlers not yet implemented")
+class TestAgentPipeConversation:
+    """Test agent | agent conversation pattern with handlers"""
+
+    async def test_piped_agents_execute_in_sequence(self):
+        """Test that agent | agent executes both agents in sequence"""
+        alice = Agent("You are Alice, a friendly greeter")
+        bob = Agent("You are Bob, a grateful responder")
+
+        # Alice greets
+        alice_handler = ConditionalHandler().default("Hello Bob! How are you today?")
+
+        # Bob responds to Alice's greeting
+        bob_handler = ConditionalHandler().default(
+            "Hi Alice! I'm doing great, thanks for asking!"
+        )
+
+        with alice.mock(alice_handler), bob.mock(bob_handler):
+            # Pipe alice into bob
+            async with alice | bob as conversation:
+                # Alice goes first (initial message)
+                alice.append("Start conversation")
+
+                # Execute the piped conversation
+                messages = []
+                async for msg in conversation.execute():
+                    messages.append(msg)
+
+                # Should have messages from both agents
+                assert len(messages) >= 2
+
+                # First message should be from Alice
+                assert messages[0].content == "Hello Bob! How are you today?"
+
+                # Bob should have received Alice's message and responded
+                assert (
+                    messages[-1].content
+                    == "Hi Alice! I'm doing great, thanks for asking!"
+                )
+
+    async def test_piped_agents_with_transcripts(self):
+        """Test agent | agent with predefined conversation transcripts"""
+        researcher = Agent("You are a researcher")
+        writer = Agent("You are a writer")
+
+        # Researcher finds information - need enough responses for conversation
+        research_transcript = [
+            ("assistant", "I found 3 key findings about the topic."),
+            ("assistant", "The data shows a clear trend upward."),
+            ("assistant", "Let me provide more details."),
+            ("assistant", "Here's the final research summary."),
+        ]
+
+        # Writer summarizes the research - need enough responses
+        writer_transcript = [
+            ("assistant", "Based on your research, I'll write a summary."),
+            ("assistant", "Here's the final article with all findings included."),
+            ("assistant", "I've incorporated all your research."),
+            ("assistant", "The article is now complete."),
+        ]
+
+        with (
+            researcher.mock(TranscriptHandler(research_transcript)),
+            writer.mock(TranscriptHandler(writer_transcript)),
+        ):
+            async with researcher | writer as workflow:
+                researcher.append("Research the topic")
+
+                messages = []
+                async for msg in workflow.execute(max_iterations=4):
+                    messages.append(msg)
+                    # Limit to 4 messages to avoid exhausting transcripts
+                    if len(messages) >= 4:
+                        break
+
+                # Should have messages from both agents
+                assert len(messages) >= 2
+
+                # Verify researcher messages appear
+                assert any("3 key findings" in msg.content for msg in messages)
+
+                # Verify writer receives and processes research
+                assert any("article" in msg.content.lower() for msg in messages)
+
+    async def test_piped_agents_maintain_separate_context(self):
+        """Test that piped agents maintain separate handler contexts"""
+
+        class ContextTrackingHandler:
+            def __init__(self, name: str):
+                self.name = name
+                self.calls = []
+
+            async def handle(self, ctx: MockContext) -> MockResponse:
+                self.calls.append(
+                    {
+                        "call_count": ctx.call_count,
+                        "user_messages": len(ctx.agent.user) if ctx.agent else 0,
+                        "assistant_messages": (
+                            len(ctx.agent.assistant) if ctx.agent else 0
+                        ),
+                    }
+                )
+                return MockResponse(content=f"{self.name} speaking")
+
+        agent_a_handler = ContextTrackingHandler("Agent A")
+        agent_b_handler = ContextTrackingHandler("Agent B")
+
+        agent_a = Agent("Agent A")
+        agent_b = Agent("Agent B")
+
+        with agent_a.mock(agent_a_handler), agent_b.mock(agent_b_handler):
+            async with agent_a | agent_b as conversation:
+                agent_a.append("Start")
+
+                messages = []
+                async for msg in conversation.execute(max_iterations=4):
+                    messages.append(msg)
+                    if len(messages) >= 4:
+                        break
+
+                # Both handlers should have been called
+                assert len(agent_a_handler.calls) > 0
+                assert len(agent_b_handler.calls) > 0
+
+                # Verify they maintain separate handler instances
+                # (even if call structure looks similar)
+                assert agent_a_handler is not agent_b_handler
+                assert id(agent_a_handler) != id(agent_b_handler)
+
+
+# ============================================================================
+# Test 12: Citations and Annotations Flow
+# ============================================================================
+
+
+@pytest.mark.skipif(not HANDLERS_AVAILABLE, reason="Handlers not yet implemented")
+class TestCitationsAndAnnotations:
+    """Test that citations and annotations flow through the pipeline"""
+
+    async def test_handler_citations_appear_in_message(self):
+        """Test that citations from handler appear in final AssistantMessage"""
+
+        def handler_with_citations(ctx: MockContext) -> MockResponse:
+            return MockResponse(
+                content="Based on research, here are the findings.",
+                citations=[
+                    "https://example.com/paper1.pdf",
+                    "https://example.com/paper2.pdf",
+                ],
+            )
+
+        agent = Agent("You are helpful")
+
+        with agent.mock(handler_with_citations):
+            result = await agent.call("What did you find?")
+
+            # Citations should be present
+            assert result.citations is not None
+            assert len(result.citations) == 2
+            assert "paper1.pdf" in result.citations[0]
+            assert "paper2.pdf" in result.citations[1]
+
+    async def test_handler_annotations_appear_in_message(self):
+        """Test that annotations from handler appear in final AssistantMessage"""
+
+        def handler_with_annotations(ctx: MockContext) -> MockResponse:
+            return MockResponse(
+                content="The calculation shows 42 as the answer.",
+                annotations=[
+                    {"type": "calculation", "value": 42, "confidence": 0.95},
+                    {"type": "source", "name": "Deep Thought"},
+                ],
+            )
+
+        agent = Agent("You are helpful")
+
+        with agent.mock(handler_with_annotations):
+            result = await agent.call("What's the answer?")
+
+            # Annotations should be present
+            assert result.annotations is not None
+            assert len(result.annotations) == 2
+            assert result.annotations[0]["type"] == "calculation"
+            assert result.annotations[0]["value"] == 42
+            assert result.annotations[1]["type"] == "source"
+
+    async def test_citations_and_annotations_together(self):
+        """Test that both citations and annotations work together"""
+
+        def handler_with_both(ctx: MockContext) -> MockResponse:
+            return MockResponse(
+                content="Research findings with sources.",
+                citations=["https://example.com/source.pdf"],
+                annotations=[{"confidence": 0.9, "verified": True}],
+            )
+
+        agent = Agent("You are helpful")
+
+        with agent.mock(handler_with_both):
+            result = await agent.call("Tell me")
+
+            assert result.citations is not None
+            assert len(result.citations) == 1
+            assert result.annotations is not None
+            assert len(result.annotations) == 1
+            assert result.annotations[0]["verified"] is True
+
+    async def test_citations_persist_across_turns(self):
+        """Test that citations from different turns are tracked"""
+        responses = [
+            MockResponse(
+                content="First finding",
+                citations=["https://example.com/paper1.pdf"],
+            ),
+            MockResponse(
+                content="Second finding",
+                citations=["https://example.com/paper2.pdf"],
+            ),
+        ]
+
+        agent = Agent("You are helpful")
+
+        with agent.mock(*responses):
+            result1 = await agent.call("Question 1")
+            assert result1.citations is not None
+            assert len(result1.citations) == 1
+
+            result2 = await agent.call("Question 2")
+            assert result2.citations is not None
+            assert len(result2.citations) == 1
+
+            # Both citations should be tracked in agent history
+            all_assistant_msgs = agent.assistant
+            citations_found = [
+                msg.citations for msg in all_assistant_msgs if msg.citations is not None
+            ]
+            assert len(citations_found) == 2
+
+
+# ============================================================================
+# Test 13: Tool Execution with Handler Inspection
+# ============================================================================
+
+
+@pytest.mark.skipif(not HANDLERS_AVAILABLE, reason="Handlers not yet implemented")
+class TestToolExecutionInspection:
+    """Test full cycle of tool execution with handler inspection"""
+
+    async def test_handler_sees_tool_results_in_messages(self):
+        """Test that handler can inspect tool results from previous execution"""
+        from good_agent import tool
+
+        @tool
+        def get_weather(location: str) -> str:
+            """Get weather for a location"""
+            return f"Weather in {location}: Sunny, 72°F"
+
+        call_contexts = []
+
+        def tracking_handler(ctx: MockContext) -> MockResponse:
+            # Track what we see
+            call_contexts.append(
+                {
+                    "call_count": ctx.call_count,
+                    "total_messages": len(ctx.messages),
+                    "tool_messages": [
+                        msg for msg in ctx.messages if msg.get("role") == "tool"
+                    ],
+                }
+            )
+
+            # First call: request tool
+            if ctx.call_count == 1:
+                return MockResponse(
+                    content="Let me check the weather",
+                    tool_calls=[
+                        {
+                            "tool_name": "get_weather",
+                            "arguments": {"location": "Paris"},
+                            "type": "tool_call",
+                            "result": None,
+                        }
+                    ],
+                )
+
+            # Second call: we should see tool result
+            # Check if we can find the tool result
+            tool_msgs = [msg for msg in ctx.messages if msg.get("role") == "tool"]
+            if tool_msgs:
+                return MockResponse(
+                    content="Based on the data: Weather in Paris is Sunny!"
+                )
+
+            return MockResponse(content="Hmm, no tool result found")
+
+        agent = Agent("You are helpful", tools=[get_weather])
+
+        with agent.mock(tracking_handler):
+            result = await agent.call("What's the weather in Paris?")
+
+            # Should have final response
+            assert "Paris" in result.content
+
+            # Should have been called twice (initial + after tool)
+            assert len(call_contexts) >= 2
+
+            # Second call should have seen the tool result
+            second_call = call_contexts[1]
+            assert len(second_call["tool_messages"]) > 0
+
+    async def test_conditional_handler_based_on_tool_results(self):
+        """Test ConditionalHandler that responds based on tool execution"""
+        from good_agent import tool
+
+        @tool
+        def check_inventory(item: str) -> dict:
+            """Check inventory for an item"""
+            inventory = {"apples": 10, "bananas": 0, "oranges": 5}
+            return {"item": item, "quantity": inventory.get(item, 0)}
+
+        handler = (
+            ConditionalHandler()
+            .when(
+                # First call - no tool results yet
+                lambda ctx: not any(msg.get("role") == "tool" for msg in ctx.messages),
+                respond=MockResponse(
+                    content="Checking inventory...",
+                    tool_calls=[
+                        {
+                            "tool_name": "check_inventory",
+                            "arguments": {"item": "bananas"},
+                            "type": "tool_call",
+                            "result": None,
+                        }
+                    ],
+                ),
+            )
+            .when(
+                # After tool execution - check if we have stock
+                lambda ctx: any(
+                    '"quantity": 0' in str(msg.get("content", ""))
+                    for msg in ctx.messages
+                    if msg.get("role") == "tool"
+                ),
+                respond="Sorry, we're out of stock!",
+            )
+            .default("We have that item in stock!")
+        )
+
+        agent = Agent("You are a store assistant", tools=[check_inventory])
+
+        with agent.mock(handler):
+            result = await agent.call("Do you have bananas?")
+
+            # Should get the out of stock message
+            assert "out of stock" in result.content.lower()
+
+    async def test_handler_inspects_tool_call_arguments(self):
+        """Test that handler can inspect tool call arguments from context"""
+        from good_agent import tool
+
+        @tool
+        def calculate(operation: str, x: int, y: int) -> int:
+            """Perform a calculation"""
+            if operation == "add":
+                return x + y
+            elif operation == "multiply":
+                return x * y
+            return 0
+
+        seen_operations = []
+
+        def operation_tracking_handler(ctx: MockContext) -> MockResponse:
+            # Check if there are any tool messages with results
+            tool_results = [msg for msg in ctx.messages if msg.get("role") == "tool"]
+
+            if not tool_results:
+                # First call - request calculation
+                return MockResponse(
+                    content="Let me calculate that",
+                    tool_calls=[
+                        {
+                            "tool_name": "calculate",
+                            "arguments": {"operation": "multiply", "x": 6, "y": 7},
+                            "type": "tool_call",
+                            "result": None,
+                        }
+                    ],
+                )
+            else:
+                # We have tool results - extract the operation
+                for msg in ctx.messages:
+                    content = str(msg.get("content", ""))
+                    if "multiply" in content:
+                        seen_operations.append("multiply")
+
+                return MockResponse(content="The result is 42")
+
+        agent = Agent("You are helpful", tools=[calculate])
+
+        with agent.mock(operation_tracking_handler):
+            result = await agent.call("What is 6 times 7?")
+
+            assert "42" in result.content
+            # Handler should have seen the operation
+            assert "multiply" in seen_operations
