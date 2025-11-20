@@ -1363,11 +1363,6 @@ class Agent(EventRouter):
             index: Index of message to replace
             new_message: New message to insert
         """
-        # warnings.warn(
-        #     "Agent.replace_message() is deprecated. Assign directly via agent.messages[index] = message instead.",
-        #     DeprecationWarning,
-        #     stacklevel=2,
-        # )
         self._message_manager.replace_message(index, new_message)
 
     def set_system_message(
@@ -2160,11 +2155,6 @@ class Agent(EventRouter):
     ) -> None:
         """Record a tool invocation via the tool execution manager."""
 
-        # warnings.warn(
-        #     "Agent.add_tool_invocation() is deprecated. Use agent.tool_calls.record_invocation().",
-        #     DeprecationWarning,
-        #     stacklevel=2,
-        # )
         self.tool_calls.record_invocation(
             tool,
             response,
@@ -2181,11 +2171,6 @@ class Agent(EventRouter):
     ) -> None:
         """Record multiple tool invocations via the tool execution manager."""
 
-        # warnings.warn(
-        #     "Agent.add_tool_invocations() is deprecated. Use agent.tool_calls.record_invocations().",
-        #     DeprecationWarning,
-        #     stacklevel=2,
-        # )
         self.tool_calls.record_invocations(
             tool,
             invocations,

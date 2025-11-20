@@ -68,6 +68,8 @@ nav:
   - Getting Started:
     - Quickstart: getting-started/quickstart.md
     - Configuration: getting-started/configuration.md
+  - Command Line:
+    - Interactive Run: cli/run.md
   - Core Concepts:
     - Agents: core/agents.md
     - Messages & History: core/messages.md
@@ -87,6 +89,7 @@ nav:
   - Reference:
     - API Reference: api-reference.md
     - Style Guide: STYLEGUIDE.md
+    - Built-In Agents: reference/built-in-agents.md
   - Project Info:
     - Changelog: CHANGELOG.md
     - Decisions: DECISIONS.md
