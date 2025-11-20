@@ -634,6 +634,737 @@ if len(agent._message_registry._messages) > 5000:
     pass
 ```
 
+## Message Persistence & Storage
+
+### Database Integration
+
+Store and retrieve message history from databases:
+
+```python
+import asyncpg
+from typing import List
+import json
+
+class MessagePersistence:
+    """PostgreSQL-based message persistence."""
+    
+    def __init__(self, connection_string: str):
+        self.connection_string = connection_string
+    
+    async def save_messages(self, agent_id: str, messages: List[Message]) -> None:
+        """Save message history to database."""
+        conn = await asyncpg.connect(self.connection_string)
+        
+        try:
+            # Create table if not exists
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS agent_messages (
+                    id TEXT PRIMARY KEY,
+                    agent_id TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    timestamp TIMESTAMPTZ NOT NULL,
+                    metadata JSONB,
+                    sequence_order INTEGER NOT NULL
+                )
+            """)
+            
+            # Insert messages
+            for i, msg in enumerate(messages):
+                await conn.execute("""
+                    INSERT INTO agent_messages 
+                    (id, agent_id, role, content, timestamp, metadata, sequence_order)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
+                    ON CONFLICT (id) DO UPDATE SET
+                        content = EXCLUDED.content,
+                        metadata = EXCLUDED.metadata
+                """, 
+                str(msg.id), 
+                agent_id,
+                msg.role,
+                msg.content,
+                msg.timestamp,
+                json.dumps(msg.model_dump(exclude={"id", "role", "content", "timestamp"})),
+                i
+                )
+        finally:
+            await conn.close()
+    
+    async def load_messages(self, agent_id: str) -> List[Message]:
+        """Load message history from database."""
+        conn = await asyncpg.connect(self.connection_string)
+        
+        try:
+            rows = await conn.fetch("""
+                SELECT id, role, content, timestamp, metadata
+                FROM agent_messages 
+                WHERE agent_id = $1 
+                ORDER BY sequence_order
+            """, agent_id)
+            
+            messages = []
+            for row in rows:
+                metadata = json.loads(row['metadata'])
+                
+                # Reconstruct message based on role
+                if row['role'] == 'user':
+                    msg = UserMessage(content=row['content'], **metadata)
+                elif row['role'] == 'assistant':
+                    msg = AssistantMessage(content=row['content'], **metadata)
+                elif row['role'] == 'system':
+                    msg = SystemMessage(content=row['content'], **metadata)
+                elif row['role'] == 'tool':
+                    msg = ToolMessage(
+                        content=row['content'],
+                        tool_call_id=metadata.get('tool_call_id'),
+                        tool_name=metadata.get('tool_name'),
+                        **{k: v for k, v in metadata.items() 
+                           if k not in ['tool_call_id', 'tool_name']}
+                    )
+                
+                # Restore original ID and timestamp
+                msg.id = ULID.from_str(row['id'])
+                msg.timestamp = row['timestamp']
+                messages.append(msg)
+            
+            return messages
+        finally:
+            await conn.close()
+
+# Usage with agents
+async def persistent_agent_session():
+    """Example of agent with persistent message history."""
+    persistence = MessagePersistence("postgresql://user:pass@localhost/agents")
+    agent_id = "user_123_session"
+    
+    # Load existing history
+    try:
+        historical_messages = await persistence.load_messages(agent_id)
+        agent = Agent("Assistant")
+        agent.messages.extend(historical_messages)
+        print(f"Loaded {len(historical_messages)} historical messages")
+    except:
+        # Start fresh if no history exists
+        agent = Agent("Assistant")
+    
+    # Continue conversation
+    await agent.initialize()
+    response = await agent.call("Continue our previous conversation")
+    
+    # Save updated history
+    await persistence.save_messages(agent_id, agent.messages)
+```
+
+### File-Based Persistence
+
+Simple file-based message storage:
+
+```python
+import json
+from pathlib import Path
+from datetime import datetime
+
+class FileMessageStore:
+    """File-based message persistence."""
+    
+    def __init__(self, base_path: str = "./message_store"):
+        self.base_path = Path(base_path)
+        self.base_path.mkdir(exist_ok=True)
+    
+    def _get_session_file(self, session_id: str) -> Path:
+        """Get file path for a session."""
+        return self.base_path / f"{session_id}.json"
+    
+    def save_session(self, session_id: str, messages: List[Message]) -> None:
+        """Save message session to file."""
+        session_data = {
+            "session_id": session_id,
+            "saved_at": datetime.now().isoformat(),
+            "message_count": len(messages),
+            "messages": [
+                {
+                    "id": str(msg.id),
+                    "role": msg.role,
+                    "content": msg.content,
+                    "timestamp": msg.timestamp.isoformat(),
+                    "metadata": msg.model_dump(exclude={"id", "role", "content", "timestamp"})
+                }
+                for msg in messages
+            ]
+        }
+        
+        session_file = self._get_session_file(session_id)
+        with open(session_file, 'w') as f:
+            json.dump(session_data, f, indent=2)
+    
+    def load_session(self, session_id: str) -> List[Message]:
+        """Load message session from file."""
+        session_file = self._get_session_file(session_id)
+        
+        if not session_file.exists():
+            return []
+        
+        with open(session_file, 'r') as f:
+            session_data = json.load(f)
+        
+        messages = []
+        for msg_data in session_data["messages"]:
+            # Reconstruct message with original ID and timestamp
+            if msg_data["role"] == "user":
+                msg = UserMessage(content=msg_data["content"], **msg_data["metadata"])
+            elif msg_data["role"] == "assistant":
+                msg = AssistantMessage(content=msg_data["content"], **msg_data["metadata"])
+            elif msg_data["role"] == "system":
+                msg = SystemMessage(content=msg_data["content"], **msg_data["metadata"])
+            elif msg_data["role"] == "tool":
+                metadata = msg_data["metadata"]
+                msg = ToolMessage(
+                    content=msg_data["content"],
+                    tool_call_id=metadata.get("tool_call_id"),
+                    tool_name=metadata.get("tool_name"),
+                    **{k: v for k, v in metadata.items() 
+                       if k not in ["tool_call_id", "tool_name"]}
+                )
+            
+            msg.id = ULID.from_str(msg_data["id"])
+            msg.timestamp = datetime.fromisoformat(msg_data["timestamp"])
+            messages.append(msg)
+        
+        return messages
+    
+    def list_sessions(self) -> List[str]:
+        """List all available session IDs."""
+        return [f.stem for f in self.base_path.glob("*.json")]
+    
+    def delete_session(self, session_id: str) -> bool:
+        """Delete a session file."""
+        session_file = self._get_session_file(session_id)
+        if session_file.exists():
+            session_file.unlink()
+            return True
+        return False
+
+# Usage
+store = FileMessageStore()
+
+# Save session
+await agent.call("Hello!")
+store.save_session("user_session_1", agent.messages)
+
+# Load session later
+messages = store.load_session("user_session_1")
+new_agent = Agent("Assistant")
+new_agent.messages.extend(messages)
+```
+
+## Message Analytics & Insights
+
+### Conversation Analysis
+
+Analyze message patterns and conversation health:
+
+```python
+from collections import Counter
+from typing import Dict, Any
+import matplotlib.pyplot as plt
+
+class ConversationAnalyzer:
+    """Analyze conversation patterns and metrics."""
+    
+    def __init__(self, messages: List[Message]):
+        self.messages = messages
+    
+    def basic_stats(self) -> Dict[str, Any]:
+        """Get basic conversation statistics."""
+        role_counts = Counter(msg.role for msg in self.messages)
+        
+        # Calculate average message length by role
+        role_lengths = {}
+        for role in role_counts:
+            role_messages = [msg for msg in self.messages if msg.role == role]
+            avg_length = sum(len(msg.content) for msg in role_messages) / len(role_messages)
+            role_lengths[role] = avg_length
+        
+        # Time span analysis
+        if self.messages:
+            start_time = min(msg.timestamp for msg in self.messages)
+            end_time = max(msg.timestamp for msg in self.messages)
+            duration = end_time - start_time
+        else:
+            duration = None
+        
+        return {
+            "total_messages": len(self.messages),
+            "by_role": dict(role_counts),
+            "average_length_by_role": role_lengths,
+            "conversation_duration": duration,
+            "messages_per_minute": len(self.messages) / (duration.total_seconds() / 60) if duration else 0
+        }
+    
+    def tool_usage_analysis(self) -> Dict[str, Any]:
+        """Analyze tool usage patterns."""
+        # Count tool calls
+        tool_calls = []
+        for msg in self.messages:
+            if isinstance(msg, AssistantMessage) and msg.tool_calls:
+                tool_calls.extend(msg.tool_calls)
+        
+        if not tool_calls:
+            return {"tool_calls": 0, "unique_tools": 0, "most_used_tools": []}
+        
+        tool_names = [call.function.name for call in tool_calls]
+        tool_counts = Counter(tool_names)
+        
+        # Tool success rate analysis
+        tool_results = [msg for msg in self.messages if isinstance(msg, ToolMessage)]
+        success_by_tool = {}
+        
+        for tool_name in tool_counts:
+            tool_results_for_name = [msg for msg in tool_results if msg.tool_name == tool_name]
+            if tool_results_for_name:
+                # Assuming successful results don't contain "error" in content
+                successes = sum(1 for msg in tool_results_for_name 
+                               if "error" not in msg.content.lower())
+                success_rate = successes / len(tool_results_for_name)
+                success_by_tool[tool_name] = success_rate
+        
+        return {
+            "tool_calls": len(tool_calls),
+            "unique_tools": len(tool_counts),
+            "most_used_tools": tool_counts.most_common(5),
+            "tool_success_rates": success_by_tool
+        }
+    
+    def conversation_flow_analysis(self) -> Dict[str, Any]:
+        """Analyze conversation flow patterns."""
+        if len(self.messages) < 2:
+            return {"patterns": [], "transitions": {}}
+        
+        # Analyze role transitions
+        role_pairs = []
+        for i in range(len(self.messages) - 1):
+            current_role = self.messages[i].role
+            next_role = self.messages[i + 1].role
+            role_pairs.append((current_role, next_role))
+        
+        transition_counts = Counter(role_pairs)
+        
+        # Find unusual patterns
+        unusual_patterns = []
+        for (from_role, to_role), count in transition_counts.items():
+            if from_role == to_role and from_role != "system":
+                unusual_patterns.append(f"Consecutive {from_role} messages: {count} times")
+        
+        return {
+            "role_transitions": dict(transition_counts),
+            "unusual_patterns": unusual_patterns,
+            "conversation_turns": sum(1 for (f, t) in role_pairs if f == "user" and t == "assistant")
+        }
+    
+    def generate_report(self) -> str:
+        """Generate comprehensive conversation analysis report."""
+        basic = self.basic_stats()
+        tools = self.tool_usage_analysis()
+        flow = self.conversation_flow_analysis()
+        
+        report = f"""
+# Conversation Analysis Report
+
+## Basic Statistics
+- Total Messages: {basic['total_messages']}
+- Duration: {basic['conversation_duration']}
+- Rate: {basic['messages_per_minute']:.1f} messages/minute
+
+## Messages by Role
+{chr(10).join(f"- {role}: {count}" for role, count in basic['by_role'].items())}
+
+## Tool Usage
+- Total tool calls: {tools['tool_calls']}
+- Unique tools used: {tools['unique_tools']}
+- Most used tools: {', '.join(f"{tool}({count})" for tool, count in tools['most_used_tools'])}
+
+## Conversation Flow
+- Conversation turns: {flow['conversation_turns']}
+- Unusual patterns: {len(flow['unusual_patterns'])}
+{chr(10).join(f"  - {pattern}" for pattern in flow['unusual_patterns'])}
+        """
+        
+        return report.strip()
+
+# Usage
+analyzer = ConversationAnalyzer(agent.messages)
+report = analyzer.generate_report()
+print(report)
+
+# Export analysis data
+analysis_data = {
+    "basic_stats": analyzer.basic_stats(),
+    "tool_usage": analyzer.tool_usage_analysis(),
+    "conversation_flow": analyzer.conversation_flow_analysis()
+}
+
+with open("conversation_analysis.json", "w") as f:
+    json.dump(analysis_data, f, indent=2, default=str)
+```
+
+### Message Quality Assessment
+
+Evaluate message quality and conversation health:
+
+```python
+import re
+from typing import List, Tuple
+
+class MessageQualityAssessor:
+    """Assess message quality and conversation health."""
+    
+    def __init__(self, messages: List[Message]):
+        self.messages = messages
+    
+    def assess_message_quality(self, message: Message) -> Dict[str, Any]:
+        """Assess quality of individual message."""
+        content = message.content
+        
+        # Length assessment
+        length_score = min(len(content) / 100, 1.0)  # Normalize to 0-1
+        
+        # Complexity assessment (simple heuristic)
+        sentences = len(re.split(r'[.!?]+', content))
+        words = len(content.split())
+        avg_word_length = sum(len(word) for word in content.split()) / max(words, 1)
+        
+        complexity_score = min((sentences * avg_word_length) / 50, 1.0)
+        
+        # Content quality indicators
+        has_questions = bool(re.search(r'\?', content))
+        has_specificity = bool(re.search(r'\b(specific|exactly|precisely|detail)\b', content.lower()))
+        has_politeness = bool(re.search(r'\b(please|thank|sorry|appreciate)\b', content.lower()))
+        
+        # Role-specific assessment
+        role_specific_score = self._assess_role_specific_quality(message)
+        
+        return {
+            "length_score": length_score,
+            "complexity_score": complexity_score,
+            "has_questions": has_questions,
+            "has_specificity": has_specificity,
+            "has_politeness": has_politeness,
+            "role_specific_score": role_specific_score,
+            "overall_quality": (length_score + complexity_score + role_specific_score) / 3
+        }
+    
+    def _assess_role_specific_quality(self, message: Message) -> float:
+        """Assess quality based on message role."""
+        content = message.content.lower()
+        
+        if message.role == "user":
+            # Good user messages are clear and specific
+            clarity_indicators = ["what", "how", "why", "when", "where", "which"]
+            clarity_score = sum(1 for indicator in clarity_indicators if indicator in content) / len(clarity_indicators)
+            return min(clarity_score * 2, 1.0)
+        
+        elif message.role == "assistant":
+            # Good assistant messages are helpful and structured
+            helpfulness_indicators = ["here's", "i can", "let me", "to help", "consider", "option"]
+            helpfulness_score = sum(1 for indicator in helpfulness_indicators if indicator in content) / len(helpfulness_indicators)
+            return min(helpfulness_score * 2, 1.0)
+        
+        elif message.role == "system":
+            # Good system messages are clear and directive
+            directive_indicators = ["you are", "your role", "respond", "format", "style"]
+            directive_score = sum(1 for indicator in directive_indicators if indicator in content) / len(directive_indicators)
+            return min(directive_score * 2, 1.0)
+        
+        return 0.5  # Default for other roles
+    
+    def assess_conversation_health(self) -> Dict[str, Any]:
+        """Assess overall conversation health."""
+        if not self.messages:
+            return {"health_score": 0, "issues": ["No messages"]}
+        
+        issues = []
+        health_indicators = []
+        
+        # Check for balanced participation
+        role_counts = Counter(msg.role for msg in self.messages)
+        user_count = role_counts.get("user", 0)
+        assistant_count = role_counts.get("assistant", 0)
+        
+        if user_count == 0:
+            issues.append("No user messages")
+        elif assistant_count == 0:
+            issues.append("No assistant responses")
+        else:
+            balance_ratio = min(user_count, assistant_count) / max(user_count, assistant_count)
+            health_indicators.append(balance_ratio)
+        
+        # Check for appropriate conversation flow
+        consecutive_same_role = 0
+        max_consecutive = 0
+        prev_role = None
+        
+        for msg in self.messages:
+            if msg.role == prev_role and msg.role != "system":
+                consecutive_same_role += 1
+                max_consecutive = max(max_consecutive, consecutive_same_role)
+            else:
+                consecutive_same_role = 1
+            prev_role = msg.role
+        
+        if max_consecutive > 3:
+            issues.append(f"Too many consecutive {prev_role} messages ({max_consecutive})")
+        else:
+            health_indicators.append(1.0 - (max_consecutive - 1) / 10)
+        
+        # Check average message quality
+        quality_scores = [
+            self.assess_message_quality(msg)["overall_quality"] 
+            for msg in self.messages
+        ]
+        avg_quality = sum(quality_scores) / len(quality_scores)
+        health_indicators.append(avg_quality)
+        
+        # Check for tool usage appropriateness
+        tool_calls = sum(1 for msg in self.messages if isinstance(msg, AssistantMessage) and msg.tool_calls)
+        tool_results = sum(1 for msg in self.messages if isinstance(msg, ToolMessage))
+        
+        if tool_calls > tool_results:
+            issues.append(f"Unmatched tool calls: {tool_calls - tool_results}")
+        elif tool_calls > 0:
+            tool_completion_rate = tool_results / tool_calls
+            health_indicators.append(tool_completion_rate)
+        
+        # Calculate overall health score
+        health_score = sum(health_indicators) / len(health_indicators) if health_indicators else 0
+        
+        return {
+            "health_score": health_score,
+            "issues": issues,
+            "average_message_quality": avg_quality,
+            "balance_ratio": balance_ratio if 'balance_ratio' in locals() else 0,
+            "tool_completion_rate": tool_completion_rate if 'tool_completion_rate' in locals() else 1.0
+        }
+    
+    def generate_quality_report(self) -> str:
+        """Generate comprehensive quality assessment report."""
+        health = self.assess_conversation_health()
+        
+        # Assess individual messages
+        message_assessments = [
+            (i, self.assess_message_quality(msg))
+            for i, msg in enumerate(self.messages)
+        ]
+        
+        # Find best and worst messages
+        best_msg = max(message_assessments, key=lambda x: x[1]["overall_quality"]) if message_assessments else None
+        worst_msg = min(message_assessments, key=lambda x: x[1]["overall_quality"]) if message_assessments else None
+        
+        report = f"""
+# Message Quality Assessment Report
+
+## Overall Health Score: {health['health_score']:.2f}/1.00
+
+## Health Indicators
+- Average Message Quality: {health['average_message_quality']:.2f}
+- Balance Ratio: {health['balance_ratio']:.2f}
+- Tool Completion Rate: {health['tool_completion_rate']:.2f}
+
+## Issues Identified
+{chr(10).join(f"- {issue}" for issue in health['issues']) if health['issues'] else "- No issues found"}
+
+## Message Quality Highlights
+- Best Message (#{best_msg[0]}): {best_msg[1]['overall_quality']:.2f} quality score
+- Worst Message (#{worst_msg[0]}): {worst_msg[1]['overall_quality']:.2f} quality score
+
+## Recommendations
+{self._generate_recommendations(health, message_assessments)}
+        """
+        
+        return report.strip()
+    
+    def _generate_recommendations(self, health: Dict, assessments: List) -> str:
+        """Generate improvement recommendations."""
+        recommendations = []
+        
+        if health['health_score'] < 0.6:
+            recommendations.append("- Consider improving overall conversation structure")
+        
+        if health['average_message_quality'] < 0.5:
+            recommendations.append("- Focus on more detailed and specific messages")
+        
+        if health['balance_ratio'] < 0.5:
+            recommendations.append("- Encourage more balanced participation between user and assistant")
+        
+        if health['tool_completion_rate'] < 0.8:
+            recommendations.append("- Review tool execution reliability")
+        
+        # Check for messages with very low quality
+        low_quality_messages = [
+            i for i, assessment in assessments 
+            if assessment['overall_quality'] < 0.3
+        ]
+        
+        if low_quality_messages:
+            recommendations.append(f"- Review messages at positions: {', '.join(map(str, low_quality_messages))}")
+        
+        return '\n'.join(recommendations) if recommendations else "- Conversation quality looks good!"
+
+# Usage
+assessor = MessageQualityAssessor(agent.messages)
+quality_report = assessor.generate_quality_report()
+print(quality_report)
+```
+
+## Message Security & Privacy
+
+### Content Sanitization
+
+Remove sensitive information from messages:
+
+```python
+import re
+from typing import Pattern, List
+
+class MessageSanitizer:
+    """Sanitize messages to remove sensitive information."""
+    
+    def __init__(self):
+        # Common patterns for sensitive data
+        self.patterns = {
+            'email': re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'),
+            'phone': re.compile(r'\b(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}\b'),
+            'ssn': re.compile(r'\b\d{3}-?\d{2}-?\d{4}\b'),
+            'credit_card': re.compile(r'\b(?:\d{4}[-\s]?){3}\d{4}\b'),
+            'api_key': re.compile(r'\b[A-Za-z0-9]{32,}\b'),
+            'ip_address': re.compile(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'),
+            'url_with_token': re.compile(r'https?://[^\s]*[?&](?:token|key|secret)=[^\s&]*'),
+        }
+    
+    def add_pattern(self, name: str, pattern: Pattern[str]) -> None:
+        """Add custom sanitization pattern."""
+        self.patterns[name] = pattern
+    
+    def sanitize_content(self, content: str, replacement: str = "[REDACTED]") -> Tuple[str, List[str]]:
+        """Sanitize content and return cleaned version with detected types."""
+        detected_types = []
+        sanitized = content
+        
+        for pattern_name, pattern in self.patterns.items():
+            matches = pattern.findall(content)
+            if matches:
+                detected_types.append(pattern_name)
+                sanitized = pattern.sub(replacement, sanitized)
+        
+        return sanitized, detected_types
+    
+    def sanitize_message(self, message: Message) -> Tuple[Message, List[str]]:
+        """Sanitize a message and return cleaned version."""
+        sanitized_content, detected_types = self.sanitize_content(message.content)
+        
+        # Create new message with sanitized content
+        if isinstance(message, UserMessage):
+            sanitized_msg = UserMessage(sanitized_content)
+        elif isinstance(message, AssistantMessage):
+            sanitized_msg = AssistantMessage(
+                sanitized_content,
+                tool_calls=message.tool_calls,
+                reasoning=message.reasoning,
+                citations=message.citations
+            )
+        elif isinstance(message, SystemMessage):
+            sanitized_msg = SystemMessage(sanitized_content)
+        elif isinstance(message, ToolMessage):
+            sanitized_msg = ToolMessage(
+                sanitized_content,
+                tool_call_id=message.tool_call_id,
+                tool_name=message.tool_name
+            )
+        else:
+            sanitized_msg = message  # Fallback
+        
+        # Preserve original metadata
+        sanitized_msg.id = message.id
+        sanitized_msg.timestamp = message.timestamp
+        
+        return sanitized_msg, detected_types
+    
+    def sanitize_message_list(self, messages: List[Message]) -> Tuple[List[Message], Dict[str, int]]:
+        """Sanitize a list of messages."""
+        sanitized_messages = []
+        detection_summary = {}
+        
+        for message in messages:
+            sanitized_msg, detected_types = self.sanitize_message(message)
+            sanitized_messages.append(sanitized_msg)
+            
+            # Update detection summary
+            for detected_type in detected_types:
+                detection_summary[detected_type] = detection_summary.get(detected_type, 0) + 1
+        
+        return sanitized_messages, detection_summary
+
+# Privacy-aware agent wrapper
+class PrivacyAwareAgent:
+    """Agent wrapper that automatically sanitizes messages."""
+    
+    def __init__(self, agent: Agent, sanitize_on_save: bool = True):
+        self.agent = agent
+        self.sanitizer = MessageSanitizer()
+        self.sanitize_on_save = sanitize_on_save
+        self._original_messages = []  # Store originals if needed
+    
+    def get_sanitized_history(self) -> List[Message]:
+        """Get sanitized version of message history."""
+        sanitized_messages, detection_summary = self.sanitizer.sanitize_message_list(self.agent.messages)
+        
+        if detection_summary:
+            print(f"Privacy Notice: Sanitized {sum(detection_summary.values())} sensitive items")
+            for item_type, count in detection_summary.items():
+                print(f"  - {item_type}: {count} instances")
+        
+        return sanitized_messages
+    
+    def export_safe_history(self, file_path: str) -> None:
+        """Export sanitized message history to file."""
+        sanitized_messages = self.get_sanitized_history()
+        
+        export_data = {
+            "export_timestamp": datetime.now().isoformat(),
+            "message_count": len(sanitized_messages),
+            "privacy_notice": "This export has been sanitized to remove sensitive information",
+            "messages": [
+                {
+                    "role": msg.role,
+                    "content": msg.content,
+                    "timestamp": msg.timestamp.isoformat()
+                }
+                for msg in sanitized_messages
+            ]
+        }
+        
+        with open(file_path, 'w') as f:
+            json.dump(export_data, f, indent=2)
+
+# Usage
+sanitizer = MessageSanitizer()
+
+# Add custom pattern for internal IDs
+sanitizer.add_pattern('internal_id', re.compile(r'\bID-\d{8,}\b'))
+
+# Sanitize message
+original_msg = UserMessage("My email is user@example.com and phone is 555-123-4567")
+sanitized_msg, detected = sanitizer.sanitize_message(original_msg)
+
+print(f"Original: {original_msg.content}")
+print(f"Sanitized: {sanitized_msg.content}")
+print(f"Detected: {detected}")
+
+# Use with agent
+privacy_agent = PrivacyAwareAgent(agent)
+safe_history = privacy_agent.get_sanitized_history()
+privacy_agent.export_safe_history("safe_conversation.json")
+```
+
 ## Next Steps
 
 - **[Tools](tools.md)** - Add function calling capabilities to your agents
