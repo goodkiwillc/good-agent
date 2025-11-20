@@ -49,6 +49,9 @@ plugins:
             show_source: true
             show_symbol_type_heading: true
             merge_init_into_class: true
+  - coverage:
+      page_path: project-info/test-coverage
+      html_report_dir: htmlcov
 
 extra_css:
   - stylesheets/extra.css
@@ -90,6 +93,7 @@ nav:
     - Style Guide: STYLEGUIDE.md
     - Built-In Agents: reference/built-in-agents.md
   - Project Info:
+    - Test Coverage: project-info/test-coverage.md
     - Changelog: CHANGELOG.md
     - Decisions: DECISIONS.md
     - Tech Debt: TECH_DEBT.md
