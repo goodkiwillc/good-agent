@@ -193,114 +193,115 @@ class TestAgentComponentEventIntegration:
         assert AgentEvents.AGENT_INIT_AFTER in config["events"]
 
         # Create agent and verify handlers are registered
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]) as agent:
+            # Give async event handlers time to complete
+            await asyncio.sleep(0.01)
 
-        # Give async event handlers time to complete
-        await asyncio.sleep(0.01)
+            # Decorator handlers should have fired during initialization
+            assert "agent_ready_static" in component.decorator_events
 
-        # Decorator handlers should have fired during initialization
-        assert "agent_ready_static" in component.decorator_events
+            # Test that decorated handlers respond to events
+            component.decorator_events.clear()
 
-        # Test that decorated handlers respond to events
-        component.decorator_events.clear()
+            # Manually trigger tool events since direct tool calls don't fire them
+            # (These events are fired during agent execution, not direct tool calls)
+            await agent.events.apply(
+                AgentEvents.TOOL_CALL_BEFORE,
+                tool_name="test_component_tool",
+                parameters={"value": "test"},
+            )
 
-        # Manually trigger tool events since direct tool calls don't fire them
-        # (These events are fired during agent execution, not direct tool calls)
-        await agent.events.apply(
-            AgentEvents.TOOL_CALL_BEFORE,
-            tool_name="test_component_tool",
-            parameters={"value": "test"},
-        )
+            # Execute the tool
+            tool = agent.tools["test_component_tool"]
+            result = await tool(_agent=agent, value="test")
 
-        # Execute the tool
-        tool = agent.tools["test_component_tool"]
-        result = await tool(_agent=agent, value="test")
+            # Trigger after event with the result
+            await agent.events.apply(
+                AgentEvents.TOOL_CALL_AFTER,
+                tool_name="test_component_tool",
+                response=result,
+            )
 
-        # Trigger after event with the result
-        await agent.events.apply(
-            AgentEvents.TOOL_CALL_AFTER,
-            tool_name="test_component_tool",
-            response=result,
-        )
+            # Give async event handlers time to complete
+            await asyncio.sleep(0.01)
 
-        # Give async event handlers time to complete
-        await asyncio.sleep(0.01)
-
-        # Verify decorator handlers captured the events
-        assert any(
-            "tool_before_static" in event for event in component.decorator_events
-        )
-        assert any("tool_after_static" in event for event in component.decorator_events)
+            # Verify decorator handlers captured the events
+            assert any(
+                "tool_before_static" in event for event in component.decorator_events
+            )
+            assert any(
+                "tool_after_static" in event for event in component.decorator_events
+            )
 
     async def test_manual_registration_phases(self):
         """Test that manual registration works in setup and install phases."""
         component = DecoratorPatternComponent()
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]) as agent:
+            # Add a message to trigger setup handlers
+            agent.append("Test user message")
 
-        # Add a message to trigger setup handlers
-        agent.append("Test user message")
+            # Give async handlers time to complete
+            await asyncio.sleep(0.01)
 
-        # Give async handlers time to complete
-        await asyncio.sleep(0.01)
+            # Verify setup handlers fired
+            assert any(
+                "message_append_setup" in event for event in component.setup_events
+            )
 
-        # Verify setup handlers fired
-        assert any("message_append_setup" in event for event in component.setup_events)
+            # Execute agent to trigger install handlers
+            # Note: We'll use a mock to avoid full LLM execution
+            mock_response = MagicMock()
+            mock_response.content = "Test response"
 
-        # Execute agent to trigger install handlers
-        # Note: We'll use a mock to avoid full LLM execution
-        mock_response = MagicMock()
-        mock_response.content = "Test response"
+            # Manually trigger execute events to test install handlers
+            await agent.events.apply(
+                AgentEvents.EXECUTE_BEFORE, agent=agent, messages=agent.messages
+            )
+            await agent.events.apply(
+                AgentEvents.EXECUTE_AFTER, agent=agent, response=mock_response
+            )
 
-        # Manually trigger execute events to test install handlers
-        await agent.events.apply(
-            AgentEvents.EXECUTE_BEFORE, agent=agent, messages=agent.messages
-        )
-        await agent.events.apply(
-            AgentEvents.EXECUTE_AFTER, agent=agent, response=mock_response
-        )
+            # Give async handlers time to complete
+            await asyncio.sleep(0.01)
 
-        # Give async handlers time to complete
-        await asyncio.sleep(0.01)
+            # The execute_before handler is now fixed
 
-        # The execute_before handler is now fixed
-
-        # Verify install handlers fired
-        assert any(
-            "execute_before_install" in event for event in component.install_events
-        ), f"Events: {component.install_events}"
-        assert any(
-            "execute_after_install_async" in event for event in component.install_events
-        ), f"Events: {component.install_events}"
+            # Verify install handlers fired
+            assert any(
+                "execute_before_install" in event for event in component.install_events
+            ), f"Events: {component.install_events}"
+            assert any(
+                "execute_after_install_async" in event
+                for event in component.install_events
+            ), f"Events: {component.install_events}"
 
     async def test_component_state_interactions(self):
         """Test that handlers respect component enabled/disabled state."""
         component = DecoratorPatternComponent()
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]) as agent:
+            # Test with component enabled (default)
+            assert component.enabled
+            agent.append("Test message 1")
+            initial_setup_count = len(component.setup_events)
+            assert initial_setup_count > 0
 
-        # Test with component enabled (default)
-        assert component.enabled
-        agent.append("Test message 1")
-        initial_setup_count = len(component.setup_events)
-        assert initial_setup_count > 0
+            # Disable component and test again
+            component.enabled = False
+            component.setup_events.clear()
+            agent.append("Test message 2")
 
-        # Disable component and test again
-        component.enabled = False
-        component.setup_events.clear()
-        agent.append("Test message 2")
+            # Setup handlers should not fire when disabled
+            # (Note: Static @on handlers will still fire as they don't check enabled)
+            disabled_setup_count = len(component.setup_events)
+            assert disabled_setup_count == 0, (
+                "Manual handlers should respect enabled state"
+            )
 
-        # Setup handlers should not fire when disabled
-        # (Note: Static @on handlers will still fire as they don't check enabled)
-        disabled_setup_count = len(component.setup_events)
-        assert disabled_setup_count == 0, "Manual handlers should respect enabled state"
-
-        # Re-enable and verify handlers work again
-        component.enabled = True
-        agent.append("Test message 3")
-        final_setup_count = len(component.setup_events)
-        assert final_setup_count > 0, "Handlers should work after re-enabling"
+            # Re-enable and verify handlers work again
+            component.enabled = True
+            agent.append("Test message 3")
+            final_setup_count = len(component.setup_events)
+            assert final_setup_count > 0, "Handlers should work after re-enabling"
 
     async def test_dynamic_configuration(self):
         """Test that manual registration allows dynamic configuration."""
@@ -308,96 +309,94 @@ class TestAgentComponentEventIntegration:
         component_high = ManualRegistrationComponent(custom_priority=250)
         component_low = ManualRegistrationComponent(custom_priority=50)
 
-        agent = Agent("Test system", extensions=[component_high, component_low])
-        await agent.initialize()
+        async with Agent(
+            "Test system", extensions=[component_high, component_low]
+        ) as agent:
+            # Both components should register handlers
+            assert component_high.handler_count == 3
+            assert component_low.handler_count == 3
 
-        # Both components should register handlers
-        assert component_high.handler_count == 3
-        assert component_low.handler_count == 3
+            # Trigger tool events to test priority handling
+            # Check if test_component_tool exists
+            if "test_component_tool" in agent.tools:
+                agent.tools["test_component_tool"]
+            else:
+                # Create a mock tool for testing
+                from good_agent.tools import Tool
 
-        # Trigger tool events to test priority handling
-        # Check if test_component_tool exists
-        if "test_component_tool" in agent.tools:
-            agent.tools["test_component_tool"]
-        else:
-            # Create a mock tool for testing
-            from good_agent.tools import Tool
+                mock_tool = Tool(fn=lambda value: f"test:{value}", name="mock_tool")
+                agent.tools["mock_tool"] = mock_tool
 
-            mock_tool = Tool(fn=lambda value: f"test:{value}", name="mock_tool")
-            agent.tools["mock_tool"] = mock_tool
+            # Trigger tool before event
+            await agent.events.apply(
+                AgentEvents.TOOL_CALL_BEFORE, tool_name="mock_tool", parameters={}
+            )
 
-        # Trigger tool before event
-        await agent.events.apply(
-            AgentEvents.TOOL_CALL_BEFORE, tool_name="mock_tool", parameters={}
-        )
+            # Verify both components captured events with their priorities
+            high_events = [
+                e for e in component_high.events if "dynamic_priority:250" in e
+            ]
+            low_events = [e for e in component_low.events if "dynamic_priority:50" in e]
 
-        # Verify both components captured events with their priorities
-        high_events = [e for e in component_high.events if "dynamic_priority:250" in e]
-        low_events = [e for e in component_low.events if "dynamic_priority:50" in e]
+            assert len(high_events) > 0, "High priority component should handle events"
+            assert len(low_events) > 0, "Low priority component should handle events"
 
-        assert len(high_events) > 0, "High priority component should handle events"
-        assert len(low_events) > 0, "Low priority component should handle events"
+            # Test conditional handler (only high priority should fire)
+            component_high.events.clear()
+            component_low.events.clear()
 
-        # Test conditional handler (only high priority should fire)
-        component_high.events.clear()
-        component_low.events.clear()
+            await agent.events.apply(
+                AgentEvents.TOOL_CALL_AFTER, tool_name="mock_tool", response=MagicMock()
+            )
 
-        await agent.events.apply(
-            AgentEvents.TOOL_CALL_AFTER, tool_name="mock_tool", response=MagicMock()
-        )
+            # Only high priority component should have conditional events
+            high_conditional = [e for e in component_high.events if "conditional" in e]
+            low_conditional = [e for e in component_low.events if "conditional" in e]
 
-        # Only high priority component should have conditional events
-        high_conditional = [e for e in component_high.events if "conditional" in e]
-        low_conditional = [e for e in component_low.events if "conditional" in e]
-
-        assert len(high_conditional) > 0, (
-            "High priority component should meet predicate"
-        )
-        assert len(low_conditional) == 0, (
-            "Low priority component should not meet predicate"
-        )
+            assert len(high_conditional) > 0, (
+                "High priority component should meet predicate"
+            )
+            assert len(low_conditional) == 0, (
+                "Low priority component should not meet predicate"
+            )
 
     async def test_hybrid_pattern_execution_order(self):
         """Test that static and dynamic handlers execute in correct priority order."""
         component = HybridPatternComponent()
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]):
+            # Give async handlers time to complete
+            await asyncio.sleep(0.01)
 
-        # Give async handlers time to complete
-        await asyncio.sleep(0.01)
+            # All handlers should have fired during agent initialization
+            # Verify execution order based on priorities:
+            # 1. init_static_high (300)
+            # 2. init_dynamic_high (250)
+            # 3. init_dynamic_mid (200)
+            # 4. init_static_low (50)
 
-        # All handlers should have fired during agent initialization
-        # Verify execution order based on priorities:
-        # 1. init_static_high (300)
-        # 2. init_dynamic_high (250)
-        # 3. init_dynamic_mid (200)
-        # 4. init_static_low (50)
+            all_events = component.static_events + component.dynamic_events
 
-        all_events = component.static_events + component.dynamic_events
-
-        # Should have all 4 events
-        assert len(all_events) == 4
-        assert "init_static_high" in component.static_events
-        assert "init_static_low" in component.static_events
-        assert "init_dynamic_mid" in component.dynamic_events
-        assert "init_dynamic_high" in component.dynamic_events
+            # Should have all 4 events
+            assert len(all_events) == 4
+            assert "init_static_high" in component.static_events
+            assert "init_static_low" in component.static_events
+            assert "init_dynamic_mid" in component.dynamic_events
+            assert "init_dynamic_high" in component.dynamic_events
 
     async def test_agent_access_patterns(self):
         """Test different patterns of agent access in handlers."""
         component = ManualRegistrationComponent()
-        agent = Agent(
+        async with Agent(
             "Test system with context",
             extensions=[component],
             context={"test_key": "test_value"},
-        )
-        await agent.initialize()
+        ):
+            # System message handler should have access to agent.messages
+            system_events = [e for e in component.events if "system_set" in e]
+            assert len(system_events) > 0
 
-        # System message handler should have access to agent.messages
-        system_events = [e for e in component.events if "system_set" in e]
-        assert len(system_events) > 0
-
-        # Verify handler could access message count
-        assert any("msg_count=" in event for event in system_events)
+            # Verify handler could access message count
+            assert any("msg_count=" in event for event in system_events)
 
     async def test_error_handling_in_handlers(self):
         """Test that event handler errors don't break component functionality."""
@@ -428,74 +427,70 @@ class TestAgentComponentEventIntegration:
         component = ErrorComponent()
 
         # Agent initialization should still succeed despite handler errors
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]):
+            # Give async handlers time to complete
+            await asyncio.sleep(0.01)
 
-        # Give async handlers time to complete
-        await asyncio.sleep(0.01)
+            # Working handlers should still execute
+            assert "working_handler" in component.events
 
-        # Working handlers should still execute
-        assert "working_handler" in component.events
-
-        # Failing handlers should have started
-        assert (
-            "before_error" in component.events
-            or "before_dynamic_error" in component.events
-        )
+            # Failing handlers should have started
+            assert (
+                "before_error" in component.events
+                or "before_dynamic_error" in component.events
+            )
 
     async def test_component_tool_integration(self):
         """Test that component tools work correctly with event handlers."""
         component = DecoratorPatternComponent()
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]) as agent:
+            # Give async handlers time to complete
+            await asyncio.sleep(0.01)
 
-        # Give async handlers time to complete
-        await asyncio.sleep(0.01)
+            # Clear any initialization events
+            component.decorator_events.clear()
+            component.runtime_events.clear()
 
-        # Clear any initialization events
-        component.decorator_events.clear()
-        component.runtime_events.clear()
+            # Manually trigger tool events (these are normally fired during agent execution)
+            await agent.events.apply(
+                AgentEvents.TOOL_CALL_BEFORE,
+                tool_name="test_component_tool",
+                parameters={"value": "integration_test"},
+            )
 
-        # Manually trigger tool events (these are normally fired during agent execution)
-        await agent.events.apply(
-            AgentEvents.TOOL_CALL_BEFORE,
-            tool_name="test_component_tool",
-            parameters={"value": "integration_test"},
-        )
+            # Execute component tool
+            tool = agent.tools["test_component_tool"]
+            result = await tool(_agent=agent, value="integration_test")
 
-        # Execute component tool
-        tool = agent.tools["test_component_tool"]
-        result = await tool(_agent=agent, value="integration_test")
+            # Trigger after event
+            await agent.events.apply(
+                AgentEvents.TOOL_CALL_AFTER,
+                tool_name="test_component_tool",
+                response=result,
+            )
 
-        # Trigger after event
-        await agent.events.apply(
-            AgentEvents.TOOL_CALL_AFTER,
-            tool_name="test_component_tool",
-            response=result,
-        )
+            # Give async handlers time to complete
+            await asyncio.sleep(0.01)
 
-        # Give async handlers time to complete
-        await asyncio.sleep(0.01)
+            # Verify tool executed correctly
+            assert result.success
+            assert result.response == "processed:integration_test"
+            assert "tool_executed:integration_test" in component.runtime_events
 
-        # Verify tool executed correctly
-        assert result.success
-        assert result.response == "processed:integration_test"
-        assert "tool_executed:integration_test" in component.runtime_events
+            # Verify event handlers captured tool execution
+            tool_before_events = [
+                e for e in component.decorator_events if "tool_before_static" in e
+            ]
+            tool_after_events = [
+                e for e in component.decorator_events if "tool_after_static" in e
+            ]
 
-        # Verify event handlers captured tool execution
-        tool_before_events = [
-            e for e in component.decorator_events if "tool_before_static" in e
-        ]
-        tool_after_events = [
-            e for e in component.decorator_events if "tool_after_static" in e
-        ]
+            assert len(tool_before_events) > 0, "Tool before handler should fire"
+            assert len(tool_after_events) > 0, "Tool after handler should fire"
 
-        assert len(tool_before_events) > 0, "Tool before handler should fire"
-        assert len(tool_after_events) > 0, "Tool after handler should fire"
-
-        # Verify correct tool name in events
-        assert any("test_component_tool" in event for event in tool_before_events)
-        assert any("test_component_tool" in event for event in tool_after_events)
+            # Verify correct tool name in events
+            assert any("test_component_tool" in event for event in tool_before_events)
+            assert any("test_component_tool" in event for event in tool_after_events)
 
 
 @pytest.mark.asyncio

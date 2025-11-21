@@ -140,140 +140,147 @@ class TestComponentEventPatterns:
         # They will be registered with the agent during setup()
 
         # Create agent and test actual event handling
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]) as agent:
+            # Trigger message event
+            agent.append("Test message")
+            assert "decorator_only:message" in component.events
 
-        # Trigger message event
-        agent.append("Test message")
-        assert "decorator_only:message" in component.events
+            # Execute tool to trigger tool events
+            # First create a simple tool for testing
+            from good_agent.tools import Tool
 
-        # Execute tool to trigger tool events
-        # First create a simple tool for testing
-        from good_agent.tools import Tool
+            test_tool = Tool(fn=lambda x: f"result:{x}", name="simple_tool")
+            agent.tools["simple_tool"] = test_tool
 
-        test_tool = Tool(fn=lambda x: f"result:{x}", name="simple_tool")
-        agent.tools["simple_tool"] = test_tool
+            # Execute and verify decorator handler fired
+            component.events.clear()
+            result = await agent.tool_calls.invoke(test_tool, x="test")
 
-        # Execute and verify decorator handler fired
-        component.events.clear()
-        result = await agent.tool_calls.invoke(test_tool, x="test")
-
-        assert result.success
-        tool_events = [e for e in component.events if "decorator_only:tool" in e]
-        assert len(tool_events) > 0
-        assert "simple_tool" in tool_events[0]
+            assert result.success
+            tool_events = [e for e in component.events if "decorator_only:tool" in e]
+            assert len(tool_events) > 0
+            assert "simple_tool" in tool_events[0]
 
     async def test_manual_pattern_functionality(self):
         """Test that manual registration works correctly."""
         component = ManualOnlyComponent()
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]) as agent:
+            # Test enabled state handling
+            assert component.enabled
+            agent.append("Test message")
+            assert "manual_only:message" in component.events
 
-        # Test enabled state handling
-        assert component.enabled
-        agent.append("Test message")
-        assert "manual_only:message" in component.events
+            # Test disabled state
+            component.events.clear()
+            component.enabled = False
+            agent.append("Another message")
 
-        # Test disabled state
-        component.events.clear()
-        component.enabled = False
-        agent.append("Another message")
+            # Manual handlers should respect enabled state
+            disabled_events = [
+                e for e in component.events if "manual_only:message" in e
+            ]
+            assert len(disabled_events) == 0
 
-        # Manual handlers should respect enabled state
-        disabled_events = [e for e in component.events if "manual_only:message" in e]
-        assert len(disabled_events) == 0
-
-        # Re-enable and verify
-        component.enabled = True
-        agent.append("Final message")
-        assert "manual_only:message" in component.events
+            # Re-enable and verify
+            component.enabled = True
+            agent.append("Final message")
+            assert "manual_only:message" in component.events
 
     async def test_hybrid_pattern_integration(self):
         """Test that decorator and manual patterns work together."""
         component = ComprehensiveEventComponent()
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]) as agent:
+            # Test message handling (both patterns should fire)
+            component.decorator_events.clear()
+            component.manual_events.clear()
 
-        # Test message handling (both patterns should fire)
-        component.decorator_events.clear()
-        component.manual_events.clear()
+            agent.append("Test message")
 
-        agent.append("Test message")
+            # Both decorator and manual handlers should have fired
+            decorator_msg_events = [
+                e for e in component.decorator_events if "message_append:decorator" in e
+            ]
+            manual_msg_events = [
+                e for e in component.manual_events if "message_append:manual" in e
+            ]
 
-        # Both decorator and manual handlers should have fired
-        decorator_msg_events = [
-            e for e in component.decorator_events if "message_append:decorator" in e
-        ]
-        manual_msg_events = [
-            e for e in component.manual_events if "message_append:manual" in e
-        ]
+            assert len(decorator_msg_events) > 0
+            assert len(manual_msg_events) > 0
 
-        assert len(decorator_msg_events) > 0
-        assert len(manual_msg_events) > 0
+            # Test tool execution (triggers multiple handlers)
+            component.decorator_events.clear()
+            component.manual_events.clear()
+            component.tool_events.clear()
 
-        # Test tool execution (triggers multiple handlers)
-        component.decorator_events.clear()
-        component.manual_events.clear()
-        component.tool_events.clear()
+            result = await agent.tool_calls.invoke(
+                "test_tool", value="integration_test"
+            )
 
-        result = await agent.tool_calls.invoke("test_tool", value="integration_test")
+            assert result.success
+            assert result.response == "processed:integration_test"
 
-        assert result.success
-        assert result.response == "processed:integration_test"
+            # Verify all handler types fired
+            assert "tool_executed:integration_test" in component.tool_events
 
-        # Verify all handler types fired
-        assert "tool_executed:integration_test" in component.tool_events
+            decorator_tool_events = [
+                e
+                for e in component.decorator_events
+                if "tool_before:decorator" in e or "tool_after:decorator" in e
+            ]
+            manual_tool_events = [
+                e
+                for e in component.manual_events
+                if "tool_before:manual" in e or "tool_after:manual" in e
+            ]
 
-        decorator_tool_events = [
-            e
-            for e in component.decorator_events
-            if "tool_before:decorator" in e or "tool_after:decorator" in e
-        ]
-        manual_tool_events = [
-            e
-            for e in component.manual_events
-            if "tool_before:manual" in e or "tool_after:manual" in e
-        ]
-
-        assert len(decorator_tool_events) > 0, (
-            f"Decorator events: {component.decorator_events}"
-        )
-        assert len(manual_tool_events) > 0, f"Manual events: {component.manual_events}"
+            assert len(decorator_tool_events) > 0, (
+                f"Decorator events: {component.decorator_events}"
+            )
+            assert len(manual_tool_events) > 0, (
+                f"Manual events: {component.manual_events}"
+            )
 
     async def test_component_enabled_state_behavior(self):
         """Test how enabled/disabled state affects different handler types."""
         component = ComprehensiveEventComponent()
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]) as agent:
+            # Test enabled (default)
+            component.decorator_events.clear()
+            component.manual_events.clear()
 
-        # Test enabled (default)
-        component.decorator_events.clear()
-        component.manual_events.clear()
+            agent.append("Enabled test")
 
-        agent.append("Enabled test")
+            # Both should fire when enabled
+            assert (
+                len([e for e in component.decorator_events if "message_append" in e])
+                > 0
+            )
+            assert (
+                len([e for e in component.manual_events if "message_append" in e]) > 0
+            )
 
-        # Both should fire when enabled
-        assert len([e for e in component.decorator_events if "message_append" in e]) > 0
-        assert len([e for e in component.manual_events if "message_append" in e]) > 0
+            # Disable component
+            component.enabled = False
+            component.decorator_events.clear()
+            component.manual_events.clear()
 
-        # Disable component
-        component.enabled = False
-        component.decorator_events.clear()
-        component.manual_events.clear()
+            agent.append("Disabled test")
 
-        agent.append("Disabled test")
+            # Manual handlers should respect enabled state (they check self.enabled)
+            manual_disabled = [
+                e for e in component.manual_events if "message_append" in e
+            ]
+            assert len(manual_disabled) == 0, (
+                "Manual handlers should respect enabled=False"
+            )
 
-        # Manual handlers should respect enabled state (they check self.enabled)
-        manual_disabled = [e for e in component.manual_events if "message_append" in e]
-        assert len(manual_disabled) == 0, "Manual handlers should respect enabled=False"
-
-        # Decorator handlers still fire (they don't automatically check enabled)
-        decorator_disabled = [
-            e for e in component.decorator_events if "message_append" in e
-        ]
-        assert len(decorator_disabled) > 0, (
-            "Decorator handlers don't automatically check enabled state"
-        )
+            # Decorator handlers still fire (they don't automatically check enabled)
+            decorator_disabled = [
+                e for e in component.decorator_events if "message_append" in e
+            ]
+            assert len(decorator_disabled) > 0, (
+                "Decorator handlers don't automatically check enabled state"
+            )
 
     async def test_event_handler_priorities(self):
         """Test that event priorities work across both patterns."""
@@ -299,17 +306,15 @@ class TestComponentEventPatterns:
                     self.execution_order.append("manual_mid")
 
         component = PriorityComponent()
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]) as agent:
+            # Trigger event
+            agent.append("Priority test")
 
-        # Trigger event
-        agent.append("Priority test")
-
-        # Should have all three handlers
-        assert len(component.execution_order) == 3
-        assert "decorator_high" in component.execution_order
-        assert "manual_mid" in component.execution_order
-        assert "decorator_low" in component.execution_order
+            # Should have all three handlers
+            assert len(component.execution_order) == 3
+            assert "decorator_high" in component.execution_order
+            assert "manual_mid" in component.execution_order
+            assert "decorator_low" in component.execution_order
 
 
 @pytest.mark.asyncio

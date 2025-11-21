@@ -74,11 +74,19 @@ nav:
   - Core Concepts:
     - Agents: core/agents.md
     - Messages & History: core/messages.md
-    - Tools: 
+    - Tools:
       - Overview: core/tools.md
       - Custom Tools: core/custom-tools.md
     - Events: core/events.md
-  - Components: 
+    - Structured Output: features/structured-output.md
+    - Agent Modes: features/modes.md
+    - Resources: features/resources.md
+    - Multi-Agent: features/multi-agent.md
+  - Advanced Features:
+    - Interactive Execution: features/interactive-execution.md
+    - Human-in-the-Loop: features/human-in-the-loop.md
+    - Context Management: features/context-management.md
+  - Components & Extensions:
     - Overview: components/index.md
     - Creating Components: components/creating-components.md
     - Events: components/events.md
@@ -87,20 +95,14 @@ nav:
     - Tool Adapters: components/tool-adapters.md
     - Testing: components/testing.md
     - Best Practices: components/best-practices.md
-  - Key Features:
-    - Structured Output: features/structured-output.md
-    - Interactive Execution: features/interactive-execution.md
-    - Agent Modes: features/modes.md
-    - Multi-Agent: features/multi-agent.md
-    - Resources: features/resources.md
-    - Human-in-the-Loop: features/human-in-the-loop.md
-    - Context Management: features/context-management.md
-    - Tasks: features/tasks.md
-    - Command Line Interface: cli/run.md
+  - Command Line Interface:
+    - CLI Usage: cli/run.md
   - Reference:
     - API Reference: api-reference.md
-    - Style Guide: STYLEGUIDE.md
+    # - Style Guide: STYLEGUIDE.md
     - Built-In Agents: reference/built-in-agents.md
+    - Utilities:
+      - Task Management: reference/utilities/tasks.md
   - Project Info:
     - Test Coverage: project-info/test-coverage.md
     - Changelog: CHANGELOG.md
@@ -111,4 +113,3 @@ watch:
   - ./assets/
   - ./src/good_agent
   - README.md
-

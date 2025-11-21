@@ -1,0 +1,233 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"Stateful assistant","role":"system"},{"content":[{"text":"Hello!
+      Let''s discuss AI","type":"text"}],"role":"user"},{"content":"Session info:
+      1 interactions over 0:00:00.000006. Previous topics: []","role":"system"}],"model":"gpt-4.1-mini","n":1,"temperature":0.0,"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '299'
+      content-type:
+      - application/json
+      cookie:
+      - _cfuvid=LmfRCZlMi0LYsMQuV3WoQfVmMg..yl31hTTrXjJbG68-1763751465569-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeRxI5Rty4VYBQt6fnP42fds8WJSf\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763756616,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Hello! I'd be happy to discuss AI with
+        you. What specific aspects of AI are you interested in? For example, we could
+        talk about machine learning, natural language processing, AI ethics, applications,
+        or something else.\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 44,\n    \"completion_tokens\":
+        44,\n    \"total_tokens\": 88,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a22e7e47a376dc4-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 20:23:37 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=hnICWMeomVxNE66KKtsYXCDy7trVioi9osWuPVhT1jw-1763756617-1.0.1.1-C4aLviYPA8f2ocQH2GFv5qLSw2ceXZzPZeyUlLESwKamUX1rbXuhNsyBIpEr5BLScCutTL0_CUC89_p.m8QlhGmr1sxYmu2kxB7b4sxD4Pk;
+        path=/; expires=Fri, 21-Nov-25 20:53:37 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '842'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999967'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"Stateful assistant","role":"system"},{"content":[{"text":"Hello!
+      Let''s discuss AI","type":"text"}],"role":"user"},{"content":"Session info:
+      1 interactions over 0:00:00.000006. Previous topics: []","role":"system"},{"role":"assistant","content":"Hello!
+      I''d be happy to discuss AI with you. What specific aspects of AI are you interested
+      in? For example, we could talk about machine learning, natural language processing,
+      AI ethics, applications, or something else."},{"content":[{"text":"What about
+      robotics?","type":"text"}],"role":"user"},{"content":"Session info: 2 interactions
+      over 0:00:00.972662. Previous topics: [''AI'']","role":"system"}],"model":"gpt-4.1-mini","n":1,"temperature":0.0,"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '729'
+      content-type:
+      - application/json
+      cookie:
+      - _cfuvid=LmfRCZlMi0LYsMQuV3WoQfVmMg..yl31hTTrXjJbG68-1763751465569-0.0.1.1-604800000;
+        __cf_bm=hnICWMeomVxNE66KKtsYXCDy7trVioi9osWuPVhT1jw-1763756617-1.0.1.1-C4aLviYPA8f2ocQH2GFv5qLSw2ceXZzPZeyUlLESwKamUX1rbXuhNsyBIpEr5BLScCutTL0_CUC89_p.m8QlhGmr1sxYmu2kxB7b4sxD4Pk
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeRxJ9sr9yhmEma6QcxsPDGY38XQv\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763756617,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Robotics is a fascinating area closely
+        related to AI! It involves designing, building, and programming robots to
+        perform tasks autonomously or semi-autonomously. AI plays a big role in robotics
+        by enabling robots to perceive their environment, make decisions, and learn
+        from experience.\\n\\nAre you interested in any particular type of robotics,
+        like industrial robots, service robots, autonomous vehicles, or something
+        else? Or would you like to discuss how AI techniques are applied in robotics?\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        127,\n    \"completion_tokens\": 92,\n    \"total_tokens\": 219,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a22e7ea7b0b6dc4-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 20:23:39 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1739'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999887'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -13,31 +13,30 @@ class TestVersioningWithRealLLM:
         async with Agent(
             "You are a helpful but concise assistant", model="gpt-4.1-mini"
         ) as agent:
+            # Initial state - system message issue means no version yet
+            initial_msg_count = len(agent.messages)
 
-        # Initial state - system message issue means no version yet
-        initial_msg_count = len(agent.messages)
+            # Make a real call
+            response = await agent.call("What is 2+2? Answer in one word.")
 
-        # Make a real call
-        response = await agent.call("What is 2+2? Answer in one word.")
+            # Should have added user and assistant messages
+            assert len(agent.messages) == initial_msg_count + 2
+            assert isinstance(agent.messages[-2], UserMessage)
+            assert isinstance(agent.messages[-1], AssistantMessage)
 
-        # Should have added user and assistant messages
-        assert len(agent.messages) == initial_msg_count + 2
-        assert isinstance(agent.messages[-2], UserMessage)
-        assert isinstance(agent.messages[-1], AssistantMessage)
+            # Should have created versions for the new messages
+            assert agent._version_manager.version_count >= 2
 
-        # Should have created versions for the new messages
-        assert agent._version_manager.version_count >= 2
+            # Messages should be in registry
+            user_msg = agent.messages[-2]
+            assistant_msg = agent.messages[-1]
+            assert agent._message_registry.get(user_msg.id) is not None
+            assert agent._message_registry.get(assistant_msg.id) is not None
 
-        # Messages should be in registry
-        user_msg = agent.messages[-2]
-        assistant_msg = agent.messages[-1]
-        assert agent._message_registry.get(user_msg.id) is not None
-        assert agent._message_registry.get(assistant_msg.id) is not None
+            # Response should be reasonable
+            assert "4" in response.content.lower() or "four" in response.content.lower()
 
-        # Response should be reasonable
-        assert "4" in response.content.lower() or "four" in response.content.lower()
-
-        await agent.events.close()
+            await agent.events.close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -46,35 +45,34 @@ class TestVersioningWithRealLLM:
         async with Agent(
             "You are a helpful assistant. Be very concise.", model="gpt-4.1-mini"
         ) as agent:
+            # First call
+            await agent.call("What is the capital of France? One word answer.")
+            v1_count = agent._version_manager.version_count
 
-        # First call
-        await agent.call("What is the capital of France? One word answer.")
-        v1_count = agent._version_manager.version_count
+            # Second call
+            await agent.call("What is the capital of Germany? One word answer.")
+            v2_count = agent._version_manager.version_count
 
-        # Second call
-        await agent.call("What is the capital of Germany? One word answer.")
-        v2_count = agent._version_manager.version_count
+            # Third call
+            await agent.call("What is the capital of Italy? One word answer.")
+            v3_count = agent._version_manager.version_count
 
-        # Third call
-        await agent.call("What is the capital of Italy? One word answer.")
-        v3_count = agent._version_manager.version_count
+            # Each call should create 2 versions (user + assistant)
+            assert v2_count > v1_count
+            assert v3_count > v2_count
 
-        # Each call should create 2 versions (user + assistant)
-        assert v2_count > v1_count
-        assert v3_count > v2_count
+            # Should have system + 3 Q&A pairs
+            assert len(agent.messages) == 7
 
-        # Should have system + 3 Q&A pairs
-        assert len(agent.messages) == 7
+            # Test reverting
+            agent.revert_to_version(v1_count - 1)
+            assert len(agent.messages) == 3  # system + first Q&A
+            assert (
+                "france" in str(agent.messages[-1]).lower()
+                or "paris" in str(agent.messages[-1]).lower()
+            )
 
-        # Test reverting
-        agent.revert_to_version(v1_count - 1)
-        assert len(agent.messages) == 3  # system + first Q&A
-        assert (
-            "france" in str(agent.messages[-1]).lower()
-            or "paris" in str(agent.messages[-1]).lower()
-        )
-
-        await agent.events.close()
+            await agent.events.close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -179,30 +177,29 @@ class TestVersioningWithRealLLM:
         async with Agent(
             "You are a helpful assistant. Be very concise.", model="gpt-4.1-mini"
         ) as agent:
+            # Build conversation
+            await agent.call("What is Python in one sentence?")
+            original_response = str(agent.messages[-1])
+            original_count = len(agent.messages)
 
-        # Build conversation
-        await agent.call("What is Python in one sentence?")
-        original_response = str(agent.messages[-1])
-        original_count = len(agent.messages)
+            # Fork for alternative conversation
+            async with agent.context_manager.fork_context() as fork:
+                # Fork has same initial state
+                assert len(fork.messages) == original_count
 
-        # Fork for alternative conversation
-        async with agent.context_manager.fork_context() as fork:
-            # Fork has same initial state
-            assert len(fork.messages) == original_count
+                # Different question in fork
+                response = await fork.call("What is JavaScript in one sentence?")
 
-            # Different question in fork
-            response = await fork.call("What is JavaScript in one sentence?")
+                # Fork has new response
+                assert "javascript" in response.content.lower()
+                assert len(fork.messages) == original_count + 2
 
-            # Fork has new response
-            assert "javascript" in response.content.lower()
-            assert len(fork.messages) == original_count + 2
+            # Original unchanged
+            assert len(agent.messages) == original_count
+            assert str(agent.messages[-1]) == original_response
+            assert "javascript" not in str(agent.messages[-1]).lower()
 
-        # Original unchanged
-        assert len(agent.messages) == original_count
-        assert str(agent.messages[-1]) == original_response
-        assert "javascript" not in str(agent.messages[-1]).lower()
-
-        await agent.events.close()
+            await agent.events.close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -211,41 +208,40 @@ class TestVersioningWithRealLLM:
         async with Agent(
             "You are a helpful assistant. Be very concise.", model="gpt-4.1-mini"
         ) as agent:
+            # Initial conversation
+            await agent.call("Tell me about dogs in one sentence.")
+            dog_response = str(agent.messages[-1])
 
-        # Initial conversation
-        await agent.call("Tell me about dogs in one sentence.")
-        dog_response = str(agent.messages[-1])
+            # Use ThreadContext to replace the topic
+            async with agent.context_manager.thread_context() as ctx:
+                # Replace user's question
+                from good_agent.content.parts import TextContentPart
 
-        # Use ThreadContext to replace the topic
-        async with agent.context_manager.thread_context() as ctx:
-            # Replace user's question
-            from good_agent.content.parts import TextContentPart
+                ctx.messages[-2] = UserMessage(
+                    content_parts=[
+                        TextContentPart(text="Tell me about cats in one sentence.")
+                    ]
+                )
 
-            ctx.messages[-2] = UserMessage(
-                content_parts=[
-                    TextContentPart(text="Tell me about cats in one sentence.")
-                ]
-            )
+                # Get new response with replaced context
+                response = await ctx.call(
+                    "What are their main characteristics? One sentence."
+                )
 
-            # Get new response with replaced context
-            response = await ctx.call(
-                "What are their main characteristics? One sentence."
-            )
+                # Response should follow from the cat context (but exact content varies)
+                response.content.lower()
+                # Just verify we got a response about characteristics
+                assert len(response.content) > 0
 
-            # Response should follow from the cat context (but exact content varies)
-            response.content.lower()
-            # Just verify we got a response about characteristics
-            assert len(response.content) > 0
+            # Original conversation about dogs preserved (as string comparison)
+            assert dog_response == str(agent.messages[-3])
+            # Just verify the dog response exists and has content
+            assert len(agent.messages[-3].content) > 0
 
-        # Original conversation about dogs preserved (as string comparison)
-        assert dog_response == str(agent.messages[-3])
-        # Just verify the dog response exists and has content
-        assert len(agent.messages[-3].content) > 0
+            # New messages appended
+            assert "characteristics" in str(agent.messages[-2]).lower()
 
-        # New messages appended
-        assert "characteristics" in str(agent.messages[-2]).lower()
-
-        await agent.events.close()
+            await agent.events.close()
 
     @pytest.mark.asyncio
     @pytest.mark.vcr

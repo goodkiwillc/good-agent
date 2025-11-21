@@ -1,0 +1,405 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"Context-aware assistant","role":"system"},{"content":[{"text":"Tell
+      me about Python","type":"text"}],"role":"user"},{"content":"Context: 2 total
+      messages, recent topics: [''programming'']. Tailor your response to build on
+      this conversation history.","role":"system"}],"model":"gpt-4.1-mini","n":1,"temperature":0.0,"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '350'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeRwwMrseznwmtF2QCSgkPo6u0Fkn\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763756594,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Python is a high-level, interpreted
+        programming language known for its readability and simplicity, making it a
+        great choice for both beginners and experienced developers. It supports multiple
+        programming paradigms, including procedural, object-oriented, and functional
+        programming. Python has a vast standard library and a large ecosystem of third-party
+        packages, which makes it versatile for tasks like web development, data analysis,
+        artificial intelligence, scientific computing, automation, and more. Its syntax
+        emphasizes code readability, using indentation to define code blocks, which
+        helps developers write clean and maintainable code. Are you interested in
+        learning Python for a specific project or just exploring programming in general?\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        47,\n    \"completion_tokens\": 124,\n    \"total_tokens\": 171,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a22e758d98875a0-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 20:23:16 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=FYWQ2oFCsOt0BkOhowaafBgP5euRm.8XguTq24oIBts-1763756596-1.0.1.1-L7YMzfQKmw7P8x5iKBVR7jnD4NhGf3ATDRTyJQTitwjeZCWAK3aSjyRxaso7uY8aE.H2N9HPa9i_JvD9vVJzAPlDRI2bkLSJLxRHersP6_I;
+        path=/; expires=Fri, 21-Nov-25 20:53:16 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=sUdvFZ.83ThW7pQWllioeVIsLv6uTTKT0jxKL.SSjTg-1763756596434-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '2053'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999955'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"Context-aware assistant","role":"system"},{"content":[{"text":"Tell
+      me about Python","type":"text"}],"role":"user"},{"content":"Context: 2 total
+      messages, recent topics: [''programming'']. Tailor your response to build on
+      this conversation history.","role":"system"},{"role":"assistant","content":"Python
+      is a high-level, interpreted programming language known for its readability
+      and simplicity, making it a great choice for both beginners and experienced
+      developers. It supports multiple programming paradigms, including procedural,
+      object-oriented, and functional programming. Python has a vast standard library
+      and a large ecosystem of third-party packages, which makes it versatile for
+      tasks like web development, data analysis, artificial intelligence, scientific
+      computing, automation, and more. Its syntax emphasizes code readability, using
+      indentation to define code blocks, which helps developers write clean and maintainable
+      code. Are you interested in learning Python for a specific project or just exploring
+      programming in general?"},{"content":[{"text":"How does it relate to AI?","type":"text"}],"role":"user"},{"content":"Context:
+      5 total messages, recent topics: [''programming'', ''artificial intelligence''].
+      Tailor your response to build on this conversation history.","role":"system"}],"model":"gpt-4.1-mini","n":1,"temperature":0.0,"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1385'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=FYWQ2oFCsOt0BkOhowaafBgP5euRm.8XguTq24oIBts-1763756596-1.0.1.1-L7YMzfQKmw7P8x5iKBVR7jnD4NhGf3ATDRTyJQTitwjeZCWAK3aSjyRxaso7uY8aE.H2N9HPa9i_JvD9vVJzAPlDRI2bkLSJLxRHersP6_I;
+        _cfuvid=sUdvFZ.83ThW7pQWllioeVIsLv6uTTKT0jxKL.SSjTg-1763756596434-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeRwyN4zKNN6pTIrbDp11peWjJJQk\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763756596,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Python is one of the most popular programming
+        languages in the field of artificial intelligence (AI) due to its simplicity
+        and the powerful libraries it offers. It provides a wide range of tools and
+        frameworks that make developing AI models more accessible and efficient. For
+        example:\\n\\n- **TensorFlow** and **PyTorch** are widely used libraries for
+        building and training deep learning models.\\n- **scikit-learn** offers tools
+        for traditional machine learning algorithms.\\n- **NLTK** and **spaCy** are
+        popular for natural language processing tasks.\\n- **OpenCV** is used for
+        computer vision applications.\\n\\nPython\u2019s readability and extensive
+        community support allow AI researchers and developers to prototype quickly,
+        experiment with new ideas, and deploy AI solutions effectively. Are you interested
+        in a particular area of AI, like machine learning, natural language processing,
+        or computer vision?\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 220,\n    \"completion_tokens\":
+        167,\n    \"total_tokens\": 387,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a22e767ecbe75a0-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 20:23:19 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '3204'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999722'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: "{\"messages\":[{\"content\":\"Context-aware assistant\",\"role\":\"system\"},{\"content\":[{\"text\":\"Tell
+      me about Python\",\"type\":\"text\"}],\"role\":\"user\"},{\"content\":\"Context:
+      2 total messages, recent topics: ['programming']. Tailor your response to build
+      on this conversation history.\",\"role\":\"system\"},{\"role\":\"assistant\",\"content\":\"Python
+      is a high-level, interpreted programming language known for its readability
+      and simplicity, making it a great choice for both beginners and experienced
+      developers. It supports multiple programming paradigms, including procedural,
+      object-oriented, and functional programming. Python has a vast standard library
+      and a large ecosystem of third-party packages, which makes it versatile for
+      tasks like web development, data analysis, artificial intelligence, scientific
+      computing, automation, and more. Its syntax emphasizes code readability, using
+      indentation to define code blocks, which helps developers write clean and maintainable
+      code. Are you interested in learning Python for a specific project or just exploring
+      programming in general?\"},{\"content\":[{\"text\":\"How does it relate to AI?\",\"type\":\"text\"}],\"role\":\"user\"},{\"content\":\"Context:
+      5 total messages, recent topics: ['programming', 'artificial intelligence'].
+      Tailor your response to build on this conversation history.\",\"role\":\"system\"},{\"role\":\"assistant\",\"content\":\"Python
+      is one of the most popular programming languages in the field of artificial
+      intelligence (AI) due to its simplicity and the powerful libraries it offers.
+      It provides a wide range of tools and frameworks that make developing AI models
+      more accessible and efficient. For example:\\n\\n- **TensorFlow** and **PyTorch**
+      are widely used libraries for building and training deep learning models.\\n-
+      **scikit-learn** offers tools for traditional machine learning algorithms.\\n-
+      **NLTK** and **spaCy** are popular for natural language processing tasks.\\n-
+      **OpenCV** is used for computer vision applications.\\n\\nPython\u2019s readability
+      and extensive community support allow AI researchers and developers to prototype
+      quickly, experiment with new ideas, and deploy AI solutions effectively. Are
+      you interested in a particular area of AI, like machine learning, natural language
+      processing, or computer vision?\"},{\"content\":[{\"text\":\"What's the best
+      framework?\",\"type\":\"text\"}],\"role\":\"user\"},{\"content\":\"Context:
+      8 total messages, recent topics: ['programming', 'artificial intelligence'].
+      Tailor your response to build on this conversation history.\",\"role\":\"system\"}],\"model\":\"gpt-4.1-mini\",\"n\":1,\"temperature\":0.0,\"top_p\":1.0}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '2579'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=FYWQ2oFCsOt0BkOhowaafBgP5euRm.8XguTq24oIBts-1763756596-1.0.1.1-L7YMzfQKmw7P8x5iKBVR7jnD4NhGf3ATDRTyJQTitwjeZCWAK3aSjyRxaso7uY8aE.H2N9HPa9i_JvD9vVJzAPlDRI2bkLSJLxRHersP6_I;
+        _cfuvid=sUdvFZ.83ThW7pQWllioeVIsLv6uTTKT0jxKL.SSjTg-1763756596434-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeRx1Qv8eEkqNZUDTVSWg4ycs9ar1\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763756599,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"There isn't a single \\\"best\\\" AI
+        framework\u2014it really depends on your specific needs and goals. However,
+        here are some of the most popular frameworks, each with its strengths:\\n\\n-
+        **TensorFlow**: Developed by Google, it's highly scalable and great for production
+        environments. It supports both research and deployment, with tools like TensorFlow
+        Lite for mobile and TensorFlow Serving for production.\\n\\n- **PyTorch**:
+        Favored in the research community for its dynamic computation graph and ease
+        of use. It\u2019s excellent for experimentation and prototyping, and it\u2019s
+        increasingly being adopted in production as well.\\n\\n- **scikit-learn**:
+        Ideal for traditional machine learning tasks like classification, regression,
+        and clustering. It\u2019s user-friendly and great for beginners or projects
+        that don\u2019t require deep learning.\\n\\n- **Keras**: Originally a high-level
+        API for TensorFlow, it simplifies building neural networks and is great for
+        beginners and rapid development.\\n\\nIf you\u2019re starting out or focusing
+        on deep learning research, PyTorch is often recommended. For deploying models
+        at scale, TensorFlow might be more suitable. What kind of AI project are you
+        thinking about? That can help narrow down the best framework for you.\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        434,\n    \"completion_tokens\": 238,\n    \"total_tokens\": 672,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a22e77d3cb275a0-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 20:23:24 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '4383'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999452'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1
