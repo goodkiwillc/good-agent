@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
 from good_agent.agent.core import Agent
-from good_agent.extensions.agent_tool import AgentAsTool
+from good_agent.tools.agent_tool import AgentAsTool
 from good_agent.mock import mock_message
 
 
@@ -59,6 +59,7 @@ async def test_as_tool_returns_tool_instance():
 async def test_call_one_shot():
     """Test one-shot execution (no session ID)."""
     mock_agent = MagicMock(spec=Agent)
+    mock_agent.name = "test_agent"  # Explicitly set name
     # Setup fork to return a mock agent that can be called
     mock_forked_agent = MagicMock(spec=Agent)
 
@@ -74,16 +75,29 @@ async def test_call_one_shot():
 
     response = await tool_wrapper(prompt="Hello")
 
-    assert response == "Response content"
+    # Check if session ID is present in the response
+    # Should use XML format now
+    assert "<test_agent session_id=" in response
+    assert "Response content" in response
+    assert "</test_agent>" in response
+
+    # Verify session ID format (should be a short number now, not ULID)
+    # e.g. <test_agent session_id="1">
+    import re
+
+    match = re.search(r'session_id="(\d+)"', response)
+    assert match, "Session ID should be a number"
+
     mock_agent.fork.assert_called_once_with(include_messages=True)
-    # Should not store session
-    assert len(tool_wrapper.sessions) == 0
+    # Should store session because default is multi_turn=True and we auto-generated an ID
+    assert len(tool_wrapper.sessions) == 1
 
 
 @pytest.mark.asyncio
 async def test_call_multi_turn_new_session():
     """Test multi-turn execution with a new session ID."""
     mock_agent = MagicMock(spec=Agent)
+    mock_agent.name = "test_agent"  # Explicitly set name
     mock_forked_agent = MagicMock(spec=Agent)
 
     async def mock_call(*args, **kwargs):
@@ -97,7 +111,17 @@ async def test_call_multi_turn_new_session():
 
     response = await tool_wrapper(prompt="Hello", session_id="session_1")
 
-    assert response == "Session response"
+    # Check if session ID is present in the response
+    # Should always wrap in XML for multi-turn
+    assert '<test_agent session_id="session_1">' in response
+    assert "Session response" in response
+
+    # Use regex to handle possible dynamic name in test if needed,
+    # but here we mocked name="test_agent" indirectly or via default.
+    # Wait, default name is agent.name or "sub_agent"
+    # In this test we didn't set agent.name explicitly on mock, so it might be "sub_agent"
+    # Let's check the wrapper initialization in this test function
+
     mock_agent.fork.assert_called_once_with(include_messages=True)
     assert "session_1" in tool_wrapper.sessions
     assert tool_wrapper.sessions["session_1"] == mock_forked_agent
@@ -107,6 +131,7 @@ async def test_call_multi_turn_new_session():
 async def test_call_multi_turn_existing_session():
     """Test multi-turn execution reusing an existing session."""
     mock_agent = MagicMock(spec=Agent)
+    mock_agent.name = "test_agent"  # Explicitly set name
     mock_forked_agent = MagicMock(spec=Agent)
 
     call_mock = MagicMock()
@@ -123,7 +148,10 @@ async def test_call_multi_turn_existing_session():
 
     response = await tool_wrapper(prompt="Follow up", session_id="session_1")
 
-    assert response == "Follow-up response"
+    # Check if session ID is present in the response
+    assert '<test_agent session_id="session_1">' in response
+    assert "Follow-up response" in response
+
     # Should NOT fork again
     mock_agent.fork.assert_not_called()
     call_mock.assert_called_once_with("Follow up")

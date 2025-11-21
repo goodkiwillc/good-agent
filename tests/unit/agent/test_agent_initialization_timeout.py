@@ -44,22 +44,19 @@ async def test_agent_initialization_with_simple_tools():
     start_time = time.time()
 
     # Create agent with simple tools
-    agent = Agent("You are a helpful assistant", tools=[simple_tool, async_tool])
+    async with Agent(
+        "You are a helpful assistant", tools=[simple_tool, async_tool]
+    ) as agent:
+        elapsed = time.time() - start_time
 
-    # Wait for agent to be ready
-    await agent.initialize()
+        # Should complete well within the 10 second timeout
+        assert elapsed < 2.0, (
+            f"Agent took {elapsed:.2f}s to initialize (should be < 2s)"
+        )
 
-    elapsed = time.time() - start_time
-
-    # Should complete well within the 10 second timeout
-    assert elapsed < 2.0, f"Agent took {elapsed:.2f}s to initialize (should be < 2s)"
-
-    # Verify tools are registered
-    assert "simple_tool" in agent.tools
-    assert "async_tool" in agent.tools
-
-    # Clean up
-    await agent.events.close()
+        # Verify tools are registered
+        assert "simple_tool" in agent.tools
+        assert "async_tool" in agent.tools
 
 
 @pytest.mark.asyncio
@@ -83,22 +80,15 @@ async def test_agent_initialization_with_many_tools():
     start_time = time.time()
 
     # Create agent with many tools
-    agent = Agent("You are a helpful assistant", tools=tools)
+    async with Agent("You are a helpful assistant", tools=tools) as agent:
+        elapsed = time.time() - start_time
 
-    # Wait for agent to be ready
-    await agent.initialize()
+        # Should still complete within reasonable time even with many tools
+        assert elapsed < 5.0, f"Agent took {elapsed:.2f}s to initialize with 50 tools"
 
-    elapsed = time.time() - start_time
-
-    # Should still complete within reasonable time even with many tools
-    assert elapsed < 5.0, f"Agent took {elapsed:.2f}s to initialize with 50 tools"
-
-    # Verify all tools are registered
-    for i in range(50):
-        assert f"tool_{i}" in agent.tools
-
-    # Clean up
-    await agent.events.close()
+        # Verify all tools are registered
+        for i in range(50):
+            assert f"tool_{i}" in agent.tools
 
 
 @pytest.mark.asyncio
@@ -108,21 +98,16 @@ async def test_agent_initialization_with_tool_patterns():
 
     # Create agent with tool patterns (these will be loaded from registry)
     # Using a pattern that shouldn't exist to avoid loading real tools
-    agent = Agent("You are a helpful assistant", tools=["nonexistent:*", "fake_tool"])
+    async with Agent(
+        "You are a helpful assistant", tools=["nonexistent:*", "fake_tool"]
+    ) as agent:
+        elapsed = time.time() - start_time
 
-    # Wait for agent to be ready
-    await agent.initialize()
+        # Should complete within timeout even when patterns don't match anything
+        assert elapsed < 2.0, f"Agent took {elapsed:.2f}s to initialize with patterns"
 
-    elapsed = time.time() - start_time
-
-    # Should complete within timeout even when patterns don't match anything
-    assert elapsed < 2.0, f"Agent took {elapsed:.2f}s to initialize with patterns"
-
-    # No tools should be loaded from nonexistent patterns
-    assert len(agent.tools) == 0
-
-    # Clean up
-    await agent.events.close()
+        # No tools should be loaded from nonexistent patterns
+        assert len(agent.tools) == 0
 
 
 @pytest.mark.asyncio
@@ -141,22 +126,19 @@ async def test_agent_initialization_timeout_detection():
         """A tool that initializes quickly."""
         return x * 2
 
-    agent = Agent("You are a helpful assistant", tools=[quick_tool])
-
     start_time = time.time()
 
     # This should complete quickly without timing out
-    await agent.initialize()
+    async with Agent("You are a helpful assistant", tools=[quick_tool]) as agent:
+        elapsed = time.time() - start_time
 
-    elapsed = time.time() - start_time
+        # Should complete well within the 10 second timeout
+        assert elapsed < 5.0, (
+            f"Agent took {elapsed:.2f}s to initialize (should be < 5s)"
+        )
 
-    # Should complete well within the 10 second timeout
-    assert elapsed < 5.0, f"Agent took {elapsed:.2f}s to initialize (should be < 5s)"
-
-    # Verify the tool was registered
-    assert "quick_tool" in agent.tools
-
-    await agent.events.close()
+        # Verify the tool was registered
+        assert "quick_tool" in agent.tools
 
     # Note: Testing the actual timeout behavior requires either:
     # 1. A component that genuinely hangs (hard to create reliably in tests)
@@ -186,7 +168,7 @@ async def test_agent_initialization_with_mixed_tool_types():
     start_time = time.time()
 
     # Create agent with mixed tool types
-    agent = Agent(
+    async with Agent(
         "You are a helpful assistant",
         tools=[
             sync_tool,  # @tool decorated sync function
@@ -194,23 +176,18 @@ async def test_agent_initialization_with_mixed_tool_types():
             raw_function,  # Raw callable (will be converted to Tool)
             "pattern:*",  # Pattern string (won't match anything)
         ],
-    )
+    ) as agent:
+        elapsed = time.time() - start_time
 
-    # Wait for agent to be ready
-    await agent.initialize()
+        # Should complete quickly
+        assert elapsed < 2.0, (
+            f"Agent took {elapsed:.2f}s to initialize with mixed tools"
+        )
 
-    elapsed = time.time() - start_time
-
-    # Should complete quickly
-    assert elapsed < 2.0, f"Agent took {elapsed:.2f}s to initialize with mixed tools"
-
-    # Verify tools are registered (raw_function gets converted)
-    assert "sync_tool" in agent.tools
-    assert "async_tool_2" in agent.tools
-    assert "raw_function" in agent.tools
-
-    # Clean up
-    await agent.events.close()
+        # Verify tools are registered (raw_function gets converted)
+        assert "sync_tool" in agent.tools
+        assert "async_tool_2" in agent.tools
+        assert "raw_function" in agent.tools
 
 
 @pytest.mark.asyncio
@@ -230,13 +207,8 @@ async def test_concurrent_agent_initialization():
 
         agent_tool = agent_tool_factory(idx)
 
-        agent = Agent(f"Agent {idx}", tools=[agent_tool, simple_tool])
-        await agent.initialize()
-
-        elapsed = time.time() - start
-
-        # Clean up
-        await agent.events.close()
+        async with Agent(f"Agent {idx}", tools=[agent_tool, simple_tool]) as agent:
+            elapsed = time.time() - start
 
         return idx, elapsed
 

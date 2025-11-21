@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
+from collections.abc import Callable
 
 import pytest
 from good_agent import Agent, AgentComponent, tool
@@ -72,51 +73,49 @@ async def test_component_tools_registration():
     """Test that component tools are properly registered with the agent."""
     # Create agent with TaskManager component
     task_manager = TaskManager()
-    agent = Agent("You are a task management assistant", extensions=[task_manager])
-    await agent.initialize()
+    async with Agent(
+        "You are a task management assistant", extensions=[task_manager]
+    ) as agent:
+        # Tools should now be registered immediately after initialize() completes
 
-    # Tools should now be registered immediately after initialize() completes
+        # Check that tools were registered
+        assert "create_list" in agent.tools
+        assert "add_task" in agent.tools
+        assert "get_list" in agent.tools
 
-    # Check that tools were registered
-    assert "create_list" in agent.tools
-    assert "add_task" in agent.tools
-    assert "get_list" in agent.tools
+        # Regular methods should not be registered
+        assert "get_all_lists" not in agent.tools
 
-    # Regular methods should not be registered
-    assert "get_all_lists" not in agent.tools
+        # Tools should be callable
+        create_tool = agent.tools["create_list"]
+        assert isinstance(create_tool, Tool)
 
-    # Tools should be callable
-    create_tool = agent.tools["create_list"]
-    assert isinstance(create_tool, Tool)
-
-    # Test calling the tool
-    result = await create_tool(_agent=agent, name="Shopping")
-    assert result.success
-    assert result.response == "list-1"
-    assert task_manager.lists["list-1"].name == "Shopping"
+        # Test calling the tool
+        result = await create_tool(_agent=agent, name="Shopping")
+        assert result.success
+        assert result.response == "list-1"
+        assert task_manager.lists["list-1"].name == "Shopping"
 
 
 @pytest.mark.asyncio
 async def test_component_tools_execution():
     """Test that component tools can be executed through the agent."""
     task_manager = TaskManager()
-    agent = Agent(
+    async with Agent(
         "You are a task management assistant. Use the tools to manage tasks.",
         extensions=[task_manager],
-    )
-    await agent.initialize()
+    ) as agent:
+        # Call agent with a request that should use tools
+        await agent.call("Create a new list called 'Work Tasks'")
 
-    # Call agent with a request that should use tools
-    await agent.call("Create a new list called 'Work Tasks'")
+        # Check that a list was created
+        assert len(task_manager.lists) > 0
 
-    # Check that a list was created
-    assert len(task_manager.lists) > 0
-
-    # The list should have the requested name
-    created_lists = [
-        lst for lst in task_manager.lists.values() if lst.name == "Work Tasks"
-    ]
-    assert len(created_lists) > 0
+        # The list should have the requested name
+        created_lists = [
+            lst for lst in task_manager.lists.values() if lst.name == "Work Tasks"
+        ]
+        assert len(created_lists) > 0
 
 
 @pytest.mark.asyncio
@@ -134,18 +133,16 @@ async def test_component_tool_with_agent_reference():
             return f"Created {name} for agent with {len(self.agent.messages)} messages"
 
     manager = SmartTaskManager()
-    agent = Agent("Assistant", extensions=[manager])
-    await agent.initialize()
+    async with Agent("Assistant", extensions=[manager]) as agent:
+        # Add some messages
+        agent.append("Hello")
+        agent.append("Create a list")
 
-    # Add some messages
-    agent.append("Hello")
-    agent.append("Create a list")
-
-    # Call the tool
-    _tool = agent.tools["create_contextual_list"]
-    result = await _tool(_agent=agent, name="Test")
-    assert result.success
-    assert "3 messages" in result.response  # System + 2 user messages
+        # Call the tool
+        _tool = agent.tools["create_contextual_list"]
+        result = await _tool(_agent=agent, name="Test")
+        assert result.success
+        assert "3 messages" in result.response  # System + 2 user messages
 
 
 @pytest.mark.asyncio
@@ -165,27 +162,25 @@ async def test_component_tool_type_checking():
             return x * 3
 
     manager = TypedManager()
-    agent = Agent("Test", extensions=[manager])
-    await agent.initialize()
+    async with Agent("Test", extensions=[manager]) as agent:
+        # Both sync and async methods should be registered as tools
+        assert "sync_method" in agent.tools
+        assert "async_method" in agent.tools
 
-    # Both sync and async methods should be registered as tools
-    assert "sync_method" in agent.tools
-    assert "async_method" in agent.tools
+        # Both should work when called
+        sync_result = await agent.tools["sync_method"](_agent=agent, x=5)
+        assert sync_result.response == 10
 
-    # Both should work when called
-    sync_result = await agent.tools["sync_method"](_agent=agent, x=5)
-    assert sync_result.response == 10
+        async_result = await agent.tools["async_method"](_agent=agent, x=5)
+        assert async_result.response == 15
 
-    async_result = await agent.tools["async_method"](_agent=agent, x=5)
-    assert async_result.response == 15
-
-    # Type checking verification (this would be caught at type-check time)
-    if TYPE_CHECKING:
-        # The decorated methods should preserve their signatures
-        sync_descriptor = manager.__class__.__dict__["sync_method"]
-        async_descriptor = manager.__class__.__dict__["async_method"]
-        cast(BoundTool[AgentComponent, Any, Any], sync_descriptor)
-        cast(BoundTool[AgentComponent, Any, Any], async_descriptor)
+        # Type checking verification (this would be caught at type-check time)
+        if TYPE_CHECKING:
+            # The decorated methods should preserve their signatures
+            sync_descriptor = manager.__class__.__dict__["sync_method"]
+            async_descriptor = manager.__class__.__dict__["async_method"]
+            cast(BoundTool[AgentComponent, Any, Any], sync_descriptor)
+            cast(BoundTool[AgentComponent, Any, Any], async_descriptor)
 
 
 @pytest.mark.asyncio
@@ -199,18 +194,16 @@ async def test_component_tool_with_hide_parameter():
             return f"Processed {data} with key {api_key[:3]}..."
 
     manager = SecureManager()
-    agent = Agent("Test", extensions=[manager])
-    await agent.initialize()
+    async with Agent("Test", extensions=[manager]) as agent:
+        secure_tool = agent.tools["secure_operation"]
 
-    secure_tool = agent.tools["secure_operation"]
+        # The hidden parameter should not be in the tool signature
+        signature = secure_tool.signature
+        properties = signature["function"]["parameters"]["properties"]
+        assert "data" in properties
+        assert "api_key" not in properties
 
-    # The hidden parameter should not be in the tool signature
-    signature = secure_tool.signature
-    properties = signature["function"]["parameters"]["properties"]
-    assert "data" in properties
-    assert "api_key" not in properties
-
-    # But the tool should still work with the hidden parameter
-    result = await secure_tool(_agent=agent, data="test", api_key="my_secret_key")
-    assert result.success
-    assert "my_" in result.response
+        # But the tool should still work with the hidden parameter
+        result = await secure_tool(_agent=agent, data="test", api_key="my_secret_key")
+        assert result.success
+        assert "my_" in result.response
