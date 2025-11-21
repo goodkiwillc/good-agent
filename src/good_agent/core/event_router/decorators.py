@@ -29,12 +29,12 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 from collections.abc import Awaitable
 
-from .context import EventContext
-from .protocols import ApplyInterrupt, EventName, F
-from .registration import LifecyclePhase
+from good_agent.core.event_router.context import EventContext
+from good_agent.core.event_router.protocols import ApplyInterrupt, EventName, F
+from good_agent.core.event_router.registration import LifecyclePhase
 
 if TYPE_CHECKING:
-    from .core import EventRouter  # pragma: no cover
+    from good_agent.core.event_router.core import EventRouter  # pragma: no cover
 
 # Type variable for methods (includes self parameter)
 T_Method = TypeVar("T_Method", bound=Callable[..., object])
@@ -198,7 +198,7 @@ class emit:
             @functools.wraps(func)
             async def async_wrapper(self, *args, **kwargs):
                 # Import here to avoid circular dependency
-                from .core import EventRouter
+                from good_agent.core.event_router.core import EventRouter
 
                 # Ensure self is EventRouter
                 if not isinstance(self, EventRouter):
@@ -288,7 +288,7 @@ class emit:
             @functools.wraps(func)
             def sync_wrapper(self, *args, **kwargs):
                 # Import here to avoid circular dependency
-                from .core import EventRouter
+                from good_agent.core.event_router.core import EventRouter
 
                 # Ensure self is EventRouter
                 if not isinstance(self, EventRouter):

@@ -144,7 +144,7 @@ class TemplateContentPart(BaseContentPart):
                 )
             else:
                 # Simple Jinja2 fallback with sandbox by default
-                from ..core import templating
+                from good_agent.core import templating
 
                 # Create sandboxed environment
                 env = templating.create_environment(use_sandbox=True)

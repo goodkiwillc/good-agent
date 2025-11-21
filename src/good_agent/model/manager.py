@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 from weakref import WeakValueDictionary
 
-from .overrides import (
+from good_agent.model.overrides import (
     ModelOverride,
     model_override_registry,
 )

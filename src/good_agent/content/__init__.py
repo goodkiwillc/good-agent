@@ -1,5 +1,5 @@
 # Re-export everything from parts (previously content_parts.py)
-from .parts import (
+from good_agent.content.parts import (
     BaseContentPart,
     ContentPartType,
     FileContentPart,

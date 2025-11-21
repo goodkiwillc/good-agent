@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Protocol, TypeVar, runtime_checkable
 
 from good_agent.core.event_router import EventContext, on
 
-from ..events import AgentEvents
+from good_agent.events import AgentEvents
 
 if TYPE_CHECKING:
     pass

@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from ..messages import Message
+    from good_agent.messages import Message
 
 # Lazy import litellm to avoid import overhead
 _token_counter = None
@@ -130,8 +130,8 @@ def message_to_dict(message: Message, include_tools: bool = True) -> dict[str, A
     Returns:
         Dictionary representation suitable for litellm token counting
     """
-    from ..content import RenderMode
-    from ..messages import AssistantMessage, ToolMessage
+    from good_agent.content import RenderMode
+    from good_agent.messages import AssistantMessage, ToolMessage
 
     # Render content without firing events to avoid recursion
     # Use direct part rendering instead of message.render() which fires events

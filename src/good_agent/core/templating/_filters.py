@@ -3,7 +3,7 @@ import textwrap
 
 from good_common.utilities import filter_nulls, yaml_dumps
 
-from ._core import register_filter
+from good_agent.core.templating._core import register_filter
 
 
 @register_filter("yaml", deprecated_aliases=["to_yaml"])

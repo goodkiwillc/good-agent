@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from good_agent.extensions.template_manager.core import Template, TemplateManager
+from good_agent import Template, TemplateManager
 
 
 def main() -> None:

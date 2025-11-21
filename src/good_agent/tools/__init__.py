@@ -1,6 +1,6 @@
 # Import all public API from each module to maintain backward compatibility
-from .bound_tools import BoundTool, create_component_tool_decorator
-from .registry import (
+from good_agent.tools.bound_tools import BoundTool, create_component_tool_decorator
+from good_agent.tools.registry import (
     ToolRegistration,
     ToolRegistry,
     clear_tool_registry,
@@ -8,7 +8,7 @@ from .registry import (
     get_tool_registry_sync,
     register_tool,
 )
-from .tools import (
+from good_agent.tools.tools import (
     Tool,
     ToolCall,
     ToolCallFunction,

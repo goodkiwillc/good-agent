@@ -1,7 +1,7 @@
 """Messages package - all message types and utilities."""
 
 # Re-export base types
-from .base import (
+from good_agent.messages.base import (
     IMAGE,
     Annotation,
     AnnotationLike,
@@ -13,19 +13,19 @@ from .base import (
 )
 
 # Re-export content types for backward compatibility
-from ..content import RenderMode
+from good_agent.content import RenderMode
 
 # Re-export tools for backward compatibility
-from ..tools import ToolCall, ToolResponse
+from good_agent.tools import ToolCall, ToolResponse
 
 # Re-export filtering
-from .filtering import FilteredMessageList
+from good_agent.messages.filtering import FilteredMessageList
 
 # Re-export message list
-from .message_list import MessageList, T_Message
+from good_agent.messages.message_list import MessageList, T_Message
 
 # Re-export role-specific messages
-from .roles import (
+from good_agent.messages.roles import (
     AssistantMessage,
     AssistantMessageStructuredOutput,
     CitationURL,
@@ -37,7 +37,7 @@ from .roles import (
 )
 
 # Re-export utilities
-from .utilities import MessageFactory
+from good_agent.messages.utilities import MessageFactory
 
 __all__ = [
     # Base types

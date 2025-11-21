@@ -4,17 +4,17 @@
 
 from __future__ import annotations
 
-from .components import ComponentRegistry
-from .context import ContextManager
-from .core import Agent, AgentConfigParameters, AgentInitialize
-from .events import AgentEventsFacade
-from .llm import LLMCoordinator
-from .messages import MessageManager
-from .modes import ModeContext, ModeManager, ModeTransition
-from .state import AgentState, AgentStateMachine
-from .tasks import AgentTaskManager
-from .tools import ToolExecutor
-from .versioning import AgentVersioningManager
+from good_agent.agent.components import ComponentRegistry
+from good_agent.agent.context import ContextManager
+from good_agent.agent.core import Agent, AgentConfigParameters, AgentInitialize
+from good_agent.agent.events import AgentEventsFacade
+from good_agent.agent.llm import LLMCoordinator
+from good_agent.agent.messages import MessageManager
+from good_agent.agent.modes import ModeContext, ModeManager, ModeTransition
+from good_agent.agent.state import AgentState, AgentStateMachine
+from good_agent.agent.tasks import AgentTaskManager
+from good_agent.agent.tools import ToolExecutor
+from good_agent.agent.versioning import AgentVersioningManager
 
 __all__: list[str] = [
     "Agent",

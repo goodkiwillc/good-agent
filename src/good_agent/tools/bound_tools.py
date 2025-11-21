@@ -14,8 +14,8 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from ..components.component import AgentComponent
-    from .tools import Tool, ToolMetadata, ToolResponse, ToolSignature
+    from good_agent.core.components.component import AgentComponent
+    from good_agent.tools.tools import Tool, ToolMetadata, ToolResponse, ToolSignature
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -142,7 +142,7 @@ class BoundTool(Generic[ComponentSelf, P, FuncResp]):
             typed_bound_method = cast("Callable[P, FuncResp]", bound_method)
 
             # Import Tool here to avoid circular import
-            from .tools import Tool
+            from good_agent.tools.tools import Tool
 
             # Create a Tool instance with the bound method
             tool_instance = Tool(
@@ -207,7 +207,7 @@ def create_component_tool_decorator():
             tool_description = description or inspect.getdoc(f) or ""
 
             # Import here to avoid circular import
-            from .tools import Tool, ToolMetadata
+            from good_agent.tools.tools import Tool, ToolMetadata
 
             # Create metadata object
             metadata = ToolMetadata(

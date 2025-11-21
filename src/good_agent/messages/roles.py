@@ -6,8 +6,8 @@ from pydantic import BaseModel
 
 from good_agent.core.types import URL
 
-from ..tools import ToolCall, ToolResponse
-from .base import (
+from good_agent.tools import ToolCall, ToolResponse
+from good_agent.messages.base import (
     AnnotationLike,
     IMAGE,
     ImageDetail,

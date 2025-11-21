@@ -52,12 +52,12 @@ type ToolLike = Union["Tool[..., Any]", Callable[..., Any]]
 if TYPE_CHECKING:
     from good_agent.agent import Agent
 
-    from ..agent.config import AgentConfigManager
-    from ..extensions.template_manager.injection import (
+    from good_agent.agent.config import AgentConfigManager
+    from good_agent.extensions.template_manager.injection import (
         _ContextValueDescriptor,
     )
-    from ..mcp.client import MCPServerConfig
-    from .bound_tools import BoundTool
+    from good_agent.mcp.client import MCPServerConfig
+    from good_agent.tools.bound_tools import BoundTool
 else:  # pragma: no cover - fallback for runtime to avoid circular imports
     Agent = Any  # type: ignore[assignment]
     MCPServerConfig = Any  # type: ignore[assignment]
@@ -146,7 +146,7 @@ class ToolManager(AgentComponent):
     async def _ensure_registry_initialized(self):
         """Ensure the global tool registry is initialized"""
         if not self._registry_initialized:
-            from .registry import get_tool_registry
+            from good_agent.tools.registry import get_tool_registry
 
             self._registry = await get_tool_registry()
             self._registry_initialized = True
@@ -329,7 +329,7 @@ class ToolManager(AgentComponent):
 
         # Lazy-load MCP client manager
         if self._mcp_client is None:
-            from ..mcp import MCPClientManager
+            from good_agent.mcp import MCPClientManager
 
             self._mcp_client = MCPClientManager()
             # Set up MCP client with agent if available
@@ -678,7 +678,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
     def _auto_hide_injectable_params(self, fn: Callable) -> None:
         """Automatically hide injectable parameters from JSON schema."""
         # Import lazily to avoid circular dependency
-        from ..extensions.template_manager.injection import (
+        from good_agent.extensions.template_manager.injection import (
             _ContextValueDescriptor,
         )
 
@@ -929,7 +929,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
     ) -> ToolResponse[FuncResp]:
         """Execute the tool and return response"""
         # Import lazily to avoid circular dependency
-        from ..extensions.template_manager.injection import (
+        from good_agent.extensions.template_manager.injection import (
             ContextValue,
             _ContextValueDescriptor,
         )
@@ -962,7 +962,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
                         elif not context_value.required:
                             kwargs[param_name] = None
                         else:
-                            from ..extensions.template_manager.injection import (
+                            from good_agent.extensions.template_manager.injection import (
                                 MissingContextValueError,
                             )
 
@@ -982,7 +982,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
                         elif not context_value.required:
                             kwargs[param_name] = None
                         else:
-                            from ..extensions.template_manager.injection import (
+                            from good_agent.extensions.template_manager.injection import (
                                 MissingContextValueError as MissingContextValueErrorRef,
                             )
 
@@ -1294,7 +1294,7 @@ def tool(  # type: ignore[misc]
         if params and params[0] == "self":
             # For AgentComponent methods, create a BoundTool descriptor
             # that will return Tool instances bound to component instances
-            from .bound_tools import BoundTool
+            from good_agent.tools.bound_tools import BoundTool
 
             # Extract metadata
             tool_name = name or f.__name__
@@ -1371,7 +1371,7 @@ def tool(  # type: ignore[misc]
         # If register=True, register the tool globally
         if register:
             # Import here to avoid circular dependency
-            from .registry import get_tool_registry_sync
+            from good_agent.tools.registry import get_tool_registry_sync
 
             # Get the global registry
             registry = get_tool_registry_sync()

@@ -19,7 +19,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, ParamSpec, Protocol, TypeVar, runtime_checkable
 
 if TYPE_CHECKING:
-    from .context import EventContext  # type: ignore[attr-defined]
+    from good_agent.core.event_router.context import EventContext  # type: ignore[attr-defined]
 
 # Type definitions
 T_Parameters = TypeVar("T_Parameters")

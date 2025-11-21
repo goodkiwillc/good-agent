@@ -24,7 +24,7 @@ from good_agent.core.types import URL
 from good_agent.core.ulid_monotonic import create_monotonic_ulid
 
 # Import content parts
-from ..content import (
+from good_agent.content import (
     ContentPartType,
     FileContentPart,
     ImageContentPart,
@@ -34,7 +34,7 @@ from ..content import (
     deserialize_content_part,
     is_template,
 )
-from ..utilities.typing import (
+from good_agent.utilities.typing import (
     SupportsDisplay,
     SupportsLLM,
     SupportsRender,
@@ -42,8 +42,8 @@ from ..utilities.typing import (
 )
 
 if TYPE_CHECKING:
-    from ..agent import Agent
-    from .roles import AssistantMessage, SystemMessage, ToolMessage, UserMessage
+    from good_agent.agent import Agent
+    from good_agent.messages.roles import AssistantMessage, SystemMessage, ToolMessage, UserMessage
 
 logger = logging.getLogger(__name__)
 
@@ -376,7 +376,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
             # Fire BEFORE event to allow components to modify content_parts
             content_parts = self.content_parts
             if self.agent is not None:
-                from ..events import AgentEvents
+                from good_agent.events import AgentEvents
 
                 try:
                     # Fire BEFORE event with content_parts (not yet rendered)
@@ -474,7 +474,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
         Returns:
             Number of tokens in this message including content and tool calls
         """
-        from ..utilities.tokens import get_message_token_count
+        from good_agent.utilities.tokens import get_message_token_count
 
         # Get model from agent if available
         model = "gpt-4o"
@@ -590,7 +590,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
             content_parts = [TextContentPart(text=str(content))]
 
         # Import here to avoid circular dependency
-        from .roles import (
+        from good_agent.messages.roles import (
             AssistantMessage,
             SystemMessage,
             ToolMessage,

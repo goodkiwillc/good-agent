@@ -12,7 +12,7 @@ from good_agent.core.event_router import (
 )
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle guard
-    from .core import Agent
+    from good_agent.agent.core import Agent
 
 
 class AgentEventsFacade:

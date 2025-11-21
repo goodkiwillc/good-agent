@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from .base import Message, deserialize_content_part
-from .roles import (
+from good_agent.messages.base import Message, deserialize_content_part
+from good_agent.messages.roles import (
     AssistantMessage,
     AssistantMessageStructuredOutput,
     SystemMessage,

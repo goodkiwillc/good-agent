@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Protocol, runtime_checkable
 import logging
 
-from .models import (
+from good_agent.extensions.search.models import (
     DataDomain,
     OperationType,
     Platform,

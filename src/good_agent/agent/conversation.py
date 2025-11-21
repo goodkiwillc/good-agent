@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 from good_agent.events import AgentEvents
 from good_agent.messages import AssistantMessage, Message, UserMessage
 
-from .core import Agent
+from good_agent.agent.core import Agent
 
 
 class Conversation:

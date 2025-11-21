@@ -9,16 +9,16 @@ from good_common.types import (
     UUIDField,
 )
 
-from ._base import Identifier, StringDict
-from ._dates import (
+from good_agent.core.types._base import Identifier, StringDict
+from good_agent.core.types._dates import (
     NullableParsedDate,
     NullableParsedDateTime,
     ParsedDate,
     ParsedDateTime,
 )
-from ._functional import FuncRef
-from ._json import JSONData
-from ._web import RequestMethod
+from good_agent.core.types._functional import FuncRef
+from good_agent.core.types._json import JSONData
+from good_agent.core.types._web import RequestMethod
 
 __all__ = [
     "URL",

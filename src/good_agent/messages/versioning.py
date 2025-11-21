@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from good_agent.agent.core import Agent
-    from . import Message
-    from .store import MessageStore
+    from good_agent.messages import Message
+    from good_agent.messages.store import MessageStore
 
 
 class MessageNotFoundError(Exception):

@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING, Any
 from jinja2 import ChoiceLoader
 
 from good_agent.core.components import AgentComponent
-from ...core import templating
-from ...events import AgentEvents
+from good_agent.core import templating
+from good_agent.events import AgentEvents
 
-from .injection import (
+from good_agent.extensions.template_manager.injection import (
     ContextResolver,
     _modify_function_for_injection,
 )
@@ -293,7 +293,7 @@ class TemplateManager(AgentComponent):
 
     def _setup_file_templates(self, prompts_dir: Path | None = None):
         """Set up file-based template loading."""
-        from .storage import ChainedStorage, FileSystemStorage, StorageTemplateLoader
+        from good_agent.extensions.template_manager.storage import ChainedStorage, FileSystemStorage, StorageTemplateLoader
 
         # Build storage chain
         storages = []

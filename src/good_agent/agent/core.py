@@ -43,34 +43,34 @@ from good_agent.core.ulid_monotonic import (
     create_monotonic_ulid,
 )
 
-from .components import ComponentRegistry
-from .context import ContextManager
-from .events import AgentEventsFacade
-from .llm import LLMCoordinator
-from .messages import MessageManager
-from .modes import MODE_HANDLER_SKIP_KWARG, ModeManager, ModeTransition
-from .state import AgentState, AgentStateMachine
-from .tasks import AgentTaskManager
-from .tools import ToolExecutor
-from .versioning import AgentVersioningManager
+from good_agent.agent.components import ComponentRegistry
+from good_agent.agent.context import ContextManager
+from good_agent.agent.events import AgentEventsFacade
+from good_agent.agent.llm import LLMCoordinator
+from good_agent.agent.messages import MessageManager
+from good_agent.agent.modes import MODE_HANDLER_SKIP_KWARG, ModeManager, ModeTransition
+from good_agent.agent.state import AgentState, AgentStateMachine
+from good_agent.agent.tasks import AgentTaskManager
+from good_agent.agent.tools import ToolExecutor
+from good_agent.agent.versioning import AgentVersioningManager
 
 if TYPE_CHECKING:
     from litellm.types.utils import Choices
 
-    from ..mock import AgentMockInterface
+    from good_agent.mock import AgentMockInterface
 
 from good_agent.core.components import AgentComponent
 
-from ..content import FileContentPart, ImageContentPart
-from ..events import (  # Import typed event parameters
+from good_agent.content import FileContentPart, ImageContentPart
+from good_agent.events import (  # Import typed event parameters
     AgentEvents,
     AgentInitializeParams,
 )
-from ..extensions.template_manager import (
+from good_agent.extensions.template_manager import (
     Template,
     TemplateManager,
 )
-from ..messages import (
+from good_agent.messages import (
     AnnotationLike,
     AssistantMessage,
     AssistantMessageStructuredOutput,
@@ -85,10 +85,10 @@ from ..messages import (
     ToolMessage,
     UserMessage,
 )
-from ..messages.store import put_message
-from ..messages.validation import MessageSequenceValidator, ValidationMode
-from ..model.llm import LanguageModel
-from ..tools import (
+from good_agent.messages.store import put_message
+from good_agent.messages.validation import MessageSequenceValidator, ValidationMode
+from good_agent.model.llm import LanguageModel
+from good_agent.tools import (
     BoundTool,
     Tool,
     ToolCall,
@@ -97,21 +97,21 @@ from ..tools import (
     ToolResponse,
     ToolSignature,
 )
-from ..utilities import print_message
-from .config import (
+from good_agent.utilities import print_message
+from good_agent.agent.config import (
     AGENT_CONFIG_KEYS,
     AgentConfigManager,
     AgentOnlyConfig,
     LLMCommonConfig,
 )
-from .config import (
+from good_agent.agent.config import (
     Context as AgentContext,
 )
-from .pool import AgentPool
+from good_agent.agent.pool import AgentPool
 
 if TYPE_CHECKING:
-    from .conversation import Conversation
-    from .thread_context import ForkContext, ThreadContext
+    from good_agent.agent.conversation import Conversation
+    from good_agent.agent.thread_context import ForkContext, ThreadContext
 
 logger = logging.getLogger(__name__)
 
@@ -464,7 +464,7 @@ class Agent(EventRouter):
             message: Message to print (defaults to last message)
             mode: Render mode ('display', 'llm', 'raw'). If None, uses config.print_messages_mode
         """
-        from ..content import RenderMode
+        from good_agent.content import RenderMode
 
         # Determine which message to print
         if message is None:
@@ -551,7 +551,7 @@ class Agent(EventRouter):
         self._name = self.config.get("name")
 
         # Initialize versioning infrastructure
-        from ..messages.versioning import MessageRegistry
+        from good_agent.messages.versioning import MessageRegistry
 
         self._message_registry = MessageRegistry()
 
@@ -618,7 +618,7 @@ class Agent(EventRouter):
         use_sandbox = config.get("use_template_sandbox", True)
 
         # Import AgentMockInterface locally to avoid circular import
-        from ..mock import AgentMockInterface
+        from good_agent.mock import AgentMockInterface
 
         extensions.extend(
             [
@@ -664,7 +664,7 @@ class Agent(EventRouter):
     @property
     def mock(self) -> AgentMockInterface:
         """Access the mock interface"""
-        from ..mock import AgentMockInterface
+        from good_agent.mock import AgentMockInterface
 
         return self[AgentMockInterface]
 
@@ -1041,7 +1041,7 @@ class Agent(EventRouter):
                     # It's already a Tool instance
                     await self[ToolManager].register_tool(direct_tool)  # type: ignore[arg-type]
                 elif callable(direct_tool):
-                    from .tools import Tool
+                    from good_agent.agent.tools import Tool
 
                     tool_instance = Tool(direct_tool)  # type: ignore[arg-type]
                     await self[ToolManager].register_tool(tool_instance)
@@ -2040,7 +2040,7 @@ class Agent(EventRouter):
         def _resolve_tool_for_schema(t: Any) -> Any:
             # Try to resolve to a Tool-like object that has a .model with JSON schema
             try:
-                from .tools import Tool as _ToolClass  # Avoid circular at top-level
+                from good_agent.agent.tools import Tool as _ToolClass  # Avoid circular at top-level
             except Exception:
                 _ToolClass = None  # type: ignore
 
@@ -2506,7 +2506,7 @@ class Agent(EventRouter):
                 # Assistant messages from one agent become user messages in the other
                 agent_one.append(AssistantMessage("Hello"))
         """
-        from .conversation import Conversation
+        from good_agent.agent.conversation import Conversation
 
         return Conversation(self, other)
 
@@ -2559,7 +2559,7 @@ class Agent(EventRouter):
             Total token count across specified messages
         """
 
-        from ..utilities.tokens import get_message_token_count
+        from good_agent.utilities.tokens import get_message_token_count
 
         # Use provided messages or all agent messages
         msgs = messages if messages is not None else self.messages
@@ -2592,7 +2592,7 @@ class Agent(EventRouter):
             Dictionary mapping role to token count
         """
 
-        from ..utilities.tokens import get_message_token_count
+        from good_agent.utilities.tokens import get_message_token_count
 
         counts: dict[str, int] = {
             "system": 0,

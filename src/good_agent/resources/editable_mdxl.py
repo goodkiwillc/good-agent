@@ -9,7 +9,7 @@ from good_agent.core.mdxl import MDXL
 from good_agent.extensions.citations.formats import CitationPatterns
 from good_agent.extensions.citations.manager import CitationManager
 
-from .base import StatefulResource
+from good_agent.resources.base import StatefulResource
 
 logger = logging.getLogger(__name__)
 

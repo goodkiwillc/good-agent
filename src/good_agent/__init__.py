@@ -1,11 +1,11 @@
 import logging
 from typing import TYPE_CHECKING
 
-from .content import RenderMode
+from good_agent.content import RenderMode
 
 # Minimal eager imports - only the most commonly used classes
-from .core.components import AgentComponent
-from .events import AgentEvents
+from good_agent.core.components import AgentComponent
+from good_agent.events import AgentEvents
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -17,7 +17,7 @@ __version__ = "0.1.0"
 if TYPE_CHECKING:
     from good_agent.core.event_router import EventContext
 
-    from .agent import (
+    from good_agent.agent import (
         Agent,
         AgentConfigParameters,
         AgentState,
@@ -25,18 +25,18 @@ if TYPE_CHECKING:
         ModeManager,
         ModeTransition,
     )
-    from .agent.config import AgentConfigManager, Context
-    from .agent.conversation import Conversation
-    from .core.components import (
+    from good_agent.agent.config import AgentConfigManager, Context
+    from good_agent.agent.conversation import Conversation
+    from good_agent.core.components import (
         AgentComponentType,
         ToolAdapter,
         ToolAdapterRegistry,
     )
-    from .core.components.injection import (
+    from good_agent.core.components.injection import (
         MessageInjectorComponent,
         SimpleMessageInjector,
     )
-    from .extensions.template_manager import (
+    from good_agent.extensions.template_manager import (
         CircularDependencyError,
         ContextInjectionError,
         ContextProviderError,
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
         TemplateManager,
         global_context_provider,
     )
-    from .content import (
+    from good_agent.content import (
         BaseContentPart,
         ContentPartType,
         FileContentPart,
@@ -57,7 +57,7 @@ if TYPE_CHECKING:
         deserialize_content_part,
         is_template,
     )
-    from .extensions import (
+    from good_agent.extensions import (
         AgentSearch,
         # BulkFetchResult,
         CitationExtractor,
@@ -75,11 +75,11 @@ if TYPE_CHECKING:
         # WebFetcher,
         # WebFetchSummary,
     )
-    from .mcp import (
+    from good_agent.mcp import (
         MCPClientManager,
         MCPToolAdapter,
     )
-    from .messages import (
+    from good_agent.messages import (
         Annotation,
         AssistantMessage,
         AssistantMessageStructuredOutput,
@@ -92,7 +92,7 @@ if TYPE_CHECKING:
         ToolMessage,
         UserMessage,
     )
-    from .mock import (
+    from good_agent.mock import (
         AgentMockInterface,
         MockAgent,
         MockResponse,
@@ -102,21 +102,21 @@ if TYPE_CHECKING:
         mock_message,
         mock_tool_call,
     )
-    from .model.llm import LanguageModel
-    from .model.manager import ManagedRouter, ModelDefinition, ModelManager
-    from .model.overrides import (
+    from good_agent.model.llm import LanguageModel
+    from good_agent.model.manager import ManagedRouter, ModelDefinition, ModelManager
+    from good_agent.model.overrides import (
         ModelCapabilities,
         ModelOverride,
         ModelOverrideRegistry,
         model_override_registry,
     )
-    from .resources import (
+    from good_agent.resources import (
         EditableMDXL,
         EditableResource,
         EditableYAML,
         StatefulResource,
     )
-    from .tools import (
+    from good_agent.tools import (
         BoundTool,
         Tool,
         ToolCall,

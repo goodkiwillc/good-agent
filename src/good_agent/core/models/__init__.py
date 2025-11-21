@@ -11,15 +11,15 @@ from pydantic import (
 )
 
 # template_loader
-from .application import Document, IterableCollection, Query, QueryResults, Report
-from .base import (
+from good_agent.core.models.application import Document, IterableCollection, Query, QueryResults, Report
+from good_agent.core.models.base import (
     GoodBase,
     Identifiable,
     PrivateAttrBase,
     PydanticBaseModel,
 )
-from .mixins import Convertible, ModelAllFields
-from .renderable import Renderable
+from good_agent.core.models.mixins import Convertible, ModelAllFields
+from good_agent.core.models.renderable import Renderable
 
 __all__ = [
     "GoodBase",

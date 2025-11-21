@@ -57,7 +57,7 @@ class MDXL:
             if convert_legacy and self._should_convert_legacy(content):
                 with open("truth.v1.mdxl", "w") as f:
                     f.write(content)
-                from .migration import MDXLMigrator  # type: ignore[import-not-found]
+                from good_agent.core.migration import MDXLMigrator  # type: ignore[import-not-found]
 
                 content = MDXLMigrator.migrate_to_v2(content, citation_urls=None)
                 with open("truth.v2.mdxl", "w") as f:
