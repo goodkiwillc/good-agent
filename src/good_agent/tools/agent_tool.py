@@ -1,11 +1,26 @@
 from __future__ import annotations
 
+import itertools
+import threading
 from typing import TYPE_CHECKING, Any
 
 from good_agent.tools.tools import Tool, ToolParameter
 
 if TYPE_CHECKING:
     from good_agent.agent.core import Agent
+
+
+class SessionIdGenerator:
+    """Generates short, unique session identifiers."""
+
+    _counter = itertools.count(1)
+    _lock = threading.Lock()
+
+    @classmethod
+    def next_id(cls) -> str:
+        """Get the next unique session ID."""
+        with cls._lock:
+            return str(next(cls._counter))
 
 
 class AgentAsTool:
@@ -54,25 +69,40 @@ class AgentAsTool:
         Returns:
             The response content from the sub-agent.
         """
-        target_agent = self._get_agent_for_session(session_id)
+        # If multi-turn is enabled but no session_id provided, generate one
+        # so we can persist this conversation and allow the parent to reference it later.
+        current_session_id = session_id
+        if self.multi_turn and not current_session_id:
+            current_session_id = SessionIdGenerator.next_id()
+
+        target_agent = self._get_agent_for_session(current_session_id)
 
         # Execute the sub-agent
         # Note: We use agent.call() which returns a message, so we extract content
         response = await target_agent.call(prompt)
-        return str(response.content)
+        content = str(response.content)
+
+        # If multi-turn is enabled, wrap the response in XML tags with the session ID
+        # This provides consistent context to the parent agent and easy reference
+        if self.multi_turn and current_session_id:
+            return (
+                f'<{self.name} session_id="{current_session_id}">\n'
+                f"{content}\n"
+                f"</{self.name}>"
+            )
+
+        return content
 
     def _get_agent_for_session(self, session_id: str | None) -> Agent:
         """
         Retrieve or create an agent instance for the given session.
         """
         if not self.multi_turn or not session_id:
-            # One-shot: Fork a fresh agent every time (or just use a clean fork)
-            # We fork to ensure we don't pollute the base agent's state or other sessions
-            # include_messages=True means we keep the system prompt/history of the base agent
+            # One-shot: Fork a fresh agent every time
             return self.base_agent.fork(include_messages=True)
 
         if session_id not in self.sessions:
-            # New session: Fork from base
+            # New session: Fork from base and store it
             self.sessions[session_id] = self.base_agent.fork(include_messages=True)
 
         return self.sessions[session_id]
