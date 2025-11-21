@@ -14,9 +14,9 @@ The most common way to use agents is with the async context manager pattern:
 
 !!! tip "Context Manager Benefits"
     The `async with` pattern automatically handles:
-    
+
     - Agent initialization and readiness
-    - Resource cleanup and task cancellation  
+    - Resource cleanup and task cancellation
     - Proper error handling and state management
     - Background task termination
 
@@ -53,7 +53,7 @@ Agents progress through well-defined states during their lifecycle:
 | `INITIALIZING` | Agent is being set up | `READY` |
 | `READY` | Agent is idle, ready for input | `PENDING_RESPONSE`, `PENDING_TOOLS` |
 | `PENDING_RESPONSE` | Waiting for LLM response | `PROCESSING`, `READY` |
-| `PENDING_TOOLS` | Waiting for tool execution | `PROCESSING`, `READY` |  
+| `PENDING_TOOLS` | Waiting for tool execution | `PROCESSING`, `READY` |
 | `PROCESSING` | Agent is processing/thinking | `READY`, `PENDING_RESPONSE`, `PENDING_TOOLS` |
 
 ### Readiness & Initialization
@@ -141,29 +141,24 @@ Register custom template functions:
 
 ## Agent Composition
 
+
 ### Agent Pools
 
-Manage multiple agent instances efficiently:
-
+Coming soon...
+<!--
 ```python
 --8<-- "examples/docs/agent_pool_basics.py"
-```
+``` -->
 
 ### Multi-Agent Workflows
-
+<!-- @TODO: change to basic conversation -->
 Chain agents using the pipe operator:
 
 ```python
 --8<-- "examples/docs/agent_pipeline.py"
 ```
 
-### Thread-Safe Context Forking
-
-Create isolated contexts for concurrent operations:
-
-```python
---8<-- "examples/docs/agent_forking.py"
-```
+<!-- @TODO: need to add examples of agent forking/cloning as well as the differnt context isolation -->
 
 ## Advanced Patterns
 
@@ -222,7 +217,7 @@ Debug agent behavior with built-in tools:
 ### Agent Lifecycle
 
 - **Always use context managers** for proper cleanup and resource management
-- **Check readiness** before operations if managing lifecycle manually  
+- **Check readiness** before operations if managing lifecycle manually
 - **Handle initialization errors** gracefully with appropriate timeouts
 - **Monitor task counts** in long-running agents to prevent memory leaks
 
@@ -269,6 +264,6 @@ Debug agent behavior with built-in tools:
 ## Next Steps
 
 - **[Messages & History](messages.md)** - Deep dive into message management and history
-- **[Tools](tools.md)** - Add capabilities to your agents with function calling  
+- **[Tools](tools.md)** - Add capabilities to your agents with function calling
 - **[Events](events.md)** - Build reactive agents with event-driven architecture
 - **[Agent Modes](../features/modes.md)** - Dynamic behavior switching and scoped contexts

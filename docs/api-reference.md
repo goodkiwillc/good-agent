@@ -34,7 +34,6 @@ suite executes all examples to prevent `DeprecationWarning` regressions.
 | `task_count` | Property | Number of active tasks managed by `agent.tasks`. | `examples/pool/agent_pool.py` |
 | `tasks` | Facade | Task orchestration facade (`create`, `join`, `stats`) replacing `create_task()`/`wait_for_tasks()`. | `examples/pool/agent_pool.py` |
 | `tool` | Property | Filtered view of tool role messages (after calling `agent.append(..., role="tool")`). | `examples/tools/basic_tool.py` |
-| `tool_calls` | Facade | Tool executor facade for `invoke`, `record_invocation(s)`, and resolving pending tool calls. | `examples/tools/basic_tool.py` |
 | `tools` | Property | Underlying `ToolManager`; inspect registered tools or call them directly. | `examples/tools/basic_tool.py` |
 | `user` | Property | Filtered `MessageList` for user messages only. | `examples/agent/basic_chat.py` |
 | `validate_message_sequence` | Method | Validates ordering/roles before sending to the LLM; typically called before custom LLM integrations. | `tests/unit/agent/test_agent_message_store_integration.py` |

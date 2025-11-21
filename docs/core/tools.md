@@ -65,7 +65,7 @@ Customize tool behavior with the decorator:
 ```python
 @tool(
     name="search_docs",                    # Override function name
-    description="Search project docs",     # Override docstring  
+    description="Search project docs",     # Override docstring
     register=True,                         # Auto-register globally
     context_variables=["project_path"]     # Required context variables
 )
@@ -119,12 +119,12 @@ async def agent_aware_tool(
     """Tool that can access agent state."""
     agent = context.agent
     tool_call = context.tool_call
-    
+
     # Access agent properties
     agent_name = agent.name
     message_count = len(agent.messages)
     last_user_message = agent.user[-1].content if agent.user else "No messages"
-    
+
     return f"Agent {agent_name} ({message_count} messages): {query}"
 ```
 
@@ -154,13 +154,13 @@ Invoke tools programmatically for testing or custom workflows:
 ```python
 async with Agent("Assistant", tools=[calculate]) as agent:
     # Direct tool invocation
-    result = await agent.tool_calls.invoke(
-        calculate, 
-        operation="add", 
-        a=10, 
+    result = await agent.invoke(
+        calculate,
+        operation="add",
+        a=10,
         b=5
     )
-    
+
     print(f"Success: {result.success}")      # True
     print(f"Response: {result.response}")    # 15.0
     print(f"Tool name: {result.tool_name}")  # "calculate"
@@ -171,7 +171,7 @@ async with Agent("Assistant", tools=[calculate]) as agent:
 
 ```python
 # With custom tool call ID
-result = await agent.tool_calls.invoke(
+result = await agent.invoke(
     calculate,
     tool_call_id="custom_123",
     operation="multiply",
@@ -180,7 +180,7 @@ result = await agent.tool_calls.invoke(
 )
 
 # Skip creating assistant message (for processing existing tool calls)
-result = await agent.tool_calls.invoke(
+result = await agent.invoke(
     calculate,
     skip_assistant_message=True,
     operation="add",
@@ -203,8 +203,8 @@ async def divide_numbers(a: float, b: float) -> float:
 
 # Usage with error handling
 async with Agent("Calculator", tools=[divide_numbers]) as agent:
-    result = await agent.tool_calls.invoke(divide_numbers, a=10, b=0)
-    
+    result = await agent.invoke(divide_numbers, a=10, b=0)
+
     if not result.success:
         print(f"Error: {result.error}")
         print(f"Traceback: {result.traceback}")
@@ -223,15 +223,15 @@ class MathComponent(AgentComponent):
     def __init__(self):
         super().__init__()
         self.calculation_history = []
-    
+
     @tool
     def add(self, a: float, b: float) -> float:
         """Add two numbers."""
         result = a + b
         self.calculation_history.append(f"{a} + {b} = {result}")
         return result
-    
-    @tool  
+
+    @tool
     def get_history(self) -> list[str]:
         """Get calculation history."""
         return self.calculation_history.copy()
@@ -252,13 +252,13 @@ class TaskManager(AgentComponent):
         super().__init__()
         self.tasks = []
         self.completed = []
-    
+
     @tool
     def create_task(self, task: str) -> str:
         """Create a new task."""
         self.tasks.append(task)
         return f"Created task: {task}"
-    
+
     @tool
     def complete_task(self, task: str) -> str:
         """Mark a task as completed."""
@@ -267,7 +267,7 @@ class TaskManager(AgentComponent):
             self.completed.append(task)
             return f"Completed task: {task}"
         return f"Task not found: {task}"
-    
+
     @tool
     def list_tasks(self) -> dict[str, list[str]]:
         """List all tasks."""
@@ -292,8 +292,8 @@ async with Agent(
     mcp_servers=[
         # Server names (must be in PATH)
         "filesystem",
-        "brave-search", 
-        
+        "brave-search",
+
         # Full server configurations
         {"name": "web", "command": "npx @modelcontextprotocol/server-web"},
         {"name": "git", "uri": "stdio://git-mcp-server"},
@@ -312,7 +312,7 @@ MCP servers can be configured with various options:
 mcp_servers = [
     # Simple string format
     "filesystem-server",
-    
+
     # Dictionary with command
     {
         "name": "custom-server",
@@ -320,10 +320,10 @@ mcp_servers = [
         "args": ["--config", "production"],
         "env": {"API_KEY": "secret"}
     },
-    
+
     # URI-based connection
     {
-        "name": "remote-server", 
+        "name": "remote-server",
         "uri": "tcp://remote.example.com:8080"
     }
 ]
@@ -340,10 +340,10 @@ MCP servers are managed automatically:
 ```python
 async with Agent("Assistant", mcp_servers=["filesystem"]) as agent:
     # Servers connect during agent initialization
-    
+
     # Use MCP tools normally
     await agent.call("Create a new file called 'notes.txt'")
-    
+
     # Servers disconnect automatically on context exit
 ```
 
@@ -359,7 +359,7 @@ def production_tool() -> str:
     """Tool only available in production."""
     return "Production data"
 
-@tool  
+@tool
 def debug_tool() -> str:
     """Tool only available in debug mode."""
     return "Debug information"
@@ -394,11 +394,11 @@ Add tools during agent execution:
 async with Agent("Extensible assistant") as agent:
     # Start with basic tools
     await agent.tools.register_tool(calculate, name="math")
-    
+
     # Add more tools based on conversation
     if "search" in agent.user[-1].content.lower():
         await agent.tools.register_tool(search_web, name="web_search")
-    
+
     # Remove tools
     if "basic_mode" in agent.user[-1].content:
         del agent.tools["web_search"]
@@ -416,18 +416,18 @@ async def search_and_summarize(
 ) -> str:
     """Search for information and summarize results."""
     agent = context.agent
-    
+
     # Call search tool
-    search_result = await agent.tool_calls.invoke("search_web", query=query)
-    
+    search_result = await agent.invoke("search_web", query=query)
+
     if search_result.success:
         # Process results and call summarization
-        summary_result = await agent.tool_calls.invoke(
-            "summarize_text", 
+        summary_result = await agent.invoke(
+            "summarize_text",
             text=search_result.response
         )
         return summary_result.response if summary_result.success else "Failed to summarize"
-    
+
     return "Search failed"
 ```
 
@@ -445,10 +445,10 @@ from good_agent.tools import ToolManager
 async def test_calculate_tool():
     manager = ToolManager()
     await manager.register_tool(calculate)
-    
+
     # Test direct invocation
     result = await manager["calculate"](operation="add", a=5, b=3)
-    
+
     assert result.success is True
     assert result.response == 8.0
     assert result.tool_name == "calculate"
@@ -457,10 +457,10 @@ async def test_calculate_tool():
 async def test_error_handling():
     manager = ToolManager()
     await manager.register_tool(divide_numbers)
-    
+
     # Test error case
     result = await manager["divide_numbers"](a=10, b=0)
-    
+
     assert result.success is False
     assert "Division by zero" in result.error
     assert result.traceback is not None
@@ -476,11 +476,11 @@ async def test_tool_in_agent():
     async with Agent("Test agent", tools=[calculate]) as agent:
         # Test agent can use tool
         response = await agent.call("Calculate 7 times 8")
-        
+
         # Verify tool was called
         tool_messages = [msg for msg in agent.tool if msg.tool_name == "calculate"]
         assert len(tool_messages) >= 1
-        
+
         # Verify response contains result
         assert "56" in response.content
 ```
@@ -496,10 +496,10 @@ from unittest.mock import AsyncMock
 async def test_with_mocked_tool():
     # Create mock tool
     mock_search = AsyncMock(return_value="Mocked search results")
-    
+
     async with Agent("Test agent", tools=[mock_search]) as agent:
-        result = await agent.tool_calls.invoke(mock_search, query="test")
-        
+        result = await agent.invoke(mock_search, query="test")
+
         assert result.success is True
         assert result.response == "Mocked search results"
         mock_search.assert_called_once_with(query="test")
@@ -547,17 +547,17 @@ from pydantic import validator
 @tool
 async def create_user(
     name: str,
-    email: str, 
+    email: str,
     age: int
 ) -> dict:
     """Create a user with validation."""
     # Custom validation
     if age < 13:
         raise ValueError("Users must be at least 13 years old")
-    
+
     if "@" not in email:
         raise ValueError("Invalid email format")
-    
+
     return {"name": name, "email": email, "age": age, "id": "user_123"}
 ```
 
@@ -589,7 +589,7 @@ async def create_complex_task(task: TaskModel) -> dict:
 # LLM receives full schema for TaskModel
 async with Agent("Task manager", tools=[create_complex_task]) as agent:
     await agent.call("""
-        Create a high-priority task titled 'Review documentation' 
+        Create a high-priority task titled 'Review documentation'
         due tomorrow with tags 'urgent' and 'docs'
     """)
 ```
@@ -676,7 +676,7 @@ async def get_http_client():
 async def fetch_url(url: str, timeout: float = 10.0) -> str:
     """Fetch URL with connection pooling and timeout."""
     client = await get_http_client()
-    
+
     try:
         async with asyncio.timeout(timeout):
             async with client.get(url) as response:
@@ -704,18 +704,18 @@ from contextlib import asynccontextmanager
 
 class DatabaseConnection:
     _instance = None
-    
+
     @classmethod
     async def get_instance(cls):
         if cls._instance is None:
             cls._instance = cls()
             await cls._instance.connect()
         return cls._instance
-    
+
     async def connect(self):
         # Initialize database connection
         self.connection = "db_connection"
-    
+
     async def close(self):
         # Clean up connection
         self.connection = None
@@ -747,24 +747,24 @@ class DatabaseTools(AgentComponent):
     def create_user(self, user_data: dict) -> dict:
         """Create a new user."""
         pass
-    
+
     @tool
     def get_user(self, user_id: str) -> dict:
         """Retrieve user by ID."""
         pass
-    
+
     @tool
     def update_user(self, user_id: str, updates: dict) -> dict:
         """Update user information."""
         pass
 
-# tools/search.py  
+# tools/search.py
 class SearchTools(AgentComponent):
     @tool
     def search_users(self, query: str) -> list[dict]:
         """Search for users."""
         pass
-    
+
     @tool
     def search_content(self, query: str) -> list[dict]:
         """Search for content."""
@@ -805,7 +805,7 @@ async with Agent("Assistant", tools=[my_tool]) as agent:
     # List available tools
     available_tools = list(agent.tools.keys())
     print("Available tools:", available_tools)
-    
+
     # Check specific tool
     if "my_tool" in agent.tools:
         tool_instance = agent.tools["my_tool"]
@@ -830,7 +830,7 @@ async def debug_tool(
 
 # Test dependency injection
 async with Agent("Debug agent", tools=[debug_tool]) as agent:
-    result = await agent.tool_calls.invoke(debug_tool, param="test")
+    result = await agent.invoke(debug_tool, param="test")
     print(result.response)
 ```
 
@@ -839,8 +839,8 @@ async with Agent("Debug agent", tools=[debug_tool]) as agent:
 ```python
 # Handle tool execution errors
 async with Agent("Error-handling agent", tools=[risky_tool]) as agent:
-    result = await agent.tool_calls.invoke(risky_tool, param="test")
-    
+    result = await agent.invoke(risky_tool, param="test")
+
     if not result.success:
         print(f"Tool failed: {result.error}")
         print(f"Parameters used: {result.parameters}")
@@ -853,7 +853,7 @@ async with Agent("Error-handling agent", tools=[risky_tool]) as agent:
 ```python
 # Debug MCP server connections
 async with Agent(
-    "MCP agent", 
+    "MCP agent",
     mcp_servers=["filesystem"],
     debug=True  # Enable debug logging
 ) as agent:
