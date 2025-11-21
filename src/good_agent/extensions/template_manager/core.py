@@ -293,7 +293,11 @@ class TemplateManager(AgentComponent):
 
     def _setup_file_templates(self, prompts_dir: Path | None = None):
         """Set up file-based template loading."""
-        from good_agent.extensions.template_manager.storage import ChainedStorage, FileSystemStorage, StorageTemplateLoader
+        from good_agent.extensions.template_manager.storage import (
+            ChainedStorage,
+            FileSystemStorage,
+            StorageTemplateLoader,
+        )
 
         # Build storage chain
         storages = []

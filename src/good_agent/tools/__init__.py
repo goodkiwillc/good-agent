@@ -1,4 +1,5 @@
 # Import all public API from each module to maintain backward compatibility
+from good_agent.tools.agent_tool import AgentAsTool
 from good_agent.tools.bound_tools import BoundTool, create_component_tool_decorator
 from good_agent.tools.registry import (
     ToolRegistration,
@@ -15,6 +16,7 @@ from good_agent.tools.tools import (
     ToolContext,
     ToolManager,
     ToolMetadata,
+    ToolParameter,
     ToolResponse,
     ToolSignature,
     tool,
@@ -26,6 +28,7 @@ __all__ = [
     "Tool",
     "ToolManager",
     "ToolMetadata",
+    "ToolParameter",
     "ToolResponse",
     "ToolSignature",
     "tool",
@@ -33,6 +36,8 @@ __all__ = [
     "ToolCallFunction",
     "ToolContext",
     "wrap_callable_as_tool",
+    # From agent_tool.py
+    "AgentAsTool",
     # From registry.py
     "ToolRegistry",
     "ToolRegistration",

@@ -237,7 +237,7 @@ Good Agent includes several built-in components for common functionality:
 Provides todo list management with agent tool integration:
 
 ```python
-from good_agent.extensions import TaskManager
+from good_agent.extensions.task_manager import TaskManager
 
 async with Agent(
     "Task coordinator", 
@@ -279,7 +279,7 @@ class ContextComponent(MessageInjectorComponent):
 Manages citations and references in agent responses:
 
 ```python
-from good_agent.extensions import CitationManager
+from good_agent.extensions.citations import CitationManager
 
 async with Agent(
     "Research assistant",
@@ -299,7 +299,7 @@ async with Agent(
 Provides semantic search capabilities within agent conversations:
 
 ```python
-from good_agent.extensions import AgentSearch
+from good_agent.extensions.search import AgentSearch
 
 async with Agent(
     "Knowledge assistant",

@@ -384,7 +384,7 @@ async def test_system_prompt_template_with_citation_manager():
     from datetime import datetime
 
     from good_agent.content import TemplateContentPart
-    from good_agent.extensions import CitationManager
+    from good_agent.extensions.citations import CitationManager
 
     # Create agent WITH CitationManager extension
     system_prompt = "You are an assistant. Today is {{today.strftime('%A, %B %d, %Y')}}"

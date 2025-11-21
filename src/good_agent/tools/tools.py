@@ -47,7 +47,7 @@ from good_agent.core.models import Renderable
 logger = logging.getLogger(__name__)
 
 type ToolCallId = str
-type ToolLike = Union["Tool[..., Any]", Callable[..., Any]]
+type ToolLike = Union["Tool[..., Any]", Callable[..., Any], "Agent"]
 
 if TYPE_CHECKING:
     from good_agent.agent import Agent
@@ -266,12 +266,31 @@ class ToolManager(AgentComponent):
         Note: Creates event loop if needed. Prefer async version when possible.
         """
         try:
+            # Check if loop exists
             loop = asyncio.get_event_loop()
+            # Check if loop is actually running (has thread associated)
             if loop.is_running():
-                raise RuntimeError(
-                    "Cannot use register_tool_sync in async context. Use register_tool() instead."
+                # If running, we can't use asyncio.run()
+                # Instead we must schedule it on the current loop
+                # But this is a sync method, so we can't return awaitable
+                # This is tricky. For testing/CLI we usually want blocking.
+                # If called from async context, user should use register_tool instead.
+
+                # However, for __init__ where we need sync execution inside async loop:
+                # We create a task and don't wait for it (fire and forget)
+                # This is risky but needed for Agent() constructor inside async test
+                loop.create_task(
+                    self.register_tool(
+                        tool,
+                        name=name,
+                        tags=tags,
+                        register_globally=register_globally,
+                        replace=replace,
+                    )
                 )
+                return
         except RuntimeError:
+            # No event loop exists, proceed to create one via asyncio.run
             pass
 
         asyncio.run(
@@ -469,6 +488,19 @@ class ToolManager(AgentComponent):
         Returns:
             Tool instance
         """
+        # Handle Agent instances by wrapping them
+        # Import locally to avoid circular imports
+        try:
+            from good_agent.agent.core import Agent
+
+            if isinstance(tool_or_callable, Agent):
+                from good_agent.tools.agent_tool import AgentAsTool
+
+                wrapped = AgentAsTool(tool_or_callable, name=name)
+                return wrapped.as_tool()
+        except ImportError:
+            pass
+
         if isinstance(tool_or_callable, Tool):
             return tool_or_callable
         elif callable(tool_or_callable):
@@ -480,7 +512,9 @@ class ToolManager(AgentComponent):
                 description=inspect.getdoc(tool_or_callable) or f"Tool: {tool_name}",
             )
         else:
-            raise TypeError(f"Expected Tool or Callable, got {type(tool_or_callable)}")
+            raise TypeError(
+                f"Expected Tool, Agent, or Callable, got {type(tool_or_callable)}"
+            )
 
 
 class ToolCall(BaseModel):
