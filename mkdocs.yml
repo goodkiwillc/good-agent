@@ -83,6 +83,7 @@ nav:
     - Multi-Agent: features/multi-agent.md
     - Resources: features/resources.md
     - Human-in-the-Loop: features/human-in-the-loop.md
+    - Context Management: features/context-management.md
     - Tasks: features/tasks.md
     - Command Line Interface: cli/run.md
   - Extensibility:

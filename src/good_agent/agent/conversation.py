@@ -52,18 +52,71 @@ class Conversation:
     async def __aenter__(self) -> Self:
         """Enter the conversation context and set up message forwarding."""
         self._active = True
+        self._original_system_messages: dict[Agent, Any] = {}
 
         # Register event handlers for message forwarding
         self._handler_ids.clear()
 
-        for source_agent in self.participants:
+        # Setup context for >2 participants
+        is_group_chat = len(self.participants) > 2
+
+        for i, source_agent in enumerate(self.participants):
             self._register_forwarding_handler(source_agent)
+
+            if is_group_chat:
+                # 1. Save original system message
+                current_sys = source_agent.system[-1] if source_agent.system else None
+                if current_sys:
+                    self._original_system_messages[source_agent] = current_sys
+
+                    # 2. Generate suffix
+                    my_name = source_agent.name or f"Agent_{i}"
+                    others = []
+                    for j, p in enumerate(self.participants):
+                        if p is not source_agent:
+                            p_name = p.name or f"Agent_{j}"
+                            others.append(f"@{p_name}")
+
+                    suffix = (
+                        f"\n\nYou are @{my_name} in a chat-room style conversation with "
+                        f"{len(others)} other agents: {', '.join(others)}. "
+                        "Conversations happen in a round-robin form. "
+                        "You may directly tag other agents using the @name syntax. "
+                        "You may skip responding to a particular round if you wish by responding `skip`."
+                    )
+
+                    # 3. Create new message with suffix appended
+                    # We copy the original message to preserve metadata/id, but update content
+                    from good_agent.content import TextContentPart
+
+                    # Create new content parts list
+                    new_parts = list(current_sys.content_parts)
+                    new_parts.append(TextContentPart(text=suffix))
+
+                    # Create replacement message
+                    # We use create_message to ensure proper validation/id generation
+                    # but we might want to preserve ID? usually replacing implies new ID/version
+                    new_sys = source_agent.model.create_message(
+                        *new_parts,
+                        role="system",
+                        citations=current_sys.citations,
+                        # Copy other attributes if needed
+                    )  # type: ignore[call-overload]
+
+                    # 4. Update agent
+                    source_agent.set_system_message(message=new_sys)
 
         return self
 
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Exit the conversation context and clean up message forwarding."""
         self._active = False
+
+        # Restore original system messages
+        if hasattr(self, "_original_system_messages"):
+            for agent, original_sys in self._original_system_messages.items():
+                agent.set_system_message(message=original_sys)
+            self._original_system_messages.clear()
 
         # Deregister event handlers
         for agent, handler_ids in list(self._handler_ids.items()):
@@ -110,11 +163,24 @@ class Conversation:
         # Mark source message to avoid re-forwarding
         message._conversation_forwarded = True  # type: ignore[attr-defined]
 
+        is_group_chat = len(self.participants) > 2
+        source_name = source_agent.name or "Unknown"
+
         for target_agent in self.participants:
             if target_agent is source_agent:
                 continue
 
-            forwarded_message = UserMessage(content=message.content)
+            # Prepare content
+            content = message.content
+            if is_group_chat:
+                # Wrap content for group chat context
+                content = (
+                    f"!# section message author=@{source_name}\n"
+                    f"{content}\n"
+                    f"!# end section"
+                )
+
+            forwarded_message = UserMessage(content=content)
             forwarded_message._conversation_forwarded = True  # type: ignore[attr-defined]
             target_agent.append(forwarded_message)
 

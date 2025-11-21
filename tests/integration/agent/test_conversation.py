@@ -25,9 +25,9 @@ class TestConversation:
     async def test_conversation_chaining(self):
         """Test chaining multiple agents with | operator."""
         async with (
-            Agent("Agent 1") as agent1,
-            Agent("Agent 2") as agent2,
-            Agent("Agent 3") as agent3,
+            (agent1 := Agent("Agent 1", name="agent1")),
+            (agent2 := Agent("Agent 2", name="agent2")),
+            (agent3 := Agent("Agent 3", name="agent3")),
         ):
             # Test chaining
             conversation = agent1 | agent2 | agent3
@@ -39,8 +39,8 @@ class TestConversation:
     async def test_message_forwarding(self):
         """Test that assistant messages are forwarded as user messages."""
         async with (
-            Agent("You are agent 1") as agent1,
-            Agent("You are agent 2") as agent2,
+            (agent1 := Agent("You are agent 1", name="agent1")),
+            (agent2 := Agent("You are agent 2", name="agent2")),
         ):
             async with agent1 | agent2:
                 # Initially, both agents should have only system messages
@@ -65,8 +65,8 @@ class TestConversation:
     async def test_bidirectional_forwarding(self):
         """Test that messages are forwarded in both directions."""
         async with (
-            Agent("You are agent 1") as agent1,
-            Agent("You are agent 2") as agent2,
+            (agent1 := Agent("You are agent 1", name="agent1")),
+            (agent2 := Agent("You are agent 2", name="agent2")),
         ):
             async with agent1 | agent2:
                 # Agent1 sends message
@@ -95,9 +95,9 @@ class TestConversation:
     async def test_multi_agent_forwarding(self):
         """Test message forwarding in 3-agent conversation."""
         async with (
-            Agent("Agent 1") as agent1,
-            Agent("Agent 2") as agent2,
-            Agent("Agent 3") as agent3,
+            (agent1 := Agent("Agent 1", name="agent1")),
+            (agent2 := Agent("Agent 2", name="agent2")),
+            (agent3 := Agent("Agent 3", name="agent3")),
         ):
             async with agent1 | agent2 | agent3:
                 # Agent1 sends message
@@ -114,8 +114,12 @@ class TestConversation:
 
                 assert len(user_messages_agent2) == 1
                 assert len(user_messages_agent3) == 1
-                assert user_messages_agent2[0].content == "Hello from agent 1"
-                assert user_messages_agent3[0].content == "Hello from agent 1"
+                # In group chat (>2 agents), messages are wrapped with author metadata
+                assert "Hello from agent 1" in user_messages_agent2[0].content
+                assert "Hello from agent 1" in user_messages_agent3[0].content
+                # Verify author metadata
+                assert "author=@agent1" in user_messages_agent2[0].content
+                assert "author=@agent1" in user_messages_agent3[0].content
 
     @pytest.mark.asyncio
     async def test_conversation_events(self):
