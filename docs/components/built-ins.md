@@ -119,16 +119,4 @@ This pattern allows the LLM to "point" to search results accurately without hall
 
 ## AgentSearch Component
 
-Provides semantic search capabilities within agent conversations:
-
-```python
-from good_agent.extensions.search import AgentSearch
-
-async with Agent(
-    "Knowledge assistant",
-    extensions=[AgentSearch()]
-) as agent:
-
-    # Component enables semantic search across message history
-    await agent.call("What did we discuss about databases earlier?")
-```
+coming soon...

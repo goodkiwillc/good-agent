@@ -1,0 +1,230 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"You are a documentation assistant.","role":"system"},{"content":[{"text":"Search
+      for ''async patterns''","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"search_documentation","description":"Search
+      project docs.\n\nThis tool demonstrates metadata customization through the @tool
+      decorator.","parameters":{"type":"object","properties":{"query":{"type":"string"},"limit":{"default":5,"type":"integer"}},"required":["query"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '595'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxOWkYdnRghuAEAeZCPm1dvvTdP\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764310,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_f4MOgw0r5kOgVyGvM8TSvz8a\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"search_documentation\",\n
+        \             \"arguments\": \"{\\\"query\\\":\\\"async patterns\\\"}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 76,\n    \"completion_tokens\":
+        16,\n    \"total_tokens\": 92,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a3bb9c40e668-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:31:51 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=ImiuBRF90mOFUjar_eUqyBkOWVzAen0Es6E9MvlNsOY-1763764311-1.0.1.1-QYm9pgIcLbjSjlrXjcv6QOUfUo._pAdBYrdnlkspeipeFMlZx4WrfA8xGnro68bgKqMwSmBFLKjvbLC94l0o88yFy.f_9Oz58Zo3Xi.Dqks;
+        path=/; expires=Fri, 21-Nov-25 23:01:51 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=o5YGpj.sK_3N8LqIiZUVzyamL5ezBmqkMoxGTMdCxbw-1763764311178-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '476'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999980'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"You are a documentation assistant.","role":"system"},{"content":[{"text":"Search
+      for ''async patterns''","type":"text"}],"role":"user"},{"role":"assistant","content":"","tool_calls":[{"id":"call_f4MOgw0r5kOgVyGvM8TSvz8a","type":"function","function":{"name":"search_documentation","arguments":"{\"query\":\"async
+      patterns\"}"}}]},{"role":"tool","content":"[''Result 0: async patterns'', ''Result
+      1: async patterns'', ''Result 2: async patterns'', ''Result 3: async patterns'',
+      ''Result 4: async patterns'']","tool_call_id":"call_f4MOgw0r5kOgVyGvM8TSvz8a"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"search_documentation","description":"Search
+      project docs.\n\nThis tool demonstrates metadata customization through the @tool
+      decorator.","parameters":{"type":"object","properties":{"query":{"type":"string"},"limit":{"default":5,"type":"integer"}},"required":["query"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1005'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=ImiuBRF90mOFUjar_eUqyBkOWVzAen0Es6E9MvlNsOY-1763764311-1.0.1.1-QYm9pgIcLbjSjlrXjcv6QOUfUo._pAdBYrdnlkspeipeFMlZx4WrfA8xGnro68bgKqMwSmBFLKjvbLC94l0o88yFy.f_9Oz58Zo3Xi.Dqks;
+        _cfuvid=o5YGpj.sK_3N8LqIiZUVzyamL5ezBmqkMoxGTMdCxbw-1763764311178-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxQju9UZSjn3s0dads4uKi7zTVV\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764312,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"I found multiple documentation entries
+        related to \\\"async patterns.\\\" Would you like me to summarize the key
+        points from these entries or provide details from a specific one?\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        141,\n    \"completion_tokens\": 32,\n    \"total_tokens\": 173,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a3c1484ee668-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:31:52 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1155'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999945'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

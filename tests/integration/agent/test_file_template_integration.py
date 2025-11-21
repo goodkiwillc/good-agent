@@ -232,14 +232,15 @@ Additional context: {{ details }}
         custom_manager = TemplateManager(enable_file_templates=False)
 
         # Template should not be resolved (no file loading)
-        # The context manager will fail during initialization when it tries to render the template
+        # Templates are rendered lazily, so we need to access the system message to trigger rendering
         with pytest.raises(RuntimeError) as exc_info:
             async with Agent(
                 "{% include 'system/base' %}",  # This won't work without file templates
                 template_manager=custom_manager,
                 model="gpt-4",
-            ):
-                pass
+            ) as agent:
+                # Trigger template rendering by accessing the system message
+                _ = str(agent.system[0])
 
         # Verify the error mentions the missing template
         assert "system/base" in str(exc_info.value)

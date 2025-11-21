@@ -8,7 +8,6 @@ Good Agent provides powerful multi-agent orchestration capabilities that allow y
 
 - **Agent Conversations** - Direct agent-to-agent communication using the pipe operator (`|`)
 - **Message Forwarding** - Automatic forwarding of assistant messages as user messages
-- **Agent Pools** - Collections of agents for concurrent task distribution
 - **Workflow Orchestration** - Chaining agents together for multi-step processes
 - **Event Coordination** - Synchronizing agent actions through events
 - **Resource Sharing** - Sharing tools, context, and state across agents
@@ -16,10 +15,10 @@ Good Agent provides powerful multi-agent orchestration capabilities that allow y
 ### Multi-Agent Benefits
 
 - **Specialization** - Different agents can have specialized roles and capabilities
-- **Scalability** - Distribute workload across multiple agent instances  
 - **Collaboration** - Agents can work together on complex multi-step problems
-- **Fault Tolerance** - System continues working even if individual agents fail
 - **Modularity** - Compose complex behaviors from simpler agent components
+- **Sequential Processing** - Chain agents for multi-step workflows
+- **Parallel Execution** - Process multiple tasks concurrently with specialized agents
 
 ## Agent Conversations
 
@@ -182,28 +181,17 @@ for i, result in enumerate(results):
 
 ## Agent Pools
 
-### Creating Agent Pools
-
-Use `AgentPool` to manage collections of agents for concurrent workloads:
+The `AgentPool` class provides a simple immutable container for managing multiple agent instances:
 
 ```python
 from good_agent.agent.pool import AgentPool
 
-async def create_worker_pool(pool_size: int = 4) -> AgentPool:
-    """Create a pool of worker agents."""
-    
-    # Create multiple identical agents
-    agents = []
-    for i in range(pool_size):
-        agent = Agent(f"You are worker #{i+1}. Handle tasks efficiently.")
-        await agent.initialize()
-        agents.append(agent)
-    
-    return AgentPool(agents)
+# Create a pool of agents
+agents = [Agent(f"Worker {i}") for i in range(4)]
+for agent in agents:
+    await agent.initialize()
 
-# Usage
-pool = await create_worker_pool(4)
-print(f"Created pool with {len(pool)} agents")
+pool = AgentPool(agents)
 
 # Access agents by index
 first_agent = pool[0]
@@ -211,130 +199,21 @@ last_agent = pool[-1]
 
 # Iterate over pool
 for i, agent in enumerate(pool):
-    print(f"Agent {i}: {agent}")
+    print(f"Agent {i}: {agent.name}")
+
+# Get pool size
+print(f"Pool size: {len(pool)}")
 ```
 
-### Round-Robin Task Distribution
+**Capabilities:**
 
-Distribute tasks across pool agents using round-robin:
+- Read-only collection of pre-initialized agents
+- Index-based and slice-based access
+- Thread-safe iteration
 
-```python
-async def distribute_tasks_round_robin(pool: AgentPool, tasks: list[str]):
-    """Distribute tasks across pool using round-robin scheduling."""
-    
-    async def process_task(task_index: int, task: str):
-        # Select agent using round-robin
-        agent = pool[task_index % len(pool)]
-        
-        # Process the task
-        result = await agent.call(f"Process this task: {task}")
-        
-        return {
-            "task_index": task_index,
-            "worker_id": task_index % len(pool),
-            "task": task,
-            "result": result.content
-        }
-    
-    # Process all tasks concurrently
-    results = await asyncio.gather(
-        *[process_task(i, task) for i, task in enumerate(tasks)],
-        return_exceptions=True
-    )
-    
-    return [r for r in results if not isinstance(r, Exception)]
+**Usage Notes:**
 
-# Usage
-pool = await create_worker_pool(3)
-tasks = [
-    "Analyze customer feedback",
-    "Generate product descriptions", 
-    "Review code quality",
-    "Write test cases",
-    "Create documentation",
-    "Optimize performance"
-]
-
-results = await distribute_tasks_round_robin(pool, tasks)
-for result in results:
-    print(f"Worker {result['worker_id']}: {result['result'][:50]}...")
-```
-
-### Load Balancing
-
-Implement intelligent load balancing based on agent performance:
-
-```python
-import time
-from collections import defaultdict
-
-class LoadBalancedPool:
-    """Agent pool with load balancing based on response time."""
-    
-    def __init__(self, agents: list[Agent]):
-        self.pool = AgentPool(agents)
-        self.performance_stats = defaultdict(list)
-        self.active_tasks = defaultdict(int)
-    
-    def get_best_agent(self) -> Agent:
-        """Select agent with best performance and lowest load."""
-        best_agent = None
-        best_score = float('inf')
-        
-        for i, agent in enumerate(self.pool):
-            # Calculate average response time
-            stats = self.performance_stats[i]
-            avg_time = sum(stats[-10:]) / len(stats[-10:]) if stats else 0
-            
-            # Factor in current load
-            current_load = self.active_tasks[i]
-            
-            # Combined score (lower is better)
-            score = avg_time + (current_load * 0.1)
-            
-            if score < best_score:
-                best_score = score
-                best_agent = (i, agent)
-        
-        if best_agent is None:
-            return self.pool[0]  # Fallback
-            
-        return best_agent
-    
-    async def process_task(self, task: str) -> str:
-        """Process task with best available agent."""
-        agent_index, agent = self.get_best_agent()
-        
-        # Track active tasks
-        self.active_tasks[agent_index] += 1
-        
-        try:
-            start_time = time.time()
-            result = await agent.call(task)
-            end_time = time.time()
-            
-            # Record performance
-            response_time = end_time - start_time
-            self.performance_stats[agent_index].append(response_time)
-            
-            return result.content
-            
-        finally:
-            self.active_tasks[agent_index] -= 1
-
-# Usage
-agents = [Agent(f"Worker {i}") for i in range(5)]
-for agent in agents:
-    await agent.initialize()
-
-lb_pool = LoadBalancedPool(agents)
-
-# Process tasks with automatic load balancing
-tasks = ["Task 1", "Task 2", "Task 3", "Task 4", "Task 5"]
-results = await asyncio.gather(
-    *[lb_pool.process_task(task) for task in tasks]
-)
-```
+`AgentPool` is a lightweight container that does not manage concurrency, locks, or task distribution. The caller is responsible for ensuring concurrent tasks use distinct agent instances. For production workloads requiring task distribution, implement custom orchestration using `asyncio.gather()` or similar concurrency primitives.
 
 ## Streaming Multi-Agent Workflows
 

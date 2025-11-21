@@ -1,0 +1,227 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"Search assistant","role":"system"},{"content":[{"text":"Search
+      for ''python'' with at most 5 results sorted by date","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"advanced_search","description":"Advanced
+      search with validation and schema generation.","parameters":{"type":"object","properties":{"query":{"type":"string"},"limit":{"default":10,"type":"integer"},"sort_by":{"default":"relevance","enum":["relevance","date","title"],"type":"string"},"include_content":{"default":true,"type":"boolean"},"categories":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}],"default":null}},"required":["query"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '796'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxcGQxtU9DO0bwtY8m6YcMl26AS\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764324,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_IWhDM1EEyABbF70dsutD1j3l\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"advanced_search\",\n
+        \             \"arguments\": \"{\\\"query\\\":\\\"python\\\",\\\"limit\\\":5,\\\"sort_by\\\":\\\"date\\\"}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 117,\n    \"completion_tokens\":
+        24,\n    \"total_tokens\": 141,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a411386e5050-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:32:04 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=K97HCWzFs8xcpYLPw8uMv.ItXaAokyqfqjjUKjnish8-1763764324-1.0.1.1-R.OEoFaRjNNUQmoscrre8CA_2TqMhkU1vHpQ1ro5n32GoDAmCiovUYle11XEiHl4QBIQIgc5stmejfrLiInEMJKWPNIkKr8b4A.mRh1fJY0;
+        path=/; expires=Fri, 21-Nov-25 23:02:04 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=fxWxdxjzE4aVWL6KtCfFDYaiKmSkFLG2RckqlJMaqZ0-1763764324713-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '600'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999977'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"Search assistant","role":"system"},{"content":[{"text":"Search
+      for ''python'' with at most 5 results sorted by date","type":"text"}],"role":"user"},{"role":"assistant","content":"","tool_calls":[{"id":"call_IWhDM1EEyABbF70dsutD1j3l","type":"function","function":{"name":"advanced_search","arguments":"{\"query\":\"python\",\"limit\":5,\"sort_by\":\"date\"}"}}]},{"role":"tool","content":"{''query'':
+      ''python'', ''results'': [''Result 0'', ''Result 1'', ''Result 2'', ''Result
+      3'', ''Result 4''], ''sort_by'': ''date'', ''categories'': []}","tool_call_id":"call_IWhDM1EEyABbF70dsutD1j3l"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"advanced_search","description":"Advanced
+      search with validation and schema generation.","parameters":{"type":"object","properties":{"query":{"type":"string"},"limit":{"default":10,"type":"integer"},"sort_by":{"default":"relevance","enum":["relevance","date","title"],"type":"string"},"include_content":{"default":true,"type":"boolean"},"categories":{"anyOf":[{"items":{"type":"string"},"type":"array"},{"type":"null"}],"default":null}},"required":["query"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1215'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=K97HCWzFs8xcpYLPw8uMv.ItXaAokyqfqjjUKjnish8-1763764324-1.0.1.1-R.OEoFaRjNNUQmoscrre8CA_2TqMhkU1vHpQ1ro5n32GoDAmCiovUYle11XEiHl4QBIQIgc5stmejfrLiInEMJKWPNIkKr8b4A.mRh1fJY0;
+        _cfuvid=fxWxdxjzE4aVWL6KtCfFDYaiKmSkFLG2RckqlJMaqZ0-1763764324713-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxcSEpnvLrLPqxciVe9Czlq0MU3\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764324,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"I found 5 recent results related to
+        \\\"python\\\" sorted by date. How would you like to proceed? Would you like
+        a summary or details of any specific result?\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 195,\n    \"completion_tokens\":
+        35,\n    \"total_tokens\": 230,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a41639d55050-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:32:05 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '726'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999945'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

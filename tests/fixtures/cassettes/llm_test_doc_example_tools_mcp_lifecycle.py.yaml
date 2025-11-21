@@ -1,0 +1,116 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"Assistant","role":"system"},{"content":[{"text":"Create
+      a new file called ''notes.txt''","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"temperature":0.0,"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '203'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxee0YgP9rgoIbTs8VPh0Po43vM\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764326,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"I can't create files directly, but
+        I can guide you on how to do it.\\n\\nIf you're using a command line, you
+        can create a new file called `notes.txt` by running:\\n\\n```bash\\ntouch
+        notes.txt\\n```\\n\\nOr, you can create and open it in a text editor, for
+        example:\\n\\n```bash\\nnano notes.txt\\n```\\n\\nIf you want me to provide
+        the content for the file, just let me know!\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 21,\n    \"completion_tokens\":
+        89,\n    \"total_tokens\": 110,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_24710c7f06\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a420fda36805-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:32:09 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=HxNJMg7NwP4rwT0IbffhQC6hqrzCTWyGTtUXjQ2G7ko-1763764329-1.0.1.1-HRrxRTtKTYQS8tOtH9ZT4I91XN0tNJbpGU5UzILajek0YcukumAKEewXUL8sGvJk6IS9ODLrnVxCbb88hyEVStkKIqgWruM5K6LY_SbWil8;
+        path=/; expires=Fri, 21-Nov-25 23:02:09 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=G13sVnSJVbkgzt2VWdia5381zrtKGsD7V6oECVxn4fU-1763764329098-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '2468'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999982'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

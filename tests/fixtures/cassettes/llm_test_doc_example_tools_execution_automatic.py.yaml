@@ -1,0 +1,336 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"You are a helpful calculator","role":"system"},{"content":[{"text":"What
+      is 15 * 7?","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"calculate","description":"Perform
+      basic math operations.","parameters":{"type":"object","properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '519'
+      content-type:
+      - application/json
+      cookie:
+      - _cfuvid=_82q1B3jueu3BuihN7IyvT7xETWO8pAU3.l43ohMHGg-1763756608656-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxojlUQB0pDOJxkDrZNRjqTj6OC\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764336,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_FmEGlLtV7QydEwfGULX4wVZa\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"calculate\",\n
+        \             \"arguments\": \"{\\\"operation\\\":\\\"*\\\",\\\"a\\\":15,\\\"b\\\":7}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 63,\n    \"completion_tokens\":
+        21,\n    \"total_tokens\": 84,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a45c7b44b3ca-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:32:16 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=wlT_BZGKslDRqaEwZZaPRKpnEZP38OCrwLKg0brX1pI-1763764336-1.0.1.1-MI4h8d.QJxl5q7YhV.vy.M3ydA59d2mAYp7uMNDyA_JCNBS38abM7Im432tqHuI_n6hvotIRO2b_aUurXTR7Glz9yS9vFTeFG4gqLh8KN9k;
+        path=/; expires=Fri, 21-Nov-25 23:02:16 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '548'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999987'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"You are a helpful calculator","role":"system"},{"content":[{"text":"What
+      is 15 * 7?","type":"text"}],"role":"user"},{"role":"assistant","content":"","tool_calls":[{"id":"call_FmEGlLtV7QydEwfGULX4wVZa","type":"function","function":{"name":"calculate","arguments":"{\"operation\":\"*\",\"a\":15,\"b\":7}"}}]},{"role":"tool","content":"Error:
+      Unknown operation: *","tool_call_id":"call_FmEGlLtV7QydEwfGULX4wVZa"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"calculate","description":"Perform
+      basic math operations.","parameters":{"type":"object","properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '813'
+      content-type:
+      - application/json
+      cookie:
+      - _cfuvid=_82q1B3jueu3BuihN7IyvT7xETWO8pAU3.l43ohMHGg-1763756608656-0.0.1.1-604800000;
+        __cf_bm=wlT_BZGKslDRqaEwZZaPRKpnEZP38OCrwLKg0brX1pI-1763764336-1.0.1.1-MI4h8d.QJxl5q7YhV.vy.M3ydA59d2mAYp7uMNDyA_JCNBS38abM7Im432tqHuI_n6hvotIRO2b_aUurXTR7Glz9yS9vFTeFG4gqLh8KN9k
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxoCHavXdW9ibnT7kBiLHzh3qXk\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764336,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_kwDsXhPvatfJGlLC8Jsktvzd\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"calculate\",\n
+        \             \"arguments\": \"{\\\"operation\\\":\\\"multiply\\\",\\\"a\\\":15,\\\"b\\\":7}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 97,\n    \"completion_tokens\":
+        21,\n    \"total_tokens\": 118,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a460be59b3ca-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:32:17 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '697'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999977'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"You are a helpful calculator","role":"system"},{"content":[{"text":"What
+      is 15 * 7?","type":"text"}],"role":"user"},{"role":"assistant","content":"","tool_calls":[{"id":"call_FmEGlLtV7QydEwfGULX4wVZa","type":"function","function":{"name":"calculate","arguments":"{\"operation\":\"*\",\"a\":15,\"b\":7}"}}]},{"role":"tool","content":"Error:
+      Unknown operation: *","tool_call_id":"call_FmEGlLtV7QydEwfGULX4wVZa"},{"role":"assistant","content":"","tool_calls":[{"id":"call_kwDsXhPvatfJGlLC8Jsktvzd","type":"function","function":{"name":"calculate","arguments":"{\"operation\":\"multiply\",\"a\":15,\"b\":7}"}}]},{"role":"tool","content":"105.0","tool_call_id":"call_kwDsXhPvatfJGlLC8Jsktvzd"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"calculate","description":"Perform
+      basic math operations.","parameters":{"type":"object","properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1092'
+      content-type:
+      - application/json
+      cookie:
+      - _cfuvid=_82q1B3jueu3BuihN7IyvT7xETWO8pAU3.l43ohMHGg-1763756608656-0.0.1.1-604800000;
+        __cf_bm=wlT_BZGKslDRqaEwZZaPRKpnEZP38OCrwLKg0brX1pI-1763764336-1.0.1.1-MI4h8d.QJxl5q7YhV.vy.M3ydA59d2mAYp7uMNDyA_JCNBS38abM7Im432tqHuI_n6hvotIRO2b_aUurXTR7Glz9yS9vFTeFG4gqLh8KN9k
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxpDBCX8lIWX6olbbEKav7JrcQZ\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764337,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"15 multiplied by 7 is 105.\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        128,\n    \"completion_tokens\": 10,\n    \"total_tokens\": 138,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a465f97eb3ca-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:32:18 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1036'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999975'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

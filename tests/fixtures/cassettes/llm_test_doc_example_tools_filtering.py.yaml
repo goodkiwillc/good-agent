@@ -1,0 +1,119 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"Restricted assistant","role":"system"},{"content":[{"text":"What
+      tools do you have access to?","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"calculate","description":"Perform
+      calculations.","parameters":{"type":"object","properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"additionalProperties":false}}},{"type":"function","function":{"name":"get_time","description":"Get
+      current time.","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}},{"type":"function","function":{"name":"debug_tool","description":"Debug
+      information tool.","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}},{"type":"function","function":{"name":"admin_tool","description":"Admin
+      operations tool.","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1060'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxrFluGQCQA1H58FXd73VZkZyhh\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764339,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"I have access to the following tools:\\n\\n1.
+        Calculation tool: Perform mathematical calculations.\\n2. Get current time:
+        Retrieve the current time.\\n3. Debug information tool: Provide debug information.\\n4.
+        Admin operations tool: Perform administrative operations.\\n\\nIf you need
+        me to use any of these tools, just let me know!\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 94,\n    \"completion_tokens\":
+        65,\n    \"total_tokens\": 159,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a46f2dae5100-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:32:20 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=Ha57pEYiNzabrikolG81DkLqvfzD4lGg7isdZqHCGO8-1763764340-1.0.1.1-kuzSPE.ajXwuo4_J7jiXpb1KL2T8ZL4EJcPe_Az6PTwW65m_Wp3pRJdyfiTCdXYujMdIpRBVQ0uutmFi7nut5Fxj2lV.vv6MZ2zSGpV4TVU;
+        path=/; expires=Fri, 21-Nov-25 23:02:20 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=qTfcUh_uAgLdfVnpRfUIT4HfMFOM6zmr8tId9uGsD.Y-1763764340499-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1367'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999982'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

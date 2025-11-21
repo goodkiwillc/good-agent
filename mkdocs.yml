@@ -83,9 +83,9 @@ nav:
     - Resources: features/resources.md
     - Multi-Agent: features/multi-agent.md
   - Advanced Features:
+    - Context Management: features/context-management.md
     - Interactive Execution: features/interactive-execution.md
     - Human-in-the-Loop: features/human-in-the-loop.md
-    - Context Management: features/context-management.md
   - Components & Extensions:
     - Overview: components/index.md
     - Creating Components: components/creating-components.md
@@ -103,6 +103,7 @@ nav:
     - Built-In Agents: reference/built-in-agents.md
     - Utilities:
       - Task Management: reference/utilities/tasks.md
+    - Planned Features: planned-features.md
   - Project Info:
     - Test Coverage: project-info/test-coverage.md
     - Changelog: CHANGELOG.md

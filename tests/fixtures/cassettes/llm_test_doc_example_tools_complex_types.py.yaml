@@ -1,0 +1,231 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"Task manager","role":"system"},{"content":[{"text":"Create
+      a high-priority task titled ''Review documentation''\ndue tomorrow with tags
+      ''urgent'' and ''docs''","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"create_complex_task","description":"Create
+      a task using a complex model.","parameters":{"type":"object","properties":{"task":{"$ref":"#/$defs/TaskModel"}},"required":["task"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '554'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxvx5Gnc8ytx0OmquLhWYOm60Tn\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764343,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_U40WsYzpdCrMsmvmG3CbDq2I\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"create_complex_task\",\n
+        \             \"arguments\": \"{\\\"task\\\":{\\\"title\\\":\\\"Review documentation\\\",\\\"due_date\\\":\\\"2024-04-28\\\",\\\"priority\\\":\\\"high\\\",\\\"tags\\\":[\\\"urgent\\\",\\\"docs\\\"]}}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 71,\n    \"completion_tokens\":
+        39,\n    \"total_tokens\": 110,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a48b5d62495b-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:32:24 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=CunidX3yrLeQMzgeqRQijWn0xwWYzsAUUBA.KU152Jc-1763764344-1.0.1.1-IyRB.9rrZWo_5EU0k4q6Ohb8C4jBs3JGJh.xgcf5L2Uoo4ZGW4HM5f560wzoDEaOsXsF8Nz3eWGO505vis.iwmRohw8Z.C0GMnmz3fHpwY0;
+        path=/; expires=Fri, 21-Nov-25 23:02:24 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=zDOMRYOZtdrupGmPJVEOKrqlCubzCACwJqNKx7f7V_o-1763764344393-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '746'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999970'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"Task manager","role":"system"},{"content":[{"text":"Create
+      a high-priority task titled ''Review documentation''\ndue tomorrow with tags
+      ''urgent'' and ''docs''","type":"text"}],"role":"user"},{"role":"assistant","content":"","tool_calls":[{"id":"call_U40WsYzpdCrMsmvmG3CbDq2I","type":"function","function":{"name":"create_complex_task","arguments":"{\"task\":{\"title\":\"Review
+      documentation\",\"due_date\":\"2024-04-28\",\"priority\":\"high\",\"tags\":[\"urgent\",\"docs\"]}}"}}]},{"role":"tool","content":"{''created'':
+      True, ''task_id'': ''task_456'', ''task'': {''title'': ''Review documentation'',
+      ''description'': None, ''priority'': ''high'', ''due_date'': datetime.datetime(2024,
+      4, 28, 0, 0), ''tags'': [''urgent'', ''docs'']}}","tool_call_id":"call_U40WsYzpdCrMsmvmG3CbDq2I"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"create_complex_task","description":"Create
+      a task using a complex model.","parameters":{"type":"object","properties":{"task":{"$ref":"#/$defs/TaskModel"}},"required":["task"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1123'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=CunidX3yrLeQMzgeqRQijWn0xwWYzsAUUBA.KU152Jc-1763764344-1.0.1.1-IyRB.9rrZWo_5EU0k4q6Ohb8C4jBs3JGJh.xgcf5L2Uoo4ZGW4HM5f560wzoDEaOsXsF8Nz3eWGO505vis.iwmRohw8Z.C0GMnmz3fHpwY0;
+        _cfuvid=zDOMRYOZtdrupGmPJVEOKrqlCubzCACwJqNKx7f7V_o-1763764344393-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxwNdCHAH219d4sriEbZh0RO1mp\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764344,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"The high-priority task titled \\\"Review
+        documentation\\\" with tags \\\"urgent\\\" and \\\"docs\\\" has been created
+        and is due tomorrow.\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 186,\n    \"completion_tokens\":
+        28,\n    \"total_tokens\": 214,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a490d80e495b-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:32:25 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '573'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999915'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -37,6 +37,7 @@ def _load_module(path: Path) -> types.ModuleType:
     return module
 
 
+@pytest.mark.llm  # Opt-in: requires API keys and makes real LLM calls
 @pytest.mark.parametrize(
     "script_path",
     EXAMPLE_FILES,
@@ -51,6 +52,12 @@ def test_example_main_runs_without_deprecations(script_path: Path) -> None:
 
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
+        # Ignore known third-party deprecation warnings
+        warnings.filterwarnings(
+            "ignore",
+            message="enable_cleanup_closed ignored",
+            category=DeprecationWarning,
+        )
         if asyncio.iscoroutinefunction(runner):
             asyncio.run(runner())
         else:

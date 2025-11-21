@@ -755,8 +755,6 @@ async with Agent("Data processing pipeline.") as agent:
 
 ## Next Steps
 
-- **[Streaming](./streaming.md)** - Learn about streaming execution with structured output
 - **[Agent Modes](./modes.md)** - Use structured output in different agent modes
 - **[Tools](../core/tools.md)** - Combine structured output with tool usage
 - **[Events](../core/events.md)** - Monitor and customize extraction with events
-- **[Testing](../extensibility/testing.md)** - Advanced testing patterns for structured data
