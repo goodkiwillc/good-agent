@@ -32,7 +32,7 @@ The loader recognises shortcuts for the reference agents:
 | Alias             | Loads |
 | ----------------- | ----- |
 | `good-agent`      | `good_agent.agents.meta:agent` |
-| `good-agent-agent`| `good_agent.agents.meta:agent` |
+<!-- | `good-agent-agent`| `good_agent.agents.meta:agent` | -->
 | `research`        | `good_agent.agents.research:agent` |
 | `research-agent`  | `good_agent.agents.research:agent` |
 
@@ -69,11 +69,12 @@ If you provide extra arguments to an agent instance (rather than a callable), th
 
 ## Interactive session controls
 
-`good-agent run` streams every event from `Agent.execute()`:
+`good-agent run` shows every message from `Agent.execute()`:
 
 - Assistant messages render as Markdown with Rich formatting.
 - Tool calls show a cyan panel with the tool name and arguments before the tool runs.
 - Tool outputs are wrapped in a blue panel; long payloads are truncated for readability.
+- Note: streaming is not yet supported, so responses will appear only after the agent finishes processing.
 
 Session shortcuts:
 

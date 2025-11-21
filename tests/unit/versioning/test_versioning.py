@@ -43,15 +43,13 @@ class TestMessageRegistry:
         msg = SystemMessage(content_parts=[], id=ULID())
 
         # Create a real agent for proper weakref testing
-        agent = Agent("test")
-        await agent.initialize()
+        async with Agent("test") as agent:
+            registry.register(msg, agent)
+            owner = registry.get_agent(msg.id)
+            assert owner == agent
 
-        registry.register(msg, agent)
-        owner = registry.get_agent(msg.id)
-        assert owner == agent
-
-        # Clean up
-        await agent.events.close()
+            # Clean up
+            await agent.events.close()
 
     def test_agent_weakref_cleanup(self):
         """Test that agent references are weak and can be garbage collected."""

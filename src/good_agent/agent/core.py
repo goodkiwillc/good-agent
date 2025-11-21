@@ -31,6 +31,16 @@ from typing import (
 import orjson
 from ulid import ULID
 
+from good_agent.agent.components import ComponentRegistry
+from good_agent.agent.context import ContextManager
+from good_agent.agent.events import AgentEventsFacade
+from good_agent.agent.llm import LLMCoordinator
+from good_agent.agent.messages import MessageManager
+from good_agent.agent.modes import MODE_HANDLER_SKIP_KWARG, ModeManager, ModeTransition
+from good_agent.agent.state import AgentState, AgentStateMachine
+from good_agent.agent.tasks import AgentTaskManager
+from good_agent.agent.tools import ToolExecutor
+from good_agent.agent.versioning import AgentVersioningManager
 from good_agent.core.event_router import (
     EventContext,
     EventName,
@@ -43,25 +53,23 @@ from good_agent.core.ulid_monotonic import (
     create_monotonic_ulid,
 )
 
-from good_agent.agent.components import ComponentRegistry
-from good_agent.agent.context import ContextManager
-from good_agent.agent.events import AgentEventsFacade
-from good_agent.agent.llm import LLMCoordinator
-from good_agent.agent.messages import MessageManager
-from good_agent.agent.modes import MODE_HANDLER_SKIP_KWARG, ModeManager, ModeTransition
-from good_agent.agent.state import AgentState, AgentStateMachine
-from good_agent.agent.tasks import AgentTaskManager
-from good_agent.agent.tools import ToolExecutor
-from good_agent.agent.versioning import AgentVersioningManager
-
 if TYPE_CHECKING:
     from litellm.types.utils import Choices
 
     from good_agent.mock import AgentMockInterface
 
-from good_agent.core.components import AgentComponent
-
+from good_agent.agent.config import (
+    AGENT_CONFIG_KEYS,
+    AgentConfigManager,
+    AgentOnlyConfig,
+    LLMCommonConfig,
+)
+from good_agent.agent.config import (
+    Context as AgentContext,
+)
+from good_agent.agent.pool import AgentPool
 from good_agent.content import FileContentPart, ImageContentPart
+from good_agent.core.components import AgentComponent
 from good_agent.events import (  # Import typed event parameters
     AgentEvents,
     AgentInitializeParams,
@@ -99,16 +107,6 @@ from good_agent.tools import (
 )
 from good_agent.tools.tools import ToolLike
 from good_agent.utilities import print_message
-from good_agent.agent.config import (
-    AGENT_CONFIG_KEYS,
-    AgentConfigManager,
-    AgentOnlyConfig,
-    LLMCommonConfig,
-)
-from good_agent.agent.config import (
-    Context as AgentContext,
-)
-from good_agent.agent.pool import AgentPool
 
 if TYPE_CHECKING:
     from good_agent.agent.conversation import Conversation
@@ -1850,12 +1848,12 @@ class Agent(EventRouter):
         # Check and resolve any pending tool calls first
 
         message_index = 0
-        pending_tool_calls = self.tool_calls.get_pending_tool_calls()
+        pending_tool_calls = self._tool_executor.get_pending_tool_calls()
         if pending_tool_calls:
             logger.debug(
                 f"Resolving {len(pending_tool_calls)} pending tool calls before execution"
             )
-            async for tool_message in self.tool_calls.resolve_pending_tool_calls():
+            async for tool_message in self._tool_executor.resolve_pending_tool_calls():
                 # Create and yield tool message for each resolved call
                 tool_message._i = message_index
                 message_index += 1
@@ -1884,7 +1882,9 @@ class Agent(EventRouter):
             # Check if the response has tool calls that need to be executed
             if response.tool_calls:
                 # Resolve the tool calls that were just added
-                async for tool_message in self.tool_calls.resolve_pending_tool_calls():
+                async for (
+                    tool_message
+                ) in self._tool_executor.resolve_pending_tool_calls():
                     tool_message._i = message_index
                     message_index += 1
                     # Yield each tool response message
@@ -2230,7 +2230,7 @@ class Agent(EventRouter):
     ) -> None:
         """Record a tool invocation via the tool execution manager."""
 
-        self.tool_calls.record_invocation(
+        self._tool_executor.record_invocation(
             tool,
             response,
             parameters,
@@ -2246,7 +2246,7 @@ class Agent(EventRouter):
     ) -> None:
         """Record multiple tool invocations via the tool execution manager."""
 
-        self.tool_calls.record_invocations(
+        self._tool_executor.record_invocations(
             tool,
             invocations,
             skip_assistant_message=skip_assistant_message,
@@ -2309,7 +2309,7 @@ class Agent(EventRouter):
             ToolResponse with execution result
         """
 
-        return await self.tool_calls.invoke(
+        return await self._tool_executor.invoke(
             tool,
             tool_name=tool_name,
             tool_call_id=tool_call_id,
@@ -2331,7 +2331,7 @@ class Agent(EventRouter):
             List of ToolResponse objects in invocation order
         """
 
-        return await self.tool_calls.invoke_many(invocations)
+        return await self._tool_executor.invoke_many(invocations)
 
     def invoke_func(
         self,
@@ -2344,7 +2344,7 @@ class Agent(EventRouter):
     ) -> Callable[..., Awaitable[ToolResponse]]:
         """Create a bound function that invokes a tool with preset parameters."""
 
-        return self.tool_calls.invoke_func(
+        return self._tool_executor.invoke_func(
             tool,
             tool_name=tool_name,
             hide=hide,
@@ -2358,7 +2358,7 @@ class Agent(EventRouter):
     ) -> Callable[[], Awaitable[list[ToolResponse]]]:
         """Create a bound coroutine that executes a batch of tool invocations."""
 
-        return self.tool_calls.invoke_many_func(invocations)
+        return self._tool_executor.invoke_many_func(invocations)
 
     def get_pending_tool_calls(self) -> list[ToolCall]:
         """Get list of tool calls that don't have corresponding responses.
@@ -2367,7 +2367,7 @@ class Agent(EventRouter):
             List of ToolCall objects that are pending execution
         """
 
-        return self.tool_calls.get_pending_tool_calls()
+        return self._tool_executor.get_pending_tool_calls()
 
     def has_pending_tool_calls(self) -> bool:
         """Check if there are any pending tool calls.
@@ -2375,7 +2375,7 @@ class Agent(EventRouter):
         Returns:
             True if there are pending tool calls
         """
-        return self.tool_calls.has_pending_tool_calls()
+        return self._tool_executor.has_pending_tool_calls()
 
     async def resolve_pending_tool_calls(self) -> AsyncIterator[ToolMessage]:
         """Find and execute all pending tool calls in conversation.
@@ -2383,7 +2383,7 @@ class Agent(EventRouter):
         Yields:
             ToolMessage for each resolved tool call
         """
-        async for msg in self.tool_calls.resolve_pending_tool_calls():
+        async for msg in self._tool_executor.resolve_pending_tool_calls():
             yield msg
 
     @overload

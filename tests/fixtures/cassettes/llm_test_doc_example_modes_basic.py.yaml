@@ -1,0 +1,509 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"You are a versatile assistant.","role":"system"},{"content":[{"text":"Tell
+      me about quantum physics","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"temperature":0.0,"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '217'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeRkyJfskCABEYfKP5SHwh4KThbl7\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763755852,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Quantum physics, also known as quantum
+        mechanics, is a fundamental branch of physics that studies the behavior of
+        matter and energy at the smallest scales\u2014typically at the level of atoms
+        and subatomic particles. It provides a mathematical framework for understanding
+        phenomena that classical physics cannot explain.\\n\\nKey concepts in quantum
+        physics include:\\n\\n1. **Wave-Particle Duality**: Particles such as electrons
+        and photons exhibit both wave-like and particle-like properties. For example,
+        electrons can produce interference patterns (a wave property) but also impact
+        a detector as discrete particles.\\n\\n2. **Quantization**: Certain physical
+        properties, like energy, are quantized, meaning they can only take on discrete
+        values rather than a continuous range. This explains phenomena like atomic
+        emission spectra.\\n\\n3. **Uncertainty Principle**: Formulated by Werner
+        Heisenberg, it states that certain pairs of physical properties (e.g., position
+        and momentum) cannot both be precisely known simultaneously. The more accurately
+        one is known, the less accurately the other can be known.\\n\\n4. **Superposition**:
+        Quantum systems can exist in multiple states at once until measured. For example,
+        an electron can be in a superposition of spin-up and spin-down states.\\n\\n5.
+        **Entanglement**: Particles can become entangled so that the state of one
+        instantly influences the state of another, regardless of the distance separating
+        them. This phenomenon challenges classical notions of locality.\\n\\nQuantum
+        physics underpins much of modern technology, including semiconductors, lasers,
+        and quantum computing. It also raises profound philosophical questions about
+        the nature of reality and measurement.\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 22,\n    \"completion_tokens\":
+        317,\n    \"total_tokens\": 339,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a22d53ddf9d24db-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 20:10:56 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=4Qv1k75e6j.BjC6JEsikJttMQxwoQb3phWKVNjhptWA-1763755856-1.0.1.1-nApwNQQEmH1RMNzA6HfBnCpQchFIdD6EPqFo8lPh4dIq9V_9FEumHZ7Z7o_R375BjGGJkDdNPtT.48U5qF_TTJrAEUZOGBClzNhp3tMiTqY;
+        path=/; expires=Fri, 21-Nov-25 20:40:56 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=22i2nI5v1RFrgI30zdbYPKm.OIsMH8lFoh0uxwYYWK0-1763755856444-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '3909'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999980'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: "{\"messages\":[{\"content\":\"You are a versatile assistant.\",\"role\":\"system\"},{\"content\":[{\"text\":\"Tell
+      me about quantum physics\",\"type\":\"text\"}],\"role\":\"user\"},{\"role\":\"assistant\",\"content\":\"Quantum
+      physics, also known as quantum mechanics, is a fundamental branch of physics
+      that studies the behavior of matter and energy at the smallest scales\u2014typically
+      at the level of atoms and subatomic particles. It provides a mathematical framework
+      for understanding phenomena that classical physics cannot explain.\\n\\nKey
+      concepts in quantum physics include:\\n\\n1. **Wave-Particle Duality**: Particles
+      such as electrons and photons exhibit both wave-like and particle-like properties.
+      For example, electrons can produce interference patterns (a wave property) but
+      also impact a detector as discrete particles.\\n\\n2. **Quantization**: Certain
+      physical properties, like energy, are quantized, meaning they can only take
+      on discrete values rather than a continuous range. This explains phenomena like
+      atomic emission spectra.\\n\\n3. **Uncertainty Principle**: Formulated by Werner
+      Heisenberg, it states that certain pairs of physical properties (e.g., position
+      and momentum) cannot both be precisely known simultaneously. The more accurately
+      one is known, the less accurately the other can be known.\\n\\n4. **Superposition**:
+      Quantum systems can exist in multiple states at once until measured. For example,
+      an electron can be in a superposition of spin-up and spin-down states.\\n\\n5.
+      **Entanglement**: Particles can become entangled so that the state of one instantly
+      influences the state of another, regardless of the distance separating them.
+      This phenomenon challenges classical notions of locality.\\n\\nQuantum physics
+      underpins much of modern technology, including semiconductors, lasers, and quantum
+      computing. It also raises profound philosophical questions about the nature
+      of reality and measurement.\"},{\"content\":[{\"text\":\"Tell me about quantum
+      physics\",\"type\":\"text\"}],\"role\":\"user\"},{\"content\":\"You are in research
+      mode. Focus on finding accurate, authoritative sources and provide detailed
+      citations.\",\"role\":\"system\"}],\"model\":\"gpt-4.1-mini\",\"n\":1,\"temperature\":0.0,\"top_p\":1.0}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '2178'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=4Qv1k75e6j.BjC6JEsikJttMQxwoQb3phWKVNjhptWA-1763755856-1.0.1.1-nApwNQQEmH1RMNzA6HfBnCpQchFIdD6EPqFo8lPh4dIq9V_9FEumHZ7Z7o_R375BjGGJkDdNPtT.48U5qF_TTJrAEUZOGBClzNhp3tMiTqY;
+        _cfuvid=22i2nI5v1RFrgI30zdbYPKm.OIsMH8lFoh0uxwYYWK0-1763755856444-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeRl2zw42ARsSeza23qbzhKPKqrIK\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763755856,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Quantum physics, or quantum mechanics,
+        is the branch of physics that deals with the behavior of matter and energy
+        at atomic and subatomic scales. It fundamentally departs from classical physics
+        by introducing principles that govern particles like electrons, photons, and
+        other quantum entities.\\n\\n### Core Principles and Concepts\\n\\n1. **Wave-Particle
+        Duality**  \\n   Quantum entities exhibit both particle-like and wave-like
+        properties. This duality was first highlighted by experiments such as the
+        double-slit experiment, where particles like electrons create interference
+        patterns characteristic of waves (Feynman, 1965).\\n\\n2. **Quantization of
+        Energy**  \\n   Energy levels in atoms are discrete rather than continuous.
+        This concept was introduced by Max Planck in 1900 to explain blackbody radiation
+        and later applied by Niels Bohr to atomic structure (Planck, 1901; Bohr, 1913).\\n\\n3.
+        **Heisenberg Uncertainty Principle**  \\n   Werner Heisenberg formulated that
+        certain pairs of physical properties, such as position and momentum, cannot
+        both be precisely measured simultaneously. This is not due to measurement
+        flaws but a fundamental property of nature (Heisenberg, 1927).\\n\\n4. **Superposition
+        Principle**  \\n   Quantum systems can exist in multiple states simultaneously
+        until measured. This principle is mathematically described by the wavefunction,
+        which encodes probabilities of different outcomes (Dirac, 1930).\\n\\n5. **Quantum
+        Entanglement**  \\n   Particles can become entangled such that the state of
+        one instantly influences the state of another, regardless of distance. This
+        phenomenon was famously discussed in the Einstein-Podolsky-Rosen (EPR) paradox
+        and experimentally confirmed later (Einstein, Podolsky, & Rosen, 1935; Aspect
+        et al., 1982).\\n\\n### Mathematical Framework\\n\\nQuantum mechanics is formulated
+        using complex-valued wavefunctions and operators acting on Hilbert spaces.
+        The Schr\xF6dinger equation governs the time evolution of quantum states (Schr\xF6dinger,
+        1926).\\n\\n### Applications\\n\\nQuantum physics underlies many modern technologies,
+        including semiconductors, lasers, magnetic resonance imaging (MRI), and emerging
+        fields like quantum computing and quantum cryptography.\\n\\n---\\n\\n###
+        Authoritative Sources and References\\n\\n- Feynman, R. P. (1965). *The Feynman
+        Lectures on Physics, Vol. 3: Quantum Mechanics*. Addison-Wesley.  \\n- Planck,
+        M. (1901). \\\"On the Law of Distribution of Energy in the Normal Spectrum\\\".
+        *Annalen der Physik*, 4(553).  \\n- Bohr, N. (1913). \\\"On the Constitution
+        of Atoms and Molecules\\\". *Philosophical Magazine*, 26(1), 1-25.  \\n- Heisenberg,
+        W. (1927). \\\"\xDCber den anschaulichen Inhalt der quantentheoretischen Kinematik
+        und Mechanik\\\". *Zeitschrift f\xFCr Physik*, 43(3-4), 172-198.  \\n- Dirac,
+        P. A. M. (1930). *The Principles of Quantum Mechanics*. Oxford University
+        Press.  \\n- Einstein, A., Podolsky, B., & Rosen, N. (1935). \\\"Can Quantum-Mechanical
+        Description of Physical Reality Be Considered Complete?\\\". *Physical Review*,
+        47(10), 777-780.  \\n- Aspect, A., Dalibard, J., & Roger, G. (1982). \\\"Experimental
+        Test of Bell's Inequalities Using Time-Varying Analyzers\\\". *Physical Review
+        Letters*, 49(25), 1804-1807.  \\n- Schr\xF6dinger, E. (1926). \\\"An Undulatory
+        Theory of the Mechanics of Atoms and Molecules\\\". *Physical Review*, 28(6),
+        1049-1070.\\n\\nIf you want, I can provide more detailed explanations on any
+        of these topics or suggest recent review articles and textbooks for deeper
+        study.\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
+        \     \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n
+        \ \"usage\": {\n    \"prompt_tokens\": 374,\n    \"completion_tokens\": 809,\n
+        \   \"total_tokens\": 1183,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a22d5574b8124db-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 20:11:09 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '12923'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999522'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: "{\"messages\":[{\"content\":\"You are a versatile assistant.\",\"role\":\"system\"},{\"content\":[{\"text\":\"Tell
+      me about quantum physics\",\"type\":\"text\"}],\"role\":\"user\"},{\"role\":\"assistant\",\"content\":\"Quantum
+      physics, also known as quantum mechanics, is a fundamental branch of physics
+      that studies the behavior of matter and energy at the smallest scales\u2014typically
+      at the level of atoms and subatomic particles. It provides a mathematical framework
+      for understanding phenomena that classical physics cannot explain.\\n\\nKey
+      concepts in quantum physics include:\\n\\n1. **Wave-Particle Duality**: Particles
+      such as electrons and photons exhibit both wave-like and particle-like properties.
+      For example, electrons can produce interference patterns (a wave property) but
+      also impact a detector as discrete particles.\\n\\n2. **Quantization**: Certain
+      physical properties, like energy, are quantized, meaning they can only take
+      on discrete values rather than a continuous range. This explains phenomena like
+      atomic emission spectra.\\n\\n3. **Uncertainty Principle**: Formulated by Werner
+      Heisenberg, it states that certain pairs of physical properties (e.g., position
+      and momentum) cannot both be precisely known simultaneously. The more accurately
+      one is known, the less accurately the other can be known.\\n\\n4. **Superposition**:
+      Quantum systems can exist in multiple states at once until measured. For example,
+      an electron can be in a superposition of spin-up and spin-down states.\\n\\n5.
+      **Entanglement**: Particles can become entangled so that the state of one instantly
+      influences the state of another, regardless of the distance separating them.
+      This phenomenon challenges classical notions of locality.\\n\\nQuantum physics
+      underpins much of modern technology, including semiconductors, lasers, and quantum
+      computing. It also raises profound philosophical questions about the nature
+      of reality and measurement.\"},{\"content\":[{\"text\":\"Tell me about quantum
+      physics\",\"type\":\"text\"}],\"role\":\"user\"},{\"content\":\"You are in research
+      mode. Focus on finding accurate, authoritative sources and provide detailed
+      citations.\",\"role\":\"system\"},{\"role\":\"assistant\",\"content\":\"Quantum
+      physics, or quantum mechanics, is the branch of physics that deals with the
+      behavior of matter and energy at atomic and subatomic scales. It fundamentally
+      departs from classical physics by introducing principles that govern particles
+      like electrons, photons, and other quantum entities.\\n\\n### Core Principles
+      and Concepts\\n\\n1. **Wave-Particle Duality**  \\n   Quantum entities exhibit
+      both particle-like and wave-like properties. This duality was first highlighted
+      by experiments such as the double-slit experiment, where particles like electrons
+      create interference patterns characteristic of waves (Feynman, 1965).\\n\\n2.
+      **Quantization of Energy**  \\n   Energy levels in atoms are discrete rather
+      than continuous. This concept was introduced by Max Planck in 1900 to explain
+      blackbody radiation and later applied by Niels Bohr to atomic structure (Planck,
+      1901; Bohr, 1913).\\n\\n3. **Heisenberg Uncertainty Principle**  \\n   Werner
+      Heisenberg formulated that certain pairs of physical properties, such as position
+      and momentum, cannot both be precisely measured simultaneously. This is not
+      due to measurement flaws but a fundamental property of nature (Heisenberg, 1927).\\n\\n4.
+      **Superposition Principle**  \\n   Quantum systems can exist in multiple states
+      simultaneously until measured. This principle is mathematically described by
+      the wavefunction, which encodes probabilities of different outcomes (Dirac,
+      1930).\\n\\n5. **Quantum Entanglement**  \\n   Particles can become entangled
+      such that the state of one instantly influences the state of another, regardless
+      of distance. This phenomenon was famously discussed in the Einstein-Podolsky-Rosen
+      (EPR) paradox and experimentally confirmed later (Einstein, Podolsky, & Rosen,
+      1935; Aspect et al., 1982).\\n\\n### Mathematical Framework\\n\\nQuantum mechanics
+      is formulated using complex-valued wavefunctions and operators acting on Hilbert
+      spaces. The Schr\xF6dinger equation governs the time evolution of quantum states
+      (Schr\xF6dinger, 1926).\\n\\n### Applications\\n\\nQuantum physics underlies
+      many modern technologies, including semiconductors, lasers, magnetic resonance
+      imaging (MRI), and emerging fields like quantum computing and quantum cryptography.\\n\\n---\\n\\n###
+      Authoritative Sources and References\\n\\n- Feynman, R. P. (1965). *The Feynman
+      Lectures on Physics, Vol. 3: Quantum Mechanics*. Addison-Wesley.  \\n- Planck,
+      M. (1901). \\\"On the Law of Distribution of Energy in the Normal Spectrum\\\".
+      *Annalen der Physik*, 4(553).  \\n- Bohr, N. (1913). \\\"On the Constitution
+      of Atoms and Molecules\\\". *Philosophical Magazine*, 26(1), 1-25.  \\n- Heisenberg,
+      W. (1927). \\\"\xDCber den anschaulichen Inhalt der quantentheoretischen Kinematik
+      und Mechanik\\\". *Zeitschrift f\xFCr Physik*, 43(3-4), 172-198.  \\n- Dirac,
+      P. A. M. (1930). *The Principles of Quantum Mechanics*. Oxford University Press.
+      \ \\n- Einstein, A., Podolsky, B., & Rosen, N. (1935). \\\"Can Quantum-Mechanical
+      Description of Physical Reality Be Considered Complete?\\\". *Physical Review*,
+      47(10), 777-780.  \\n- Aspect, A., Dalibard, J., & Roger, G. (1982). \\\"Experimental
+      Test of Bell's Inequalities Using Time-Varying Analyzers\\\". *Physical Review
+      Letters*, 49(25), 1804-1807.  \\n- Schr\xF6dinger, E. (1926). \\\"An Undulatory
+      Theory of the Mechanics of Atoms and Molecules\\\". *Physical Review*, 28(6),
+      1049-1070.\\n\\nIf you want, I can provide more detailed explanations on any
+      of these topics or suggest recent review articles and textbooks for deeper study.\"},{\"content\":[{\"text\":\"Tell
+      me about quantum physics\",\"type\":\"text\"}],\"role\":\"user\"},{\"content\":\"You
+      are in creative mode. Be imaginative, expressive, and think outside the box.
+      Use vivid language and storytelling.\",\"role\":\"system\"}],\"model\":\"gpt-4.1-mini\",\"n\":1,\"temperature\":0.0,\"top_p\":1.0}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '5912'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=4Qv1k75e6j.BjC6JEsikJttMQxwoQb3phWKVNjhptWA-1763755856-1.0.1.1-nApwNQQEmH1RMNzA6HfBnCpQchFIdD6EPqFo8lPh4dIq9V_9FEumHZ7Z7o_R375BjGGJkDdNPtT.48U5qF_TTJrAEUZOGBClzNhp3tMiTqY;
+        _cfuvid=22i2nI5v1RFrgI30zdbYPKm.OIsMH8lFoh0uxwYYWK0-1763755856444-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeRlFbuh7HqcXBT1C3cRUOsIcrkZw\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763755869,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Imagine stepping into a world where
+        the rules you thought governed reality suddenly twist and shimmer like a mirage.
+        Welcome to the realm of quantum physics\u2014a place where particles dance
+        as both waves and points, where certainty dissolves into a fog of probabilities,
+        and where the very act of looking changes what you see.\\n\\nIn this strange
+        universe, an electron isn\u2019t just a tiny speck orbiting an atom; it\u2019s
+        a ghostly wave of possibilities, spreading out like ripples on a cosmic pond.
+        It can be here and there, everywhere and nowhere, until you decide to peek\u2014and
+        then, like magic, it chooses a single spot to reveal itself. This is the essence
+        of superposition, a spellbinding state where reality holds its breath, waiting
+        for your gaze to collapse the infinite into the definite.\\n\\nBut the wonder
+        doesn\u2019t stop there. Imagine two particles born from the same cosmic dance,
+        forever entwined in a secret conversation. No matter how far apart they drift\u2014across
+        galaxies or across your living room\u2014what happens to one instantly whispers
+        to the other. This is entanglement, a mysterious bond that defies distance
+        and challenges our deepest intuitions about space and time.\\n\\nQuantum physics
+        is a story of paradoxes and poetry, where uncertainty isn\u2019t a flaw but
+        a fundamental feature of the universe\u2019s design. It\u2019s a symphony
+        of probabilities, a kaleidoscope of hidden dimensions, and a playground where
+        the tiniest actors perform the grandest dramas.\\n\\nSo, when you think of
+        quantum physics, don\u2019t just see it as equations or experiments. See it
+        as the universe\u2019s secret language\u2014a language that tells us that
+        reality is far more wondrous, strange, and beautiful than we ever imagined.\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        1223,\n    \"completion_tokens\": 343,\n    \"total_tokens\": 1566,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 1152,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a22d5a90c7b24db-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 20:11:15 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '5852'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149998627'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

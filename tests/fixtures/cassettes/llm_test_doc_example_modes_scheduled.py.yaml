@@ -1,0 +1,349 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"Assistant with mode control","role":"system"},{"content":[{"text":"Hello","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"enter_research_mode","description":"Schedule
+      research mode for the next call.","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}},{"type":"function","function":{"name":"exit_current_mode","description":"Schedule
+      exiting current mode.","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '634'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeRkrWRclLIhT5zJJOr2VvTo7XXd9\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763755845,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Hello! How can I assist you today?\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        61,\n    \"completion_tokens\": 10,\n    \"total_tokens\": 71,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a22d50e4abb372b-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 20:10:45 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=e1A1ydHlbZu9ct2wAO72N7JyqxovkB9nts.XvYWprMI-1763755845-1.0.1.1-WMD7KPL0JybWP7GBMO7Nk5CTY6N1xX.q6KLKfte60A_wC7nKRJZNXz9gpcBK1K5fSWOGyXJgHlEdCbJtPXsYlR4IBjF37WgRhM1mf3LacRg;
+        path=/; expires=Fri, 21-Nov-25 20:40:45 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=.HjBKf7CHQa5fLvSC.XCgmokFBVBvxTD9QKRWCjbAps-1763755845662-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '479'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999987'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"Assistant with mode control","role":"system"},{"content":[{"text":"Hello","type":"text"}],"role":"user"},{"role":"assistant","content":"Hello!
+      How can I assist you today?"},{"content":[{"text":"Tell me about AI","type":"text"}],"role":"user"},{"content":"Research
+      mode active.","role":"system"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"enter_research_mode","description":"Schedule
+      research mode for the next call.","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}},{"type":"function","function":{"name":"exit_current_mode","description":"Schedule
+      exiting current mode.","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '824'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=e1A1ydHlbZu9ct2wAO72N7JyqxovkB9nts.XvYWprMI-1763755845-1.0.1.1-WMD7KPL0JybWP7GBMO7Nk5CTY6N1xX.q6KLKfte60A_wC7nKRJZNXz9gpcBK1K5fSWOGyXJgHlEdCbJtPXsYlR4IBjF37WgRhM1mf3LacRg;
+        _cfuvid=.HjBKf7CHQa5fLvSC.XCgmokFBVBvxTD9QKRWCjbAps-1763755845662-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeRkrZjIzgukrlG8pKvpBGTT97we6\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763755845,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Artificial Intelligence (AI) refers
+        to the simulation of human intelligence in machines that are programmed to
+        think, learn, and problem-solve like humans. AI systems can perform tasks
+        such as recognizing speech, understanding natural language, making decisions,
+        and identifying patterns. There are various types of AI, including narrow
+        AI, which is designed for specific tasks, and general AI, which aims to perform
+        any intellectual task a human can do. AI technologies are widely used in fields
+        like healthcare, finance, robotics, and customer service, enhancing efficiency
+        and enabling new capabilities. If you want, I can provide more detailed information
+        on specific aspects of AI.\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 90,\n    \"completion_tokens\":
+        126,\n    \"total_tokens\": 216,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a22d5138c92372b-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 20:10:47 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1814'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999967'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"Assistant with mode control","role":"system"},{"content":[{"text":"Hello","type":"text"}],"role":"user"},{"role":"assistant","content":"Hello!
+      How can I assist you today?"},{"content":[{"text":"Tell me about AI","type":"text"}],"role":"user"},{"content":"Research
+      mode active.","role":"system"},{"role":"assistant","content":"Artificial Intelligence
+      (AI) refers to the simulation of human intelligence in machines that are programmed
+      to think, learn, and problem-solve like humans. AI systems can perform tasks
+      such as recognizing speech, understanding natural language, making decisions,
+      and identifying patterns. There are various types of AI, including narrow AI,
+      which is designed for specific tasks, and general AI, which aims to perform
+      any intellectual task a human can do. AI technologies are widely used in fields
+      like healthcare, finance, robotics, and customer service, enhancing efficiency
+      and enabling new capabilities. If you want, I can provide more detailed information
+      on specific aspects of AI."},{"content":[{"text":"Thanks!","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"enter_research_mode","description":"Schedule
+      research mode for the next call.","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}},{"type":"function","function":{"name":"exit_current_mode","description":"Schedule
+      exiting current mode.","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1605'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=e1A1ydHlbZu9ct2wAO72N7JyqxovkB9nts.XvYWprMI-1763755845-1.0.1.1-WMD7KPL0JybWP7GBMO7Nk5CTY6N1xX.q6KLKfte60A_wC7nKRJZNXz9gpcBK1K5fSWOGyXJgHlEdCbJtPXsYlR4IBjF37WgRhM1mf3LacRg;
+        _cfuvid=.HjBKf7CHQa5fLvSC.XCgmokFBVBvxTD9QKRWCjbAps-1763755845662-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeRku7vZ47JdRcTS2ja3yzVQ2gHoM\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763755848,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"You're welcome! If you have any more
+        questions or need further assistance, feel free to ask. Have a great day!\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        225,\n    \"completion_tokens\": 25,\n    \"total_tokens\": 250,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a22d5200e0b372b-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 20:10:49 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1105'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999792'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

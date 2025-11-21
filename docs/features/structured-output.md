@@ -10,7 +10,7 @@ Good Agent provides first-class support for extracting structured, typed data fr
 - **Automatic Validation** - Pydantic validates the extracted data
 - **Retry Logic** - Built-in retry handling for malformed responses
 - **Schema Generation** - Automatic JSON schema generation for LLMs
-- **Instructor Integration** - Powered by the popular Instructor library
+- **Instructor Integration** - Powered by the popular Instructor library. However unlike Instructor on its own, you can have follow-up messages and tool calls in the same conversation.
 - **Event Hooks** - Full event system integration for monitoring and debugging
 
 ### How It Works
@@ -44,13 +44,13 @@ async with Agent("You are a weather assistant.") as agent:
         "What's the weather like in Paris tomorrow?",
         response_model=Weather
     )
-    
+
     # Access the structured data
     weather_data = response.output
     print(f"Temperature: {weather_data.temperature}°C")
     print(f"Condition: {weather_data.condition}")
     print(f"Humidity: {weather_data.humidity}%")
-    
+
     # Still access the original text response
     print(f"Full response: {response.content}")
 ```
@@ -81,13 +81,13 @@ class MarketAnalysis(BaseModel):
     growth_rate: float = Field(description="Annual growth rate as percentage")
     key_competitors: List[str]
     risk_factors: List[str]
-    
+
 async with Agent("You are a financial analyst.") as agent:
     analysis = await agent.call(
         "Analyze Tesla as an investment opportunity",
         response_model=MarketAnalysis
     )
-    
+
     company = analysis.output.company
     print(f"Analyzing: {company.name}")
     print(f"Industry: {company.industry}")
@@ -117,7 +117,7 @@ class Task(BaseModel):
     due_date: Optional[datetime] = None
     tags: List[str] = Field(default_factory=list, max_items=5)
     estimated_hours: float = Field(gt=0, le=1000)
-    
+
     @validator('due_date')
     def due_date_not_in_past(cls, v):
         if v and v < datetime.now():
@@ -131,7 +131,7 @@ async with Agent("You are a project manager.") as agent:
         "due next Friday, estimated 8 hours",
         response_model=Task
     )
-    
+
     task_data = task.output
     print(f"Task: {task_data.title}")
     print(f"Priority: {task_data.priority.level} (score: {task_data.priority.score})")
@@ -166,14 +166,14 @@ class Article(BaseModel):
     word_count: int = Field(ge=100, le=10000)
     source_url: Optional[HttpUrl] = None
     reading_time_minutes: int = Field(ge=1, description="Estimated reading time")
-    
+
 async with Agent("You are a content editor.") as agent:
     article = await agent.call(
         "Create metadata for an article about quantum computing breakthroughs, "
         "approximately 1500 words, from a tech blog",
         response_model=Article
     )
-    
+
     article_data = article.output
     print(f"Title: {article_data.title}")
     print(f"Category: {article_data.category.value}")
@@ -200,15 +200,15 @@ async with Agent("Extract user information.") as agent:
         "John is 30 years old and likes coding, hiking, and cooking",
         response_model=UserProfile
     )
-    
+
     # Check the message type
     assert isinstance(response, AssistantMessageStructuredOutput)
-    
+
     # Access both text content and structured data
     print(f"LLM Response: {response.content}")
     print(f"Extracted Data: {response.output}")
     print(f"User Name: {response.output.name}")
-    
+
     # The message appears in conversation history
     assert agent.messages[-1] == response
     assert agent.assistant[-1].output.name == "John"
@@ -230,22 +230,22 @@ async with Agent("You are a sentiment analysis expert.") as agent:
         "Analyze the sentiment: 'I love this new feature!'",
         response_model=Sentiment
     )
-    
+
     print(f"Sentiment: {sentiment.output.label} (score: {sentiment.output.score})")
-    
+
     # Second turn: regular conversation
     follow_up = await agent.call(
         "What makes this sentiment particularly strong?"
     )
-    
+
     print(f"Explanation: {follow_up.content}")
-    
+
     # Third turn: another structured analysis
     comparison = await agent.call(
         "Now analyze: 'This is okay, I guess'",
         response_model=Sentiment
     )
-    
+
     print(f"Comparison: {comparison.output.label} (score: {comparison.output.score})")
 ```
 
@@ -272,15 +272,15 @@ async with Agent("Extract contact information.") as agent:
         """
         Extract contacts from this text:
         - John Doe (john@example.com, 555-1234, Acme Corp)
-        - Jane Smith (jane@smith.org)  
+        - Jane Smith (jane@smith.org)
         - Bob Johnson (bob@tech.com, TechCorp)
         """,
         response_model=ContactList
     )
-    
+
     contacts = response.output
     print(f"Found {contacts.total_count} contacts from {contacts.source}")
-    
+
     for contact in contacts.contacts:
         print(f"- {contact.name} ({contact.email})")
         if contact.company:
@@ -318,13 +318,13 @@ class WebPage(BaseModel):
     title: str
     url: str
     content: List[ContentItem]
-    
+
 async with Agent("Extract web page structure.") as agent:
     page = await agent.call(
         "Analyze this webpage content and structure...",
         response_model=WebPage
     )
-    
+
     for item in page.output.content:
         if item.type == "text":
             print(f"Text: {item.content[:100]}...")
@@ -361,15 +361,15 @@ async def execute_query(query: DatabaseQuery) -> QueryResult:
     # Simulate database execution
     import time
     start = time.time()
-    
+
     # Mock query execution
     mock_data = [
         {"id": 1, "name": "Alice", "age": 30},
         {"id": 2, "name": "Bob", "age": 25},
     ]
-    
+
     end = time.time()
-    
+
     return QueryResult(
         query=query,
         row_count=len(mock_data),
@@ -383,7 +383,7 @@ async with Agent("You are a database assistant.", tools=[execute_query]) as agen
         "Find all users over 25 years old from the users table",
         response_model=QueryResult
     )
-    
+
     query_result = result.output
     print(f"Query: SELECT {', '.join(query_result.query.columns)} FROM {query_result.query.table}")
     print(f"Execution time: {query_result.execution_time_ms:.2f}ms")
@@ -403,7 +403,7 @@ from good_agent.exceptions import ExtractionError
 class StrictData(BaseModel):
     number: int = Field(ge=1, le=100)
     email: str = Field(regex=r'^[^@]+@[^@]+\.[^@]+$')
-    
+
 async with Agent("Be precise with data formats.") as agent:
     try:
         response = await agent.call(
@@ -411,11 +411,11 @@ async with Agent("Be precise with data formats.") as agent:
             response_model=StrictData
         )
         print(f"Valid data: {response.output}")
-        
+
     except ExtractionError as e:
         print(f"Failed to extract valid data: {e}")
         # The LLM failed to generate valid data after retries
-        
+
     except ValidationError as e:
         print(f"Validation failed: {e}")
         # This is less likely since Good Agent handles retries
@@ -435,13 +435,13 @@ class Event(BaseModel):
     end_date: date
     max_attendees: int
     current_attendees: int = 0
-    
+
     @validator('end_date')
     def end_after_start(cls, v, values):
         if 'start_date' in values and v <= values['start_date']:
             raise ValueError('End date must be after start date')
         return v
-    
+
     @root_validator
     def validate_attendees(cls, values):
         current = values.get('current_attendees', 0)
@@ -455,7 +455,7 @@ async with Agent("You are an event planner.") as agent:
         "Plan a 3-day conference starting next Monday for up to 100 people",
         response_model=Event
     )
-    
+
     event_data = event.output
     print(f"Event: {event_data.name}")
     print(f"Duration: {event_data.start_date} to {event_data.end_date}")
@@ -477,20 +477,20 @@ async with Agent("Extract structured data.") as agent:
     def before_extraction(ctx: EventContext):
         response_model = ctx.parameters['response_model']
         print(f"Starting extraction for model: {response_model.__name__}")
-    
+
     @agent.on(AgentEvents.LLM_EXTRACT_AFTER)
     def after_extraction(ctx: EventContext):
         response = ctx.parameters['response']
         duration = ctx.parameters['duration']
         print(f"Extraction completed in {duration:.2f}s")
         print(f"Extracted: {type(response).__name__}")
-    
+
     @agent.on(AgentEvents.LLM_EXTRACT_ERROR)
     def extraction_error(ctx: EventContext):
         error = ctx.parameters['error']
         response_model = ctx.parameters['response_model']
         print(f"Extraction failed for {response_model.__name__}: {error}")
-    
+
     # Events will fire during extraction
     result = await agent.call(
         "Generate user data",
@@ -506,10 +506,10 @@ Use events to modify extraction behavior:
 @agent.on(AgentEvents.LLM_EXTRACT_BEFORE)
 def modify_extraction_config(ctx: EventContext):
     config = ctx.parameters['config']
-    
+
     # Increase temperature for more creative structured output
     config['temperature'] = 0.3
-    
+
     # Add custom instructions for complex models
     response_model = ctx.parameters['response_model']
     if hasattr(response_model, '__name__') and 'Analysis' in response_model.__name__:
@@ -533,20 +533,20 @@ Design efficient schemas for better extraction:
 class BadStructure(BaseModel):
     data: Dict[str, Dict[str, List[Dict[str, Any]]]]  # Too nested
     everything: List[Union[str, int, float, bool]]    # Too permissive
-    
-# ✅ Clear, focused structure  
+
+# ✅ Clear, focused structure
 class GoodStructure(BaseModel):
     """A well-designed model for reliable extraction."""
-    
+
     # Clear field names and types
     user_id: int
     username: str
     status: Literal["active", "inactive", "pending"]
-    
+
     # Optional fields with defaults
     last_login: Optional[datetime] = None
     preferences: Dict[str, str] = Field(default_factory=dict)
-    
+
     # Reasonable constraints
     tags: List[str] = Field(max_items=10, default_factory=list)
 ```
@@ -596,7 +596,7 @@ def test_user_profile_validation():
     user = UserProfile(**valid_data)
     assert user.name == "Alice"
     assert user.age == 30
-    
+
     # Invalid data
     with pytest.raises(ValidationError):
         UserProfile(name="", age=-5, interests=[])
@@ -608,7 +608,7 @@ async def test_structured_extraction():
             "Create a profile for John, age 25, likes reading",
             response_model=UserProfile
         )
-        
+
         assert isinstance(response, AssistantMessageStructuredOutput)
         assert response.output.name == "John"
         assert response.output.age == 25
@@ -627,19 +627,19 @@ class TestData(BaseModel):
     value: int
     message: str
 
-@pytest.mark.asyncio  
+@pytest.mark.asyncio
 async def test_with_mocked_extraction():
     mock_response = TestData(value=42, message="Test message")
-    
+
     with with_mock_llm() as mock_llm:
         mock_llm.extract.return_value = mock_response
-        
+
         async with Agent("Test agent") as agent:
             response = await agent.call(
                 "Generate test data",
                 response_model=TestData
             )
-            
+
             assert response.output.value == 42
             assert response.output.message == "Test message"
 ```
@@ -665,13 +665,13 @@ async def robust_extraction(agent: Agent, prompt: str, model: type[BaseModel]):
         # Primary extraction attempt
         response = await agent.call(prompt, response_model=model)
         return response.output
-        
+
     except ExtractionError:
         # Fallback: try without structured output
         fallback = await agent.call(
             f"{prompt}\n\nPlease format your response clearly for manual parsing."
         )
-        
+
         # Log the fallback for analysis
         print(f"Structured extraction failed, got fallback: {fallback.content}")
         return None
@@ -687,7 +687,7 @@ class UserV1(BaseModel):
     name: str
     email: str
 
-# Version 2 - backward compatible  
+# Version 2 - backward compatible
 class UserV2(BaseModel):
     name: str
     email: str
@@ -700,7 +700,7 @@ class UserV3(BaseModel):
     email: str
     phone: Optional[str] = None
     created_at: Optional[datetime] = None
-    
+
     class Config:
         allow_population_by_field_name = True  # Allow old field names
 ```
@@ -739,13 +739,13 @@ async with Agent("Data processing pipeline.") as agent:
         "Parse this raw input...",
         response_model=InputData
     )
-    
+
     # Step 2: Process the data
     processed = await agent.call(
         f"Process this data: {input_data.output.raw_text}",
         response_model=ProcessedData
     )
-    
+
     # Step 3: Generate final output
     output = await agent.call(
         f"Finalize analysis with confidence score for: {processed.output.summary}",
@@ -756,7 +756,7 @@ async with Agent("Data processing pipeline.") as agent:
 ## Next Steps
 
 - **[Streaming](./streaming.md)** - Learn about streaming execution with structured output
-- **[Agent Modes](./modes.md)** - Use structured output in different agent modes  
+- **[Agent Modes](./modes.md)** - Use structured output in different agent modes
 - **[Tools](../core/tools.md)** - Combine structured output with tool usage
 - **[Events](../core/events.md)** - Monitor and customize extraction with events
 - **[Testing](../extensibility/testing.md)** - Advanced testing patterns for structured data

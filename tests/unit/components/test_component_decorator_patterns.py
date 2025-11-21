@@ -83,25 +83,22 @@ class TestComponentDecoratorPatterns:
         assert AgentEvents.AGENT_INIT_AFTER in config["events"]
 
         # Create agent - this should trigger decorator registration
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]) as agent:
+            # Give async event handlers time to complete
+            await asyncio.sleep(0.01)
 
-        # Give async event handlers time to complete
-        await asyncio.sleep(0.01)
+            # Decorator handlers should have fired during initialization
+            assert "decorator:agent_init" in component.events
 
-        # Decorator handlers should have fired during initialization
-        assert "decorator:agent_init" in component.events
-
-        # Verify component inherits EventRouter correctly
-        assert hasattr(component, "on")
-        assert hasattr(component, "do")
-        assert hasattr(component, "apply")
+            # Verify component inherits EventRouter correctly
+            assert hasattr(component, "on")
+            assert hasattr(component, "do")
+            assert hasattr(component, "apply")
 
     async def test_manual_vs_decorator_handlers(self):
         """Test that both manual and decorator handlers work together."""
         component = SimpleDecoratorComponent()
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]) as agent:
 
         # Give async event handlers time to complete
         await asyncio.sleep(0.01)
@@ -133,8 +130,7 @@ class TestComponentDecoratorPatterns:
     async def test_component_enabled_state(self):
         """Test that handlers respect component enabled state."""
         component = SimpleDecoratorComponent()
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]) as agent:
 
         # Clear initialization events
         component.events.clear()
@@ -164,8 +160,7 @@ class TestComponentDecoratorPatterns:
     async def test_manual_only_component(self):
         """Test component that uses only manual registration."""
         component = ManualOnlyComponent()
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]) as agent:
 
         # Give async event handlers time to complete
         await asyncio.sleep(0.01)
@@ -211,8 +206,7 @@ class TestComponentDecoratorPatterns:
                     self.execution_order.append("manual_mid")
 
         component = PriorityTestComponent()
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]) as agent:
 
         # Give async event handlers time to complete
         await asyncio.sleep(0.01)
@@ -256,8 +250,7 @@ class TestComponentDecoratorPatterns:
                 return f"triggered:{value}"
 
         component = AsyncTestComponent()
-        agent = Agent("Test system", extensions=[component])
-        await agent.initialize()
+        async with Agent("Test system", extensions=[component]) as agent:
 
         # Execute tool via agent to trigger async handlers
         result = await agent.tool_calls.invoke("trigger_tool", value="async_test")

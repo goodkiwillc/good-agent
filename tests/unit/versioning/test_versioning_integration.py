@@ -41,15 +41,13 @@ class TestVersioningWithAgentOperations:
     @pytest_asyncio.fixture
     async def agent_with_mock_llm(self, mock_llm_response):
         """Create an agent with mocked LLM."""
-        agent = Agent("You are a test assistant")
-        await agent.initialize()
-
-        # Mock the language model's complete method
-        with patch.object(
-            agent.model, "complete", new_callable=AsyncMock
-        ) as mock_complete:
-            mock_complete.return_value = mock_llm_response
-            yield agent, mock_complete
+        async with Agent("You are a test assistant") as agent:
+            # Mock the language model's complete method
+            with patch.object(
+                agent.model, "complete", new_callable=AsyncMock
+            ) as mock_complete:
+                mock_complete.return_value = mock_llm_response
+                yield agent, mock_complete
 
     @pytest.mark.asyncio
     async def test_versioning_with_call(self, agent_with_mock_llm):
@@ -173,78 +171,76 @@ class TestVersioningWithAgentOperations:
             return f"Processed: {value}"
 
         # Create agent with tool
-        agent = Agent("You are a test assistant", tools=[test_tool])
-        await agent.initialize()
+        async with Agent("You are a test assistant", tools=[test_tool]) as agent:
+            # Mock LLM to return tool call
+            tool_function = Mock()
+            tool_function.name = "test_tool"  # Set as attribute, not Mock argument
+            tool_function.arguments = json.dumps({"value": "test"})
 
-        # Mock LLM to return tool call
-        tool_function = Mock()
-        tool_function.name = "test_tool"  # Set as attribute, not Mock argument
-        tool_function.arguments = json.dumps({"value": "test"})
+            tool_call = Mock()
+            tool_call.id = "call_123"
+            tool_call.function = tool_function
+            tool_call.type = "function"
 
-        tool_call = Mock()
-        tool_call.id = "call_123"
-        tool_call.function = tool_function
-        tool_call.type = "function"
+            tool_message = Mock()
+            tool_message.content = ""
+            tool_message.tool_calls = [tool_call]
+            tool_message.model_extra = {}
+            tool_message.citations = None  # Explicitly set None
+            tool_message.annotations = None  # Explicitly set None
 
-        tool_message = Mock()
-        tool_message.content = ""
-        tool_message.tool_calls = [tool_call]
-        tool_message.model_extra = {}
-        tool_message.citations = None  # Explicitly set None
-        tool_message.annotations = None  # Explicitly set None
+            tool_choice = Mock()
+            tool_choice.__class__.__name__ = "Choices"
+            tool_choice.message = tool_message
+            tool_choice.finish_reason = "tool_calls"
 
-        tool_choice = Mock()
-        tool_choice.__class__.__name__ = "Choices"
-        tool_choice.message = tool_message
-        tool_choice.finish_reason = "tool_calls"
-
-        tool_response = Mock()
-        tool_response.choices = [tool_choice]
-        tool_response.usage = CompletionUsage(
-            prompt_tokens=10, completion_tokens=5, total_tokens=15
-        )
-
-        with patch.object(
-            agent.model, "complete", new_callable=AsyncMock
-        ) as mock_complete:
-            # Final response after tool execution
-            final_message = Mock()
-            final_message.content = "Tool executed successfully"
-            final_message.tool_calls = None
-            final_message.model_extra = {}
-            final_message.citations = None  # Explicitly set None
-            final_message.annotations = None  # Explicitly set None
-
-            final_choice = Mock()
-            final_choice.__class__.__name__ = "Choices"
-            final_choice.message = final_message
-            final_choice.finish_reason = "stop"
-
-            final_response = Mock()
-            final_response.choices = [final_choice]
-            final_response.usage = CompletionUsage(
-                prompt_tokens=15, completion_tokens=8, total_tokens=23
+            tool_response = Mock()
+            tool_response.choices = [tool_choice]
+            tool_response.usage = CompletionUsage(
+                prompt_tokens=10, completion_tokens=5, total_tokens=15
             )
 
-            mock_complete.side_effect = [tool_response, final_response]
+            with patch.object(
+                agent.model, "complete", new_callable=AsyncMock
+            ) as mock_complete:
+                # Final response after tool execution
+                final_message = Mock()
+                final_message.content = "Tool executed successfully"
+                final_message.tool_calls = None
+                final_message.model_extra = {}
+                final_message.citations = None  # Explicitly set None
+                final_message.annotations = None  # Explicitly set None
 
-            # Execute with tool
-            await agent.call("Use the test tool")
+                final_choice = Mock()
+                final_choice.__class__.__name__ = "Choices"
+                final_choice.message = final_message
+                final_choice.finish_reason = "stop"
 
-        # Should have: system + user + assistant (tool call) + tool response + assistant (final)
-        assert len(agent.messages) == 5
+                final_response = Mock()
+                final_response.choices = [final_choice]
+                final_response.usage = CompletionUsage(
+                    prompt_tokens=15, completion_tokens=8, total_tokens=23
+                )
 
-        # Each message should create a version
-        assert agent._version_manager.version_count == 5
+                mock_complete.side_effect = [tool_response, final_response]
 
-        # Verify message types in order
-        assert isinstance(agent.messages[0], SystemMessage)
-        assert isinstance(agent.messages[1], UserMessage)
-        assert isinstance(agent.messages[2], AssistantMessage)  # Tool call
-        # Tool messages are complex, just check they exist
-        assert len(agent.messages) == 5
+                # Execute with tool
+                await agent.call("Use the test tool")
 
-        await agent.events.close()
+            # Should have: system + user + assistant (tool call) + tool response + assistant (final)
+            assert len(agent.messages) == 5
+
+            # Each message should create a version
+            assert agent._version_manager.version_count == 5
+
+            # Verify message types in order
+            assert isinstance(agent.messages[0], SystemMessage)
+            assert isinstance(agent.messages[1], UserMessage)
+            assert isinstance(agent.messages[2], AssistantMessage)  # Tool call
+            # Tool messages are complex, just check they exist
+            assert len(agent.messages) == 5
+
+            await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_version_consistency_after_error(self, agent_with_mock_llm):

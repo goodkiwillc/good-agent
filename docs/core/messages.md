@@ -11,20 +11,7 @@ Good Agent supports four core message types, each with specific capabilities and
 Represent input from users, including text and images:
 
 ```python
-from good_agent.messages import UserMessage
-
-# Text-only message  
-user_msg = UserMessage("Hello, how are you?")
-
-# Multi-part content
-user_msg = UserMessage("Analyze this image", images=["path/to/image.jpg"])
-
-# With image detail settings
-user_msg = UserMessage(
-    "What's in this image?",
-    images=["image.jpg"],
-    image_detail="high"  # "auto", "low", "high"
-)
+--8<-- "examples/docs/messages_user.py"
 ```
 
 ### System Messages
@@ -32,16 +19,7 @@ user_msg = UserMessage(
 Provide instructions and context to the LLM:
 
 ```python
-from good_agent.messages import SystemMessage
-
-# Basic system message
-system_msg = SystemMessage("You are a helpful assistant.")
-
-# With templating
-system_msg = SystemMessage(
-    "You are an expert in {{domain}}",
-    context={"domain": "machine learning"}
-)
+--8<-- "examples/docs/messages_system.py"
 ```
 
 ### Assistant Messages
@@ -49,29 +27,7 @@ system_msg = SystemMessage(
 Represent responses from the LLM, including tool calls:
 
 ```python
-from good_agent.messages import AssistantMessage
-from good_agent.tools import ToolCall
-
-# Text response
-assistant_msg = AssistantMessage("I'm doing well, thank you!")
-
-# With tool calls
-assistant_msg = AssistantMessage(
-    "Let me calculate that for you.",
-    tool_calls=[ToolCall(id="call_123", function={"name": "calculator", "arguments": "{}"})]
-)
-
-# With reasoning (o1 models)
-assistant_msg = AssistantMessage(
-    "The answer is 42.",
-    reasoning="I need to think about this carefully..."
-)
-
-# With citations
-assistant_msg = AssistantMessage(
-    "According to recent research...",
-    citations=["https://example.com/paper.pdf"]
-)
+--8<-- "examples/docs/messages_assistant.py"
 ```
 
 ### Tool Messages
@@ -79,22 +35,7 @@ assistant_msg = AssistantMessage(
 Contain results from tool execution:
 
 ```python
-from good_agent.messages import ToolMessage
-
-# Basic tool result
-tool_msg = ToolMessage(
-    "Result: 42",
-    tool_call_id="call_123",
-    tool_name="calculator"
-)
-
-# With structured response
-tool_msg = ToolMessage(
-    content="Calculation complete",
-    tool_call_id="call_123", 
-    tool_name="calculator",
-    tool_response=calculator_result  # ToolResponse object
-)
+--8<-- "examples/docs/messages_tool.py"
 ```
 
 ## Message Lists & History
