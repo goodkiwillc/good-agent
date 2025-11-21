@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 
 from good_agent.agent import Agent
-from good_agent.extensions.citations.manager import CitationManager
+from good_agent.extensions.citations import CitationManager
 from good_agent.messages import AssistantMessage
 
 
