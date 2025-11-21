@@ -97,6 +97,7 @@ from good_agent.tools import (
     ToolResponse,
     ToolSignature,
 )
+from good_agent.tools.tools import ToolLike
 from good_agent.utilities import print_message
 from good_agent.agent.config import (
     AGENT_CONFIG_KEYS,
@@ -454,6 +455,32 @@ class Agent(EventRouter):
         )
         return ContextManager.context_providers(name)
 
+    def as_tool(
+        self,
+        name: str | None = None,
+        description: str | None = None,
+        multi_turn: bool = True,
+    ) -> Tool:
+        """
+        Convert the agent into a Tool that can be used by other agents.
+
+        Args:
+            name: Optional name for the tool (defaults to agent's name)
+            description: Optional description for the tool
+            multi_turn: Whether to support multi-turn sessions (default: True)
+
+        Returns:
+            A Tool instance wrapping this agent
+        """
+        from good_agent.tools.agent_tool import AgentAsTool
+
+        return AgentAsTool(
+            agent=self,
+            name=name,
+            description=description,
+            multi_turn=multi_turn,
+        ).as_tool()
+
     def print(
         self, message: int | Message | None = None, mode: str | None = None
     ) -> None:
@@ -649,6 +676,50 @@ class Agent(EventRouter):
 
         # Fire the initialization event (this triggers async component installation)
         self.do(AgentEvents.AGENT_INIT_AFTER, agent=self, tools=tools)
+
+        # Synchronously register tools if they are provided
+        # This is needed because tests often expect tools to be available immediately
+        # without awaiting initialize()
+        if tools:
+            for tool in tools:
+                # Resolve name if possible
+                name = None
+                if isinstance(tool, str):
+                    # Skip strings, they are loaded during init
+                    continue
+
+                # Check for Agent instances and use their name
+                from good_agent.agent.core import Agent
+
+                if isinstance(tool, Agent):
+                    name = tool.name
+
+                # Use cast to satisfy mypy
+                tool_arg = cast(ToolLike, tool)
+
+                try:
+                    loop = asyncio.get_running_loop()
+                    # We are in a loop, verify it's running
+                    if loop.is_running():
+                        # Schedule registration in background
+                        loop.create_task(
+                            self.tools.register_tool(
+                                name=str(name or getattr(tool, "name", str(tool))),
+                                tool=tool_arg,
+                            )
+                        )
+                    else:
+                        # Loop exists but not running? Unusual but use sync.
+                        self.tools.register_tool_sync(
+                            name=str(name or getattr(tool, "name", str(tool))),
+                            tool=tool_arg,
+                        )
+                except RuntimeError:
+                    # No running loop, safe to use sync version
+                    self.tools.register_tool_sync(
+                        name=str(name or getattr(tool, "name", str(tool))),
+                        tool=tool_arg,
+                    )
 
         self.__registry__[self._id] = weakref.ref(self)
 
@@ -2040,7 +2111,9 @@ class Agent(EventRouter):
         def _resolve_tool_for_schema(t: Any) -> Any:
             # Try to resolve to a Tool-like object that has a .model with JSON schema
             try:
-                from good_agent.agent.tools import Tool as _ToolClass  # Avoid circular at top-level
+                from good_agent.agent.tools import (
+                    Tool as _ToolClass,
+                )  # Avoid circular at top-level
             except Exception:
                 _ToolClass = None  # type: ignore
 

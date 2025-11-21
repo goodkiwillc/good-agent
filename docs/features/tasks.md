@@ -301,7 +301,7 @@ The `TaskManager` component provides structured todo list functionality for orga
 
 ```python
 from good_agent import Agent
-from good_agent.extensions import TaskManager
+from good_agent.extensions.task_manager import TaskManager
 
 async with Agent("Project manager", extensions=[TaskManager()]) as agent:
     
@@ -378,7 +378,7 @@ The rendered output provides clear visual feedback:
 #### Programmatic Todo Operations
 
 ```python
-from good_agent.extensions import TaskManager, ToDoItem
+from good_agent.extensions.task_manager import TaskManager, ToDoItem
 
 # Create todo manager
 task_manager = TaskManager()
