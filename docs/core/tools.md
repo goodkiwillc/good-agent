@@ -594,6 +594,61 @@ async with Agent("Task manager", tools=[create_complex_task]) as agent:
     """)
 ```
 
+## Agent as a Tool
+
+You can convert any Agent into a tool that can be used by another Agent. This enables powerful multi-agent orchestration patterns where agents delegate complex tasks to specialized sub-agents.
+
+### Creating an Agent Tool
+
+Use the `as_tool()` method to convert an agent into a tool:
+
+```python
+# 1. Create specialized agents
+researcher = Agent(
+    "You are a research specialist. Search for information and summarize findings.",
+    name="researcher",
+    tools=[web_search]
+)
+
+writer = Agent(
+    "You are a technical writer. Create content based on research.",
+    name="writer"
+)
+
+# 2. Convert them to tools
+research_tool = researcher.as_tool(
+    description="Delegate research tasks to a specialist agent"
+)
+
+# 3. Use in a manager agent
+manager = Agent(
+    "You are a content manager. Coordinate research and writing.",
+    tools=[research_tool] # The writer agent can also be used here if converted
+)
+
+async with manager:
+    await manager.call("Research the history of AI agents")
+```
+
+### Multi-Turn Sessions
+
+By default, Agent-as-a-Tool supports multi-turn conversations (`multi_turn=True`). This means the sub-agent maintains its state and conversation history across multiple calls from the parent agent.
+
+When a sub-agent is called multiple times:
+1. The first call creates a new session and returns a session ID (e.g., `<researcher session_id="1">...`)
+2. Subsequent calls by the parent agent will automatically use this session ID to continue the conversation
+3. State (memory, context) persists for the duration of the parent's lifecycle
+
+```python
+# Disable multi-turn for stateless, one-shot execution
+stateless_tool = researcher.as_tool(multi_turn=False)
+```
+
+### How it Works
+
+- **One-shot (`multi_turn=False`)**: Each tool call forks a fresh instance of the base agent. No state is preserved between calls.
+- **Multi-turn (`multi_turn=True`)**: A session ID is generated on the first call. The tool wrapper maintains a registry of forked agent sessions. Subsequent calls with the same ID are routed to the existing session instance.
+
 ## Performance & Best Practices
 
 ### Tool Performance
