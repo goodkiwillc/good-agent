@@ -43,7 +43,12 @@ from good_agent.utilities.typing import (
 
 if TYPE_CHECKING:
     from good_agent.agent import Agent
-    from good_agent.messages.roles import AssistantMessage, SystemMessage, ToolMessage, UserMessage
+    from good_agent.messages.roles import (
+        AssistantMessage,
+        SystemMessage,
+        ToolMessage,
+        UserMessage,
+    )
 
 logger = logging.getLogger(__name__)
 

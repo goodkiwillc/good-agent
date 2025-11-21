@@ -10,7 +10,11 @@ from good_agent.extensions.search.models import (
     SearchResult,
     UserResult,
 )
-from good_agent.extensions.search.providers import BaseSearchProvider, SearchProvider, SearchProviderRegistry
+from good_agent.extensions.search.providers import (
+    BaseSearchProvider,
+    SearchProvider,
+    SearchProviderRegistry,
+)
 
 __all__ = [
     # Component

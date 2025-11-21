@@ -11,7 +11,13 @@ from pydantic import (
 )
 
 # template_loader
-from good_agent.core.models.application import Document, IterableCollection, Query, QueryResults, Report
+from good_agent.core.models.application import (
+    Document,
+    IterableCollection,
+    Query,
+    QueryResults,
+    Report,
+)
 from good_agent.core.models.base import (
     GoodBase,
     Identifiable,

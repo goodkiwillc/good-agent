@@ -17,7 +17,10 @@ from good_agent.extensions.search.models import (
     SearchResult,
     UserResult,
 )
-from good_agent.extensions.search.providers import SearchProvider, SearchProviderRegistry
+from good_agent.extensions.search.providers import (
+    SearchProvider,
+    SearchProviderRegistry,
+)
 
 if TYPE_CHECKING:
     pass

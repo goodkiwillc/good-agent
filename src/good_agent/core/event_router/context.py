@@ -10,7 +10,11 @@ import contextvars
 from dataclasses import dataclass
 from typing import Generic
 
-from good_agent.core.event_router.protocols import ApplyInterrupt, T_Parameters, T_Return
+from good_agent.core.event_router.protocols import (
+    ApplyInterrupt,
+    T_Parameters,
+    T_Return,
+)
 
 
 type EventResult[T_Return] = T_Return | BaseException

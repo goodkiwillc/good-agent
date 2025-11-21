@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import itertools
 import threading
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from good_agent.tools.tools import Tool, ToolParameter
+from good_agent.tools.tools import Tool
 
 if TYPE_CHECKING:
     from good_agent.agent.core import Agent
@@ -56,7 +56,6 @@ class AgentAsTool:
         self,
         prompt: str,
         session_id: str | None = None,
-        **kwargs: Any,
     ) -> str:
         """
         Delegate a task to the sub-agent.
@@ -64,7 +63,6 @@ class AgentAsTool:
         Args:
             prompt: The instruction or message for the sub-agent.
             session_id: Optional ID to maintain conversation context across calls.
-            **kwargs: Additional arguments.
 
         Returns:
             The response content from the sub-agent.
@@ -111,28 +109,12 @@ class AgentAsTool:
         """
         Return a configured Tool instance that can be registered with an Agent.
         """
-        # We manually construct the tool instance to avoid signature inspection issues
-        # with the __call__ method which might not be fully introspectable in tests
+        # We construct the tool instance from the __call__ method
+        # The Tool class handles inspection and parameter extraction
         tool = Tool(
             fn=self.__call__,
             name=self.name,
             description=self.description,
         )
 
-        # Manually inject parameters to ensure they are correct regardless of inspection
-        # This overrides whatever the Tool constructor inferred
-        tool._tool_metadata.parameters = {
-            "prompt": ToolParameter(
-                name="prompt",
-                type=str,
-                description="The task or question for the sub-agent",
-            ),
-            "session_id": ToolParameter(
-                name="session_id",
-                type=str | None,
-                description="Session ID for multi-turn context (optional)",
-                default=None,
-                required=False,
-            ),
-        }
         return tool

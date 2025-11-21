@@ -12,13 +12,28 @@ from good_agent.core.event_router.context import EventContext, event_ctx
 from good_agent.core.event_router.core import EventRouter
 
 # Decorators
-from good_agent.core.event_router.decorators import EventHandlerDecorator, emit, emit_event, on, typed_on
+from good_agent.core.event_router.decorators import (
+    EventHandlerDecorator,
+    emit,
+    emit_event,
+    on,
+    typed_on,
+)
 
 # Core protocols and types
-from good_agent.core.event_router.protocols import ApplyInterrupt, EventName, EventPriority, PredicateHandler
+from good_agent.core.event_router.protocols import (
+    ApplyInterrupt,
+    EventName,
+    EventPriority,
+    PredicateHandler,
+)
 
 # Handler registration and lifecycle
-from good_agent.core.event_router.registration import HandlerRegistration, LifecyclePhase, current_test_nodeid
+from good_agent.core.event_router.registration import (
+    HandlerRegistration,
+    LifecyclePhase,
+    current_test_nodeid,
+)
 
 # Public API - maintains backward compatibility with original event_router.py
 __all__ = [

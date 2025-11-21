@@ -16,8 +16,17 @@ from rich.table import Table
 from rich.text import Text
 
 from good_agent.core.event_router.context import EventContext, event_ctx
-from good_agent.core.event_router.protocols import ApplyInterrupt, EventName, F, T_Parameters, T_Return
-from good_agent.core.event_router.registration import HandlerRegistration, HandlerRegistry
+from good_agent.core.event_router.protocols import (
+    ApplyInterrupt,
+    EventName,
+    F,
+    T_Parameters,
+    T_Return,
+)
+from good_agent.core.event_router.registration import (
+    HandlerRegistration,
+    HandlerRegistry,
+)
 from good_agent.core.event_router.sync_bridge import SyncBridge
 
 logger = logging.getLogger(__name__)
@@ -909,7 +918,9 @@ class EventRouter:
         """Clean up resources and wait for outstanding tasks."""
         # Unregister from signal handling
         if self._signal_handling_enabled:
-            from good_agent.core.event_router.signal_handler import unregister_from_signals  # type: ignore[import-not-found]
+            from good_agent.core.event_router.signal_handler import (
+                unregister_from_signals,
+            )  # type: ignore[import-not-found]
 
             unregister_from_signals(self)
         await self._sync_bridge.close()
@@ -917,7 +928,9 @@ class EventRouter:
     def close_sync(self) -> None:
         """Synchronous helper that performs immediate cleanup."""
         if self._signal_handling_enabled:
-            from good_agent.core.event_router.signal_handler import unregister_from_signals  # type: ignore[import-not-found]
+            from good_agent.core.event_router.signal_handler import (
+                unregister_from_signals,
+            )  # type: ignore[import-not-found]
 
             unregister_from_signals(self)
 

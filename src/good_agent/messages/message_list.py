@@ -16,7 +16,12 @@ from typing import (
 )
 
 from good_agent.messages.base import Message, MessageRole
-from good_agent.messages.roles import AssistantMessage, SystemMessage, ToolMessage, UserMessage
+from good_agent.messages.roles import (
+    AssistantMessage,
+    SystemMessage,
+    ToolMessage,
+    UserMessage,
+)
 
 if TYPE_CHECKING:
     from good_agent.agent import Agent
