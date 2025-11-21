@@ -3,7 +3,13 @@ from enum import Enum
 from typing import TYPE_CHECKING
 import logging
 
-from good_agent.messages import AssistantMessage, Message, MessageList, SystemMessage, ToolMessage
+from good_agent.messages import (
+    AssistantMessage,
+    Message,
+    MessageList,
+    SystemMessage,
+    ToolMessage,
+)
 
 logger = logging.getLogger(__name__)
 

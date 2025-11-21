@@ -43,7 +43,7 @@ async def test_agent_as_tool_session_e2e():
     SessionIdGenerator._counter = itertools.count(1)
 
     # 2. Setup Worker Agent (The Tool)
-    worker = Agent(name="worker", system_prompt="You are a worker.")
+    worker = Agent("You are a worker.", name="worker")
 
     # Mock worker responses
     worker_responses = [
