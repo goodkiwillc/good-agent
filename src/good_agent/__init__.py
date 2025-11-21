@@ -36,6 +36,16 @@ if TYPE_CHECKING:
         MessageInjectorComponent,
         SimpleMessageInjector,
     )
+    from good_agent.extensions.citations import (
+        CitationExtractor,
+        CitationFormat,
+        CitationIndex,
+        CitationManager,
+        CitationPatterns,
+        CitationTransformer,
+    )
+    from good_agent.extensions.search import AgentSearch
+    from good_agent.extensions.task_manager import TaskManager, ToDoItem, ToDoList
     from good_agent.extensions.template_manager import (
         CircularDependencyError,
         ContextInjectionError,
@@ -47,34 +57,14 @@ if TYPE_CHECKING:
         TemplateManager,
         global_context_provider,
     )
-    from good_agent.content import (
-        BaseContentPart,
-        ContentPartType,
-        FileContentPart,
-        ImageContentPart,
-        TemplateContentPart,
-        TextContentPart,
-        deserialize_content_part,
-        is_template,
-    )
-    from good_agent.extensions import (
-        AgentSearch,
-        # BulkFetchResult,
-        CitationExtractor,
-        CitationFormat,
-        NewCitationIndex as CitationIndex,
-        CitationManager,
-        CitationPatterns,
-        CitationTransformer,
-        # FetchStats,
-        # Paragraph,
-        # SearchFetchResult,
-        TaskManager,
-        ToDoItem,
-        ToDoList,
-        # WebFetcher,
-        # WebFetchSummary,
-    )
+
+    # from good_agent.extensions.webfetcher import (
+    #     BulkFetchResult,
+    #     FetchStats,
+    #     SearchFetchResult,
+    #     WebFetcher,
+    #     WebFetchSummary,
+    # )
     from good_agent.mcp import (
         MCPClientManager,
         MCPToolAdapter,
@@ -165,23 +155,23 @@ _LAZY_IMPORTS = {
     "Context": "agent.config",
     "Conversation": "agent.conversation",
     # Extensions - Citations
-    "CitationIndex": "extensions",
-    "CitationManager": "extensions",
-    "CitationFormat": "extensions",
-    "CitationTransformer": "extensions",
-    "CitationExtractor": "extensions",
-    "CitationPatterns": "extensions",
-    # "Paragraph": "extensions",
+    "CitationIndex": "extensions.citations",
+    "CitationManager": "extensions.citations",
+    "CitationFormat": "extensions.citations",
+    "CitationTransformer": "extensions.citations",
+    "CitationExtractor": "extensions.citations",
+    "CitationPatterns": "extensions.citations",
+    # "Paragraph": "extensions.citations",
     # Extensions - Other
-    "AgentSearch": "extensions",
-    "TaskManager": "extensions",
-    "ToDoItem": "extensions",
-    "ToDoList": "extensions",
-    "WebFetcher": "extensions",
-    "WebFetchSummary": "extensions",
-    "BulkFetchResult": "extensions",
-    "SearchFetchResult": "extensions",
-    "FetchStats": "extensions",
+    "AgentSearch": "extensions.search",
+    "TaskManager": "extensions.task_manager",
+    "ToDoItem": "extensions.task_manager",
+    "ToDoList": "extensions.task_manager",
+    # "WebFetcher": "extensions.webfetcher",
+    # "WebFetchSummary": "extensions.webfetcher",
+    # "BulkFetchResult": "extensions.webfetcher",
+    # "SearchFetchResult": "extensions.webfetcher",
+    # "FetchStats": "extensions.webfetcher",
     # Language model - heaviest import
     "LanguageModel": "model.llm",
     # MCP integration
