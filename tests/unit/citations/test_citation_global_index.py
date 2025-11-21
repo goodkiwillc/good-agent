@@ -10,45 +10,41 @@ class TestGlobalIndexConsistency:
     async def test_same_url_same_global_index(self):
         """Same URL always gets the same global index."""
         manager = CitationManager()
-        agent = Agent(extensions=[manager])
-        await agent.initialize()
+        async with Agent(extensions=[manager]) as agent:
+            url = "https://example.com/doc.pdf"
 
-        url = "https://example.com/doc.pdf"
+            # Add URL multiple times across different messages
+            agent.append(f"First: [1]\n\n[1]: {url}")
+            agent.append(f"Second: [1]\n\n[1]: {url}")
+            agent.append(f"Third: [1]\n\n[1]: {url}")
 
-        # Add URL multiple times across different messages
-        agent.append(f"First: [1]\n\n[1]: {url}")
-        agent.append(f"Second: [1]\n\n[1]: {url}")
-        agent.append(f"Third: [1]\n\n[1]: {url}")
+            # All should map to the same global index
+            global_idx = manager.index.lookup(url)
+            assert global_idx is not None
 
-        # All should map to the same global index
-        global_idx = manager.index.lookup(url)
-        assert global_idx is not None
+            # Check that index only appears once
+            assert len(manager.index) == 1
 
-        # Check that index only appears once
-        assert len(manager.index) == 1
-
-        await agent.events.close()
+            await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_different_urls_different_indices(self):
         """Different URLs get different global indices."""
         manager = CitationManager()
-        agent = Agent(extensions=[manager])
-        await agent.initialize()
+        async with Agent(extensions=[manager]) as agent:
+            url1 = "https://example.com/doc1.pdf"
+            url2 = "https://example.com/doc2.pdf"
 
-        url1 = "https://example.com/doc1.pdf"
-        url2 = "https://example.com/doc2.pdf"
+            agent.append(f"First: [1]\n\n[1]: {url1}")
+            agent.append(f"Second: [1]\n\n[1]: {url2}")
 
-        agent.append(f"First: [1]\n\n[1]: {url1}")
-        agent.append(f"Second: [1]\n\n[1]: {url2}")
+            idx1 = manager.index.lookup(url1)
+            idx2 = manager.index.lookup(url2)
 
-        idx1 = manager.index.lookup(url1)
-        idx2 = manager.index.lookup(url2)
+            assert idx1 != idx2
+            assert len(manager.index) == 2
 
-        assert idx1 != idx2
-        assert len(manager.index) == 2
-
-        await agent.events.close()
+            await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_global_index_sequential(self):
@@ -71,54 +67,50 @@ class TestLocalToGlobalMapping:
     async def test_local_indices_mapped_to_global(self):
         """Local message indices map to correct global indices."""
         manager = CitationManager()
-        agent = Agent(extensions=[manager])
-        await agent.initialize()
+        async with Agent(extensions=[manager]) as agent:
+            # First message: establishes doc1 as global index 1
+            agent.append("Text [1]\n\n[1]: https://example.com/doc1")
 
-        # First message: establishes doc1 as global index 1
-        agent.append("Text [1]\n\n[1]: https://example.com/doc1")
+            # Second message: doc2 gets global index 2, but is local index 1
+            agent.append("Text [1]\n\n[1]: https://example.com/doc2")
 
-        # Second message: doc2 gets global index 2, but is local index 1
-        agent.append("Text [1]\n\n[1]: https://example.com/doc2")
+            msg2 = agent.messages[-1]
+            assert msg2.citations is not None
+            # Message has local index 1
+            assert len(msg2.citations) == 1
 
-        msg2 = agent.messages[-1]
-        assert msg2.citations is not None
-        # Message has local index 1
-        assert len(msg2.citations) == 1
+            # But maps to global index 2
+            global_idx = manager.index.lookup(str(msg2.citations[0]))
+            assert global_idx == 2
 
-        # But maps to global index 2
-        global_idx = manager.index.lookup(str(msg2.citations[0]))
-        assert global_idx == 2
-
-        await agent.events.close()
+            await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_message_with_multiple_citations_maps_correctly(self):
         """Message with multiple citations maps each to global index."""
         manager = CitationManager()
-        agent = Agent(extensions=[manager])
-        await agent.initialize()
+        async with Agent(extensions=[manager]) as agent:
+            # Pre-populate global index
+            manager.index.add("https://example.com/doc1")
+            manager.index.add("https://example.com/doc2")
 
-        # Pre-populate global index
-        manager.index.add("https://example.com/doc1")
-        manager.index.add("https://example.com/doc2")
+            # Message references both in local order
+            agent.append(
+                "Text [1] and [2]\n\n[1]: https://example.com/doc2\n[2]: https://example.com/doc1"
+            )
 
-        # Message references both in local order
-        agent.append(
-            "Text [1] and [2]\n\n[1]: https://example.com/doc2\n[2]: https://example.com/doc1"
-        )
+            message = agent.messages[-1]
 
-        message = agent.messages[-1]
+            # Local citations are in message order
+            assert message.citations is not None
+            assert str(message.citations[0]) == "https://example.com/doc2"
+            assert str(message.citations[1]) == "https://example.com/doc1"
 
-        # Local citations are in message order
-        assert message.citations is not None
-        assert str(message.citations[0]) == "https://example.com/doc2"
-        assert str(message.citations[1]) == "https://example.com/doc1"
+            # But global indices are consistent
+            assert manager.index.lookup("https://example.com/doc1") == 1
+            assert manager.index.lookup("https://example.com/doc2") == 2
 
-        # But global indices are consistent
-        assert manager.index.lookup("https://example.com/doc1") == 1
-        assert manager.index.lookup("https://example.com/doc2") == 2
-
-        await agent.events.close()
+            await agent.events.close()
 
 
 class TestCitationLookup:
@@ -159,39 +151,37 @@ class TestCitationLookup:
     async def test_llm_response_lookups_citations_from_global_index(self):
         """LLM response with [1], [2] should resolve from global index."""
         manager = CitationManager()
-        agent = Agent(extensions=[manager])
-        await agent.initialize()
+        async with Agent(extensions=[manager]) as agent:
+            # Populate global index
+            agent.append(
+                """
+                Sources:
 
-        # Populate global index
-        agent.append(
-            """
-            Sources:
+                [1]: https://example.com/source1
+                [2]: https://example.com/source2
+                [3]: https://example.com/source3
+                """
+            )
 
-            [1]: https://example.com/source1
-            [2]: https://example.com/source2
-            [3]: https://example.com/source3
-            """
-        )
+            # Simulate LLM response that just has references (no URLs)
+            llm_response = AssistantMessage(
+                """
+                Based on [1] and [2], we conclude X.
+                Additional evidence from [3] supports this.
+                """
+            )
 
-        # Simulate LLM response that just has references (no URLs)
-        llm_response = AssistantMessage(
-            """
-            Based on [1] and [2], we conclude X.
-            Additional evidence from [3] supports this.
-            """
-        )
+            agent.append(llm_response)
+            message = agent.messages[-1]
 
-        agent.append(llm_response)
-        message = agent.messages[-1]
+            # Citations should be resolved from global index
+            assert message.citations is not None
+            assert len(message.citations) == 3
+            assert str(message.citations[0]) == "https://example.com/source1"
+            assert str(message.citations[1]) == "https://example.com/source2"
+            assert str(message.citations[2]) == "https://example.com/source3"
 
-        # Citations should be resolved from global index
-        assert message.citations is not None
-        assert len(message.citations) == 3
-        assert str(message.citations[0]) == "https://example.com/source1"
-        assert str(message.citations[1]) == "https://example.com/source2"
-        assert str(message.citations[2]) == "https://example.com/source3"
-
-        await agent.events.close()
+            await agent.events.close()
 
 
 class TestSparseIndexHandling:
@@ -201,29 +191,27 @@ class TestSparseIndexHandling:
     async def test_sparse_indices_compacted_to_sequential(self):
         """Sparse indices [1], [5], [10] are compacted in message.citations."""
         manager = CitationManager()
-        agent = Agent(extensions=[manager])
-        await agent.initialize()
+        async with Agent(extensions=[manager]) as agent:
+            content = """
+            References [1], [5], and [10].
 
-        content = """
-        References [1], [5], and [10].
+            [1]: https://example.com/doc1
+            [5]: https://example.com/doc5
+            [10]: https://example.com/doc10
+            """
 
-        [1]: https://example.com/doc1
-        [5]: https://example.com/doc5
-        [10]: https://example.com/doc10
-        """
+            agent.append(content)
+            message = agent.messages[-1]
 
-        agent.append(content)
-        message = agent.messages[-1]
+            # Message citations are sequential
+            citations = message.citations
+            assert citations is not None
+            assert len(citations) == 3
+            assert str(citations[0]) == "https://example.com/doc1"
+            assert str(citations[1]) == "https://example.com/doc5"
+            assert str(citations[2]) == "https://example.com/doc10"
 
-        # Message citations are sequential
-        citations = message.citations
-        assert citations is not None
-        assert len(citations) == 3
-        assert str(citations[0]) == "https://example.com/doc1"
-        assert str(citations[1]) == "https://example.com/doc5"
-        assert str(citations[2]) == "https://example.com/doc10"
-
-        await agent.events.close()
+            await agent.events.close()
 
     @pytest.mark.asyncio
     async def test_sparse_references_remapped_in_content(self):

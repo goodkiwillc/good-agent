@@ -1,0 +1,431 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"Assistant","role":"system"},{"content":[{"text":"Write
+      a story","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"temperature":0.7,"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '180'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeQbrw2yrsxTxtXZaLPtu07tMciYJ\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763751443,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Certainly! Here's a short story for
+        you:\\n\\n---\\n\\n**The Whispering Forest**\\n\\nIn the small village of
+        Eldenwood, nestled between rolling hills and ancient trees, there was a forest
+        that no one dared to enter. The villagers called it the Whispering Forest
+        because, on quiet nights, the wind seemed to carry voices\u2014soft, eerie
+        whispers that no one could quite understand.\\n\\nOne curious girl named Lila
+        had always been fascinated by the forest. Unlike the others, she didn\u2019t
+        fear the whispers. She believed they were the forest\u2019s way of sharing
+        its secrets. One evening, just as the sun dipped below the horizon, Lila decided
+        to venture into the woods.\\n\\nAs she stepped beneath the towering oaks,
+        the whispers grew louder, weaving through the leaves like a gentle song. Following
+        the sound, Lila came upon a clearing where moonlight bathed a circle of ancient
+        stones. In the center stood a glowing tree, its bark shimmering silver and
+        its leaves sparkling like stars.\\n\\nThe tree spoke in a voice as soft as
+        the wind. \u201CWelcome, Lila. You have the heart to listen, and so I will
+        share with you the stories of the forest\u2014tales of forgotten magic, of
+        creatures long vanished, and of the balance that holds the world together.\u201D\\n\\nFor
+        hours, Lila listened, entranced by the stories. When dawn approached, the
+        tree\u2019s glow faded, and the whispers quieted. Lila returned to her village,
+        carrying with her the wisdom of the forest.\\n\\nFrom that day on, the villagers
+        noticed a change in Lila. She spoke with a calm confidence and a deep understanding
+        of the world around her. And though she never revealed the secrets she had
+        learned, the Whispering Forest seemed less frightening\u2014because now, they
+        all knew someone had listened.\\n\\n---\\n\\nWould you like a story in a specific
+        genre or theme?\",\n        \"refusal\": null,\n        \"annotations\": []\n
+        \     },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n
+        \ ],\n  \"usage\": {\n    \"prompt_tokens\": 15,\n    \"completion_tokens\":
+        374,\n    \"total_tokens\": 389,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a22699b1fb3e17a-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 18:57:29 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=sqa9qD2.XMAhzttfAfb2QIAso8P.xv8v5.wkBCR4bFU-1763751449-1.0.1.1-Q7SnSyyUvswWrrYYFUonylj6WK2RfIyQrFCT1hAwsfy85wKoQrXonnnjSn0ciPE6VvKdHiX1JWoJLW0.pwhowT9FZTHpx9Bdqu12346Y8YI;
+        path=/; expires=Fri, 21-Nov-25 19:27:29 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=vH.QduWsUmGi6bn1aGOTHgVgCHBsypoCbRxqx7lt0kQ-1763751449560-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '5790'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999990'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: "{\"messages\":[{\"content\":\"Assistant\",\"role\":\"system\"},{\"content\":[{\"text\":\"Write
+      a story\",\"type\":\"text\"}],\"role\":\"user\"},{\"role\":\"assistant\",\"content\":\"Certainly!
+      Here's a short story for you:\\n\\n---\\n\\n**The Whispering Forest**\\n\\nIn
+      the small village of Eldenwood, nestled between rolling hills and ancient trees,
+      there was a forest that no one dared to enter. The villagers called it the Whispering
+      Forest because, on quiet nights, the wind seemed to carry voices\u2014soft,
+      eerie whispers that no one could quite understand.\\n\\nOne curious girl named
+      Lila had always been fascinated by the forest. Unlike the others, she didn\u2019t
+      fear the whispers. She believed they were the forest\u2019s way of sharing its
+      secrets. One evening, just as the sun dipped below the horizon, Lila decided
+      to venture into the woods.\\n\\nAs she stepped beneath the towering oaks, the
+      whispers grew louder, weaving through the leaves like a gentle song. Following
+      the sound, Lila came upon a clearing where moonlight bathed a circle of ancient
+      stones. In the center stood a glowing tree, its bark shimmering silver and its
+      leaves sparkling like stars.\\n\\nThe tree spoke in a voice as soft as the wind.
+      \u201CWelcome, Lila. You have the heart to listen, and so I will share with
+      you the stories of the forest\u2014tales of forgotten magic, of creatures long
+      vanished, and of the balance that holds the world together.\u201D\\n\\nFor hours,
+      Lila listened, entranced by the stories. When dawn approached, the tree\u2019s
+      glow faded, and the whispers quieted. Lila returned to her village, carrying
+      with her the wisdom of the forest.\\n\\nFrom that day on, the villagers noticed
+      a change in Lila. She spoke with a calm confidence and a deep understanding
+      of the world around her. And though she never revealed the secrets she had learned,
+      the Whispering Forest seemed less frightening\u2014because now, they all knew
+      someone had listened.\\n\\n---\\n\\nWould you like a story in a specific genre
+      or theme?\"},{\"content\":[{\"text\":\"Summarize the above\",\"type\":\"text\"}],\"role\":\"user\"}],\"model\":\"gpt-4.1-mini\",\"max_tokens\":100,\"n\":1,\"temperature\":0.1,\"top_p\":1.0}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '2105'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=sqa9qD2.XMAhzttfAfb2QIAso8P.xv8v5.wkBCR4bFU-1763751449-1.0.1.1-Q7SnSyyUvswWrrYYFUonylj6WK2RfIyQrFCT1hAwsfy85wKoQrXonnnjSn0ciPE6VvKdHiX1JWoJLW0.pwhowT9FZTHpx9Bdqu12346Y8YI;
+        _cfuvid=vH.QduWsUmGi6bn1aGOTHgVgCHBsypoCbRxqx7lt0kQ-1763751449560-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeQbx5YN590uCILwrpDoxFZy46WWY\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763751449,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Certainly! Here's a summary of the
+        story:\\n\\nIn the village of Eldenwood, a girl named Lila is curious about
+        the mysterious Whispering Forest, known for eerie voices carried by the wind.
+        One evening, she ventures inside and discovers a glowing tree that shares
+        ancient magical stories with her. Afterward, Lila returns with newfound wisdom,
+        and the villagers come to see the forest as less frightening, knowing someone
+        has listened to its secrets.\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 402,\n    \"completion_tokens\":
+        89,\n    \"total_tokens\": 491,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a2269bfff60e17a-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 18:57:31 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1619'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999537'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: "{\"messages\":[{\"content\":\"Assistant\",\"role\":\"system\"},{\"content\":[{\"text\":\"Write
+      a story\",\"type\":\"text\"}],\"role\":\"user\"},{\"role\":\"assistant\",\"content\":\"Certainly!
+      Here's a short story for you:\\n\\n---\\n\\n**The Whispering Forest**\\n\\nIn
+      the small village of Eldenwood, nestled between rolling hills and ancient trees,
+      there was a forest that no one dared to enter. The villagers called it the Whispering
+      Forest because, on quiet nights, the wind seemed to carry voices\u2014soft,
+      eerie whispers that no one could quite understand.\\n\\nOne curious girl named
+      Lila had always been fascinated by the forest. Unlike the others, she didn\u2019t
+      fear the whispers. She believed they were the forest\u2019s way of sharing its
+      secrets. One evening, just as the sun dipped below the horizon, Lila decided
+      to venture into the woods.\\n\\nAs she stepped beneath the towering oaks, the
+      whispers grew louder, weaving through the leaves like a gentle song. Following
+      the sound, Lila came upon a clearing where moonlight bathed a circle of ancient
+      stones. In the center stood a glowing tree, its bark shimmering silver and its
+      leaves sparkling like stars.\\n\\nThe tree spoke in a voice as soft as the wind.
+      \u201CWelcome, Lila. You have the heart to listen, and so I will share with
+      you the stories of the forest\u2014tales of forgotten magic, of creatures long
+      vanished, and of the balance that holds the world together.\u201D\\n\\nFor hours,
+      Lila listened, entranced by the stories. When dawn approached, the tree\u2019s
+      glow faded, and the whispers quieted. Lila returned to her village, carrying
+      with her the wisdom of the forest.\\n\\nFrom that day on, the villagers noticed
+      a change in Lila. She spoke with a calm confidence and a deep understanding
+      of the world around her. And though she never revealed the secrets she had learned,
+      the Whispering Forest seemed less frightening\u2014because now, they all knew
+      someone had listened.\\n\\n---\\n\\nWould you like a story in a specific genre
+      or theme?\"},{\"content\":[{\"text\":\"Summarize the above\",\"type\":\"text\"}],\"role\":\"user\"},{\"role\":\"assistant\",\"content\":\"Certainly!
+      Here's a summary of the story:\\n\\nIn the village of Eldenwood, a girl named
+      Lila is curious about the mysterious Whispering Forest, known for eerie voices
+      carried by the wind. One evening, she ventures inside and discovers a glowing
+      tree that shares ancient magical stories with her. Afterward, Lila returns with
+      newfound wisdom, and the villagers come to see the forest as less frightening,
+      knowing someone has listened to its secrets.\"},{\"content\":[{\"text\":\"Continue
+      the story\",\"type\":\"text\"}],\"role\":\"user\"}],\"model\":\"gpt-4.1-mini\",\"n\":1,\"temperature\":0.7,\"top_p\":1.0}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '2641'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=sqa9qD2.XMAhzttfAfb2QIAso8P.xv8v5.wkBCR4bFU-1763751449-1.0.1.1-Q7SnSyyUvswWrrYYFUonylj6WK2RfIyQrFCT1hAwsfy85wKoQrXonnnjSn0ciPE6VvKdHiX1JWoJLW0.pwhowT9FZTHpx9Bdqu12346Y8YI;
+        _cfuvid=vH.QduWsUmGi6bn1aGOTHgVgCHBsypoCbRxqx7lt0kQ-1763751449560-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeQbzN6ebG41W7eEMCTHe9KQjx30j\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763751451,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Certainly! Here\u2019s the continuation
+        of the story:\\n\\n---\\n\\nIn the weeks that followed, Lila found herself
+        drawn back to the edge of the Whispering Forest. Though the villagers warned
+        her to stay away, she knew the forest held more to teach. Each night, she
+        returned to the glowing tree, learning about the delicate balance of nature,
+        the hidden creatures living in harmony, and the ancient magic that sustained
+        it all.\\n\\nOne evening, as Lila approached the clearing, she noticed something
+        different\u2014the glow of the tree flickered weakly, and the whispers sounded
+        anxious. The tree spoke in a trembling voice, \u201CThe balance is in danger,
+        Lila. A shadow stirs beyond the hills, threatening to consume the forest\u2019s
+        light. You must help protect it.\u201D\\n\\nDetermined, Lila set out to uncover
+        the source of the shadow. Guided by the forest\u2019s whispers, she discovered
+        a dark mist spreading from a forgotten cave. Inside, she found an ancient
+        relic pulsing with a cold, corrupting energy. Remembering the stories the
+        tree had shared, Lila realized the relic was the heart of the shadow.\\n\\nWith
+        courage and the knowledge she had gained, Lila called upon the magic of the
+        forest. She whispered words learned from the glowing tree, and the forest
+        responded\u2014roots rose from the earth, vines wrapped around the relic,
+        and light began to push back the darkness.\\n\\nAs dawn broke, the shadow
+        dissolved, and the forest\u2019s glow returned stronger than before. Lila
+        knew her journey was just beginning\u2014she was now the guardian of the Whispering
+        Forest, entrusted to protect its secrets and keep its magic alive for generations
+        to come.\\n\\n---\\n\\nWould you like me to continue or explore a different
+        part of the story?\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 502,\n    \"completion_tokens\":
+        348,\n    \"total_tokens\": 850,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a2269cac855e17a-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 18:57:37 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '6311'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999422'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

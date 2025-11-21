@@ -39,19 +39,8 @@ Install Good Agent using pip or uv:
 
 Let's create a simple agent and have a conversation:
 
-```python title="examples/agent/hello_world.py"
-import asyncio
-from good_agent import Agent
-
-async def main():
-    # Create an agent with a system prompt
-    async with Agent("You are a helpful assistant.") as agent:
-        # Send a message and get a response
-        response = await agent.call("Hello! What can you help me with?")
-        print(response.content)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+```python title="examples/docs/basic_agent.py"
+--8<-- "examples/docs/basic_agent.py"
 ```
 
 !!! note "Context Manager Pattern"

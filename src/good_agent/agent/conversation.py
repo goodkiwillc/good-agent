@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import AsyncIterator
+from contextlib import AsyncExitStack
 from typing import TYPE_CHECKING, Any, Self, TypeVar, Union
 
 from ulid import ULID
@@ -33,6 +34,7 @@ class Conversation:
         self.conversation_id: str = str(uuid.uuid4())
         self._active = False
         self._handler_ids: dict[Agent, list[int]] = {}
+        self._exit_stack = AsyncExitStack()
 
     def __or__(self, other: Union[Agent, "Conversation"]) -> "Conversation":
         """Chain agents or conversations together using the | operator."""
@@ -61,6 +63,10 @@ class Conversation:
         is_group_chat = len(self.participants) > 2
 
         for i, source_agent in enumerate(self.participants):
+            # Manage agent lifecycle if not already ready
+            if not source_agent.is_ready:
+                await self._exit_stack.enter_async_context(source_agent)
+
             self._register_forwarding_handler(source_agent)
 
             if is_group_chat:
@@ -127,6 +133,9 @@ class Conversation:
                     continue
 
         self._handler_ids.clear()
+
+        # Clean up managed agents
+        await self._exit_stack.aclose()
 
     def _register_forwarding_handler(self, source_agent: Agent) -> None:
         """Register an event handler that forwards assistant messages from source_agent."""

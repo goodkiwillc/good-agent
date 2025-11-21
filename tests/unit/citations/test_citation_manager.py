@@ -29,15 +29,12 @@ class TestCitationManagerInitialization:
     async def test_manager_installation_on_agent(self):
         """Manager properly installs on an agent."""
         manager = CitationManager()
-        agent = Agent(extensions=[manager])
+        async with Agent(extensions=[manager]) as agent:
+            assert agent[CitationManager] is not None
+            assert agent[CitationManager] is manager
+            assert agent[CitationManager].agent is agent
 
-        await agent.initialize()
-
-        assert agent[CitationManager] is not None
-        assert agent[CitationManager] is manager
-        assert agent[CitationManager].agent is agent
-
-        await agent.events.close()
+            await agent.events.close()
 
 
 class TestCitationManagerPublicAPI:

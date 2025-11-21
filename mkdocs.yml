@@ -74,8 +74,19 @@ nav:
   - Core Concepts:
     - Agents: core/agents.md
     - Messages & History: core/messages.md
-    - Tools: core/tools.md
+    - Tools: 
+      - Overview: core/tools.md
+      - Custom Tools: core/custom-tools.md
     - Events: core/events.md
+  - Components: 
+    - Overview: components/index.md
+    - Creating Components: components/creating-components.md
+    - Events: components/events.md
+    - Built-ins: components/built-ins.md
+    - Dependencies & State: components/dependencies.md
+    - Tool Adapters: components/tool-adapters.md
+    - Testing: components/testing.md
+    - Best Practices: components/best-practices.md
   - Key Features:
     - Structured Output: features/structured-output.md
     - Interactive Execution: features/interactive-execution.md
@@ -86,9 +97,6 @@ nav:
     - Context Management: features/context-management.md
     - Tasks: features/tasks.md
     - Command Line Interface: cli/run.md
-  - Extensibility:
-    - Agent Components: extensibility/components.md
-    - Custom Tools: extensibility/custom-tools.md
   - Reference:
     - API Reference: api-reference.md
     - Style Guide: STYLEGUIDE.md
