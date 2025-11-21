@@ -22,10 +22,10 @@ import orjson
 from pydantic import BaseModel
 from ulid import ULID
 
-from .agent.config import AgentConfigManager
-from .core.components import AgentComponent
-from .content import TextContentPart
-from .messages import (
+from good_agent.agent.config import AgentConfigManager
+from good_agent.core.components import AgentComponent
+from good_agent.content import TextContentPart
+from good_agent.messages import (
     Annotation,
     AnnotationLike,
     AssistantMessage,
@@ -38,8 +38,8 @@ from .messages import (
     ToolMessage,
     UserMessage,
 )
-from .model.protocols import StreamChunk
-from .tools import ToolCall, ToolCallFunction, ToolResponse
+from good_agent.model.protocols import StreamChunk
+from good_agent.tools import ToolCall, ToolCallFunction, ToolResponse
 
 # Lazy loading litellm types - moved to TYPE_CHECKING
 logger = logging.getLogger(__name__)
@@ -47,8 +47,8 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from litellm.types.utils import Usage
 
-    from .agent import Agent
-    from .model.llm import LanguageModel
+    from good_agent.agent import Agent
+    from good_agent.model.llm import LanguageModel
 
 __all__ = [
     # Main mock classes
@@ -537,7 +537,7 @@ class MockHandlerLanguageModel(AgentComponent):
 
         # Fire llm:complete:before event
         if self._agent:
-            from .events import AgentEvents
+            from good_agent.events import AgentEvents
 
             await self._agent.events.apply(
                 AgentEvents.LLM_COMPLETE_BEFORE,
@@ -573,7 +573,7 @@ class MockHandlerLanguageModel(AgentComponent):
 
         # Fire llm:complete:after event
         if self._agent:
-            from .events import AgentEvents
+            from good_agent.events import AgentEvents
 
             await self._agent.events.apply(
                 AgentEvents.LLM_COMPLETE_AFTER,
@@ -745,7 +745,7 @@ class MockQueuedLanguageModel(AgentComponent):
 
         # Fire llm:complete:before event to match real LanguageModel
         if self._agent:
-            from .events import AgentEvents
+            from good_agent.events import AgentEvents
 
             await self._agent.events.apply(
                 AgentEvents.LLM_COMPLETE_BEFORE,
@@ -799,7 +799,7 @@ class MockQueuedLanguageModel(AgentComponent):
 
         # Fire llm:complete:after event to match real LanguageModel
         if self._agent:
-            from .events import AgentEvents
+            from good_agent.events import AgentEvents
 
             await self._agent.events.apply(
                 AgentEvents.LLM_COMPLETE_AFTER,
@@ -949,7 +949,7 @@ class MockAgent:
 
     def __enter__(self) -> MockAgent:
         """Enter context manager - replace agent's model with mock"""
-        from .model.llm import LanguageModel
+        from good_agent.model.llm import LanguageModel
 
         self._original_model = self.agent.model
 
@@ -987,7 +987,7 @@ class MockAgent:
         exc_tb: Any,
     ) -> Literal[False]:
         """Exit context manager - restore original model"""
-        from .model.llm import LanguageModel
+        from good_agent.model.llm import LanguageModel
 
         if self._original_model is None:
             raise RuntimeError("MockAgent exited before being entered")

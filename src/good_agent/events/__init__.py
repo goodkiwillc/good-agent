@@ -1,5 +1,5 @@
-from .agent import AgentEvents
-from .decorators import (
+from good_agent.events.agent import AgentEvents
+from good_agent.events.decorators import (
     TypedEventHandlersMixin,
     on_agent_init,
     on_cache_hit,
@@ -11,7 +11,7 @@ from .decorators import (
     on_message_append,
     on_tool_call,
 )
-from .types import (
+from good_agent.events.types import (
     AgentForkParams,
     AgentInitializeParams,
     AgentMergeParams,

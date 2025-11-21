@@ -1,10 +1,10 @@
-from . import _filters as _filters
-from ._core import (
+from good_agent.core.templating import _filters as _filters
+from good_agent.core.templating._core import (
     AbstractTemplate,
     register_filter,
     register_function,
 )
-from ._environment import (
+from good_agent.core.templating._environment import (
     TEMPLATE_REGISTRY,
     TemplateLike,
     TemplateRegistry,

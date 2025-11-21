@@ -5,11 +5,11 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from .base import Message, MessageContent
-from .message_list import MessageList
+from good_agent.messages.base import Message, MessageContent
+from good_agent.messages.message_list import MessageList
 
 if TYPE_CHECKING:
-    from ..agent import Agent
+    from good_agent.agent import Agent
 
 T_Message = TypeVar("T_Message", bound=Message)
 
@@ -60,7 +60,7 @@ class FilteredMessageList(MessageList[T_Message], Generic[T_Message]):
         Returns:
             Rendered content of first message, or None
         """
-        from ..content import RenderMode
+        from good_agent.content import RenderMode
 
         # Filter agent's messages by role and return first message's content
         for msg in self._agent.messages:
@@ -87,8 +87,8 @@ class FilteredMessageList(MessageList[T_Message], Generic[T_Message]):
             )
 
         # Import here to avoid circular dependency
-        from .roles import SystemMessage
-        from ..agent.config import AGENT_CONFIG_KEYS
+        from good_agent.messages.roles import SystemMessage
+        from good_agent.agent.config import AGENT_CONFIG_KEYS
 
         # Extract and apply config parameters
         message_kwargs = {}

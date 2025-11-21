@@ -1,7 +1,7 @@
-from .base import StatefulResource
-from .editable import EditableResource
-from .editable_mdxl import EditableMDXL
-from .editable_yaml import EditableYAML
+from good_agent.resources.base import StatefulResource
+from good_agent.resources.editable import EditableResource
+from good_agent.resources.editable_mdxl import EditableMDXL
+from good_agent.resources.editable_yaml import EditableYAML
 
 __all__ = [
     "StatefulResource",

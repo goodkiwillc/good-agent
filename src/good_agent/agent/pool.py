@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, overload
 
 if TYPE_CHECKING:
-    from .core import Agent
+    from good_agent.agent.core import Agent
 
 
 class AgentPool:

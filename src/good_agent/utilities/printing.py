@@ -291,8 +291,8 @@ def print_message(
     console = console or Console()
 
     # Import here to avoid circular imports
-    from ..content import RenderMode
-    from ..messages import AssistantMessage, ToolMessage
+    from good_agent.content import RenderMode
+    from good_agent.messages import AssistantMessage, ToolMessage
 
     content = None
 

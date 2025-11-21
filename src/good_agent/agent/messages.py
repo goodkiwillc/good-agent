@@ -30,7 +30,7 @@ from good_agent.messages import (
 from good_agent.messages.store import put_message
 
 if TYPE_CHECKING:
-    from ..agent import Agent
+    from good_agent.agent import Agent
 
 logger = logging.getLogger(__name__)
 

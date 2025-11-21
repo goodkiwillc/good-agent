@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 from ulid import ULID
 
 if TYPE_CHECKING:
-    from . import Message
+    from good_agent.messages import Message
 
-from .utilities import MessageFactory
+from good_agent.messages.utilities import MessageFactory
 
 
 class MessageNotFoundError(Exception):

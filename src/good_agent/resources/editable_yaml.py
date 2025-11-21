@@ -12,7 +12,7 @@ from pydantic import Field
 
 from good_agent import tool
 
-from .base import StatefulResource
+from good_agent.resources.base import StatefulResource
 
 logger = logging.getLogger(__name__)
 

@@ -7,14 +7,14 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from good_agent.core.event_router import EventContext, EventRouter, on
 
-from ...events import AgentEvents
-from .tool_adapter import ToolAdapter, ToolAdapterRegistry
+from good_agent.events import AgentEvents
+from good_agent.core.components.tool_adapter import ToolAdapter, ToolAdapterRegistry
 
 if TYPE_CHECKING:
-    from ...agent import Agent
-    from ...agent.config import AgentConfigManager
-    from ...events import ToolsGenerateSignature
-    from ...tools import ToolSignature
+    from good_agent.agent import Agent
+    from good_agent.agent.config import AgentConfigManager
+    from good_agent.events import ToolsGenerateSignature
+    from good_agent.tools import ToolSignature
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +121,23 @@ class AgentComponent(EventRouter, metaclass=AgentComponentType):
             raise TypeError(
                 f"{type(self).__name__} must implement _clone_init_args to support cloning"
             ) from exc
+
+        # Copy instance attributes to preserve state
+        # Exclude internal attributes that must be reset or are handled by _import_state
+        excluded_attrs = {
+            "_agent",
+            "_handler_registry",
+            "_broadcast_to",
+            "_sync_bridge",
+            "_registered_tool_names",
+            "_tool_adapter_registry",
+            "_enabled",
+        }
+
+        for key, value in self.__dict__.items():
+            if key not in excluded_attrs and not key.startswith("__"):
+                setattr(clone, key, value)
+
         clone._import_state(self._export_state())
         return clone
 
@@ -232,8 +249,8 @@ class AgentComponent(EventRouter, metaclass=AgentComponentType):
         if self._agent is None:
             return
 
-        from ...tools.bound_tools import BoundTool
-        from ...tools.tools import wrap_callable_as_tool
+        from good_agent.tools.bound_tools import BoundTool
+        from good_agent.tools.tools import wrap_callable_as_tool
 
         # Register each tool method
         for method_name, method in self._component_tools.items():
@@ -384,7 +401,7 @@ class AgentComponent(EventRouter, metaclass=AgentComponentType):
         if not tool_name or not response:
             return
 
-        from ...tools import ToolResponse
+        from good_agent.tools import ToolResponse
 
         if not isinstance(response, ToolResponse):
             return

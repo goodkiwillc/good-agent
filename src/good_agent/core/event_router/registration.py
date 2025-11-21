@@ -26,8 +26,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .context import EventContext
-    from .protocols import EventName, EventPriority
+    from good_agent.core.event_router.context import EventContext
+    from good_agent.core.event_router.protocols import EventName, EventPriority
 
 logger = logging.getLogger(__name__)
 

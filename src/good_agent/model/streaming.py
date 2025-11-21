@@ -8,13 +8,13 @@ import time
 from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Protocol, Unpack
 
-from ..events import AgentEvents
-from .protocols import StreamChunk
+from good_agent.events import AgentEvents
+from good_agent.model.protocols import StreamChunk
 
 if TYPE_CHECKING:
     from litellm.types.completion import ChatCompletionMessageParam
 
-    from ..agent.config import ModelConfig
+    from good_agent.agent.config import ModelConfig
 
 logger = logging.getLogger(__name__)
 

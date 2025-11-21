@@ -4,15 +4,15 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 import logging
 
-from ...content import ContentPartType, TemplateContentPart, TextContentPart
-from ...events import AgentEvents
-from ...messages import SystemMessage, UserMessage
-from .component import AgentComponent
+from good_agent.content import ContentPartType, TemplateContentPart, TextContentPart
+from good_agent.events import AgentEvents
+from good_agent.messages import SystemMessage, UserMessage
+from good_agent.core.components.component import AgentComponent
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from ...agent import Agent
+    from good_agent.agent import Agent
 
 
 class MessageInjectorComponent(AgentComponent):
@@ -163,8 +163,8 @@ class MessageInjectorComponent(AgentComponent):
                 # If print_messages is enabled and set to 'llm' mode, show the modified system message
                 if hasattr(agent, "config") and agent.config.print_messages:
                     if agent.config.print_messages_mode == "llm":
-                        from ...content import RenderMode
-                        from ...utilities import print_message
+                        from good_agent.content import RenderMode
+                        from good_agent.utilities import print_message
 
                         logger.info(
                             "System prompt as it will appear to LLM (with injected content):"

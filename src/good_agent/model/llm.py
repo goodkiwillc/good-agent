@@ -23,9 +23,9 @@ from pydantic import BaseModel
 from good_agent.core.components import AgentComponent
 from good_agent.core.types import URL
 
-from ..agent.config import PASS_THROUGH_KEYS, AgentConfigManager, ModelConfig
-from ..events import AgentEvents
-from ..messages import (
+from good_agent.agent.config import PASS_THROUGH_KEYS, AgentConfigManager, ModelConfig
+from good_agent.events import AgentEvents
+from good_agent.messages import (
     AssistantMessage,
     AssistantMessageStructuredOutput,
     Message,
@@ -35,19 +35,19 @@ from ..messages import (
     ToolMessage,
     UserMessage,
 )
-from .capabilities import ModelCapabilities
-from .formatting import MessageFormatter
-from .manager import ManagedRouter, ModelManager
-from .overrides import model_override_registry
-from .protocols import (
+from good_agent.model.capabilities import ModelCapabilities
+from good_agent.model.formatting import MessageFormatter
+from good_agent.model.manager import ManagedRouter, ModelManager
+from good_agent.model.overrides import model_override_registry
+from good_agent.model.protocols import (
     DEFAULT_MODEL,
     DEFAULT_TEMPERATURE,
     FILTER_ARGS,
     CompletionEvent,
     StreamChunk,
 )
-from .streaming import StreamingHandler
-from .structured import StructuredOutputExtractor
+from good_agent.model.streaming import StreamingHandler
+from good_agent.model.structured import StructuredOutputExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -462,7 +462,7 @@ class LanguageModel(AgentComponent):
                     parts.append(item.get("text", ""))
                 elif item.get("type") == "image_url":
                     # Handle multimodal responses - these need to be ContentPart objects
-                    from ..content import ImageContentPart
+                    from good_agent.content import ImageContentPart
 
                     image_data = item.get("image_url", {})
                     parts.append(
@@ -584,7 +584,7 @@ class LanguageModel(AgentComponent):
         """Lazy-loaded ManagedRouter with isolated callbacks"""
         if not self._router:
             # Lazy import factory function only when needed
-            from .manager import create_managed_router
+            from good_agent.model.manager import create_managed_router
 
             # Get model configuration
             model_name = self.model
@@ -814,7 +814,7 @@ class LanguageModel(AgentComponent):
 
         # Fire before event
         start_time = time.time()
-        from ..core.event_router import EventContext
+        from good_agent.core.event_router import EventContext
 
         ctx: EventContext[CompletionEvent, None] = await self.agent.events.apply_typed(
             AgentEvents.LLM_COMPLETE_BEFORE,

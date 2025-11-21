@@ -1,12 +1,12 @@
-from .formats import (
+from good_agent.extensions.citations.formats import (
     CitationExtractor,
     CitationFormat,
     CitationMatch,
     CitationPatterns,
     CitationTransformer,
 )
-from .index import CitationIndex
-from .manager import CitationManager
+from good_agent.extensions.citations.index import CitationIndex
+from good_agent.extensions.citations.manager import CitationManager
 
 __all__ = [
     # Manager

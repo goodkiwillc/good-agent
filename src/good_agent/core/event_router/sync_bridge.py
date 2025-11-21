@@ -31,7 +31,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .protocols import EventName
+    from good_agent.core.event_router.protocols import EventName
 
 logger = logging.getLogger(__name__)
 

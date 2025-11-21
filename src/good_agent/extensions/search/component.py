@@ -8,7 +8,7 @@ from good_common.utilities import now_pt
 from good_agent.core.components import AgentComponent
 from good_agent.tools import tool
 
-from .models import (
+from good_agent.extensions.search.models import (
     DataDomain,
     OperationType,
     Platform,
@@ -17,7 +17,7 @@ from .models import (
     SearchResult,
     UserResult,
 )
-from .providers import SearchProvider, SearchProviderRegistry
+from good_agent.extensions.search.providers import SearchProvider, SearchProviderRegistry
 
 if TYPE_CHECKING:
     pass

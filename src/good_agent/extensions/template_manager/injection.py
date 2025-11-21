@@ -158,7 +158,7 @@ class ContextResolver:
                 return self.template_manager._context_providers[name]
 
         # Check global providers
-        from .core import _GLOBAL_CONTEXT_PROVIDERS
+        from good_agent.extensions.template_manager.core import _GLOBAL_CONTEXT_PROVIDERS
 
         if name in _GLOBAL_CONTEXT_PROVIDERS:
             return _GLOBAL_CONTEXT_PROVIDERS[name]
@@ -303,7 +303,7 @@ class ContextResolver:
         if hasattr(self.template_manager, "_context_providers"):
             provider_names.update(self.template_manager._context_providers.keys())
 
-        from .core import _GLOBAL_CONTEXT_PROVIDERS
+        from good_agent.extensions.template_manager.core import _GLOBAL_CONTEXT_PROVIDERS
 
         provider_names.update(_GLOBAL_CONTEXT_PROVIDERS.keys())
 

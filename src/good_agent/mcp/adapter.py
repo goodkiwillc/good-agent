@@ -4,7 +4,7 @@ import logging
 
 from pydantic import BaseModel, Field, create_model
 
-from ..tools import Tool, ToolResponse
+from good_agent.tools import Tool, ToolResponse
 
 logger = logging.getLogger(__name__)
 

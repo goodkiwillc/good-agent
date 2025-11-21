@@ -1,15 +1,18 @@
 # New citation management system
-from .citations import (
+from good_agent.extensions.citations import (
     CitationExtractor,
     CitationFormat,
     CitationManager,
     CitationPatterns,
     CitationTransformer,
 )
-from .citations import CitationIndex as NewCitationIndex
-from .search import AgentSearch
-from .task_manager import TaskManager, ToDoItem, ToDoList
-from .template_manager import Template, TemplateManager
+from good_agent.extensions.citations import CitationIndex as NewCitationIndex
+from good_agent.extensions.search import AgentSearch
+from good_agent.extensions.task_manager import TaskManager, ToDoItem, ToDoList
+from good_agent.extensions.template_manager import Template, TemplateManager
+
+# Alias NewCitationIndex to CitationIndex for backward compatibility (as a type/class, not component)
+CitationIndex = NewCitationIndex
 
 # from .webfetcher import (
 #     BulkFetchResult,
@@ -22,6 +25,7 @@ from .template_manager import Template, TemplateManager
 __all__ = [
     # New citation management system
     "CitationManager",
+    "CitationIndex",
     "NewCitationIndex",
     "CitationFormat",
     "CitationTransformer",

@@ -1,6 +1,6 @@
 from typing import Any
 
-from .manager import ConfigStack
+from good_agent.agent.config.manager import ConfigStack
 
 
 class Context(ConfigStack):

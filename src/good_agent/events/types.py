@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING, Any, Literal, NotRequired, TypedDict
 from ulid import ULID
 
 if TYPE_CHECKING:
-    from ..agent import Agent, AgentState
-    from ..messages import Message
-    from ..model.protocols import ResponseWithUsage
-    from ..tools import Tool, ToolCall, ToolResponse
+    from good_agent.agent import Agent, AgentState
+    from good_agent.messages import Message
+    from good_agent.model.protocols import ResponseWithUsage
+    from good_agent.tools import Tool, ToolCall, ToolResponse
 
 
 # ============================================================================

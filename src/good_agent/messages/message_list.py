@@ -15,12 +15,12 @@ from typing import (
     overload,
 )
 
-from .base import Message, MessageRole
-from .roles import AssistantMessage, SystemMessage, ToolMessage, UserMessage
+from good_agent.messages.base import Message, MessageRole
+from good_agent.messages.roles import AssistantMessage, SystemMessage, ToolMessage, UserMessage
 
 if TYPE_CHECKING:
-    from ..agent import Agent
-    from .versioning import MessageRegistry, VersionManager
+    from good_agent.agent import Agent
+    from good_agent.messages.versioning import MessageRegistry, VersionManager
 
 T_Message = TypeVar("T_Message", bound=Message)
 

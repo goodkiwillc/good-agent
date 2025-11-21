@@ -15,10 +15,10 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from .context import EventContext, event_ctx
-from .protocols import ApplyInterrupt, EventName, F, T_Parameters, T_Return
-from .registration import HandlerRegistration, HandlerRegistry
-from .sync_bridge import SyncBridge
+from good_agent.core.event_router.context import EventContext, event_ctx
+from good_agent.core.event_router.protocols import ApplyInterrupt, EventName, F, T_Parameters, T_Return
+from good_agent.core.event_router.registration import HandlerRegistration, HandlerRegistry
+from good_agent.core.event_router.sync_bridge import SyncBridge
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ class EventRouter:
 
         # Register for signal handling if enabled
         if self._signal_handling_enabled:
-            from .signal_handler import register_for_signals  # type: ignore[import-not-found]
+            from good_agent.core.event_router.signal_handler import register_for_signals  # type: ignore[import-not-found]
 
             register_for_signals(self)
 
@@ -893,7 +893,7 @@ class EventRouter:
     ):
         """Helper returning a fluent API wrapper for typed apply calls."""
         # Import here to avoid circular dependency
-        from .advanced import TypedApply  # type: ignore[attr-defined]
+        from good_agent.core.event_router.advanced import TypedApply  # type: ignore[attr-defined]
 
         return TypedApply(self, params_type, return_type)
 
@@ -909,7 +909,7 @@ class EventRouter:
         """Clean up resources and wait for outstanding tasks."""
         # Unregister from signal handling
         if self._signal_handling_enabled:
-            from .signal_handler import unregister_from_signals  # type: ignore[import-not-found]
+            from good_agent.core.event_router.signal_handler import unregister_from_signals  # type: ignore[import-not-found]
 
             unregister_from_signals(self)
         await self._sync_bridge.close()
@@ -917,7 +917,7 @@ class EventRouter:
     def close_sync(self) -> None:
         """Synchronous helper that performs immediate cleanup."""
         if self._signal_handling_enabled:
-            from .signal_handler import unregister_from_signals  # type: ignore[import-not-found]
+            from good_agent.core.event_router.signal_handler import unregister_from_signals  # type: ignore[import-not-found]
 
             unregister_from_signals(self)
 

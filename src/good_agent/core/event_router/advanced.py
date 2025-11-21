@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Generic
 
-from .context import EventContext
-from .protocols import EventName, T_Parameters, T_Return
+from good_agent.core.event_router.context import EventContext
+from good_agent.core.event_router.protocols import EventName, T_Parameters, T_Return
 
 if TYPE_CHECKING:
-    from .core import EventRouter
+    from good_agent.core.event_router.core import EventRouter
 
 
 class TypedApply(Generic[T_Parameters, T_Return]):

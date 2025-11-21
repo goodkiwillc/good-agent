@@ -1,5 +1,5 @@
-from .context import Context
-from .manager import (
+from good_agent.agent.config.context import Context
+from good_agent.agent.config.manager import (
     AgentConfigManager,
     ConfigField,
     ConfigStack,
@@ -10,7 +10,7 @@ from .manager import (
     PredictedOutput,
     ResponseFormat,
 )
-from .types import (
+from good_agent.agent.config.types import (
     AGENT_CONFIG_KEYS,
     AgentOnlyConfig,
     LLMCommonConfig,

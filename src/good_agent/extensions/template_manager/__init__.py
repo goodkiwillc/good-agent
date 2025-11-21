@@ -9,7 +9,7 @@ use this package.
 from __future__ import annotations
 
 # Core template functionality
-from .core import (
+from good_agent.extensions.template_manager.core import (
     Template,
     TemplateManager,
     _GLOBAL_CONTEXT_PROVIDERS,
@@ -19,7 +19,7 @@ from .core import (
 )
 
 # Context dependency injection
-from .injection import (
+from good_agent.extensions.template_manager.injection import (
     CircularDependencyError,
     ContextInjectionError,
     ContextProviderError,
@@ -29,8 +29,8 @@ from .injection import (
 )
 
 # Storage and metadata
-from .index import TemplateMetadata
-from .storage import (
+from good_agent.extensions.template_manager.index import TemplateMetadata
+from good_agent.extensions.template_manager.storage import (
     ChainedStorage,
     FileSystemStorage,
     StorageTemplateLoader,

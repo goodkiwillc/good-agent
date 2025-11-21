@@ -1,6 +1,6 @@
 from typing import Any
 
-from .base import StatefulResource
+from good_agent.resources.base import StatefulResource
 
 
 class EditableResource(StatefulResource[str]):

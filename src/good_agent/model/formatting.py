@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
-from ..content import (
+from good_agent.content import (
     ContentPartType,
     FileContentPart,
     ImageContentPart,
@@ -13,9 +13,9 @@ from ..content import (
     TemplateContentPart,
     TextContentPart,
 )
-from ..utilities import url_to_base64
-from ..events import AgentEvents
-from ..messages import (
+from good_agent.utilities import url_to_base64
+from good_agent.events import AgentEvents
+from good_agent.messages import (
     AssistantMessage,
     Message,
     SystemMessage,
@@ -27,7 +27,7 @@ from good_agent.core.types import URL
 if TYPE_CHECKING:
     from litellm.types.completion import ChatCompletionMessageParam
 
-    from .llm import LanguageModel
+    from good_agent.model.llm import LanguageModel
 
 
 class MessageFormatter:

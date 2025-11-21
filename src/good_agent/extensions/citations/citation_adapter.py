@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from good_agent import Agent
     from good_agent.tools import BoundTool, Tool, ToolSignature
-    from .manager import CitationManager
+    from good_agent.extensions.citations.manager import CitationManager
 
     CitationManagerType = CitationManager
 else:

@@ -7,15 +7,15 @@ import time
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Unpack
 
-from ..events import AgentEvents
-from .protocols import CompletionEvent
+from good_agent.events import AgentEvents
+from good_agent.model.protocols import CompletionEvent
 
 if TYPE_CHECKING:
     from litellm.types.completion import ChatCompletionMessageParam
     from pydantic import BaseModel
 
-    from ..agent.config import ModelConfig
-    from .llm import LanguageModel
+    from good_agent.agent.config import ModelConfig
+    from good_agent.model.llm import LanguageModel
 
 
 class StructuredOutputExtractor:
@@ -40,7 +40,7 @@ class StructuredOutputExtractor:
         **kwargs: Unpack[ModelConfig],
     ) -> BaseModel:
         """Run instructor against ``messages`` and return a validated ``response_model`` instance."""
-        from .overrides import model_override_registry
+        from good_agent.model.overrides import model_override_registry
 
         # Note: messages already have tool call pairs ensured by format_message_list_for_llm()
 
@@ -51,7 +51,7 @@ class StructuredOutputExtractor:
         config = model_override_registry.apply(model_name, config)
 
         # Fire before event (using apply_typed for type safety)
-        from ..core.event_router import EventContext
+        from good_agent.core.event_router import EventContext
 
         start_time = time.time()
         ctx: EventContext[

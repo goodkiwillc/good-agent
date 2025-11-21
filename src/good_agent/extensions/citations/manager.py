@@ -15,14 +15,14 @@ from good_agent.events import (
     MessageRenderParams,
     ToolsGenerateSignature,
 )
-from .citation_adapter import CitationAdapter
-from .formats import (
+from good_agent.extensions.citations.citation_adapter import CitationAdapter
+from good_agent.extensions.citations.formats import (
     CitationExtractor,
     CitationFormat,
     CitationPatterns,
     CitationTransformer,
 )
-from .index import CitationIndex
+from good_agent.extensions.citations.index import CitationIndex
 
 logger = logging.getLogger(__name__)
 
@@ -1226,7 +1226,7 @@ class CitationManager(AgentComponent):
         try:
             from good_agent.core.types import URL
 
-            from .formats import CitationPatterns as _CP
+            from good_agent.extensions.citations.formats import CitationPatterns as _CP
 
             if 'url="' in cleaned:
 
@@ -1270,7 +1270,7 @@ class CitationManager(AgentComponent):
         # For [!CITE_X!] format, we need to use the global index
         import re
 
-        from .formats import CitationPatterns
+        from good_agent.extensions.citations.formats import CitationPatterns
 
         result = content
 

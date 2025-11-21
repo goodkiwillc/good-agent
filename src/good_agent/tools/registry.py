@@ -17,7 +17,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from .tools import Tool
+    from good_agent.tools.tools import Tool
 
 
 @dataclass
@@ -534,7 +534,7 @@ def register_tool(
         if auto_register:
             # Register immediately
             # Create tool from function
-            from .tools import Tool
+            from good_agent.tools.tools import Tool
 
             tool = Tool(func)
 

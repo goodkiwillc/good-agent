@@ -12,7 +12,7 @@ from good_agent.core.templating import (
 )
 from good_agent.utilities.lxml import extract_first_level_xml
 
-from .mixins import ModelAllFields
+from good_agent.core.models.mixins import ModelAllFields
 
 logger = logging.getLogger(__name__)
 

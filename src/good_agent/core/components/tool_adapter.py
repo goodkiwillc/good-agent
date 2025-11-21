@@ -6,9 +6,9 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, Union
 
 if TYPE_CHECKING:
-    from ...agent import Agent
-    from ...tools import Tool, ToolResponse, ToolSignature
-    from ...tools.bound_tools import BoundTool
+    from good_agent.agent import Agent
+    from good_agent.tools import Tool, ToolResponse, ToolSignature
+    from good_agent.tools.bound_tools import BoundTool
 
 # Union type for tools that can be either Tool instances or BoundTool descriptors
 ToolLike = Union["Tool", "BoundTool"]

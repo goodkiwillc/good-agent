@@ -10,8 +10,8 @@ from jinja2 import BaseLoader, Environment, TemplateNotFound, TemplateSyntaxErro
 from jinja2.sandbox import SandboxedEnvironment
 from markupsafe import Markup
 
-from . import _extensions as extensions
-from ._core import (
+from good_agent.core.templating import _extensions as extensions
+from good_agent.core.templating._core import (
     AbstractTemplate,
     Context,
     _compose_environment,

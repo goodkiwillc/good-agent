@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 if TYPE_CHECKING:
-    from ..agent import Agent
+    from good_agent.agent import Agent
 
 T = TypeVar("T")  # State type
 
@@ -83,8 +83,8 @@ class StatefulResource(ABC, Generic[T], metaclass=StatefulResourceMeta):
 
         Returns a list of Tool instances collected by the metaclass.
         """
-        from ..tools.bound_tools import BoundTool
-        from ..tools.tools import wrap_callable_as_tool
+        from good_agent.tools.bound_tools import BoundTool
+        from good_agent.tools.tools import wrap_callable_as_tool
 
         tools = []
 

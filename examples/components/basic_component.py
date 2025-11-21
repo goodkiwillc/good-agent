@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import asyncio
 
-from good_agent.agent import Agent
-from good_agent.core.components import AgentComponent
+from good_agent import Agent, AgentComponent, tool
 from good_agent.core.event_router import on
 from good_agent.events import AgentEvents
-from good_agent.tools import tool
+
 
 try:  # pragma: no cover - support running via ``python``
     from .._shared.mock_llm import ExampleLanguageModel, assistant_response

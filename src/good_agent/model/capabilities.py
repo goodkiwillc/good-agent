@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .llm import LanguageModel
+    from good_agent.model.llm import LanguageModel
 
 
 class ModelCapabilities:
@@ -25,7 +25,7 @@ class ModelCapabilities:
 
     def supports_function_calling(self, model: str | None = None) -> bool:
         """Check if the model supports function calling"""
-        from .overrides import model_override_registry
+        from good_agent.model.overrides import model_override_registry
 
         model_name = model or self.llm.model
 
@@ -48,7 +48,7 @@ class ModelCapabilities:
 
     def supports_parallel_function_calling(self, model: str | None = None) -> bool:
         """Check if the model supports parallel function calling"""
-        from .overrides import model_override_registry
+        from good_agent.model.overrides import model_override_registry
 
         model_name = model or self.llm.model
 
@@ -71,7 +71,7 @@ class ModelCapabilities:
 
     def supports_images(self, model: str | None = None) -> bool:
         """Check if the model supports image inputs"""
-        from .overrides import model_override_registry
+        from good_agent.model.overrides import model_override_registry
 
         model_name = model or self.llm.model
 
@@ -97,7 +97,7 @@ class ModelCapabilities:
 
     def supports_pdf_input(self, model: str | None = None) -> bool:
         """Check if the model supports PDF inputs"""
-        from .overrides import model_override_registry
+        from good_agent.model.overrides import model_override_registry
 
         model_name = model or self.llm.model
         capabilities = model_override_registry.get_model_capabilities(model_name)
@@ -105,7 +105,7 @@ class ModelCapabilities:
 
     def supports_citations(self, model: str | None = None) -> bool:
         """Check if the model supports citations"""
-        from .overrides import model_override_registry
+        from good_agent.model.overrides import model_override_registry
 
         model_name = model or self.llm.model
         capabilities = model_override_registry.get_model_capabilities(model_name)
@@ -113,7 +113,7 @@ class ModelCapabilities:
 
     def supports_structured_output(self, model: str | None = None) -> bool:
         """Check if the model supports structured output (JSON mode, etc.)"""
-        from .overrides import model_override_registry
+        from good_agent.model.overrides import model_override_registry
 
         model_name = model or self.llm.model
         capabilities = model_override_registry.get_model_capabilities(model_name)
@@ -121,7 +121,7 @@ class ModelCapabilities:
 
     def supports_streaming(self, model: str | None = None) -> bool:
         """Check if the model supports streaming responses"""
-        from .overrides import model_override_registry
+        from good_agent.model.overrides import model_override_registry
 
         model_name = model or self.llm.model
         capabilities = model_override_registry.get_model_capabilities(model_name)
@@ -133,7 +133,7 @@ class ModelCapabilities:
         Returns:
             Tuple of (supports_audio_input, supports_audio_output)
         """
-        from .overrides import model_override_registry
+        from good_agent.model.overrides import model_override_registry
 
         model_name = model or self.llm.model
         capabilities = model_override_registry.get_model_capabilities(model_name)
@@ -141,7 +141,7 @@ class ModelCapabilities:
 
     def supports_video(self, model: str | None = None) -> bool:
         """Check if the model supports video inputs"""
-        from .overrides import model_override_registry
+        from good_agent.model.overrides import model_override_registry
 
         model_name = model or self.llm.model
         capabilities = model_override_registry.get_model_capabilities(model_name)
@@ -149,7 +149,7 @@ class ModelCapabilities:
 
     def supports_web_search(self, model: str | None = None) -> bool:
         """Check if the model supports web search"""
-        from .overrides import model_override_registry
+        from good_agent.model.overrides import model_override_registry
 
         model_name = model or self.llm.model
         capabilities = model_override_registry.get_model_capabilities(model_name)
@@ -157,7 +157,7 @@ class ModelCapabilities:
 
     def supports_context_caching(self, model: str | None = None) -> bool:
         """Check if the model supports context/prompt caching"""
-        from .overrides import model_override_registry
+        from good_agent.model.overrides import model_override_registry
 
         model_name = model or self.llm.model
         capabilities = model_override_registry.get_model_capabilities(model_name)
@@ -165,7 +165,7 @@ class ModelCapabilities:
 
     def supports_reasoning(self, model: str | None = None) -> bool:
         """Check if the model supports advanced reasoning modes"""
-        from .overrides import model_override_registry
+        from good_agent.model.overrides import model_override_registry
 
         model_name = model or self.llm.model
         capabilities = model_override_registry.get_model_capabilities(model_name)
@@ -173,7 +173,7 @@ class ModelCapabilities:
 
     def get_capabilities(self, model: str | None = None) -> dict[str, Any]:
         """Get all capabilities for a model as a dictionary"""
-        from .overrides import model_override_registry
+        from good_agent.model.overrides import model_override_registry
 
         model_name = model or self.llm.model
         capabilities = model_override_registry.get_model_capabilities(model_name)

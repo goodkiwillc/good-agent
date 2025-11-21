@@ -8,8 +8,8 @@ from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
 from pydantic import BaseModel, Field
 
-from ..core.components.component import AgentComponent
-from .adapter import MCPToolAdapter, MCPToolSpec
+from good_agent.core.components.component import AgentComponent
+from good_agent.mcp.adapter import MCPToolAdapter, MCPToolSpec
 
 logger = logging.getLogger(__name__)
 

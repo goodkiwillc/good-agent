@@ -8,7 +8,7 @@ from ulid import ULID
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from .core import Agent
+    from good_agent.agent.core import Agent
 
 
 class ForkContext:
