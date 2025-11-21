@@ -286,13 +286,12 @@ Limit results to {{ limit | default(10) }} items.""")
             language_model=mock_lm,  # Provide the mocked language model
         )
 
-        await agent.initialize()
-
-        # Verify system prompt was properly rendered
-        assert len(agent.messages) == 1
-        system_msg = agent.messages[0]
-        assert "Python programming" in str(system_msg.content)
-        assert "code optimization" in str(system_msg.content)
+        async with agent:
+            # Verify system prompt was properly rendered
+            assert len(agent.messages) == 1
+            system_msg = agent.messages[0]
+            assert "Python programming" in str(system_msg.content)
+            assert "code optimization" in str(system_msg.content)
 
     @pytest.mark.asyncio
     async def test_chained_storage(self, template_system):

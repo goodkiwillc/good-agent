@@ -75,23 +75,21 @@ async def test_provider_discovery():
     search = AgentSearch(auto_discover=True)
 
     # Initialize agent (this triggers discovery)
-    agent = Agent("You are a test assistant", extensions=[search])
-    await agent.initialize()
+    async with Agent("You are a test assistant", extensions=[search]) as agent:
+        # Check discovered providers
+        providers = search.registry._providers
+        print(f"AgentSearch discovered providers: {list(providers.keys())}")
 
-    # Check discovered providers
-    providers = search.registry._providers
-    print(f"AgentSearch discovered providers: {list(providers.keys())}")
+        for name, provider in providers.items():
+            print(f"  - {name}: {provider.__class__.__name__}")
+            try:
+                valid = await provider.validate()
+                print(f"    Valid: {valid}")
+            except Exception as e:
+                print(f"    Validation error: {e}")
 
-    for name, provider in providers.items():
-        print(f"  - {name}: {provider.__class__.__name__}")
-        try:
-            valid = await provider.validate()
-            print(f"    Valid: {valid}")
-        except Exception as e:
-            print(f"    Validation error: {e}")
-
-    # Check available tools
-    print(f"Available tools: {list(agent.tools.keys())}")
+        # Check available tools
+        print(f"Available tools: {list(agent.tools.keys())}")
 
     return search, agent
 
@@ -256,35 +254,35 @@ async def test_agent_search_integration():
         return
 
     # Create agent with search component
-    agent = Agent("You are a search assistant", extensions=[search])
-    await agent.initialize()
+    async with Agent("You are a search assistant", extensions=[search]) as agent:
+        print(f"\nRegistered providers: {list(search.registry._providers.keys())}")
+        print(f"Available tools: {list(agent.tools.keys())}")
 
-    print(f"\nRegistered providers: {list(search.registry._providers.keys())}")
-    print(f"Available tools: {list(agent.tools.keys())}")
+        # Test search_entities tool if available
+        if "search_entities" in agent.tools:
+            print("\n--- Testing search_entities tool ---")
+            try:
+                result = await agent.tool_calls.invoke(
+                    "search",
+                    query="AI technology",
+                    platforms=["google"] if WebSearchProvider else ["twitter"],
+                    limit=3,
+                )
+                print(f"Tool response type: {type(result)}")
+                if hasattr(result, "response"):
+                    print(f"Results: {result.response}")
+            except Exception as e:
+                print(f"Error: {e}")
 
-    # Test search_entities tool if available
-    if "search_entities" in agent.tools:
-        print("\n--- Testing search_entities tool ---")
+        # Test via natural language
+        print("\n--- Testing via natural language ---")
         try:
-            result = await agent.tool_calls.invoke(
-                "search",
-                query="AI technology",
-                platforms=["google"] if WebSearchProvider else ["twitter"],
-                limit=3,
+            response = await agent.call(
+                "Search for recent news about Python programming"
             )
-            print(f"Tool response type: {type(result)}")
-            if hasattr(result, "response"):
-                print(f"Results: {result.response}")
+            print(f"Agent response: {response.content[:500]}...")
         except Exception as e:
             print(f"Error: {e}")
-
-    # Test via natural language
-    print("\n--- Testing via natural language ---")
-    try:
-        response = await agent.call("Search for recent news about Python programming")
-        print(f"Agent response: {response.content[:500]}...")
-    except Exception as e:
-        print(f"Error: {e}")
 
 
 @pytest.mark.skip(reason="Integration test hangs - needs investigation")
@@ -294,46 +292,44 @@ async def test_date_range_functionality():
 
     # Create AgentSearch with discovered providers
     search = AgentSearch(auto_discover=True)
-    agent = Agent("Search assistant", extensions=[search])
-    await agent.initialize()
+    async with Agent("Search assistant", extensions=[search]) as agent:
+        if len(search.registry._providers) == 0:
+            print("No providers available for date range test")
+            return
 
-    if len(search.registry._providers) == 0:
-        print("No providers available for date range test")
-        return
+        # Test search with date range using new field names
+        print("Testing search with since/until date range...")
 
-    # Test search with date range using new field names
-    print("Testing search with since/until date range...")
+        try:
+            # Mock the provider searches to avoid API calls
+            from unittest.mock import AsyncMock, patch
 
-    try:
-        # Mock the provider searches to avoid API calls
-        from unittest.mock import AsyncMock, patch
+            # Mock all provider search methods
+            for provider in search.registry._providers.values():
+                with patch.object(
+                    provider, "search", new_callable=AsyncMock
+                ) as mock_search:
+                    mock_search.return_value = []
 
-        # Mock all provider search methods
-        for provider in search.registry._providers.values():
-            with patch.object(
-                provider, "search", new_callable=AsyncMock
-            ) as mock_search:
-                mock_search.return_value = []
+            response = await agent.tool_calls.invoke(
+                "search",
+                query="test query with date range",
+                since=datetime.combine(date(2024, 1, 1), datetime.min.time()),
+                until=datetime.combine(date(2024, 1, 31), datetime.max.time()),
+            )
 
-        response = await agent.tool_calls.invoke(
-            "search",
-            query="test query with date range",
-            since=datetime.combine(date(2024, 1, 1), datetime.min.time()),
-            until=datetime.combine(date(2024, 1, 31), datetime.max.time()),
-        )
+            print("✓ Date range search completed successfully")
+            print(f"Response type: {type(response)}")
 
-        print("✓ Date range search completed successfully")
-        print(f"Response type: {type(response)}")
+            # Test relative date functionality
+            response = await agent.tool_calls.invoke(
+                "search", query="recent news", last_week=True
+            )
 
-        # Test relative date functionality
-        response = await agent.tool_calls.invoke(
-            "search", query="recent news", last_week=True
-        )
+            print("✓ Relative date search (last_week) completed successfully")
 
-        print("✓ Relative date search (last_week) completed successfully")
-
-    except Exception as e:
-        print(f"✗ Date range test failed: {e}")
+        except Exception as e:
+            print(f"✗ Date range test failed: {e}")
 
 
 async def main():

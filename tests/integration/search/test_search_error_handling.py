@@ -96,17 +96,17 @@ class TestErrorHandling:
             providers=[failing_provider, working_provider],
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            # Should still get results from working provider
+            response = await agent.tool_calls.invoke("search", query="test")
+            results = response.response
 
-        # Should still get results from working provider
-        response = await agent.tool_calls.invoke("search", query="test")
-        results = response.response
-
-        assert "working" in results
-        assert len(results["working"]) == 1
-        assert "failing_exception" in results
-        assert results["failing_exception"] == []  # Failed provider returns empty list
+            assert "working" in results
+            assert len(results["working"]) == 1
+            assert "failing_exception" in results
+            assert (
+                results["failing_exception"] == []
+            )  # Failed provider returns empty list
 
     @pytest.mark.asyncio
     async def test_all_providers_fail(self):
@@ -119,46 +119,44 @@ class TestErrorHandling:
             providers=[failing1, failing2],
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            # Verify search is installed
+            print(f"Agent tools: {list(agent.tools.keys())}")
+            print(f"Search component installed: {search in agent.extensions}")
 
-        # Verify search is installed
-        print(f"Agent tools: {list(agent.tools.keys())}")
-        print(f"Search component installed: {search in agent.extensions}")
+            # Check if agent is set on component
+            print(f"Search component has agent: {search.agent is not None}")
+            print(f"Search component agent: {search.agent}")
 
-        # Check if agent is set on component
-        print(f"Search component has agent: {search.agent is not None}")
-        print(f"Search component agent: {search.agent}")
+            # Test calling the method directly first (this won't work without agent)
+            print("Testing direct method call...")
+            direct_result = await search.search(query="test")
+            print(f"Direct result: {direct_result}")
+            print(f"Direct result type: {type(direct_result)}")
 
-        # Test calling the method directly first (this won't work without agent)
-        print("Testing direct method call...")
-        direct_result = await search.search(query="test")
-        print(f"Direct result: {direct_result}")
-        print(f"Direct result type: {type(direct_result)}")
+            # Should return empty results for each provider
+            print("Testing via agent.invoke...")
+            response = await agent.tool_calls.invoke("search", query="test")
 
-        # Should return empty results for each provider
-        print("Testing via agent.invoke...")
-        response = await agent.tool_calls.invoke("search", query="test")
+            # Debug output
+            print(f"Response type: {type(response)}")
+            print(f"Response: {response}")
+            print(f"Response has response attr: {hasattr(response, 'response')}")
+            if hasattr(response, "response"):
+                print(f"Response.response: {response.response}")
+                print(
+                    f"Response.response type: {type(response.response) if response.response is not None else 'None'}"
+                )
 
-        # Debug output
-        print(f"Response type: {type(response)}")
-        print(f"Response: {response}")
-        print(f"Response has response attr: {hasattr(response, 'response')}")
-        if hasattr(response, "response"):
-            print(f"Response.response: {response.response}")
-            print(
-                f"Response.response type: {type(response.response) if response.response is not None else 'None'}"
-            )
+            results = response.response
 
-        results = response.response
+            # Handle None case - this shouldn't happen but guard against it
+            if results is None:
+                results = {}
 
-        # Handle None case - this shouldn't happen but guard against it
-        if results is None:
-            results = {}
-
-        assert "failing_exception" in results
-        assert results["failing_exception"] == []
-        # Timeout provider might not appear if it times out
+            assert "failing_exception" in results
+            assert results["failing_exception"] == []
+            # Timeout provider might not appear if it times out
 
     @pytest.mark.asyncio
     async def test_no_providers_available(self):
@@ -179,18 +177,16 @@ class TestErrorHandling:
             providers=[news_provider],
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            # Search for SOCIAL_MEDIA which provider doesn't support
+            response = await agent.tool_calls.invoke(
+                "search",
+                query="test",
+                domains=["social_media"],
+            )
+            results = response.response
 
-        # Search for SOCIAL_MEDIA which provider doesn't support
-        response = await agent.tool_calls.invoke(
-            "search",
-            query="test",
-            domains=["social_media"],
-        )
-        results = response.response
-
-        assert results == {}  # No results when no providers available
+            assert results == {}  # No results when no providers available
 
     @pytest.mark.asyncio
     async def test_invalid_platform_name(self):
@@ -211,18 +207,16 @@ class TestErrorHandling:
             providers=[provider],
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            # Search with invalid platform name
+            await agent.tool_calls.invoke(
+                "search",
+                query="test",
+                platforms=["invalid_platform", "google"],  # One invalid, one valid
+            )
 
-        # Search with invalid platform name
-        await agent.tool_calls.invoke(
-            "search",
-            query="test",
-            platforms=["invalid_platform", "google"],  # One invalid, one valid
-        )
-
-        # Should still search Google, ignore invalid
-        provider.search.assert_called_once()
+            # Should still search Google, ignore invalid
+            provider.search.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_invalid_domain_name(self):
@@ -243,18 +237,16 @@ class TestErrorHandling:
             providers=[provider],
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            # Search with invalid domain name
+            await agent.tool_calls.invoke(
+                "search",
+                query="test",
+                domains=["invalid_domain", "web"],  # One invalid, one valid
+            )
 
-        # Search with invalid domain name
-        await agent.tool_calls.invoke(
-            "search",
-            query="test",
-            domains=["invalid_domain", "web"],  # One invalid, one valid
-        )
-
-        # Should still search web domain
-        provider.search.assert_called_once()
+            # Should still search web domain
+            provider.search.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_empty_query_handling(self):
@@ -275,14 +267,12 @@ class TestErrorHandling:
             providers=[provider],
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            # Search with empty query
+            await agent.tool_calls.invoke("search", query="")
 
-        # Search with empty query
-        await agent.tool_calls.invoke("search", query="")
-
-        # Should still call provider (provider decides how to handle empty query)
-        provider.search.assert_called_once()
+            # Should still call provider (provider decides how to handle empty query)
+            provider.search.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_provider_validation_failure(self):
@@ -350,14 +340,12 @@ class TestEdgeCases:
             providers=[provider],
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            response = await agent.tool_calls.invoke("search", query="test", limit=10)
+            results = response.response
 
-        response = await agent.tool_calls.invoke("search", query="test", limit=10)
-        results = response.response
-
-        # Provider returns 1000 but that's ok - component doesn't enforce limit
-        assert len(results["large"]) == 1000
+            # Provider returns 1000 but that's ok - component doesn't enforce limit
+            assert len(results["large"]) == 1000
 
     @pytest.mark.asyncio
     async def test_duplicate_provider_names(self):
@@ -411,25 +399,23 @@ class TestEdgeCases:
             providers=[provider],
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            # Test various special characters
+            special_queries = [
+                "test & test",
+                "test | test",
+                'test "quoted" test',
+                "test\nwith\nnewlines",
+                "test\twith\ttabs",
+                "émojis 🎉 and ünïcödé",
+                "<script>alert('xss')</script>",
+            ]
 
-        # Test various special characters
-        special_queries = [
-            "test & test",
-            "test | test",
-            'test "quoted" test',
-            "test\nwith\nnewlines",
-            "test\twith\ttabs",
-            "émojis 🎉 and ünïcödé",
-            "<script>alert('xss')</script>",
-        ]
-
-        for query_text in special_queries:
-            response = await agent.tool_calls.invoke("search", query=query_text)
-            results = response.response
-            assert provider.last_query == query_text
-            assert len(results["echo"]) == 1
+            for query_text in special_queries:
+                response = await agent.tool_calls.invoke("search", query=query_text)
+                results = response.response
+                assert provider.last_query == query_text
+                assert len(results["echo"]) == 1
 
     @pytest.mark.asyncio
     async def test_concurrent_searches(self):
@@ -471,25 +457,25 @@ class TestEdgeCases:
             providers=[provider],
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            # Launch multiple searches concurrently
+            tasks = [
+                agent.tool_calls.invoke("search", query=f"query{i}") for i in range(5)
+            ]
 
-        # Launch multiple searches concurrently
-        tasks = [agent.tool_calls.invoke("search", query=f"query{i}") for i in range(5)]
+            responses = await asyncio.gather(*tasks)
+            results = [r.response for r in responses]
 
-        responses = await asyncio.gather(*tasks)
-        results = [r.response for r in responses]
+            # All searches should complete
+            assert len(results) == 5
+            assert provider.search_count == 5
 
-        # All searches should complete
-        assert len(results) == 5
-        assert provider.search_count == 5
-
-        # Each result should be unique
-        seen_ids = set()
-        for result_set in results:
-            for result in result_set["slow"]:
-                assert result.id not in seen_ids
-                seen_ids.add(result.id)
+            # Each result should be unique
+            seen_ids = set()
+            for result_set in results:
+                for result in result_set["slow"]:
+                    assert result.id not in seen_ids
+                    seen_ids.add(result.id)
 
     @pytest.mark.asyncio
     async def test_result_with_missing_fields(self):
@@ -524,26 +510,24 @@ class TestEdgeCases:
             providers=[provider],
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            response = await agent.tool_calls.invoke("search", query="test")
+            results = response.response
 
-        response = await agent.tool_calls.invoke("search", query="test")
-        results = response.response
+            assert len(results["minimal"]) == 1
+            result = results["minimal"][0]
 
-        assert len(results["minimal"]) == 1
-        result = results["minimal"][0]
+            # Required fields should be present
+            assert result.platform == "minimal"
+            assert result.id == "1"
+            assert result.url in [
+                "https://test.com",
+                "https://test.com/",
+            ]  # Allow trailing slash
+            assert result.content == "Minimal result"
 
-        # Required fields should be present
-        assert result.platform == "minimal"
-        assert result.id == "1"
-        assert result.url in [
-            "https://test.com",
-            "https://test.com/",
-        ]  # Allow trailing slash
-        assert result.content == "Minimal result"
-
-        # Optional fields should be None or default
-        assert result.author_name is None
-        assert result.created_at is None
-        assert result.metrics == {}
-        assert result.media == []
+            # Optional fields should be None or default
+            assert result.author_name is None
+            assert result.created_at is None
+            assert result.metrics == {}
+            assert result.media == []

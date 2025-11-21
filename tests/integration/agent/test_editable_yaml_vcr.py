@@ -34,24 +34,22 @@ async def test_editable_yaml_real_llm_edits_with_tools(llm_vcr):
     resource = EditableYAML(initial, name="doc")
 
     # Strongly instruct the model to use tools for edits
-    agent = Agent(
+    async with Agent(
         "You are a YAML editor. Only modify the document via the provided tools."
         " Use the 'set' tool to update values. Return a short confirmation when done.",
         # temperature=0,
-    )
-    await agent.initialize()
+    ) as agent:
+        async with resource(agent):
+            assert isinstance(resource.state, Box)
+            assert resource.state.meta.version == 1.0
+            assert resource.state.config.title == "Draft"
 
-    async with resource(agent):
-        assert isinstance(resource.state, Box)
-        assert resource.state.meta.version == 1.0
-        assert resource.state.config.title == "Draft"
+            # Ask the LLM to perform a concrete edit via tools
+            await agent.call(
+                "Update meta.version to '3.0' and set config.title to 'Final'. Confirm when done."
+            )
 
-        # Ask the LLM to perform a concrete edit via tools
-        await agent.call(
-            "Update meta.version to '3.0' and set config.title to 'Final'. Confirm when done."
-        )
-
-        # Verify the resource was actually edited by tool execution
-        assert isinstance(resource.state, Box)
-        assert resource.state.meta.version == 3.0
-        assert resource.state.config.title == "Final"
+            # Verify the resource was actually edited by tool execution
+            assert isinstance(resource.state, Box)
+            assert resource.state.meta.version == 3.0
+            assert resource.state.config.title == "Final"

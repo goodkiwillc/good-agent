@@ -81,93 +81,82 @@ Additional context: {{ details }}
         """Test that Agent automatically loads file templates."""
         # Create agent with file template reference
         # This should work WITHOUT manual rendering
-        agent = Agent("{% include 'system/base' %}", model="gpt-4")
+        async with Agent("{% include 'system/base' %}", model="gpt-4") as agent:
+            # Check that system message was rendered from file
+            assert len(agent.messages) == 1
+            system_msg = agent.messages[0]
 
-        await agent.initialize()
-
-        # Check that system message was rendered from file
-        assert len(agent.messages) == 1
-        system_msg = agent.messages[0]
-
-        # Should have content from the file template
-        rendered_content = str(system_msg.content)
-        assert "helpful AI assistant" in rendered_content
-        assert "Be helpful and accurate" in rendered_content
+            # Should have content from the file template
+            rendered_content = str(system_msg.content)
+            assert "helpful AI assistant" in rendered_content
+            assert "Be helpful and accurate" in rendered_content
 
     @pytest.mark.asyncio
     async def test_agent_supports_template_inheritance(self, project_with_templates):
         """Test that template inheritance works in Agent."""
         # Use template with inheritance and variables
-        agent = Agent(
+        async with Agent(
             "{% include 'system/specialist' %}",
             context={
                 "specialty": "Python programming",
                 "domain": "software development",
             },
             model="gpt-4",
-        )
+        ) as agent:
+            # Check that inheritance and variables worked
+            system_msg = agent.messages[0]
+            rendered_content = str(system_msg.content)
 
-        await agent.initialize()
+            # Should have base content
+            assert "helpful AI assistant" in rendered_content
 
-        # Check that inheritance and variables worked
-        system_msg = agent.messages[0]
-        rendered_content = str(system_msg.content)
-
-        # Should have base content
-        assert "helpful AI assistant" in rendered_content
-
-        # Should have specialized content with variables
-        assert "Python programming" in rendered_content
-        assert "software development best practices" in rendered_content
+            # Should have specialized content with variables
+            assert "Python programming" in rendered_content
+            assert "software development best practices" in rendered_content
 
     @pytest.mark.asyncio
     async def test_message_templates_work(self, project_with_templates):
         """Test that file templates work in user messages."""
-        agent = Agent("You are a helpful assistant.", model="gpt-4")
+        async with Agent("You are a helpful assistant.", model="gpt-4") as agent:
+            # Add message using file template
+            agent.append(
+                "{% include 'user/question' %}",
+                context={
+                    "topic": "async programming in Python",
+                    "details": "I'm working with asyncio",
+                },
+            )
 
-        await agent.initialize()
+            # Check that message was rendered from template
+            user_msg = agent.messages[1]
+            rendered_content = str(user_msg.content)
 
-        # Add message using file template
-        agent.append(
-            "{% include 'user/question' %}",
-            context={
-                "topic": "async programming in Python",
-                "details": "I'm working with asyncio",
-            },
-        )
-
-        # Check that message was rendered from template
-        user_msg = agent.messages[1]
-        rendered_content = str(user_msg.content)
-
-        assert "Please help me with async programming in Python" in rendered_content
-        assert "Additional context: I'm working with asyncio" in rendered_content
+            assert "Please help me with async programming in Python" in rendered_content
+            assert "Additional context: I'm working with asyncio" in rendered_content
 
     @pytest.mark.asyncio
     async def test_template_preloading(self, project_with_templates):
         """Test that templates can be preloaded for performance."""
         # Get the template manager from agent
-        agent = Agent("Test", model="gpt-4")
-        await agent.initialize()
+        async with Agent("Test", model="gpt-4") as agent:
+            # The template manager should be enhanced
+            template_manager = agent.template
+            assert isinstance(template_manager, TemplateManager)
 
-        # The template manager should be enhanced
-        template_manager = agent.template
-        assert isinstance(template_manager, TemplateManager)
+            # Preload templates
+            await template_manager.preload_templates(
+                ["system/base", "system/specialist", "user/question"]
+            )
 
-        # Preload templates
-        await template_manager.preload_templates(
-            ["system/base", "system/specialist", "user/question"]
-        )
-
-        # Templates should be cached
-        assert "system/base" in template_manager.file_loader._cache
-        assert "system/specialist" in template_manager.file_loader._cache
-        assert "user/question" in template_manager.file_loader._cache
+            # Templates should be cached
+            assert "system/base" in template_manager.file_loader._cache
+            assert "system/specialist" in template_manager.file_loader._cache
+            assert "user/question" in template_manager.file_loader._cache
 
     @pytest.mark.asyncio
     async def test_mixed_templates(self, project_with_templates):
         """Test mixing file templates with inline templates."""
-        agent = Agent(
+        async with Agent(
             """
             {% include 'system/base' %}
             
@@ -177,48 +166,43 @@ Additional context: {{ details }}
             """,
             context={"current_date": "2025-09-02", "focus_area": "testing"},
             model="gpt-4",
-        )
+        ) as agent:
+            system_msg = agent.messages[0]
+            rendered_content = str(system_msg.content)
 
-        await agent.initialize()
+            # Should have file template content
+            assert "helpful AI assistant" in rendered_content
 
-        system_msg = agent.messages[0]
-        rendered_content = str(system_msg.content)
-
-        # Should have file template content
-        assert "helpful AI assistant" in rendered_content
-
-        # Should have inline template content
-        assert "Today's date is 2025-09-02" in rendered_content
-        assert "Focus on testing" in rendered_content
+            # Should have inline template content
+            assert "Today's date is 2025-09-02" in rendered_content
+            assert "Focus on testing" in rendered_content
 
     @pytest.mark.asyncio
     async def test_fallback_to_registry(self, project_with_templates):
         """Test that registry templates still work."""
-        agent = Agent("Test", model="gpt-4")
-        await agent.initialize()
+        async with Agent("Test", model="gpt-4") as agent:
+            # Register a template in the traditional way
+            agent.template.add_template(
+                "registered_template", "This is registered: {{ value }}"
+            )
 
-        # Register a template in the traditional way
-        agent.template.add_template(
-            "registered_template", "This is registered: {{ value }}"
-        )
+            # Use both file and registry templates
+            agent.append(
+                """
+                File template: {% include 'system/base' %}
+                Registry template: {% include 'registered_template' %}
+            """,
+                context={"value": "test123"},
+            )
 
-        # Use both file and registry templates
-        agent.append(
-            """
-            File template: {% include 'system/base' %}
-            Registry template: {% include 'registered_template' %}
-        """,
-            context={"value": "test123"},
-        )
+            user_msg = agent.messages[1]
+            rendered_content = str(user_msg.content)
 
-        user_msg = agent.messages[1]
-        rendered_content = str(user_msg.content)
+            # Should have file template
+            assert "helpful AI assistant" in rendered_content
 
-        # Should have file template
-        assert "helpful AI assistant" in rendered_content
-
-        # Should have registry template
-        assert "This is registered: test123" in rendered_content
+            # Should have registry template
+            assert "This is registered: test123" in rendered_content
 
     @pytest.mark.asyncio
     async def test_no_prompts_directory(self):
@@ -231,13 +215,12 @@ Additional context: {{ details }}
 
             try:
                 # Create agent without prompts directory
-                agent = Agent("Regular system prompt without templates", model="gpt-4")
-
-                await agent.initialize()
-
-                # Should work normally
-                assert len(agent.messages) == 1
-                assert "Regular system prompt" in str(agent.messages[0].content)
+                async with Agent(
+                    "Regular system prompt without templates", model="gpt-4"
+                ) as agent:
+                    # Should work normally
+                    assert len(agent.messages) == 1
+                    assert "Regular system prompt" in str(agent.messages[0].content)
 
             finally:
                 os.chdir(original_cwd)
@@ -248,20 +231,15 @@ Additional context: {{ details }}
         # Create custom template manager with file templates disabled
         custom_manager = TemplateManager(enable_file_templates=False)
 
-        agent = Agent(
-            "{% include 'system/base' %}",  # This won't work without file templates
-            template_manager=custom_manager,
-            model="gpt-4",
-        )
-
-        await agent.initialize()
-
         # Template should not be resolved (no file loading)
-        system_msg = agent.messages[0]
-
-        # Accessing content should raise an error since the template can't be found
+        # The context manager will fail during initialization when it tries to render the template
         with pytest.raises(RuntimeError) as exc_info:
-            str(system_msg.content)
+            async with Agent(
+                "{% include 'system/base' %}",  # This won't work without file templates
+                template_manager=custom_manager,
+                model="gpt-4",
+            ):
+                pass
 
         # Verify the error mentions the missing template
         assert "system/base" in str(exc_info.value)

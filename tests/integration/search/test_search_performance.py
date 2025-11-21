@@ -121,24 +121,22 @@ class TestPerformance:
             parallel_execution=True,
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            start = time.time()
+            response = await agent.tool_calls.invoke("search", query="test")
+            total_time = time.time() - start
 
-        start = time.time()
-        response = await agent.tool_calls.invoke("search", query="test")
-        total_time = time.time() - start
+            results = response.response
 
-        results = response.response
+            # Should complete in roughly the time of slowest provider
+            assert total_time < 0.7  # Slowest is 0.5s + overhead
 
-        # Should complete in roughly the time of slowest provider
-        assert total_time < 0.7  # Slowest is 0.5s + overhead
-
-        # All providers should return results
-        assert len(results) == 4
-        assert len(results["fast"]) == 5
-        assert len(results["medium"]) == 10
-        assert len(results["slow"]) == 20
-        assert len(results["very_fast"]) == 3
+            # All providers should return results
+            assert len(results) == 4
+            assert len(results["fast"]) == 5
+            assert len(results["medium"]) == 10
+            assert len(results["slow"]) == 20
+            assert len(results["very_fast"]) == 3
 
     @pytest.mark.asyncio
     async def test_deduplication_performance(self):
@@ -293,24 +291,22 @@ class TestConcurrency:
             providers=[provider],
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            # Launch 20 concurrent searches
+            queries = [f"query_{i}" for i in range(20)]
+            tasks = [agent.tool_calls.invoke("search", query=q) for q in queries]
 
-        # Launch 20 concurrent searches
-        queries = [f"query_{i}" for i in range(20)]
-        tasks = [agent.tool_calls.invoke("search", query=q) for q in queries]
+            responses = await asyncio.gather(*tasks)
+            results = [r.response for r in responses]
 
-        responses = await asyncio.gather(*tasks)
-        results = [r.response for r in responses]
+            # All queries should have been processed
+            assert len(provider.queries_seen) == 20
+            assert set(provider.queries_seen) == set(queries)
 
-        # All queries should have been processed
-        assert len(provider.queries_seen) == 20
-        assert set(provider.queries_seen) == set(queries)
-
-        # Each result should match its query
-        for i, result_set in enumerate(results):
-            result = result_set["tracker"][0]
-            assert f"query_{i}" in result.content
+            # Each result should match its query
+            for i, result_set in enumerate(results):
+                result = result_set["tracker"][0]
+                assert f"query_{i}" in result.content
 
     @pytest.mark.asyncio
     async def test_concurrent_searches_shared_state(self):
@@ -355,29 +351,27 @@ class TestConcurrency:
             providers=[provider],
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            # Launch concurrent searches
+            tasks = [
+                agent.tool_calls.invoke("search", query=f"concurrent_{i}")
+                for i in range(50)
+            ]
 
-        # Launch concurrent searches
-        tasks = [
-            agent.tool_calls.invoke("search", query=f"concurrent_{i}")
-            for i in range(50)
-        ]
+            responses = await asyncio.gather(*tasks)
+            results = [r.response for r in responses]
 
-        responses = await asyncio.gather(*tasks)
-        results = [r.response for r in responses]
+            # Should have made exactly 50 searches
+            assert provider.search_counter == 50
 
-        # Should have made exactly 50 searches
-        assert provider.search_counter == 50
+            # Each search should have unique ID
+            seen_ids = set()
+            for result_set in results:
+                for result in result_set["stateful"]:
+                    assert result.id not in seen_ids
+                    seen_ids.add(result.id)
 
-        # Each search should have unique ID
-        seen_ids = set()
-        for result_set in results:
-            for result in result_set["stateful"]:
-                assert result.id not in seen_ids
-                seen_ids.add(result.id)
-
-        assert len(seen_ids) == 50
+            assert len(seen_ids) == 50
 
     @pytest.mark.asyncio
     async def test_provider_rate_limiting(self):
@@ -424,33 +418,31 @@ class TestConcurrency:
             providers=[provider],
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            # Try to make more requests than rate limit allows
+            results = []
+            successful_results = 0
+            empty_results = 0
 
-        # Try to make more requests than rate limit allows
-        results = []
-        successful_results = 0
-        empty_results = 0
+            for i in range(15):
+                response = await agent.tool_calls.invoke("search", query=f"test_{i}")
+                results.append(response.response)
 
-        for i in range(15):
-            response = await agent.tool_calls.invoke("search", query=f"test_{i}")
-            results.append(response.response)
+                # Check if we got actual results or empty due to rate limiting
+                if response.response.get("rate_limited"):
+                    successful_results += 1
+                else:
+                    empty_results += 1
 
-            # Check if we got actual results or empty due to rate limiting
-            if response.response.get("rate_limited"):
-                successful_results += 1
-            else:
-                empty_results += 1
+                # Small delay between requests
+                await asyncio.sleep(0.01)
 
-            # Small delay between requests
-            await asyncio.sleep(0.01)
-
-        # All requests should return something (even if empty)
-        assert len(results) == 15
-        # First 10 should succeed (up to rate limit)
-        assert successful_results <= 10
-        # Remaining should be rate limited (empty results)
-        assert empty_results >= 5
+            # All requests should return something (even if empty)
+            assert len(results) == 15
+            # First 10 should succeed (up to rate limit)
+            assert successful_results <= 10
+            # Remaining should be rate limited (empty results)
+            assert empty_results >= 5
 
     @pytest.mark.asyncio
     async def test_search_cancellation(self):
@@ -484,23 +476,21 @@ class TestConcurrency:
             providers=[provider],
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            # Start search and cancel it
+            task = asyncio.create_task(agent.tool_calls.invoke("search", query="test"))
 
-        # Start search and cancel it
-        task = asyncio.create_task(agent.tool_calls.invoke("search", query="test"))
+            # Let it start
+            await asyncio.sleep(0.1)
 
-        # Let it start
-        await asyncio.sleep(0.1)
+            # Cancel the search
+            task.cancel()
 
-        # Cancel the search
-        task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
 
-        with pytest.raises(asyncio.CancelledError):
-            await task
-
-        # Provider should have detected cancellation
-        assert provider.was_cancelled
+            # Provider should have detected cancellation
+            assert provider.was_cancelled
 
 
 class TestScalability:
@@ -521,18 +511,16 @@ class TestScalability:
             parallel_execution=True,
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            start = time.time()
+            response = await agent.tool_calls.invoke("search", query="test")
+            elapsed = time.time() - start
 
-        start = time.time()
-        response = await agent.tool_calls.invoke("search", query="test")
-        elapsed = time.time() - start
-
-        results = response.response
-        # Should handle many providers efficiently
-        assert len(results) == 50
-        # With parallel execution, should be fast even with many providers
-        assert elapsed < 1.0
+            results = response.response
+            # Should handle many providers efficiently
+            assert len(results) == 50
+            # With parallel execution, should be fast even with many providers
+            assert elapsed < 1.0
 
     @pytest.mark.asyncio
     async def test_large_result_aggregation(self):
@@ -576,22 +564,20 @@ class TestScalability:
             enable_dedup=False,  # Don't dedup for this test
         )
 
-        agent = Agent("Test", extensions=[search])
-        await agent.initialize()
+        async with Agent("Test", extensions=[search]) as agent:
+            start = time.time()
+            response = await agent.tool_calls.invoke("search", query="test")
+            elapsed = time.time() - start
 
-        start = time.time()
-        response = await agent.tool_calls.invoke("search", query="test")
-        elapsed = time.time() - start
+            results = response.response
+            # Should handle large result sets
+            assert len(results["small"]) == 10
+            assert len(results["medium"]) == 100
+            assert len(results["large"]) == 1000
+            assert len(results["huge"]) == 5000
 
-        results = response.response
-        # Should handle large result sets
-        assert len(results["small"]) == 10
-        assert len(results["medium"]) == 100
-        assert len(results["large"]) == 1000
-        assert len(results["huge"]) == 5000
+            total_results = sum(len(r) for r in results.values())
+            assert total_results == 6110
 
-        total_results = sum(len(r) for r in results.values())
-        assert total_results == 6110
-
-        # Should still be reasonably fast
-        assert elapsed < 5.0
+            # Should still be reasonably fast
+            assert elapsed < 5.0
