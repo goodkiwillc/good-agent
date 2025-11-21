@@ -207,7 +207,7 @@ async def test_concurrent_agent_initialization():
 
         agent_tool = agent_tool_factory(idx)
 
-        async with Agent(f"Agent {idx}", tools=[agent_tool, simple_tool]) as agent:
+        async with Agent(f"Agent {idx}", tools=[agent_tool, simple_tool]):
             elapsed = time.time() - start
 
         return idx, elapsed

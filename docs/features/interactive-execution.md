@@ -1,5 +1,8 @@
 # Interactive Execution
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 Good Agent provides granular control over the agent's execution lifecycle through the `agent.execute()` method, enabling you to process messages and events step-by-step as they are generated. This is essential for building responsive UIs, handling long-running workflows, and implementing custom tool approval flows.
 
 ## Overview
@@ -169,22 +172,22 @@ async with Agent("Travel agent", tools=[get_weather, book_flight]) as agent:
 Control how long the agent runs:
 
 ```python
-# @TODO: we shouldn't need `iteration_count` - there is a matchable argument in Message that contains local iteration count (`i`) and global message index (`index`
+from good_agent.messages import Message
+
 async with Agent("Research assistant", tools=[search_web]) as agent:
-    iteration_count = 0
-
     async for message in agent.execute("Research AI trends", max_iterations=3):
-        iteration_count += 1
-        print(f"Iteration {iteration_count}: {message.role}")
+        match message:
+            case Message(i=iteration):
+                print(f"Iteration {iteration}: {message.role}")
 
-        # Early termination based on content
-        if "final report" in message.content.lower():
-            print("Research complete!")
-            break
+                # Early termination based on content
+                if "final report" in message.content.lower():
+                    print("Research complete!")
+                    break
 
-        # Warning for long-running processes
-        if iteration_count > 2:
-            print("⚠️ Agent is taking multiple iterations...")
+                # Warning for long-running processes
+                if iteration > 2:
+                    print("⚠️ Agent is taking multiple iterations...")
 ```
 
 ### Conditional Processing

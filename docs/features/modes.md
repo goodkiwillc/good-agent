@@ -36,7 +36,7 @@ Create modes using the `@agent.modes()` decorator:
 Use modes as context managers to activate specific behaviors:
 
 ```python
---8<-- "examples/docs/modes_basic.py:39:60"
+--8<-- "examples/docs/modes_basic.py:38:47"
 ```
 
 ## Mode State Management
@@ -221,4 +221,3 @@ Here's a comprehensive example demonstrating advanced mode usage:
 - **[Interactive Execution](./interactive-execution.md)** - Use modes in interactive execution contexts
 - **[Events](../core/events.md)** - Monitor and respond to mode changes
 - **[Tools](../core/tools.md)** - Build tools that interact with agent modes
-- **[Components](../extensibility/components.md)** - Create reusable mode-aware components

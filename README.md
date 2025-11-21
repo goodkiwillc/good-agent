@@ -1,5 +1,8 @@
 # Good Agent
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 A Pythonic, async-first framework for building composable, stateful AI agents.
 
 Good Agent leverages native Python constructs—context managers, decorators, and strong typing—to give you granular control over agent context, lifecycle, and tool execution.
@@ -87,7 +90,79 @@ async with Agent("Analyze sentiment") as agent:
     print(f"Confidence: {result.output.confidence}")
 ```
 
-### 4. Agent Modes & Reusability
+### 4. Interactive Execution
+
+Use `execute()` to iterate over the agent's thought process in real-time. Good Agent supports structural pattern matching for clean handling of different message types.
+
+```python
+from good_agent import Agent, ToolMessage, AssistantMessage
+
+async with Agent("Assistant", model="gpt-4o") as agent:
+    # Pass the message directly to execute()
+    async for message in agent.execute("Calculate 2 + 2 * 4"):
+        match message:
+            case ToolMessage(tool_name=name, content=result):
+                print(f"Tool {name} output: {result}")
+
+            case AssistantMessage(content=text):
+                print(f"Response: {text}")
+```
+
+#### Accessing Agent State During Iteration
+
+You can inspect and modify agent state during iteration, enabling dynamic control over the conversation flow.
+
+```python
+from good_agent import Agent, ToolMessage, AssistantMessage
+
+@tool
+async def get_user_location() -> str:
+    """Get the user's approximate location."""
+    return "Unknown"
+
+async with Agent("Assistant", tools=[get_user_location]) as agent:
+    async for message in agent.execute("What's the weather like?"):
+        match message:
+            case ToolMessage(tool_name="get_user_location"):
+                # Access message history
+                print(f"Total messages: {len(agent.messages)}")
+                print(f"Last assistant message: {agent.assistant[-1].content}")
+                
+                # Inject context when location lookup fails
+                if "Unknown" in message.content:
+                    agent.append(
+                        "<system>IP lookup failed. User is in San Francisco, CA.</system>",
+                        role="system"
+                    )
+                    print(f"Injected context: {agent[-1].content}")
+            
+            case AssistantMessage(content=text):
+                print(f"Final response: {text}")
+```
+
+#### Common State Access Patterns
+
+```python
+# Access typed message views
+agent.messages          # All messages
+agent.user             # Only user messages
+agent.assistant        # Only assistant messages  
+agent.tool             # Only tool messages
+
+# Get recent messages
+agent[-1]              # Last message (any role)
+agent.assistant[-1]    # Last assistant message
+agent.user[-1]         # Last user message
+
+# Check message content and metadata
+last_msg = agent[-1]
+print(f"Role: {last_msg.role}")
+print(f"Content: {last_msg.content}")
+if hasattr(last_msg, 'tool_calls'):
+    print(f"Tool calls: {last_msg.tool_calls}")
+```
+
+### 5. Agent Modes & Reusability
 
 You can define an agent and its capabilities upfront, then use it later in your application logic. This allows you to separate agent configuration from execution.
 
@@ -112,24 +187,6 @@ async def main():
     async with agent.modes['research']:
         response = await agent.call("Investigate quantum computing trends.")
         print(response.content)
-```
-
-### 5. Interactive Execution
-
-Use `execute()` to iterate over the agent's thought process in real-time. Good Agent supports structural pattern matching for clean handling of different message types.
-
-```python
-from good_agent import Agent, ToolMessage, AssistantMessage
-
-async with Agent("Assistant", model="gpt-4o") as agent:
-    # Pass the message directly to execute()
-    async for message in agent.execute("Calculate 2 + 2 * 4"):
-        match message:
-            case ToolMessage(tool_name=name, content=result):
-                print(f"Tool {name} output: {result}")
-
-            case AssistantMessage(content=text):
-                print(f"Response: {text}")
 ```
 
 ### 6. Composing Agents

@@ -15,6 +15,7 @@ __version__ = "0.1.0"
 
 # For static type checking only
 if TYPE_CHECKING:
+    from fast_depends import Depends
     from good_agent.core.event_router import EventContext
 
     from good_agent.agent import (
@@ -241,6 +242,7 @@ _LAZY_IMPORTS = {
     "create_component_tool_decorator": "tools",
     # External
     "EventContext": "good_agent.core.event_router",
+    "Depends": "fast_depends",
 }
 
 
@@ -396,4 +398,5 @@ __all__ = [
     "create_component_tool_decorator",
     # External
     "EventContext",
+    "Depends",
 ]

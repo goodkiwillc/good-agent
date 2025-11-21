@@ -1,0 +1,129 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"MCP-enabled assistant","role":"system"},{"content":[{"text":"What
+      MCP tools are available?","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"temperature":0.0,"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '208'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxGaT2HUf3O8pgdH5IQ8vgq9eWc\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764302,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"MCP (Microsoft Certified Professional)
+        tools typically refer to resources and utilities provided by Microsoft to
+        help certified professionals prepare for exams, manage certifications, and
+        enhance their skills. Here are some common MCP-related tools and resources:\\n\\n1.
+        **Microsoft Learn**  \\n   - An official learning platform offering free,
+        interactive training modules and learning paths aligned with Microsoft certifications.\\n\\n2.
+        **Certification Dashboard**  \\n   - A portal where MCPs can view and manage
+        their certifications, download certificates, and access transcripts.\\n\\n3.
+        **Exam Prep Tools**  \\n   - Practice tests, study guides, and exam reference
+        books available through Microsoft Press or third-party providers.\\n\\n4.
+        **Microsoft Virtual Labs**  \\n   - Hands-on labs that allow you to practice
+        Microsoft technologies in a sandbox environment without needing your own setup.\\n\\n5.
+        **MCP Community Forums**  \\n   - Online forums and communities where MCPs
+        can discuss exam topics, share study tips, and network.\\n\\n6. **Microsoft
+        Official Practice Tests**  \\n   - Official practice exams that simulate the
+        real certification tests.\\n\\n7. **Microsoft Certification App**  \\n   -
+        A mobile app to track your certification progress, schedule exams, and access
+        learning resources.\\n\\nIf you meant a different \\\"MCP\\\" or specific
+        tools related to a particular Microsoft product or platform, please clarify!\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        21,\n    \"completion_tokens\": 259,\n    \"total_tokens\": 280,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_24710c7f06\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a388f8150d2e-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:31:46 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=v8fgGduBIb9u9htnaHQWnNd.tS252XwhAYz8Qmk6RSg-1763764306-1.0.1.1-aY7pEeSNwDIdifHEWl_etp0oz9H2ArKAxzWUTX6Mj2tvtlj_WerwKWWerZXj8V3gmiE2DPL3a77spGqC9nv3DkN4PrnvYPnAARdm6Og8Lwo;
+        path=/; expires=Fri, 21-Nov-25 23:01:46 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=sX2ejoHBQZFiEtaliQZoPEQLAloqoyaBrjAcRlLCGaw-1763764306212-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '3577'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999982'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

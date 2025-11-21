@@ -1,5 +1,8 @@
 # Agents
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 The `Agent` class is the heart of Good Agent. It orchestrates LLM interactions, manages conversation state, executes tools, and provides the foundation for all agent behavior. This page covers the agent lifecycle, state management, versioning, and advanced patterns.
 
 ## Agent Basics

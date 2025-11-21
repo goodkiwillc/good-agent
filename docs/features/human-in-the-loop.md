@@ -1,8 +1,13 @@
 # Human-in-the-Loop
 
-Human-in-the-loop (HITL) patterns enable agents to pause execution and wait for user input, approval, or intervention at critical points. Good Agent provides both interactive CLI interfaces and programmatic APIs for seamless human-agent collaboration.
+!!! warning "Planned Feature"
+    Most programmatic human-in-the-loop APIs described in this document (such as `agent.handoff()`, `ctx.ask_user()`, and routing decorators) are **planned features** and not yet implemented. See the [Planned Features](#planned-features) section at the bottom of this page.
+    
+    The **CLI interactive session** described below is fully implemented and production-ready.
 
-## Core Concepts
+Human-in-the-loop (HITL) patterns enable agents to pause execution and wait for user input, approval, or intervention at critical points. Good Agent currently provides interactive CLI interfaces, with programmatic APIs planned for future releases.
+
+## Interactive CLI Sessions (Available Now)
 
 ### Interactive Sessions
 
@@ -19,27 +24,7 @@ The Good Agent CLI provides built-in interactive sessions for real-time conversa
 - **Rich Display**: Markdown rendering and structured output
 - **Session Management**: History, clear screen, graceful exit
 
-### Human Input API (Planned)
-
-The core agent API will support programmatic user input requests:
-
-```python
-from good_agent import Agent
-
-async with Agent("You are a deployment assistant") as agent:
-    # Request user approval with typed response
-    response = await agent.user_input(
-        "Approve deployment to production?",
-        response_model=bool
-    )
-
-    if response.data:
-        await agent.call("Proceeding with deployment...")
-    else:
-        await agent.call("Deployment cancelled by user")
-```
-
-## Interactive CLI Interface
+## CLI Interface
 
 ### Basic Usage
 
@@ -88,9 +73,35 @@ The interactive loop handles step-by-step execution with rich display:
 --8<-- "src/good_agent/cli/run.py:58:95"
 ```
 
-## User Input Patterns
+---
 
-### Approval Workflows
+## Planned Features
+
+The following sections describe **planned** human-in-the-loop patterns that are not yet implemented. These APIs are under design and will be added in future releases.
+
+### Programmatic User Input API
+
+The core agent API will support programmatic user input requests:
+
+```python
+from good_agent import Agent
+
+async with Agent("You are a deployment assistant") as agent:
+    # Request user approval with typed response
+    response = await agent.user_input(
+        "Approve deployment to production?",
+        response_model=bool
+    )
+
+    if response.data:
+        await agent.call("Proceeding with deployment...")
+    else:
+        await agent.call("Deployment cancelled by user")
+```
+
+### User Input Patterns (Planned)
+
+#### Approval Workflows
 
 Request user approval before taking critical actions:
 
@@ -99,7 +110,7 @@ from good_agent import Agent
 from typing import Literal
 
 async with Agent("System administrator") as agent:
-
+    # Note: @agent.route() is a planned feature
     @agent.route('deploy')
     async def deploy_with_approval(ctx):
         """Deploy after getting user approval"""
@@ -121,11 +132,12 @@ async with Agent("System administrator") as agent:
             return "Deployment cancelled by user"
 ```
 
-### Clarification Requests
+#### Clarification Requests
 
 Handle ambiguous user requests by asking for clarification:
 
 ```python
+# Note: @agent.route() is a planned feature
 @agent.route('ready')
 async def ready_with_clarification(ctx):
     """Ask for clarification when needed"""
@@ -152,12 +164,12 @@ async def ready_with_clarification(ctx):
     return response
 ```
 
-### Progressive Disclosure
+#### Progressive Disclosure
 
 Show partial results and get user direction:
 
-<!-- @TODO: remove .route and .mode - search and update everywhere. -->
 ```python
+# Note: @agent.route() is a planned feature
 @agent.route('research')
 async def research_with_feedback(ctx):
     """Show progress and get direction"""
@@ -184,9 +196,9 @@ async def research_with_feedback(ctx):
         return await focused_research(initial_results, direction)
 ```
 
-## Advanced Patterns
+### Advanced Patterns (Planned)
 
-### Multiple Choice Interactions
+#### Multiple Choice Interactions
 
 Present structured choices to users:
 
@@ -212,7 +224,7 @@ async def analysis_with_options(ctx):
     return await execute_analysis(choice)
 ```
 
-### Confidence-Based Intervention
+#### Confidence-Based Intervention
 
 Only involve humans when agent confidence is low:
 
@@ -248,7 +260,7 @@ async def ready_with_confidence_check(ctx):
     return response
 ```
 
-### Interactive Execution with Interruption
+#### Interactive Execution with Interruption
 
 Allow users to interrupt long-running responses:
 
@@ -281,7 +293,7 @@ async def interactive_with_intervention(ctx):
     return ''.join(chunks)
 ```
 
-### Validation Workflows
+#### Validation Workflows
 
 Get user validation for generated content:
 
@@ -312,9 +324,9 @@ async def generate_with_validation(ctx):
         return draft
 ```
 
-## Timeout and Error Handling
+### Timeout and Error Handling (Planned)
 
-### Timeout Configuration
+#### Timeout Configuration
 
 All human input operations support timeouts:
 
@@ -337,7 +349,7 @@ response = await ctx.ask_user(
 )
 ```
 
-### Default Actions
+#### Default Actions
 
 Configure what happens when users don't respond:
 
@@ -363,7 +375,7 @@ async def deploy_with_defaults(ctx):
     return await execute_deployment()
 ```
 
-### Error Recovery
+#### Error Recovery
 
 Handle errors gracefully in interactive workflows:
 
@@ -396,9 +408,9 @@ async def interactive_task_with_recovery(ctx):
                 return f"Task failed after {max_retries} attempts"
 ```
 
-## Integration Patterns
+### Integration Patterns (Planned)
 
-### Web UI Integration
+#### Web UI Integration
 
 Human-in-the-loop works seamlessly with web interfaces:
 
@@ -424,7 +436,7 @@ async def chat_endpoint(request):
     return {'response': response}
 ```
 
-### Slack/Discord Integration
+#### Slack/Discord Integration
 
 Integrate with chat platforms:
 
@@ -451,7 +463,7 @@ async def deploy_command(context):
         await context.respond("Deployment cancelled")
 ```
 
-### API Integration
+#### API Integration
 
 Use HITL patterns in API endpoints:
 
@@ -499,9 +511,9 @@ async def process_document(
     return {"status": "processing", "document_id": document_id}
 ```
 
-## Testing Human-in-the-Loop
+### Testing Human-in-the-Loop (Planned)
 
-### Mocking User Input
+#### Mocking User Input
 
 Test interactive agents by mocking user responses:
 
@@ -539,7 +551,7 @@ async def test_timeout_handling():
     assert "timeout" in result.lower()
 ```
 
-### Integration Testing
+#### Integration Testing
 
 Test complete interactive workflows:
 
@@ -564,9 +576,9 @@ async def test_interactive_workflow():
     assert result == "Process completed successfully"
 ```
 
-## Best Practices
+### Best Practices (Planned)
 
-### 1. Always Set Timeouts
+#### 1. Always Set Timeouts
 
 Prevent indefinite waiting by always setting appropriate timeouts:
 
@@ -582,7 +594,7 @@ response = await ctx.ask_user(
 response = await ctx.ask_user("Approve this action?")  # No timeout
 ```
 
-### 2. Provide Clear Context
+#### 2. Provide Clear Context
 
 Give users enough information to make informed decisions:
 
@@ -601,7 +613,7 @@ approved = await ctx.ask_user(
 approved = await ctx.ask_user("Delete files?", response_model=bool)
 ```
 
-### 3. Handle Edge Cases
+#### 3. Handle Edge Cases
 
 Account for timeouts, errors, and unexpected responses:
 
@@ -622,7 +634,7 @@ except ValueError as e:
     choice = "balanced"
 ```
 
-### 4. Minimize Interruptions
+#### 4. Minimize Interruptions
 
 Only request human input when truly necessary:
 
@@ -648,7 +660,7 @@ async def smart_processing(ctx):
     return result
 ```
 
-### 5. Provide Escape Hatches
+#### 5. Provide Escape Hatches
 
 Always give users ways to abort or modify workflows:
 
@@ -677,4 +689,6 @@ async def long_task_with_escape(ctx):
     return "Task completed successfully"
 ```
 
-Human-in-the-loop patterns make agents more trustworthy and effective by involving humans at critical decision points while maintaining the speed and efficiency of automated processing.
+---
+
+**Note:** The programmatic human-in-the-loop APIs described in this document are planned features. For production use, please use the CLI interactive sessions or implement custom input handling in your application layer. Follow the project roadmap for updates on when these features will be available.

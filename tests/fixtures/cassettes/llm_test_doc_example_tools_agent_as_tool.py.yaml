@@ -1,0 +1,525 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"You are a content manager. Coordinate research
+      and writing.","role":"system"},{"content":[{"text":"Research the history of
+      AI agents","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"researcher","description":"Delegate
+      research tasks to a specialist agent","parameters":{"type":"object","properties":{"prompt":{"type":"string"},"session_id":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["prompt"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '600'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeU4IoYI82GV7fkG1d8xlDhZA8aRt\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764738,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_EG3rscJCYCnGzLqy4vuYzgKe\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"researcher\",\n
+        \             \"arguments\": \"{\\\"prompt\\\":\\\"Research the history of
+        AI agents, including key developments, milestones, and influential figures
+        in the field.\\\"}\"\n            }\n          }\n        ],\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"tool_calls\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        74,\n    \"completion_tokens\": 34,\n    \"total_tokens\": 108,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23ae2f594308db-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:38:59 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=451.HVwWwTcKwNGhpaHISPteubVpq_eNEOuEw0XVxGE-1763764739-1.0.1.1-s5a.TWTFfNYpafxxeKSqPO_RjN7CMcKxN4phntAaelCdR09lrM6f729BRHQclQn5Wj44NiImj131npmgImtoRxTOCrAmSjtU2KHOnowfIQA;
+        path=/; expires=Fri, 21-Nov-25 23:08:59 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=nN2HpgFsR5V0_bg6Fzwv7cHJLLbLAVDjqcTj_7t.7f4-1763764739011-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '486'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999975'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"You are a research specialist. Search for information
+      and summarize findings.","role":"system"},{"content":[{"text":"Research the
+      history of AI agents, including key developments, milestones, and influential
+      figures in the field.","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"web_search","description":"Mock
+      web search tool.","parameters":{"type":"object","properties":{"query":{"type":"string"}},"required":["query"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '597'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=451.HVwWwTcKwNGhpaHISPteubVpq_eNEOuEw0XVxGE-1763764739-1.0.1.1-s5a.TWTFfNYpafxxeKSqPO_RjN7CMcKxN4phntAaelCdR09lrM6f729BRHQclQn5Wj44NiImj131npmgImtoRxTOCrAmSjtU2KHOnowfIQA;
+        _cfuvid=nN2HpgFsR5V0_bg6Fzwv7cHJLLbLAVDjqcTj_7t.7f4-1763764739011-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeU4JGvHK3hP7pOsHrUgrEHHMvt6Y\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764739,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_FMxR7ly8xhAIVOg0mn9lUHQ9\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"web_search\",\n
+        \             \"arguments\": \"{\\\"query\\\":\\\"history of AI agents key
+        developments milestones influential figures\\\"}\"\n            }\n          }\n
+        \       ],\n        \"refusal\": null,\n        \"annotations\": []\n      },\n
+        \     \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n    }\n
+        \ ],\n  \"usage\": {\n    \"prompt_tokens\": 75,\n    \"completion_tokens\":
+        22,\n    \"total_tokens\": 97,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23ae336c1f08db-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:38:59 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '410'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999947'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"You are a research specialist. Search for information
+      and summarize findings.","role":"system"},{"content":[{"text":"Research the
+      history of AI agents, including key developments, milestones, and influential
+      figures in the field.","type":"text"}],"role":"user"},{"role":"assistant","content":"","tool_calls":[{"id":"call_FMxR7ly8xhAIVOg0mn9lUHQ9","type":"function","function":{"name":"web_search","arguments":"{\"query\":\"history
+      of AI agents key developments milestones influential figures\"}"}}]},{"role":"tool","content":"Search
+      results for: history of AI agents key developments milestones influential figures","tool_call_id":"call_FMxR7ly8xhAIVOg0mn9lUHQ9"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"web_search","description":"Mock
+      web search tool.","parameters":{"type":"object","properties":{"query":{"type":"string"}},"required":["query"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '999'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=451.HVwWwTcKwNGhpaHISPteubVpq_eNEOuEw0XVxGE-1763764739-1.0.1.1-s5a.TWTFfNYpafxxeKSqPO_RjN7CMcKxN4phntAaelCdR09lrM6f729BRHQclQn5Wj44NiImj131npmgImtoRxTOCrAmSjtU2KHOnowfIQA;
+        _cfuvid=nN2HpgFsR5V0_bg6Fzwv7cHJLLbLAVDjqcTj_7t.7f4-1763764739011-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeU4JUG0Kdoidhue5vrfGQljHvk2U\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764739,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"The history of AI agents involves the
+        development of autonomous or semi-autonomous systems capable of perceiving
+        their environment, reasoning, and acting to achieve specific goals. Key developments
+        and milestones include:\\n\\n1. Early Foundations (1950s-1960s):\\n   - Alan
+        Turing's 1950 paper \\\"Computing Machinery and Intelligence\\\" proposed
+        the Turing Test as a measure of machine intelligence.\\n   - The Dartmouth
+        Conference in 1956, where the term \\\"Artificial Intelligence\\\" was coined,
+        marked the birth of AI as a field.\\n   - Early AI programs like the Logic
+        Theorist (1956) by Newell and Simon demonstrated automated reasoning.\\n\\n2.
+        Development of Intelligent Agents (1970s-1980s):\\n   - The concept of intelligent
+        agents emerged, focusing on systems that perceive and act in an environment.\\n
+        \  - The introduction of the \\\"agent\\\" paradigm shifted AI research towards
+        autonomous systems.\\n   - Influential figures include John McCarthy, Marvin
+        Minsky, and Herbert A. Simon.\\n\\n3. Multi-Agent Systems and Robotics (1990s):\\n
+        \  - Research expanded to multi-agent systems where multiple agents interact
+        or collaborate.\\n   - Advances in robotics integrated AI agents into physical
+        machines.\\n   - The development of agent communication languages and protocols.\\n\\n4.
+        Modern AI Agents (2000s-Present):\\n   - The rise of machine learning and
+        deep learning enhanced agent capabilities.\\n   - Virtual assistants like
+        Siri, Alexa, and Google Assistant are practical AI agents.\\n   - Reinforcement
+        learning has been pivotal in training agents for complex tasks.\\n   - Influential
+        figures include Yann LeCun, Geoffrey Hinton, and Richard Sutton.\\n\\nOverall,
+        the evolution of AI agents reflects progress from theoretical foundations
+        to practical applications, driven by advances in algorithms, computing power,
+        and data availability.\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 118,\n    \"completion_tokens\":
+        361,\n    \"total_tokens\": 479,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23ae36fe4508db-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:39:04 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '4694'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999925'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"You are a content manager. Coordinate research
+      and writing.","role":"system"},{"content":[{"text":"Research the history of
+      AI agents","type":"text"}],"role":"user"},{"role":"assistant","content":"","tool_calls":[{"id":"call_EG3rscJCYCnGzLqy4vuYzgKe","type":"function","function":{"name":"researcher","arguments":"{\"prompt\":\"Research
+      the history of AI agents, including key developments, milestones, and influential
+      figures in the field.\"}"}}]},{"role":"tool","content":"<researcher session_id=\"1\">\nThe
+      history of AI agents involves the development of autonomous or semi-autonomous
+      systems capable of perceiving their environment, reasoning, and acting to achieve
+      specific goals. Key developments and milestones include:\n\n1. Early Foundations
+      (1950s-1960s):\n   - Alan Turing''s 1950 paper \"Computing Machinery and Intelligence\"
+      proposed the Turing Test as a measure of machine intelligence.\n   - The Dartmouth
+      Conference in 1956, where the term \"Artificial Intelligence\" was coined, marked
+      the birth of AI as a field.\n   - Early AI programs like the Logic Theorist
+      (1956) by Newell and Simon demonstrated automated reasoning.\n\n2. Development
+      of Intelligent Agents (1970s-1980s):\n   - The concept of intelligent agents
+      emerged, focusing on systems that perceive and act in an environment.\n   -
+      The introduction of the \"agent\" paradigm shifted AI research towards autonomous
+      systems.\n   - Influential figures include John McCarthy, Marvin Minsky, and
+      Herbert A. Simon.\n\n3. Multi-Agent Systems and Robotics (1990s):\n   - Research
+      expanded to multi-agent systems where multiple agents interact or collaborate.\n   -
+      Advances in robotics integrated AI agents into physical machines.\n   - The
+      development of agent communication languages and protocols.\n\n4. Modern AI
+      Agents (2000s-Present):\n   - The rise of machine learning and deep learning
+      enhanced agent capabilities.\n   - Virtual assistants like Siri, Alexa, and
+      Google Assistant are practical AI agents.\n   - Reinforcement learning has been
+      pivotal in training agents for complex tasks.\n   - Influential figures include
+      Yann LeCun, Geoffrey Hinton, and Richard Sutton.\n\nOverall, the evolution of
+      AI agents reflects progress from theoretical foundations to practical applications,
+      driven by advances in algorithms, computing power, and data availability.\n</researcher>","tool_call_id":"call_EG3rscJCYCnGzLqy4vuYzgKe"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"researcher","description":"Delegate
+      research tasks to a specialist agent","parameters":{"type":"object","properties":{"prompt":{"type":"string"},"session_id":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null}},"required":["prompt"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '2836'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=451.HVwWwTcKwNGhpaHISPteubVpq_eNEOuEw0XVxGE-1763764739-1.0.1.1-s5a.TWTFfNYpafxxeKSqPO_RjN7CMcKxN4phntAaelCdR09lrM6f729BRHQclQn5Wj44NiImj131npmgImtoRxTOCrAmSjtU2KHOnowfIQA;
+        _cfuvid=nN2HpgFsR5V0_bg6Fzwv7cHJLLbLAVDjqcTj_7t.7f4-1763764739011-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeU4OmTzkZEwGpWkday21aU62byPH\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764744,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"The history of AI agents traces the
+        evolution of autonomous or semi-autonomous systems designed to perceive their
+        environment, reason, and act to achieve specific goals. Key developments and
+        milestones include:\\n\\n1. Early Foundations (1950s-1960s):\\n   - Alan Turing's
+        1950 paper \\\"Computing Machinery and Intelligence\\\" introduced the Turing
+        Test as a measure of machine intelligence.\\n   - The Dartmouth Conference
+        in 1956 coined the term \\\"Artificial Intelligence,\\\" marking the birth
+        of AI as a field.\\n   - Early AI programs like the Logic Theorist (1956)
+        by Newell and Simon demonstrated automated reasoning.\\n\\n2. Development
+        of Intelligent Agents (1970s-1980s):\\n   - The concept of intelligent agents
+        emerged, focusing on systems that perceive and act in an environment.\\n   -
+        The \\\"agent\\\" paradigm shifted AI research towards autonomous systems.\\n
+        \  - Influential figures include John McCarthy, Marvin Minsky, and Herbert
+        A. Simon.\\n\\n3. Multi-Agent Systems and Robotics (1990s):\\n   - Research
+        expanded to multi-agent systems where multiple agents interact or collaborate.\\n
+        \  - Advances in robotics integrated AI agents into physical machines.\\n
+        \  - Development of agent communication languages and protocols.\\n\\n4. Modern
+        AI Agents (2000s-Present):\\n   - The rise of machine learning and deep learning
+        enhanced agent capabilities.\\n   - Virtual assistants like Siri, Alexa, and
+        Google Assistant are practical AI agents.\\n   - Reinforcement learning has
+        been pivotal in training agents for complex tasks.\\n   - Influential figures
+        include Yann LeCun, Geoffrey Hinton, and Richard Sutton.\\n\\nThe evolution
+        of AI agents reflects progress from theoretical foundations to practical applications,
+        driven by advances in algorithms, computing power, and data availability.
+        If you need a more detailed timeline or specific examples, I can provide further
+        information.\",\n        \"refusal\": null,\n        \"annotations\": []\n
+        \     },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n
+        \ ],\n  \"usage\": {\n    \"prompt_tokens\": 488,\n    \"completion_tokens\":
+        367,\n    \"total_tokens\": 855,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23ae554ec608db-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:39:09 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '4726'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999512'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

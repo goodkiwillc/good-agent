@@ -1,0 +1,230 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"You are a helpful assistant.","role":"system"},{"content":[{"text":"What
+      is 5 + 3 and what time is it?","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"calculate","description":"Perform
+      basic math operations.","parameters":{"type":"object","properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"additionalProperties":false}}},{"type":"function","function":{"name":"get_current_time","description":"Get
+      the current time in ISO format.","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '739'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxRsJi4I0KDZqgOK7jc25KswQKn\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764313,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_KLzDX14iCvR87SgRM4zZ8T9C\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"calculate\",\n
+        \             \"arguments\": \"{\\\"operation\\\": \\\"add\\\", \\\"a\\\":
+        5, \\\"b\\\": 3}\"\n            }\n          },\n          {\n            \"id\":
+        \"call_bCcuZ9p6689c87zyzGUmS0d8\",\n            \"type\": \"function\",\n
+        \           \"function\": {\n              \"name\": \"get_current_time\",\n
+        \             \"arguments\": \"{}\"\n            }\n          }\n        ],\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"tool_calls\"\n    }\n  ],\n  \"usage\":
+        {\n    \"prompt_tokens\": 85,\n    \"completion_tokens\": 50,\n    \"total_tokens\":
+        135,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\": 0,\n      \"audio_tokens\":
+        0\n    },\n    \"completion_tokens_details\": {\n      \"reasoning_tokens\":
+        0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\": 0,\n
+        \     \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a3cf3efea3c8-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:31:54 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=LzJIRNq3tiqbQ_FcP18eeV0jO758AmkUcr1LkL5vGuY-1763764314-1.0.1.1-AgWCcnUuYAmAVYHD_dYpO0MDNyyMq6Dg.Y8bGK5sU2CO9orJgrVX_KDNkkGeRyYSkI2QlqwFJ7ixqjYi3WWhmWNdxjPoSIjSjab.JoDz40M;
+        path=/; expires=Fri, 21-Nov-25 23:01:54 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=QW7NaImxLGUYX6yZ0meMKmYMUcdwd6_gNngZsRXTP9Q-1763764314793-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '932'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999982'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"You are a helpful assistant.","role":"system"},{"content":[{"text":"What
+      is 5 + 3 and what time is it?","type":"text"}],"role":"user"},{"role":"assistant","content":"","tool_calls":[{"id":"call_KLzDX14iCvR87SgRM4zZ8T9C","type":"function","function":{"name":"calculate","arguments":"{\"operation\":
+      \"add\", \"a\": 5, \"b\": 3}"}},{"id":"call_bCcuZ9p6689c87zyzGUmS0d8","type":"function","function":{"name":"get_current_time","arguments":"{}"}}]},{"role":"tool","content":"8.0","tool_call_id":"call_KLzDX14iCvR87SgRM4zZ8T9C"},{"role":"tool","content":"2025-11-21T14:31:54.780619","tool_call_id":"call_bCcuZ9p6689c87zyzGUmS0d8"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"calculate","description":"Perform
+      basic math operations.","parameters":{"type":"object","properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}},"required":["operation","a","b"],"additionalProperties":false}}},{"type":"function","function":{"name":"get_current_time","description":"Get
+      the current time in ISO format.","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1230'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=LzJIRNq3tiqbQ_FcP18eeV0jO758AmkUcr1LkL5vGuY-1763764314-1.0.1.1-AgWCcnUuYAmAVYHD_dYpO0MDNyyMq6Dg.Y8bGK5sU2CO9orJgrVX_KDNkkGeRyYSkI2QlqwFJ7ixqjYi3WWhmWNdxjPoSIjSjab.JoDz40M;
+        _cfuvid=QW7NaImxLGUYX6yZ0meMKmYMUcdwd6_gNngZsRXTP9Q-1763764314793-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxTGD9WriGB2mYD0ifhTVSZEJax\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764315,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"5 + 3 is 8. The current time is 2025-11-21T14:31:54.\",\n
+        \       \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\":
+        null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        167,\n    \"completion_tokens\": 27,\n    \"total_tokens\": 194,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a3d7ddbaa3c8-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:31:55 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '649'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999972'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

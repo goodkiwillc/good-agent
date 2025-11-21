@@ -1,0 +1,116 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"Context-aware assistant","role":"system"},{"content":[{"text":"What
+      tools do you have?","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"debug_tool","description":"Tool
+      only available in debug mode.","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}},{"type":"function","function":{"name":"production_tool","description":"Tool
+      only available in production.","parameters":{"type":"object","properties":{},"required":[],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '634'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxLrEcwX9FckGw7XZzeM12bTXhB\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764307,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"I have access to two tools:\\n\\n1.
+        A debug tool, which is only available in debug mode.\\n2. A production tool,
+        which is only available in production mode.\\n\\nIf you'd like, I can provide
+        more details or use one of these tools for you.\",\n        \"refusal\": null,\n
+        \       \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\":
+        \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 62,\n    \"completion_tokens\":
+        54,\n    \"total_tokens\": 116,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a3a99ae4682c-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:31:49 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=aoFqMk67b6e45SiOZNVDXYYbnOdJL1V02YfzZOTSkME-1763764309-1.0.1.1-4QrtHB8FTlJnY7ZlnM_jawj_xj9e0BWA.jzxb2D3zahQ5WiOAVvvxDN84evmRFjUZEQqLEWSMw5M.zxe42XHXVXnNYmFmMg1nI2XFt3l6TQ;
+        path=/; expires=Fri, 21-Nov-25 23:01:49 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=cpMtl7DMRXyrODcC1LMj4NHnOLf9L5UbDEihGXorA9g-1763764309347-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1500'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999985'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

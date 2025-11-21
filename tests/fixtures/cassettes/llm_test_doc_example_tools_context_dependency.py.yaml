@@ -1,0 +1,117 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"Context-aware assistant","role":"system"},{"content":[{"text":"Tell
+      me about yourself","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"agent_aware_tool","description":"Tool
+      that can access agent state.","parameters":{"type":"object","properties":{"query":{"type":"string"}},"required":["query"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '471'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeU4W7ERDUsrvwUueMJnglLYI6HXG\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764752,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Hello! I'm ChatGPT, an AI language
+        model created by OpenAI. I'm designed to assist with a wide range of tasks,
+        such as answering questions, providing explanations, helping with writing,
+        brainstorming ideas, and much more. I can understand and generate human-like
+        text based on the input I receive. If you have any questions or need assistance,
+        feel free to ask!\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 54,\n    \"completion_tokens\":
+        75,\n    \"total_tokens\": 129,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23ae85aa824f5c-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:39:13 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=ThMomYGCFUF.tiyGkinW4WxxwLkHg4uBs7iQMtrAruI-1763764753-1.0.1.1-fJoEx4LVwJJ512iNvalVleHErQYlpSQc9xmEw8ZxXEzrPRh58dyz.cu7tBb3JSqJVA4YHPUZw.vIaWggYXbWmoLKmYBBRjjUdxm3a3Qdoj4;
+        path=/; expires=Fri, 21-Nov-25 23:09:13 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=dVACw_y42Y7TeF.zIZOHa1n2p8g8Uw1gw3QTAV0_E1I-1763764753411-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1070'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999985'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

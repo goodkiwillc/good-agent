@@ -1,5 +1,8 @@
 # Quickstart
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 This guide will get you up and running with Good Agent in minutes. You'll learn how to create your first agent, execute simple tasks, and understand the core interaction patterns.
 
 ## Prerequisites

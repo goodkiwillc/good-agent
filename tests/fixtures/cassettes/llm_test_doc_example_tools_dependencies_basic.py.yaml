@@ -1,0 +1,233 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"Database assistant","role":"system"},{"content":[{"text":"Query
+      users with limit 5","type":"text"}],"role":"user"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"query_database","description":"Query
+      the database with API enrichment.","parameters":{"type":"object","properties":{"query":{"type":"string"},"limit":{"default":10,"type":"integer"},"db":{"additionalProperties":true,"type":"object"},"api":{"additionalProperties":true,"type":"object"}},"required":["query"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '615'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxh8yEbnTae6ClWhKBgyBJMI3id\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764329,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": null,\n        \"tool_calls\": [\n          {\n
+        \           \"id\": \"call_LHg7xzURNQqCf6SN2lPshhcs\",\n            \"type\":
+        \"function\",\n            \"function\": {\n              \"name\": \"query_database\",\n
+        \             \"arguments\": \"{\\\"query\\\":\\\"SELECT * FROM users\\\",\\\"limit\\\":5}\"\n
+        \           }\n          }\n        ],\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"tool_calls\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 64,\n    \"completion_tokens\":
+        21,\n    \"total_tokens\": 85,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a4344982b455-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:32:10 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=IeVRMDNYEY1KbTzSEKsggz4WuWaBiwBOoxo2.RBZOwA-1763764330-1.0.1.1-ngpH9Eiym4qTWNiLixJAxC7OfFS6cEHGFqlYU32rwuQL34NcJQz9o1SP_oQeNEhC9X_Wwo07kVDFtb0hHR6XzKmJZNeaNhEhxj4QhVl_bb0;
+        path=/; expires=Fri, 21-Nov-25 23:02:10 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=FeoYJ3bDDm1QwRq42H_1FaXxGqEvrFjkTq70gy5j910-1763764330204-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '489'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999985'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"content":"Database assistant","role":"system"},{"content":[{"text":"Query
+      users with limit 5","type":"text"}],"role":"user"},{"role":"assistant","content":"","tool_calls":[{"id":"call_LHg7xzURNQqCf6SN2lPshhcs","type":"function","function":{"name":"query_database","arguments":"{\"query\":\"SELECT
+      * FROM users\",\"limit\":5}"}}]},{"role":"tool","content":"[{''id'': 0, ''query'':
+      ''SELECT * FROM users'', ''api_url'': ''https://api.example.com''}, {''id'':
+      1, ''query'': ''SELECT * FROM users'', ''api_url'': ''https://api.example.com''},
+      {''id'': 2, ''query'': ''SELECT * FROM users'', ''api_url'': ''https://api.example.com''},
+      {''id'': 3, ''query'': ''SELECT * FROM users'', ''api_url'': ''https://api.example.com''},
+      {''id'': 4, ''query'': ''SELECT * FROM users'', ''api_url'': ''https://api.example.com''}]","tool_call_id":"call_LHg7xzURNQqCf6SN2lPshhcs"}],"model":"gpt-4.1-mini","n":1,"parallel_tool_calls":true,"temperature":0.0,"tools":[{"type":"function","function":{"name":"query_database","description":"Query
+      the database with API enrichment.","parameters":{"type":"object","properties":{"query":{"type":"string"},"limit":{"default":10,"type":"integer"},"db":{"additionalProperties":true,"type":"object"},"api":{"additionalProperties":true,"type":"object"}},"required":["query"],"additionalProperties":false}}}],"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '1301'
+      content-type:
+      - application/json
+      cookie:
+      - __cf_bm=IeVRMDNYEY1KbTzSEKsggz4WuWaBiwBOoxo2.RBZOwA-1763764330-1.0.1.1-ngpH9Eiym4qTWNiLixJAxC7OfFS6cEHGFqlYU32rwuQL34NcJQz9o1SP_oQeNEhC9X_Wwo07kVDFtb0hHR6XzKmJZNeaNhEhxj4QhVl_bb0;
+        _cfuvid=FeoYJ3bDDm1QwRq42H_1FaXxGqEvrFjkTq70gy5j910-1763764330204-0.0.1.1-604800000
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeTxiK7PNZP9uBxcWsNFF07vtn7t2\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763764330,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Here are 5 users from the database:\\n\\n1.
+        User ID: 0, API URL: https://api.example.com\\n2. User ID: 1, API URL: https://api.example.com\\n3.
+        User ID: 2, API URL: https://api.example.com\\n4. User ID: 3, API URL: https://api.example.com\\n5.
+        User ID: 4, API URL: https://api.example.com\\n\\nIf you need more details
+        or specific information about these users, please let me know!\",\n        \"refusal\":
+        null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n
+        \     \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\":
+        225,\n    \"completion_tokens\": 112,\n    \"total_tokens\": 337,\n    \"prompt_tokens_details\":
+        {\n      \"cached_tokens\": 0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_9766e549b2\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a23a4382cf8b455-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 22:32:12 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1727'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999882'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1
