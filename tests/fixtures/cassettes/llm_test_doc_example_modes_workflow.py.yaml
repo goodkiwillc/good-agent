@@ -1,0 +1,129 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"Workflow assistant","role":"system"},{"content":[{"text":"Help
+      me build a task management system","type":"text"}],"role":"user"},{"content":"Starting
+      workflow wf_20251121_122324. Step 1: Analysis phase.","role":"system"},{"content":"Analysis
+      mode: Break down requirements and identify key components.","role":"system"}],"model":"gpt-4.1-mini","n":1,"temperature":0.0,"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '404'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeRx6DJFXDIGyWgWpiZUjnGa3q6Ux\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763756604,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"To build a task management system,
+        let's start by analyzing the requirements and identifying key components.\\n\\n1.
+        **User Management**\\n   - User registration and authentication\\n   - User
+        profiles and roles (e.g., admin, regular user)\\n\\n2. **Task Management**\\n
+        \  - Create, read, update, delete (CRUD) tasks\\n   - Task attributes: title,
+        description, due date, priority, status, assignee\\n   - Task categorization:
+        tags, projects, or lists\\n\\n3. **Collaboration Features**\\n   - Assign
+        tasks to users\\n   - Comments or notes on tasks\\n   - Notifications and
+        reminders\\n\\n4. **Task Views**\\n   - List view, calendar view, kanban board\\n
+        \  - Filtering and sorting options\\n\\n5. **Persistence**\\n   - Database
+        design for storing users, tasks, comments, etc.\\n\\n6. **User Interface**\\n
+        \  - Web or mobile interface for interacting with the system\\n\\n7. **Additional
+        Features (optional)**\\n   - File attachments\\n   - Integration with calendars
+        or other tools\\n   - Reporting and analytics\\n\\nCould you specify which
+        features you want to include, preferred technology stack, and whether this
+        is a web, mobile, or desktop application? This will help tailor the design
+        and implementation plan.\",\n        \"refusal\": null,\n        \"annotations\":
+        []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n
+        \   }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 57,\n    \"completion_tokens\":
+        254,\n    \"total_tokens\": 311,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a22e799fcfedeff-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 20:23:28 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=9Zcr0dEnIJrACLFiwPVFAsth41.rb9JBA1rtF3H8i54-1763756608-1.0.1.1-r4aucMavHUOLGDSWLazpECu19NOFDFH7H0udHcbExRKiNfO0f8hY4usFeTORvMSm8EfcGuzma7EAAU6jpOhKR0LfH2lVVg7R1VCNDWm6DpM;
+        path=/; expires=Fri, 21-Nov-25 20:53:28 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=_82q1B3jueu3BuihN7IyvT7xETWO8pAU3.l43ohMHGg-1763756608656-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '4094'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999950'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1

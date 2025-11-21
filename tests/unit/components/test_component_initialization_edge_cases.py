@@ -81,62 +81,46 @@ class TestComponentInitializationEdgeCases:
     async def test_initialization_timeout_handling(self):
         """Test that agent.initialize() waits for component initialization to complete."""
         component = SlowInitializationComponent()
-        agent = Agent("Test agent", extensions=[component])
-
-        # Measure time to ensure initialize() actually waits for component initialization
         import time
 
+        # Measure time to ensure initialize() actually waits for component initialization
         start_time = time.time()
-        await agent.initialize()  # Should wait for the 2-second component init
-        elapsed = time.time() - start_time
+        async with Agent("Test agent", extensions=[component]) as agent:
+            elapsed = time.time() - start_time
 
-        # Should have waited at least the component initialization time (2.0 seconds)
-        assert elapsed >= 1.9, (
-            f"Expected >= 2.0s, got {elapsed}s"
-        )  # Allow small timing variance
+            # Should have waited at least the component initialization time (2.0 seconds)
+            assert elapsed >= 1.9, (
+                f"Expected >= 2.0s, got {elapsed}s"
+            )  # Allow small timing variance
 
-        # Agent should be in ready state after initialization
-        from good_agent.agent import AgentState
+            # Agent should be in ready state after initialization
+            from good_agent.agent import AgentState
 
-        assert agent.state == AgentState.READY
-
-        await agent.events.close()
+            assert agent.state == AgentState.READY
 
     @pytest.mark.asyncio
     async def test_failing_initialization_task_handling(self):
         """Test that failing initialization tasks don't prevent agent ready."""
         component = FailingInitializationComponent()
-        agent = Agent("Test agent", extensions=[component])
+        async with Agent("Test agent", extensions=[component]) as agent:
+            # Agent should still be ready
+            from good_agent.agent import AgentState
 
-        # Should complete despite failing initialization task
-        await agent.initialize()
+            assert agent.state == AgentState.READY
 
-        # Agent should still be ready
-        from good_agent.agent import AgentState
+            # Component should have caught the error
+            assert component.install_failed
 
-        assert agent.state == AgentState.READY
-
-        # Component should have caught the error
-        assert component.install_failed
-
-        # Tools should still be registered despite init failure
-        assert "failing_tool" in agent.tools
-
-        await agent.events.close()
+            # Tools should still be registered despite init failure
+            assert "failing_tool" in agent.tools
 
     @pytest.mark.asyncio
     async def test_component_with_no_tools(self):
         """Test that components without tools don't create unnecessary tasks."""
         component = ComponentWithNoTools()
-        agent = Agent("Test agent", extensions=[component])
-
-        # Should complete quickly since no tools to register
-        await agent.initialize()
-
-        assert component.installed
-        assert len(agent.tools._tools) == 0
-
-        await agent.events.close()
+        async with Agent("Test agent", extensions=[component]) as agent:
+            assert component.installed
+            assert len(agent.tools._tools) == 0
 
     @pytest.mark.asyncio
     async def test_multiple_components_mixed_success_failure(self):
@@ -153,32 +137,24 @@ class TestComponentInitializationEdgeCases:
         failing = FailingInitializationComponent()
         no_tools = ComponentWithNoTools()
 
-        agent = Agent("Test agent", extensions=[working, failing, no_tools])
-        await agent.initialize()
-
-        # Working component tools should be available
-        assert "working_tool" in agent.tools
-        # Failing component tools should still be available
-        assert "failing_tool" in agent.tools
-        # No-tools component should be installed
-        assert no_tools.installed
-
-        await agent.events.close()
+        async with Agent(
+            "Test agent", extensions=[working, failing, no_tools]
+        ) as agent:
+            # Working component tools should be available
+            assert "working_tool" in agent.tools
+            # Failing component tools should still be available
+            assert "failing_tool" in agent.tools
+            # No-tools component should be installed
+            assert no_tools.installed
 
     @pytest.mark.asyncio
     async def test_component_task_exception_handling(self):
         """Test that exceptions in component tasks are handled properly."""
         component = FailingInitializationComponent()
-        agent = Agent("Test agent", extensions=[component])
-
-        # Should not raise exception despite task failure
-        await agent.initialize()
-
-        # Verify the exception was caught and handled
-        assert component.install_failed
-        assert agent.state.value >= 1  # AgentState.READY
-
-        await agent.events.close()
+        async with Agent("Test agent", extensions=[component]) as agent:
+            # Verify the exception was caught and handled
+            assert component.install_failed
+            assert agent.state.value >= 1  # AgentState.READY
 
     @pytest.mark.asyncio
     async def test_agent_ready_idempotency(self):
@@ -192,35 +168,24 @@ class TestComponentInitializationEdgeCases:
                 return f"Simple: {value}"
 
         component = SimpleComponent()
-        agent = Agent("Test agent", extensions=[component])
+        async with Agent("Test agent", extensions=[component]) as agent:
+            assert "simple_tool" in agent.tools
 
-        # First call
-        await agent.initialize()
-        assert "simple_tool" in agent.tools
+            # Second call should be idempotent
+            await agent.initialize()
+            assert "simple_tool" in agent.tools
 
-        # Second call should be idempotent
-        await agent.initialize()
-        assert "simple_tool" in agent.tools
-
-        # Third call should still work
-        await agent.initialize()
-        assert "simple_tool" in agent.tools
-
-        await agent.events.close()
+            # Third call should still work
+            await agent.initialize()
+            assert "simple_tool" in agent.tools
 
     @pytest.mark.asyncio
     async def test_component_tasks_cleared_on_exception(self):
         """Test that component tasks are cleared even when exceptions occur."""
         component = FailingInitializationComponent()
-        agent = Agent("Test agent", extensions=[component])
-
-        # Just verify that ready completes despite exceptions
-        await agent.initialize()
-
-        # Component should still be accessible
-        assert component._agent is agent
-
-        await agent.events.close()
+        async with Agent("Test agent", extensions=[component]) as agent:
+            # Component should still be accessible
+            assert component._agent is agent
 
     @pytest.mark.asyncio
     async def test_no_event_loop_fallback_behavior(self):
@@ -242,15 +207,9 @@ class TestComponentInitializationEdgeCases:
                 return f"Test: {value}"
 
         component = TestComponent()
-        agent = Agent("Test agent", extensions=[component])
-
-        # Should work even if task creation failed
-        await agent.initialize()
-
-        # Tool should still be registered
-        assert "test_tool" in agent.tools
-
-        await agent.events.close()
+        async with Agent("Test agent", extensions=[component]) as agent:
+            # Tool should still be registered
+            assert "test_tool" in agent.tools
 
     @pytest.mark.asyncio
     async def test_agent_state_consistency_with_component_failures(self):
@@ -263,24 +222,36 @@ class TestComponentInitializationEdgeCases:
         # Should start in INITIALIZING
         assert agent.state == AgentState.INITIALIZING
 
-        await agent.initialize()
+        async with agent:
+            # Should reach READY despite component failure
+            assert agent.state == AgentState.READY
 
-        # Should reach READY despite component failure
-        assert agent.state == AgentState.READY
-
-        # Should be able to transition to other states normally
-        # (This would be tested more thoroughly in integration tests)
-
-        await agent.events.close()
+            # Should be able to transition to other states normally
+            # (This would be tested more thoroughly in integration tests)
 
     @pytest.mark.asyncio
     async def test_component_task_cleanup_on_agent_close(self):
         """Test that component tasks are properly cleaned up when agent closes."""
         component = SlowInitializationComponent()
+        # Don't use context manager here to test manual close behavior
         agent = Agent("Test agent", extensions=[component])
 
-        # Don't wait for ready - close while tasks might still be running
-        await agent.events.close()
+        # Start initialization but don't wait for it
+        # In this specific test case we want to test cleanup during close
+        # without full initialization completion if possible, or just normal close
+        init_task = asyncio.create_task(agent.initialize())
+
+        # Wait a bit but less than component init time
+        await asyncio.sleep(0.1)
+
+        # Close while tasks might still be running
+        await agent.close()
+
+        # Cleanup
+        try:
+            await init_task
+        except Exception:
+            pass  # Ignore errors from cancelled tasks
 
         # Should not leave dangling tasks
         # (In practice, this would be tested by monitoring for task cleanup)
@@ -304,19 +275,12 @@ class TestComponentInitializationEdgeCases:
 
         # Test different installation orders
         comp_a1, comp_b1 = ComponentA(), ComponentB()
-        agent1 = Agent("Test 1", extensions=[comp_a1, comp_b1])
-        await agent1.initialize()
+        async with Agent("Test 1", extensions=[comp_a1, comp_b1]) as agent1:
+            assert "tool_a" in agent1.tools and "tool_b" in agent1.tools
 
         comp_a2, comp_b2 = ComponentA(), ComponentB()
-        agent2 = Agent("Test 2", extensions=[comp_b2, comp_a2])  # Reversed order
-        await agent2.initialize()
-
-        # Both should have both tools regardless of order
-        assert "tool_a" in agent1.tools and "tool_b" in agent1.tools
-        assert "tool_a" in agent2.tools and "tool_b" in agent2.tools
-
-        await agent1.close()
-        await agent2.close()
+        async with Agent("Test 2", extensions=[comp_b2, comp_a2]) as agent2:
+            assert "tool_a" in agent2.tools and "tool_b" in agent2.tools
 
     @pytest.mark.asyncio
     async def test_memory_cleanup_after_component_initialization(self):
@@ -330,17 +294,9 @@ class TestComponentInitializationEdgeCases:
                 return f"Cleanup: {value}"
 
         component = CleanupTestComponent()
-        agent = Agent("Test agent", extensions=[component])
+        async with Agent("Test agent", extensions=[component]) as agent:
+            # Tasks should be cleared (memory cleanup)
+            assert len(agent._component_tasks) == 0
 
-        # Component tasks are managed internally
-        # Just verify initialization completes
-
-        await agent.initialize()
-
-        # Tasks should be cleared (memory cleanup)
-        assert len(agent._component_tasks) == 0
-
-        # But tools should remain registered
-        assert "cleanup_tool" in agent.tools
-
-        await agent.events.close()
+            # But tools should remain registered
+            assert "cleanup_tool" in agent.tools

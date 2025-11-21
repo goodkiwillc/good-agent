@@ -1,0 +1,136 @@
+interactions:
+- request:
+    body: '{"messages":[{"content":"Composite assistant","role":"system"},{"content":[{"text":"Explain
+      quantum entanglement","type":"text"}],"role":"user"},{"content":"Be patient
+      and encouraging. Break down complex ideas.","role":"system"}],"model":"gpt-4.1-mini","n":1,"temperature":0.0,"top_p":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '289'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 2.8.1
+      x-stainless-arch:
+      - x64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.8.1
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '30.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.6
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: "{\n  \"id\": \"chatcmpl-CeRxBhGAQ5nY5Q77dhr0mVAhksywI\",\n  \"object\":
+        \"chat.completion\",\n  \"created\": 1763756609,\n  \"model\": \"gpt-4.1-mini-2025-04-14\",\n
+        \ \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\":
+        \"assistant\",\n        \"content\": \"Absolutely! Quantum entanglement is
+        a fascinating and important concept in quantum physics, and I\u2019d be happy
+        to explain it step-by-step.\\n\\nImagine you have two tiny particles, like
+        electrons or photons, that become linked together in a special way. This link
+        is what we call **entanglement**. When particles are entangled, the state
+        of one particle instantly influences the state of the other, no matter how
+        far apart they are\u2014even if they are on opposite sides of the universe!\\n\\nHere\u2019s
+        a way to think about it:\\n\\n1. **Particles have properties**: For example,
+        an electron can have a property called \u201Cspin,\u201D which can be thought
+        of as pointing \u201Cup\u201D or \u201Cdown.\u201D\\n\\n2. **Creating entanglement**:
+        When two particles interact in certain ways, their spins become connected.
+        Instead of each particle having its own independent spin, their spins become
+        linked so that if one is measured to be \u201Cup,\u201D the other will always
+        be \u201Cdown,\u201D and vice versa.\\n\\n3. **Instant connection**: The amazing
+        part is that if you measure the spin of one particle, you immediately know
+        the spin of the other, even if it\u2019s very far away. This happens instantly,
+        faster than any signal could travel between them.\\n\\n4. **No faster-than-light
+        communication**: Although it seems like information is traveling instantly,
+        entanglement doesn\u2019t allow for faster-than-light communication because
+        the outcome of each measurement is random. You can\u2019t control the result
+        to send a message.\\n\\nWhy is this important? Quantum entanglement is a key
+        resource for emerging technologies like quantum computing, quantum cryptography
+        (secure communication), and quantum teleportation (transferring quantum information).\\n\\nDoes
+        that help clarify things? Feel free to ask if you want me to explain any part
+        in more detail!\",\n        \"refusal\": null,\n        \"annotations\": []\n
+        \     },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n
+        \ ],\n  \"usage\": {\n    \"prompt_tokens\": 32,\n    \"completion_tokens\":
+        362,\n    \"total_tokens\": 394,\n    \"prompt_tokens_details\": {\n      \"cached_tokens\":
+        0,\n      \"audio_tokens\": 0\n    },\n    \"completion_tokens_details\":
+        {\n      \"reasoning_tokens\": 0,\n      \"audio_tokens\": 0,\n      \"accepted_prediction_tokens\":
+        0,\n      \"rejected_prediction_tokens\": 0\n    }\n  },\n  \"service_tier\":
+        \"default\",\n  \"system_fingerprint\": \"fp_4c2851f862\"\n}\n"
+    headers:
+      CF-RAY:
+      - 9a22e7b60bff30a6-SEA
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 21 Nov 2025 20:23:34 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=cWU.FwbayZtw4zh6eFaEepXSOw8AbZgyxVOY4nMTkC8-1763756614-1.0.1.1-7jHExFaTndC_kvIsYA3jeYeOmB137q7aYXA3m6fCeify27Ixn7Jls_Raay54b0hZlSfSGAF43KpyJCBwFSoi9WAR8jPwYaH_npPUC7.1TBU;
+        path=/; expires=Fri, 21-Nov-25 20:53:34 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=CnQL6YNJb_w9RvNTSikUGoeor_m6IhHJoFQuebo9OGk-1763756614397-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - REDACTED
+      openai-processing-ms:
+      - REDACTED
+      openai-project:
+      - proj_h58uqu6ntDiobACDvmtlWH0w
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '5357'
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999972'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - REDACTED
+    status:
+      code: 200
+      message: OK
+version: 1
