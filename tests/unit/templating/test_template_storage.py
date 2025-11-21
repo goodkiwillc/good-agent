@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
-from good_agent.components.template_manager.storage import (
+from good_agent.extensions.template_manager.storage import (
     ChainedStorage,
     FileSystemStorage,
     FileTemplateManager,

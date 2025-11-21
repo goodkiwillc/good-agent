@@ -20,11 +20,10 @@ from typing import (
 
 from pydantic import BaseModel
 
+from good_agent.core.components import AgentComponent
 from good_agent.core.types import URL
 
-from ..components import AgentComponent
-from ..agent.config import AgentConfigManager
-from ..agent.config import PASS_THROUGH_KEYS, ModelConfig
+from ..agent.config import PASS_THROUGH_KEYS, AgentConfigManager, ModelConfig
 from ..events import AgentEvents
 from ..messages import (
     AssistantMessage,

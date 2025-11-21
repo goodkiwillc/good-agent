@@ -1,6 +1,6 @@
 import pytest
 from good_agent import Agent, AgentEvents
-from good_agent.components.injection import (
+from good_agent.core.components import (
     MessageInjectorComponent,
     SimpleMessageInjector,
 )

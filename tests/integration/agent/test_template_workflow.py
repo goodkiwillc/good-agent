@@ -6,11 +6,11 @@ import pytest
 import pytest_asyncio
 import yaml
 from good_agent import Agent
-from good_agent.components.template_manager.index import (
+from good_agent.extensions.template_manager.index import (
     TemplateIndex,
     TemplateVersionManager,
 )
-from good_agent.components.template_manager.storage import (
+from good_agent.extensions.template_manager.storage import (
     ChainedStorage,
     FileSystemStorage,
     FileTemplateManager,
@@ -371,7 +371,7 @@ This is my personal template for {{ task }}.""")
     #     storage = template_system["storage"]
     #     manager = template_system["manager"]
 
-    #     from good_agent.components.template_manager.storage import TemplateValidator
+    #     from good_agent.extensions.template_manager.storage import TemplateValidator
     #     validator = TemplateValidator()
 
     #     # Get analyst template which has dependencies

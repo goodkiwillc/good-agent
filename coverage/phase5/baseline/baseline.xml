@@ -3574,7 +3574,7 @@
 						<line number="8" hits="1"/>
 					</lines>
 				</class>
-				<class name="component.py" filename="src/good_agent/components/component.py" complexity="0" line-rate="0.7389" branch-rate="0.625">
+				<class name="component.py" filename="src/good_agent.components.py" complexity="0" line-rate="0.7389" branch-rate="0.625">
 					<methods/>
 					<lines>
 						<line number="1" hits="1"/>
@@ -3759,7 +3759,7 @@
 						<line number="450" hits="1"/>
 					</lines>
 				</class>
-				<class name="injection.py" filename="src/good_agent/components/injection.py" complexity="0" line-rate="0.8276" branch-rate="0.64">
+				<class name="injection.py" filename="src/good_agent.components.py" complexity="0" line-rate="0.8276" branch-rate="0.64">
 					<methods/>
 					<lines>
 						<line number="1" hits="1"/>
@@ -3880,7 +3880,7 @@
 						<line number="334" hits="0"/>
 					</lines>
 				</class>
-				<class name="tool_adapter.py" filename="src/good_agent/components/tool_adapter.py" complexity="0" line-rate="0.8939" branch-rate="0.8125">
+				<class name="tool_adapter.py" filename="src/good_agent.components.py" complexity="0" line-rate="0.8939" branch-rate="0.8125">
 					<methods/>
 					<lines>
 						<line number="1" hits="1"/>

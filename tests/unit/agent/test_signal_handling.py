@@ -7,13 +7,14 @@ import threading
 import time
 import weakref
 from contextlib import contextmanager
-from typing import Sequence, cast
+from typing import cast
+from collections.abc import Sequence
 from unittest.mock import MagicMock, patch
 
 import pytest
 from good_agent import Agent, tool
 from good_agent.agent import AgentState
-from good_agent.components.component import AgentComponent
+from good_agent.core.components import AgentComponent
 from good_agent.core.signal_handler import SignalHandler, _global_handler
 from litellm.types.completion import ChatCompletionMessageParam
 

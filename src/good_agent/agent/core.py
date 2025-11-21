@@ -56,28 +56,30 @@ from .versioning import AgentVersioningManager
 
 if TYPE_CHECKING:
     from litellm.types.utils import Choices
+
     from ..mock import AgentMockInterface
 
-from ..components import AgentComponent
+from good_agent.core.components import AgentComponent
+
 from ..content import FileContentPart, ImageContentPart
-from ..components.template_manager import (
-    Template,
-    TemplateManager,
-)
 from ..events import (  # Import typed event parameters
     AgentEvents,
     AgentInitializeParams,
+)
+from ..extensions.template_manager import (
+    Template,
+    TemplateManager,
 )
 from ..messages import (
     AnnotationLike,
     AssistantMessage,
     AssistantMessageStructuredOutput,
     FilteredMessageList,
+    ImageDetail,
     Message,
     MessageContent,
     MessageList,
     MessageRole,
-    ImageDetail,
     SystemMessage,
     T_Output,
     ToolMessage,

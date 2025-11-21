@@ -190,7 +190,7 @@ class ContextManager:
 
         return ThreadContext(self.agent, truncate_at)
 
-    def copy(self, include_messages: bool = True, **config: Any) -> "Agent":
+    def copy(self, include_messages: bool = True, **config: Any) -> Agent:
         """Clone the underlying agent with optional configuration overrides."""
 
         copied = self.agent.__class__(**config)
@@ -241,13 +241,13 @@ class ContextManager:
     def context_providers(name: str):
         """Register a global context provider."""
 
-        from good_agent.components.template_manager import global_context_provider
+        from good_agent.extensions.template_manager import global_context_provider
 
         return global_context_provider(name)
 
     async def merge(
         self,
-        *agents: "Agent",
+        *agents: Agent,
         method: Literal["tool_call", "interleaved"] = "tool_call",
         **kwargs: Any,
     ) -> None:
@@ -281,7 +281,7 @@ class ContextManager:
             result="success",
         )
 
-    async def _merge_as_tool_calls(self, *agents: "Agent", **kwargs: Any) -> None:
+    async def _merge_as_tool_calls(self, *agents: Agent, **kwargs: Any) -> None:
         """Helper that converts child outputs into tool calls on the parent."""
 
         tool_calls: list[ToolCall] = []

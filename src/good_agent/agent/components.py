@@ -6,9 +6,9 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, Any
 
-from good_agent.components import AgentComponent
-from good_agent.components.template_manager import TemplateManager
+from good_agent.core.components import AgentComponent
 from good_agent.events import AgentEvents
+from good_agent.extensions.template_manager import TemplateManager
 from good_agent.model.llm import LanguageModel
 from good_agent.tools import ToolManager
 

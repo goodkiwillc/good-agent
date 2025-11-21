@@ -13,7 +13,6 @@ from typing import (
     Concatenate,
     Generic,
     Literal,
-    Optional,
     ParamSpec,
     Protocol,
     TypedDict,
@@ -42,13 +41,8 @@ from pydantic._internal._core_utils import CoreSchemaOrField, is_core_schema
 from pydantic.json_schema import GenerateJsonSchema
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_exponential
 
+from good_agent.core.components import AgentComponent
 from good_agent.core.models import Renderable
-
-from ..components import AgentComponent
-from ..components.template_manager.injection import (
-    ContextValue,
-    _ContextValueDescriptor,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +51,11 @@ type ToolLike = Union["Tool[..., Any]", Callable[..., Any]]
 
 if TYPE_CHECKING:
     from good_agent.agent import Agent
-    from ..agent.config import AgentConfigManager
 
+    from ..agent.config import AgentConfigManager
+    from ..extensions.template_manager.injection import (
+        _ContextValueDescriptor,
+    )
     from ..mcp.client import MCPServerConfig
     from .bound_tools import BoundTool
 else:  # pragma: no cover - fallback for runtime to avoid circular imports
@@ -71,7 +68,7 @@ class ToolContext:
     """Context passed to tools via dependency injection"""
 
     agent: Any  # Avoid circular import
-    tool_call: Optional["ToolCall"] = None
+    tool_call: ToolCall | None = None
 
 
 # Provider functions for dependency injection
@@ -154,7 +151,7 @@ class ToolManager(AgentComponent):
             self._registry = await get_tool_registry()
             self._registry_initialized = True
 
-    def __getitem__(self, tool_name: str) -> "Tool":
+    def __getitem__(self, tool_name: str) -> Tool:
         """Get a tool by name"""
         if tool_name not in self._tools:
             raise KeyError(f"Tool '{tool_name}' not found")
@@ -183,7 +180,7 @@ class ToolManager(AgentComponent):
         """Get all tools"""
         return self._tools.values()
 
-    def as_list(self) -> list["Tool"]:
+    def as_list(self) -> list[Tool]:
         """Get all tools as a list"""
         return list(self._tools.values())
 
@@ -287,9 +284,7 @@ class ToolManager(AgentComponent):
             )
         )
 
-    async def get_available_tools(
-        self, pattern: str | None = None
-    ) -> dict[str, "Tool"]:
+    async def get_available_tools(self, pattern: str | None = None) -> dict[str, Tool]:
         """
         Get available tools from both local collection and global registry.
 
@@ -385,7 +380,7 @@ class ToolManager(AgentComponent):
         self,
         mode: Literal["replace", "append", "filter"] = "replace",
         tools: list[ToolLike] | None = None,
-        filter_fn: Callable[[str, "Tool"], bool] | None = None,
+        filter_fn: Callable[[str, Tool], bool] | None = None,
     ):
         """
         Context manager for temporary tool modifications.
@@ -463,7 +458,7 @@ class ToolManager(AgentComponent):
 
     def _ensure_tool(
         self, tool_or_callable: ToolLike, name: str | None = None
-    ) -> "Tool[..., Any]":
+    ) -> Tool[..., Any]:
         """
         Ensure we have a Tool instance, wrapping a callable if necessary.
 
@@ -493,7 +488,7 @@ class ToolCall(BaseModel):
 
     id: ToolCallId
     type: str = "function"
-    function: "ToolCallFunction"
+    function: ToolCallFunction
 
     @property
     def name(self) -> str:
@@ -682,6 +677,11 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
 
     def _auto_hide_injectable_params(self, fn: Callable) -> None:
         """Automatically hide injectable parameters from JSON schema."""
+        # Import lazily to avoid circular dependency
+        from ..extensions.template_manager.injection import (
+            _ContextValueDescriptor,
+        )
+
         # Check for ContextValue parameters first
         sig = inspect.signature(fn)
         for param_name, param in sig.parameters.items():
@@ -928,6 +928,12 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
         **kwargs: P.kwargs,
     ) -> ToolResponse[FuncResp]:
         """Execute the tool and return response"""
+        # Import lazily to avoid circular dependency
+        from ..extensions.template_manager.injection import (
+            ContextValue,
+            _ContextValueDescriptor,
+        )
+
         tool_call: ToolCall | None = None
         try:
             # Set up dependency injection context if available
@@ -956,7 +962,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
                         elif not context_value.required:
                             kwargs[param_name] = None
                         else:
-                            from ..components.template_manager.injection import (
+                            from ..extensions.template_manager.injection import (
                                 MissingContextValueError,
                             )
 
@@ -976,11 +982,11 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
                         elif not context_value.required:
                             kwargs[param_name] = None
                         else:
-                            from ..components.template_manager.injection import (
-                                MissingContextValueError,
+                            from ..extensions.template_manager.injection import (
+                                MissingContextValueError as MissingContextValueErrorRef,
                             )
 
-                            raise MissingContextValueError(context_value.name, [])
+                            raise MissingContextValueErrorRef(context_value.name, [])
 
             from contextlib import ExitStack
 
@@ -1209,27 +1215,27 @@ def extract_parameter_info(
 @overload
 def tool(
     func: Callable[Concatenate[InstanceSelf, P], Awaitable[FuncResp]],
-) -> Union["BoundTool[InstanceSelf, P, FuncResp]", Tool[P, FuncResp]]: ...
+) -> BoundTool[InstanceSelf, P, FuncResp] | Tool[P, FuncResp]: ...
 
 
 @overload
 def tool(
     func: Callable[Concatenate[InstanceSelf, P], FuncResp],
-) -> Union["BoundTool[InstanceSelf, P, FuncResp]", Tool[P, FuncResp]]: ...
+) -> BoundTool[InstanceSelf, P, FuncResp] | Tool[P, FuncResp]: ...
 
 
 # Overload for async standalone functions
 @overload
 def tool(
     func: Callable[P, Awaitable[FuncResp]],
-) -> Union["BoundTool[Any, P, FuncResp]", Tool[P, FuncResp]]: ...
+) -> BoundTool[Any, P, FuncResp] | Tool[P, FuncResp]: ...
 
 
 # Overload for sync standalone functions
 @overload
 def tool(
     func: Callable[P, FuncResp],
-) -> Union["BoundTool[Any, P, FuncResp]", Tool[P, FuncResp]]: ...
+) -> BoundTool[Any, P, FuncResp] | Tool[P, FuncResp]: ...
 
 
 # Overload for decorator with arguments (returns decorator)
@@ -1250,7 +1256,7 @@ def tool(
         | Callable[P, FuncResp]
         | Callable[P, Awaitable[FuncResp]]
     ],
-    Union[Tool[P, FuncResp], "BoundTool[InstanceSelf, P, FuncResp]"],
+    Tool[P, FuncResp] | BoundTool[InstanceSelf, P, FuncResp],
 ]: ...
 
 
@@ -1263,11 +1269,11 @@ def tool(  # type: ignore[misc]
     retry: bool = False,
     hide: list[str] | None = None,
     **kwargs: Any,
-) -> Union[
-    Tool[P, FuncResp],
-    "BoundTool",  # Still returned for methods at runtime
-    Callable[[Any], Union[Tool[P, FuncResp], "BoundTool"]],
-]:
+) -> (
+    Tool[P, FuncResp]
+    | BoundTool  # Still returned for methods at runtime
+    | Callable[[Any], Tool[P, FuncResp] | BoundTool]
+):
     """Decorator that turns a function or method into a Tool/BoundTool.
 
     Supports optional naming, retry, global registration, and hidden params. See
@@ -1276,7 +1282,7 @@ def tool(  # type: ignore[misc]
 
     def decorator(
         f: Callable[P, FuncResp] | Callable[P, Awaitable[FuncResp]],
-    ) -> Union[Tool[P, FuncResp], "BoundTool"]:
+    ) -> Tool[P, FuncResp] | BoundTool:
         # Check if this is being applied to a method that will be part of an AgentComponent
         # We detect this by checking if 'self' is the first parameter
         import inspect

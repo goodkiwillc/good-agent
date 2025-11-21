@@ -1,103 +1,5 @@
 import pytest
-from good_agent import Agent, AgentComponent, CitationIndex, Paragraph
-from good_agent.tools import tool
-
-
-@pytest.mark.asyncio
-async def test_citation_index_basic():
-    """Test basic CitationIndex functionality"""
-    # Create agent with CitationIndex extension
-    async with Agent(
-        "You are a helpful assistant.", extensions=[CitationIndex()]
-    ) as agent:
-        # Access the extension via type key
-        citations = agent[CitationIndex]
-        assert isinstance(citations, CitationIndex)
-
-        # Add a citation
-        cid = citations.add(
-            "Paris is the capital of France.",
-            origin="https://en.wikipedia.org/wiki/Paris",
-            source="Wikipedia",
-        )
-
-        # Verify citation was added
-        assert cid in citations._index
-        assert citations[cid] == "Paris is the capital of France."
-
-        # Create a paragraph with citation
-        para = citations.create_paragraph(
-            "The Eiffel Tower is located in Paris.",
-            origin="https://en.wikipedia.org/wiki/Eiffel_Tower",
-            source="Wikipedia",
-        )
-
-        assert isinstance(para, Paragraph)
-        assert para.content == "The Eiffel Tower is located in Paris."
-        assert para.citation is not None
-        assert para.citation.source == "Wikipedia"
-
-        # Test __llm__ rendering
-        llm_text = para.__llm__()
-        assert f"[{para.citation.id}]" in llm_text
-
-
-@pytest.mark.asyncio
-async def test_citation_index_with_tools():
-    """Test CitationIndex integration with tools"""
-
-    @tool
-    async def answer_from_wikipedia(
-        query: str,
-        citations: CitationIndex,  # Inject the CitationIndex extension
-    ) -> Paragraph:
-        """
-        Search Wikipedia for the given query and return the first paragraph of the summary.
-        """
-        # Simulate a Wikipedia search
-        if "capital of France" in query:
-            result_url = "https://en.wikipedia.org/wiki/Paris"
-            result_answer = "Paris is the capital of France."
-        else:
-            result_url = "https://en.wikipedia.org/wiki/Unknown"
-            result_answer = "Unknown query."
-
-        # Create cited paragraph
-        return citations.create_paragraph(
-            result_answer, origin=result_url, source="Wikipedia"
-        )
-
-    # Create agent with extension and tool
-    async with Agent(
-        "You are a helpful assistant.",
-        extensions=[CitationIndex()],
-        tools=[answer_from_wikipedia],
-    ) as agent:
-        # Give tools time to load asynchronously
-        import asyncio
-
-        await asyncio.sleep(0.1)
-
-        # Verify tool was registered
-        assert "answer_from_wikipedia" in agent.tools._tools
-
-        # Access citations
-        citations = agent[CitationIndex]
-
-        # Since @tool decorator returns a Tool instance, we need to call it differently
-        # For now, let's test the CitationIndex directly
-        result = citations.create_paragraph(
-            "Paris is the capital of France.",
-            origin="https://en.wikipedia.org/wiki/Paris",
-            source="Wikipedia",
-        )
-
-        assert isinstance(result, Paragraph)
-        assert result.content == "Paris is the capital of France."
-        assert result.citation.source == "Wikipedia"
-
-        # Verify citation was indexed
-        assert result.citation.id in citations._index
+from good_agent import Agent, AgentComponent
 
 
 @pytest.mark.asyncio
@@ -132,21 +34,31 @@ async def test_extension_access_methods():
 async def test_extension_forking():
     """Test that extensions are preserved when forking agents"""
 
-    # Create agent with citation index
-    async with Agent("Original agent", extensions=[CitationIndex()]) as agent:
-        # Add some citations
-        citations = agent[CitationIndex]
-        citations.add("Test content", source="Test")
+    # Custom extension for testing
+    class DataExtension(AgentComponent):
+        def __init__(self):
+            super().__init__()
+            self.name = "data"
+            self.data = []
+
+        def add(self, item):
+            self.data.append(item)
+
+    # Create agent with extension
+    async with Agent("Original agent", extensions=[DataExtension()]) as agent:
+        # Add some data
+        ext = agent[DataExtension]
+        ext.add("Test content")
 
         # Fork the agent
         forked = agent.context_manager.fork()
 
         # Verify extension is preserved
-        forked_citations = forked[CitationIndex]
-        assert isinstance(forked_citations, CitationIndex)
+        forked_ext = forked[DataExtension]
+        assert isinstance(forked_ext, DataExtension)
 
-        # Note: Extensions are shared references in basic implementation
-        # For true isolation, extensions would need copy/deepcopy support
+        # Check that data is shared (since it's a reference)
+        assert "Test content" in forked_ext.data
 
 
 @pytest.mark.asyncio

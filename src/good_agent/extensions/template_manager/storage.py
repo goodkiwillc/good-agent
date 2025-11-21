@@ -8,8 +8,8 @@ from typing import Any, Protocol, runtime_checkable
 import logging
 
 import yaml  # type: ignore[import-untyped]
-from good_agent.core import templating
-from good_agent.core.templating import TemplateRegistry
+from ...core import templating
+from ...core.templating import TemplateRegistry
 from jinja2 import BaseLoader, ChoiceLoader, Environment, TemplateNotFound
 from pydantic import BaseModel, Field
 

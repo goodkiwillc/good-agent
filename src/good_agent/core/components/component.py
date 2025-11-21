@@ -7,14 +7,14 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from good_agent.core.event_router import EventContext, EventRouter, on
 
-from ..events import AgentEvents
+from ...events import AgentEvents
 from .tool_adapter import ToolAdapter, ToolAdapterRegistry
 
 if TYPE_CHECKING:
-    from ..agent import Agent
-    from ..agent.config import AgentConfigManager
-    from ..events import ToolsGenerateSignature
-    from ..tools import ToolSignature
+    from ...agent import Agent
+    from ...agent.config import AgentConfigManager
+    from ...events import ToolsGenerateSignature
+    from ...tools import ToolSignature
 
 logger = logging.getLogger(__name__)
 
@@ -232,8 +232,8 @@ class AgentComponent(EventRouter, metaclass=AgentComponentType):
         if self._agent is None:
             return
 
-        from ..tools.bound_tools import BoundTool
-        from ..tools.tools import wrap_callable_as_tool
+        from ...tools.bound_tools import BoundTool
+        from ...tools.tools import wrap_callable_as_tool
 
         # Register each tool method
         for method_name, method in self._component_tools.items():
@@ -322,25 +322,6 @@ class AgentComponent(EventRouter, metaclass=AgentComponentType):
         """
         self._tool_adapter_registry.unregister(adapter)
 
-    # def _setup_adapter_handlers(self):
-    #     """Set up event handlers for tool adaptation."""
-    #     if not self._agent or hasattr(self, "_adapter_handlers_setup"):
-    #         return
-
-    #     # Register handlers for tool adaptation events
-    #     # Use high priority to ensure adapters run before other handlers
-    #     # self._agent.on(AgentEvents.TOOLS_GENERATE_SIGNATURE, priority=200)(
-    #     #     self._on_tools_generate_signature_adapter
-    #     # )
-    #     # self._agent.on(AgentEvents.TOOL_CALL_BEFORE, priority=200)(
-    #     #     self._on_tool_call_before_adapter
-    #     # )
-    #     # self._agent.on(AgentEvents.TOOL_CALL_AFTER, priority=50)(
-    #     #     self._on_tool_call_after_adapter
-    #     # )
-
-    #     self._adapter_handlers_setup = True
-
     @on(AgentEvents.TOOLS_GENERATE_SIGNATURE, priority=200)
     def _on_tools_generate_signature_adapter(
         self, ctx: EventContext[ToolsGenerateSignature, ToolSignature]
@@ -403,7 +384,7 @@ class AgentComponent(EventRouter, metaclass=AgentComponentType):
         if not tool_name or not response:
             return
 
-        from ..tools import ToolResponse
+        from ...tools import ToolResponse
 
         if not isinstance(response, ToolResponse):
             return

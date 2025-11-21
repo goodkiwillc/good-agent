@@ -4,14 +4,13 @@ import copy
 import logging
 from typing import TYPE_CHECKING, Any
 
-from ...components import ToolAdapter
-from ...components.tool_adapter import AdapterMetadata
+from good_agent.core.components.tool_adapter import AdapterMetadata, ToolAdapter
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from ...agent import Agent
-    from ...tools import BoundTool, Tool, ToolSignature
+    from good_agent import Agent
+    from good_agent.tools import BoundTool, Tool, ToolSignature
     from .manager import CitationManager
 
     CitationManagerType = CitationManager

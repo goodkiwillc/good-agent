@@ -12,11 +12,11 @@ import yaml
 from click.utils import get_text_stream
 
 # Agent templating components
-from good_agent.components.template_manager.index import (
+from good_agent.extensions.template_manager.index import (
     TemplateIndex,
     TemplateVersionManager,
 )
-from good_agent.components.template_manager.storage import (
+from good_agent.extensions.template_manager.storage import (
     FileSystemStorage,
     FileTemplateManager,
     TemplateValidator,
