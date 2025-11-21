@@ -18,13 +18,15 @@ async with agent.config(model="gpt-4o", temperature=0.7):
 # Configuration reverts to original settings here
 ```
 
-### Context Variables
+### Tempalte Context Variables
 
-Use `agent.context()` to inject temporary variables into the agent's context. These are accessible to templates and tools during execution.
+Use `agent.context()` to inject temporary variables into the agent's template context . These are accessible to templates and tools during execution.
 
 ```python
 # Temporarily inject context variables
+# @TODO: is context() an async context manager?
 async with agent.context(user_id="123", environment="prod"):
+    # @TODO: this example needs to actually make use of the context variables - maybe show before and after the agent.context context-manager
     await agent.call("Check system status")
 ```
 
@@ -32,6 +34,7 @@ async with agent.context(user_id="123", environment="prod"):
 
 Use `agent.fork_context()` (or `agent.context_manager.fork_context()`) to create a **fully isolated copy** of the agent. This is ideal for exploratory queries or side-tasks where you don't want the conversation history to persist in the main agent.
 
+<!-- @TODO: is this a confusing API vs agent.fork()? what is used when? -->
 ```python
 # Create a temporary fork
 async with agent.fork_context() as forked_agent:
@@ -43,10 +46,11 @@ async with agent.fork_context() as forked_agent:
 
 ### Thread Context
 
-Use `agent.thread_context()` (or `agent.context_manager.thread_context()`) to temporarily modify the conversation view (e.g., truncating history) while preserving new messages. Unlike a fork, new messages generated during this context are merged back into the main agent's history, but the view modifications are reverted.
+Use `agent.thread_context()` to temporarily modify the conversation view (e.g., truncating history) while preserving new messages. Unlike a fork, new messages generated during this context are merged back into the main agent's history, but the view modifications are reverted.
 
 ```python
 # Temporarily truncate history to the last 5 messages to save tokens
+# @TODO what are the other options for thread_context?
 async with agent.thread_context(truncate_at=5):
     await agent.call("Based on this recent context...")
 

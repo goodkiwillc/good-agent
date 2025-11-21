@@ -133,13 +133,53 @@ async def run_tests(agent: Agent, path: str = "."):
     ...
 ```
 
-### Human-in-the-Loop
-Pause execution for user input or approval.
+### Human-in-the-Loop & Interactive Patterns
+
+Agents can pass control back to the user interface for decisions, data collection, or open-ended clarification. This uses a `handoff` mechanism that suspends execution.
+
+#### 1. Simple Decisions
+Suspend for a single value or choice.
 
 ```python
-response = await agent.user_input("Approve deployment?", response_model=bool)
-if response.data:
-    await agent.call("Deploying...")
+# Agent requests input (suspends execution)
+await agent.handoff(
+    "Approve deployment?", 
+    options=["Approve", "Reject"]
+)
+
+# Host application resumes later
+if agent.state == AgentState.WAITING_FOR_INPUT:
+    await agent.resume("Approve") 
+```
+
+#### 2. Structured Wizards (Forms)
+Collect complex data using Pydantic models. The host UI can render this as a multi-step form or wizard.
+
+```python
+class DeploymentConfig(BaseModel):
+    env: Literal["prod", "staging"]
+    replicas: int
+    confirm_db_migration: bool
+
+# Agent requests full configuration
+config = await agent.handoff(
+    "Please configure the deployment:",
+    response_model=DeploymentConfig
+)
+```
+
+#### 3. Conversational Handoff
+Yield control for an open-ended chat session (e.g., for debugging or brainstorming) before resuming the task.
+
+```python
+# Switch to interactive chat mode until user says "continue"
+await agent.handoff(
+    "I need help understanding the requirements. Let's chat.",
+    mode="interactive_chat"
+)
+
+# The host system now treats inputs as chat messages, 
+# not just answers to a specific question.
 ```
 
 ## 3. Architecture & Internals

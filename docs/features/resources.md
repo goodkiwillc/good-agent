@@ -13,6 +13,8 @@ All resources inherit from `StatefulResource`, which provides:
 - **Agent Integration**: Context manager pattern for temporary agent binding
 - **Isolated Contexts**: Thread-safe execution with message isolation
 
+<!-- @TODO: Show the StatefulResource protocol/api here -->
+
 ```python
 from good_agent.resources import StatefulResource
 from good_agent import tool
@@ -35,7 +37,7 @@ class CustomResource(StatefulResource[dict]):
         """Get item by key."""
         return self.state.get(key, "Not found")
 
-    @tool  
+    @tool
     async def set_item(self, key: str, value: str) -> str:
         """Set item value."""
         self.state[key] = value
@@ -51,7 +53,7 @@ from good_agent import Agent
 
 async with Agent("You are a data editor") as agent:
     resource = CustomResource({"name": "example"})
-    
+
     # Bind resource to agent with isolated context
     async with resource(agent):
         # Agent now has only resource-specific tools
@@ -63,7 +65,7 @@ async with Agent("You are a data editor") as agent:
 The binding process:
 
 1. **Initialization**: Resource is initialized if not already done
-2. **Context Isolation**: Creates thread context for message isolation  
+2. **Context Isolation**: Creates thread context for message isolation
 3. **Tool Replacement**: Temporarily replaces agent tools with resource tools
 4. **System Message**: Adds resource-specific context to system prompt
 5. **Restoration**: Original tools and context restored on exit
@@ -101,7 +103,7 @@ Batch operations using JSON Patch-style operations:
 **Supported Operations:**
 
 - `add`: Add new values with create_missing support
-- `replace`: Update existing values 
+- `replace`: Update existing values
 - `remove`: Delete paths
 - `merge`: Shallow merge dictionaries
 - `deep_merge`: Deep merge nested structures
@@ -126,7 +128,7 @@ def dict_validator(doc: dict) -> tuple[bool, list[str]]:
         errors.append("Missing required_field")
     return len(errors) == 0, errors
 
-# String-based validator  
+# String-based validator
 def yaml_validator(yaml_text: str) -> dict:
     try:
         data = yaml.safe_load(yaml_text)
@@ -144,7 +146,7 @@ Automatic type coercion preserves existing data types when updating scalar value
 await editor.set("config.port", "8080", coerce_to_existing_type=True)
 # Result: config.port = 8080 (int, not string)
 
-# If existing value is boolean  
+# If existing value is boolean
 await editor.set("config.debug", "true", coerce_to_existing_type=True)
 # Result: config.debug = True (bool, not string)
 ```
@@ -169,7 +171,7 @@ await editor.update("//person", text_content="Updated bio")
 await editor.update("//person[@name='John']", attributes={"role": "candidate"})
 
 # Complex expressions
-await editor.update("//timeline/day[@date='2024-01-20']/event[1]", 
+await editor.update("//timeline/day[@date='2024-01-20']/event[1]",
                    text_content="Updated event description")
 ```
 
@@ -192,7 +194,7 @@ await editor.update("//timeline/day[@date='2024-01-20']/event[1]",
 # Append child to existing parent
 await editor.append_child(
     parent_xpath="//person[@name='John']",
-    element_tag="details", 
+    element_tag="details",
     text_content="Personal information",
     attributes={"type": "personal"}
 )
@@ -202,7 +204,7 @@ await editor.insert(
     reference_xpath="//timeline/day[@date='2024-01-20']",
     element_tag="day",
     position="before",
-    text_content="Pre-event activities", 
+    text_content="Pre-event activities",
     attributes={"date": "2024-01-19"}
 )
 ```
@@ -214,15 +216,15 @@ await editor.insert(
 await editor.update("//summary", text_content="Updated summary")
 
 # Update attributes
-await editor.update("//person[@name='John']", 
+await editor.update("//person[@name='John']",
                    attributes={"role": "active", "status": "verified"})
 
 # Update YAML data blocks
-await editor.update("//config[@yaml]", 
+await editor.update("//config[@yaml]",
                    data={"database_url": "updated_connection"})
 
 # Replace specific text
-await editor.replace_text("//document", 
+await editor.replace_text("//document",
                          old_text="draft", new_text="final",
                          all_occurrences=True)
 ```
@@ -243,7 +245,7 @@ EditableMDXL automatically manages citations and references:
 
 ```python
 # Citations in content are normalized to markdown format
-await editor.update("//summary", 
+await editor.update("//summary",
     text_content="Key findings [!CITE_1!] show trends [!CITE_2!]")
 # Becomes: "Key findings [1] show trends [2]"
 # With reference block: "[1]: https://source1.com\n[2]: https://source2.com"
@@ -294,7 +296,7 @@ MDXL (Markdown XML) provides a structured document format combining XML's precis
       <event date="2024-03-15">First release</event>
     </timeline>
   </project>
-  
+
   <!-- YAML data blocks -->
   <config yaml>
 database_url: postgres://localhost/db
@@ -356,7 +358,7 @@ backup = mdxl.copy()
 # Add elements
 new_event = mdxl.append("event", text="New milestone", date="2024-06-01")
 
-# Modify structure  
+# Modify structure
 mdxl.insert(0, "metadata", text="Document info")
 mdxl.remove(2)  # Remove third child
 mdxl.replace(1, "updated-element", text="Replacement")
@@ -428,19 +430,19 @@ async def update_project_config(agent: Agent):
     # Load YAML configuration
     yaml_content = "database:\n  host: localhost\n  port: 5432"
     yaml_editor = EditableYAML(yaml_content, name="config")
-    
-    # Load MDXL documentation  
+
+    # Load MDXL documentation
     doc_content = "<project><name>My App</name></project>"
     mdxl_editor = EditableMDXL(MDXL(doc_content), name="docs")
-    
+
     # Update configuration
     async with yaml_editor(agent):
         await agent.call("Update the database port to 3306")
-    
+
     # Update documentation
     async with mdxl_editor(agent):
         await agent.call("Add a description: 'Web application with MySQL'")
-    
+
     # Access final states
     updated_config = yaml_editor.state
     updated_docs = mdxl_editor.state.outer_text
@@ -453,13 +455,13 @@ Implement complex validation chains:
 ```python
 def validate_config(config_dict: dict) -> tuple[bool, list[str]]:
     errors = []
-    
+
     # Required fields
     required = ["database", "api_key", "debug"]
     for field in required:
         if field not in config_dict:
             errors.append(f"Missing required field: {field}")
-    
+
     # Type validation
     if "port" in config_dict:
         try:
@@ -468,7 +470,7 @@ def validate_config(config_dict: dict) -> tuple[bool, list[str]]:
                 errors.append("Port must be between 1 and 65535")
         except (ValueError, TypeError):
             errors.append("Port must be a valid integer")
-    
+
     return len(errors) == 0, errors
 
 # Use with EditableYAML
@@ -498,7 +500,7 @@ if result["ok"]:
 # Read specific sections only
 config_section = await editor.get("database.config")
 
-# Read with line limits for large files  
+# Read with line limits for large files
 first_100_lines = await editor.read(start_line=1, num_lines=100)
 ```
 
@@ -513,7 +515,7 @@ if result.startswith("ERROR:"):
     print(f"Validation failed: {result}")
     # State automatically rolled back
 
-# XPath errors provide guidance  
+# XPath errors provide guidance
 update_result = await mdxl_editor.update("//nonexistent", text_content="test")
 # Returns: "No elements found for XPath: //nonexistent. Element must exist..."
 ```
@@ -534,13 +536,13 @@ class ConfigurationComponent(AgentComponent):
 
     async def install(self, agent: Agent):
         await super().install(agent)
-        
+
         # Load configuration resource
         with open(self.config_path, 'r') as f:
             yaml_content = f.read()
-        
+
         self.editor = EditableYAML(yaml_content, name="app-config")
-        
+
         # Add configuration management context
         agent.context["config_editor"] = self.editor
 
@@ -552,7 +554,7 @@ class ConfigurationComponent(AgentComponent):
 async with Agent("Configuration manager") as agent:
     config_component = ConfigurationComponent("app.yaml")
     await config_component.install(agent)
-    
+
     # Access configuration resource
     async with agent.context["config_editor"](agent):
         response = await agent.call("Update the API timeout to 30 seconds")
@@ -570,17 +572,17 @@ from good_agent.core.mdxl import MDXL
 async def stream_document_updates():
     doc = MDXL("<document><title>Draft</title></document>")
     editor = EditableMDXL(doc, name="article")
-    
+
     async with Agent("Technical writer") as agent:
         async with editor(agent):
             agent.append("Expand this document with technical details")
-            
+
             async for message in agent.execute():
                 if hasattr(message, 'tool_name') and message.tool_name:
                     print(f"🛠️ {message.tool_name}: {message.content[:100]}...")
                 elif hasattr(message, 'content'):
                     print(f"📝 {message.content[:100]}...")
-    
+
     # Document updated through resource tools
     final_doc = editor.state.outer_text
     print(f"Final document: {len(final_doc)} characters")
@@ -600,14 +602,14 @@ async def test_yaml_validation():
         if "required_field" not in doc:
             return False, ["Missing required_field"]
         return True, []
-    
+
     editor = EditableYAML("optional: value", validator=validator)
     await editor.initialize()
-    
+
     # Should fail validation
     result = await editor.set("new_field", "value", validate=True)
     assert result.startswith("ERROR:")
-    
+
     # Should pass after adding required field
     await editor.set("required_field", "present", validate=False)
     result = await editor.set("new_field", "value", validate=True)
@@ -621,13 +623,13 @@ async def test_yaml_validation():
 async def test_resource_agent_integration():
     from good_agent import Agent
     from good_agent.resources import EditableYAML
-    
+
     editor = EditableYAML("count: 0", name="counter")
-    
+
     async with Agent("You count things") as agent:
         async with editor(agent):
             response = await agent.call("Increment the count to 5")
-            
+
     # Verify the change was applied
     assert editor.state.count == 5
 ```
@@ -655,15 +657,15 @@ Implement validation that provides actionable feedback:
 def comprehensive_validator(doc: dict) -> tuple[bool, list[str]]:
     errors = []
     warnings = []
-    
+
     # Check required structure
     if "metadata" not in doc:
         errors.append("Missing metadata section")
-    
+
     # Check optional but recommended fields
     if doc.get("version") is None:
         warnings.append("Consider adding version field")
-    
+
     # Return errors (warnings don't fail validation)
     return len(errors) == 0, errors
 ```

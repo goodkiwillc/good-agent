@@ -97,13 +97,11 @@ async def _perform_search(
 
 Use dependency injection for clean, testable tool architecture:
 
---8<-- "src/good_agent/tools/tools.py:70:90"
-
 ```python
 from good_agent import tool, Depends
 from good_agent.tools import ToolContext
 import httpx
-from typing import Protocol
+from typing import Protocol, Any
 
 # Define service interfaces
 class DatabaseService(Protocol):
