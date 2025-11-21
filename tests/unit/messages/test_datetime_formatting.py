@@ -121,7 +121,7 @@ Week: {{ today.strftime('%U') }}
 @pytest.mark.asyncio
 async def test_datetime_comparison():
     """Test that datetime objects maintain their type for comparisons."""
-    from good_agent.components.template_manager import _GLOBAL_CONTEXT_PROVIDERS
+    from good_agent.extensions.template_manager import _GLOBAL_CONTEXT_PROVIDERS
 
     today_val = _GLOBAL_CONTEXT_PROVIDERS["today"]()
     now_val = _GLOBAL_CONTEXT_PROVIDERS["now"]()

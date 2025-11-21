@@ -7,9 +7,9 @@ from .citations import (
     CitationTransformer,
 )
 from .citations import CitationIndex as NewCitationIndex
-from .index import CitationIndex, Paragraph
 from .search import AgentSearch
 from .task_manager import TaskManager, ToDoItem, ToDoList
+from .template_manager import Template, TemplateManager
 
 # from .webfetcher import (
 #     BulkFetchResult,
@@ -27,15 +27,15 @@ __all__ = [
     "CitationTransformer",
     "CitationExtractor",
     "CitationPatterns",
-    # Legacy citation support (for backward compatibility)
-    "CitationIndex",
-    "Paragraph",
     # Search
     "AgentSearch",
     # To-Do List
     "ToDoItem",
     "ToDoList",
     "TaskManager",
+    # Template Manager
+    "Template",
+    "TemplateManager",
     # Web Fetcher
     #     "WebFetcher",
     #     "WebFetchSummary",

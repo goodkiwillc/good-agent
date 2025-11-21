@@ -1,20 +1,17 @@
+from __future__ import annotations
+
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
-from good_agent.core.models import Renderable
-
-# Remove direct fetch imports - now handled by WebFetcher
-# Storage (from store module)
-# External dependencies
 from pydantic import BaseModel
 
-# Core agent imports
-from good_agent import (
-    Agent,
-    ContentPartType,
-    MessageInjectorComponent,
-    TemplateContentPart,
-    tool,
-)
+from good_agent.content import ContentPartType, TemplateContentPart
+from good_agent.core.components import MessageInjectorComponent
+from good_agent.core.models import Renderable
+from good_agent.tools import tool
+
+if TYPE_CHECKING:
+    from good_agent import Agent
 
 
 class ToDoItem(BaseModel):

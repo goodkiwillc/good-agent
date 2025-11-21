@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pytest
 from good_agent import Agent, UserMessage
-from good_agent.components.template_manager import Template
+from good_agent.extensions.template_manager import Template
 from good_agent.content import TemplateContentPart
 from good_agent.messages import RenderMode
 

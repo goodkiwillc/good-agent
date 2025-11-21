@@ -22,7 +22,7 @@
 #     def fetch(*args, **kwargs):  # type: ignore
 #         raise ImportError("good_agent_fetch is required for WebFetcher; install it to enable fetching")
 
-# from good_agent.components.component import AgentComponent
+# from good_agent.components import AgentComponent
 # from good_agent.core.models import Renderable
 # from good_agent.tools import tool
 # from good_agent.core.types import URL, NullableParsedDate

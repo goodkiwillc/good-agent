@@ -1,6 +1,7 @@
 import asyncio
 
 import pytest
+
 from good_agent import Agent, AgentComponent, tool
 
 
@@ -140,7 +141,7 @@ class TestComponentInitializationEdgeCases:
     @pytest.mark.asyncio
     async def test_multiple_components_mixed_success_failure(self):
         """Test mixed scenarios with some components failing."""
-        from good_agent.components import AgentComponent
+        from good_agent.core.components import AgentComponent
         from good_agent.tools import tool
 
         class WorkingComponent(AgentComponent):
@@ -182,7 +183,7 @@ class TestComponentInitializationEdgeCases:
     @pytest.mark.asyncio
     async def test_agent_ready_idempotency(self):
         """Test that calling agent.initialize() multiple times is safe."""
-        from good_agent.components import AgentComponent
+        from good_agent.core.components import AgentComponent
         from good_agent.tools import tool
 
         class SimpleComponent(AgentComponent):
@@ -288,7 +289,7 @@ class TestComponentInitializationEdgeCases:
     @pytest.mark.asyncio
     async def test_component_installation_order_independence(self):
         """Test that component installation order doesn't affect tool registration."""
-        from good_agent.components import AgentComponent
+        from good_agent.core.components import AgentComponent
         from good_agent.tools import tool
 
         class ComponentA(AgentComponent):
@@ -320,7 +321,7 @@ class TestComponentInitializationEdgeCases:
     @pytest.mark.asyncio
     async def test_memory_cleanup_after_component_initialization(self):
         """Test that temporary initialization data is cleaned up."""
-        from good_agent.components import AgentComponent
+        from good_agent.core.components import AgentComponent
         from good_agent.tools import tool
 
         class CleanupTestComponent(AgentComponent):

@@ -54,7 +54,7 @@ class TestTemplateContext:
     def test_global_context_provider(self):
         """Test global context provider registration"""
         # Save existing global providers
-        from good_agent.components.template_manager import _GLOBAL_CONTEXT_PROVIDERS
+        from good_agent.extensions.template_manager import _GLOBAL_CONTEXT_PROVIDERS
 
         # Save original state
         original_providers = _GLOBAL_CONTEXT_PROVIDERS.copy()
@@ -149,7 +149,7 @@ class TestTemplateContext:
     @pytest.mark.asyncio
     async def test_context_resolution_priority(self):
         """Test that context resolution follows correct priority"""
-        from good_agent.components.template_manager import _GLOBAL_CONTEXT_PROVIDERS
+        from good_agent.extensions.template_manager import _GLOBAL_CONTEXT_PROVIDERS
 
         # Save original state
         original_providers = _GLOBAL_CONTEXT_PROVIDERS.copy()

@@ -1,9 +1,10 @@
 import logging
 from typing import TYPE_CHECKING
 
-# Minimal eager imports - only the most commonly used classes
-from .components import AgentComponent
 from .content import RenderMode
+
+# Minimal eager imports - only the most commonly used classes
+from .core.components import AgentComponent
 from .events import AgentEvents
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -24,13 +25,28 @@ if TYPE_CHECKING:
         ModeManager,
         ModeTransition,
     )
-    from .components import (
+    from .agent.config import AgentConfigManager, Context
+    from .agent.conversation import Conversation
+    from .core.components import (
         AgentComponentType,
         ToolAdapter,
         ToolAdapterRegistry,
     )
-    from .components.injection import MessageInjectorComponent, SimpleMessageInjector
-    from .agent.config import AgentConfigManager
+    from .core.components.injection import (
+        MessageInjectorComponent,
+        SimpleMessageInjector,
+    )
+    from .extensions.template_manager import (
+        CircularDependencyError,
+        ContextInjectionError,
+        ContextProviderError,
+        ContextResolver,
+        ContextValue,
+        MissingContextValueError,
+        Template,
+        TemplateManager,
+        global_context_provider,
+    )
     from .content import (
         BaseContentPart,
         ContentPartType,
@@ -41,19 +57,17 @@ if TYPE_CHECKING:
         deserialize_content_part,
         is_template,
     )
-    from .agent.config import Context
-    from .agent.conversation import Conversation
     from .extensions import (
         AgentSearch,
         # BulkFetchResult,
         CitationExtractor,
         CitationFormat,
-        CitationIndex,
+        NewCitationIndex as CitationIndex,
         CitationManager,
         CitationPatterns,
         CitationTransformer,
         # FetchStats,
-        Paragraph,
+        # Paragraph,
         # SearchFetchResult,
         TaskManager,
         ToDoItem,
@@ -102,17 +116,6 @@ if TYPE_CHECKING:
         EditableYAML,
         StatefulResource,
     )
-    from .components.template_manager import (
-        CircularDependencyError,
-        ContextInjectionError,
-        ContextProviderError,
-        ContextResolver,
-        ContextValue,
-        MissingContextValueError,
-        Template,
-        TemplateManager,
-        global_context_provider,
-    )
     from .tools import (
         BoundTool,
         Tool,
@@ -153,11 +156,11 @@ _LAZY_IMPORTS = {
     "deserialize_content_part": "content",
     "is_template": "content",
     # Component system
-    "AgentComponentType": "components",
-    "MessageInjectorComponent": "components.injection",
-    "SimpleMessageInjector": "components.injection",
-    "ToolAdapter": "components",
-    "ToolAdapterRegistry": "components",
+    "AgentComponentType": "core.components",
+    "MessageInjectorComponent": "core.components",
+    "SimpleMessageInjector": "core.components",
+    "ToolAdapter": "core.components",
+    "ToolAdapterRegistry": "core.components",
     # Context and conversation
     "Context": "agent.config",
     "Conversation": "agent.conversation",
@@ -168,7 +171,7 @@ _LAZY_IMPORTS = {
     "CitationTransformer": "extensions",
     "CitationExtractor": "extensions",
     "CitationPatterns": "extensions",
-    "Paragraph": "extensions",
+    # "Paragraph": "extensions",
     # Extensions - Other
     "AgentSearch": "extensions",
     "TaskManager": "extensions",
@@ -218,16 +221,16 @@ _LAZY_IMPORTS = {
     "EditableResource": "resources",
     "EditableMDXL": "resources",
     # Templates
-    "Template": "components.template_manager",
-    "TemplateManager": "components.template_manager",
-    "global_context_provider": "components.template_manager",
+    "Template": "extensions.template_manager",
+    "TemplateManager": "extensions.template_manager",
+    "global_context_provider": "extensions.template_manager",
     # Context dependency injection
-    "ContextValue": "components.template_manager",
-    "ContextResolver": "components.template_manager",
-    "ContextInjectionError": "components.template_manager",
-    "MissingContextValueError": "components.template_manager",
-    "ContextProviderError": "components.template_manager",
-    "CircularDependencyError": "components.template_manager",
+    "ContextValue": "extensions.template_manager",
+    "ContextResolver": "extensions.template_manager",
+    "ContextInjectionError": "extensions.template_manager",
+    "MissingContextValueError": "extensions.template_manager",
+    "ContextProviderError": "extensions.template_manager",
+    "CircularDependencyError": "extensions.template_manager",
     # Tools - Core
     "Tool": "tools",
     "ToolCall": "tools",
@@ -324,7 +327,7 @@ __all__ = [
     "CitationTransformer",
     "CitationExtractor",
     "CitationPatterns",
-    "Paragraph",
+    # "Paragraph",
     # Extensions - Other
     "AgentSearch",
     "TaskManager",

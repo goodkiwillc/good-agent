@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 
 from good_agent.agent import Agent
-from good_agent.components import AgentComponent
+from good_agent.core.components import AgentComponent
 from good_agent.core.event_router import on
 from good_agent.events import AgentEvents
 from good_agent.tools import tool
@@ -17,7 +17,10 @@ except ImportError:  # pragma: no cover
     from pathlib import Path
 
     sys.path.append(str(Path(__file__).resolve().parent.parent))
-    from _shared.mock_llm import ExampleLanguageModel, assistant_response  # type: ignore[no-redef]
+    from _shared.mock_llm import (  # type: ignore[no-redef]
+        ExampleLanguageModel,
+        assistant_response,
+    )
 
 
 class LoggingComponent(AgentComponent):
@@ -36,7 +39,9 @@ class LoggingComponent(AgentComponent):
 async def main() -> None:
     component = LoggingComponent()
     agent = Agent(
-        language_model=ExampleLanguageModel([assistant_response("Hello from component!")]),
+        language_model=ExampleLanguageModel(
+            [assistant_response("Hello from component!")]
+        ),
         extensions=[component],
     )
     agent.append("You are a cheerful assistant.", role="system")

@@ -888,7 +888,7 @@ async def external_service_tool(
 
 Create sophisticated tool adapters for transparent functionality enhancement:
 
---8<-- "src/good_agent/components/tool_adapter.py:37:70"
+--8<-- "src/good_agent.components.py:37:70"
 
 ```python
 from good_agent.components import ToolAdapter

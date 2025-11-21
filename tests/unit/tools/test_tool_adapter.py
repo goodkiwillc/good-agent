@@ -3,14 +3,15 @@ from typing import Any, cast
 from unittest.mock import MagicMock
 
 import pytest
+
 from good_agent import Agent, AgentComponent, tool
-from good_agent.components import ToolAdapter, ToolAdapterRegistry
-from good_agent.components.tool_adapter import (
+from good_agent.core.components import (
     AdapterMetadata,
     ConflictStrategy,
+    ToolAdapter,
+    ToolAdapterRegistry,
 )
 from good_agent.tools import BoundTool, Tool, ToolResponse
-
 
 ToolLike = Tool[Any, Any] | BoundTool[Any, Any, Any]
 

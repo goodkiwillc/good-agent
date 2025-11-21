@@ -4,18 +4,17 @@ import logging
 import re
 from typing import TYPE_CHECKING, Any, Literal, cast
 
+from good_agent.core.components import AgentComponent
 from good_agent.core.event_router import EventContext, on
 
-from ...components import AgentComponent
-from ...content import RenderMode
-from ...events import (
+from good_agent.content import RenderMode
+from good_agent.events import (
     AgentEvents,
     MessageAppendParams,
     MessageCreateParams,
     MessageRenderParams,
     ToolsGenerateSignature,
 )
-from ...tools import ToolSignature
 from .citation_adapter import CitationAdapter
 from .formats import (
     CitationExtractor,
@@ -29,8 +28,9 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from ...agent import Agent
-    from ...messages import Message
+    from good_agent import Agent
+    from good_agent.messages import Message
+    from good_agent.tools import ToolSignature
 
 
 class CitationManager(AgentComponent):
@@ -175,7 +175,7 @@ class CitationManager(AgentComponent):
 
                     # Update content if it was transformed
                     if processed_content != content_text:
-                        from ...content import TextContentPart
+                        from good_agent.content import TextContentPart
 
                         # Replace first text content part with processed content
                         for i, part in enumerate(message.content_parts):
@@ -324,7 +324,7 @@ class CitationManager(AgentComponent):
                 return
 
             # Import here to avoid circular dependency
-            from ...content import TextContentPart
+            from good_agent.content import TextContentPart
 
             # Process each content part for transformation
             transformed_parts = []
@@ -433,7 +433,7 @@ class CitationManager(AgentComponent):
 
         from good_agent.core.types import URL
 
-        from ...content import TemplateContentPart, TextContentPart, is_template
+        from good_agent.content import TemplateContentPart, TextContentPart, is_template
 
         # Default to DISPLAY mode if not provided (for backward compatibility)
         if mode is None:
@@ -1051,7 +1051,7 @@ class CitationManager(AgentComponent):
         # Update message content through content_parts
         if hasattr(message, "content_parts") and message.content_parts:
             # Update the first text content part
-            from ...content import TextContentPart
+            from good_agent.content import TextContentPart
 
             for part in message.content_parts:
                 if isinstance(part, TextContentPart):

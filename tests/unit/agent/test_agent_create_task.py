@@ -2,8 +2,9 @@ import asyncio
 from typing import Any
 
 import pytest
+
 from good_agent import Agent
-from good_agent.components import AgentComponent
+from good_agent.core.components import AgentComponent
 
 
 async def simple_async_task(value: int) -> int:

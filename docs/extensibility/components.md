@@ -8,7 +8,7 @@ Good Agent provides a powerful component-based extension system that enables mod
 
 All components extend `AgentComponent`, which provides the foundation for extensible agent functionality:
 
---8<-- "src/good_agent/components/component.py:57:69"
+--8<-- "src/good_agent.components.py:57:69"
 
 **Core Capabilities:**
 
@@ -256,10 +256,10 @@ async with Agent(
 
 Base class for components that inject content into messages:
 
---8<-- "src/good_agent/components/injection.py:17:43"
+--8<-- "src/good_agent.components.py:17:43"
 
 ```python
-from good_agent.components.injection import MessageInjectorComponent
+from good_agent.components import MessageInjectorComponent
 from good_agent.content import TextContentPart
 
 class ContextComponent(MessageInjectorComponent):
@@ -427,7 +427,7 @@ print(f"Original: {original.value}, Clone: {clone.value}")  # Original: 20, Clon
 Components can use tool adapters to modify tool behavior transparently:
 
 ```python
-from good_agent.components.tool_adapter import ToolAdapter
+from good_agent.components import ToolAdapter
 
 class LoggingAdapter(ToolAdapter):
     """Adapter that logs all tool calls."""

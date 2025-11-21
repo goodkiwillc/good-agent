@@ -26,7 +26,7 @@ The adapter system hooks into three key events in the tool lifecycle:
 
 ```python
 from good_agent.components import AgentComponent, ToolAdapter
-from good_agent.components.tool_adapter import AdapterMetadata
+from good_agent.components import AdapterMetadata
 
 class MyAdapter(ToolAdapter):
     """Custom adapter for modifying tool behavior."""
@@ -204,7 +204,7 @@ When multiple adapters modify the same tool:
 Configure how conflicts are handled:
 
 ```python
-from good_agent.components.tool_adapter import ConflictStrategy
+from good_agent.components import ConflictStrategy
 
 class MyAdapter(ToolAdapter):
     def __init__(self, component):

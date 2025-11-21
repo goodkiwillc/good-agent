@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING, Any
 
 from jinja2 import ChoiceLoader
 
-from good_agent.components import AgentComponent
-from good_agent.core import templating
-from good_agent.events import AgentEvents
+from good_agent.core.components import AgentComponent
+from ...core import templating
+from ...events import AgentEvents
 
 from .injection import (
     ContextResolver,

@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from good_common.utilities import now_pt
 
-from good_agent import AgentComponent, tool
+from good_agent.core.components import AgentComponent
+from good_agent.tools import tool
 
 from .models import (
     DataDomain,
