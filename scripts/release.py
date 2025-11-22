@@ -19,7 +19,9 @@ INIT_PATH = ROOT / "src" / "good_agent" / "__init__.py"
 CHANGELOG_PATH = ROOT / "CHANGELOG.md"
 
 
-def run_command(command: str, *, check: bool = True, capture_output: bool = False) -> subprocess.CompletedProcess[str]:
+def run_command(
+    command: str, *, check: bool = True, capture_output: bool = False
+) -> subprocess.CompletedProcess[str]:
     """Run a shell command relative to the repo root."""
 
     print(f"$ {command}")
@@ -48,7 +50,9 @@ def ensure_repo_root() -> None:
 def ensure_clean_worktree() -> None:
     status = run_command("git status --porcelain", capture_output=True)
     if status.stdout.strip():
-        raise SystemExit("Working tree is dirty. Commit or stash changes before releasing.")
+        raise SystemExit(
+            "Working tree is dirty. Commit or stash changes before releasing."
+        )
 
 
 def read_pyproject_version() -> str:
@@ -105,7 +109,7 @@ def update_changelog(version: str) -> None:
 
 def run_validations() -> None:
     commands = [
-        "uv sync --group dev --extra server",
+        "uv sync --group dev",
         "uv run ruff check src scripts tests",
         "uv run python -m compileall src",
         "uv run mkdocs build --clean --site-dir site",
@@ -125,10 +129,18 @@ def push_release(version: str) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Create a new good-agent release")
-    parser.add_argument("bump_type", choices=["patch", "minor", "major"], help="Version segment to bump")
-    parser.add_argument("--dry-run", action="store_true", help="Show actions without mutating anything")
-    parser.add_argument("--skip-tests", action="store_true", help="Skip validation commands")
-    parser.add_argument("--yes", "-y", action="store_true", help="Skip confirmation prompt")
+    parser.add_argument(
+        "bump_type", choices=["patch", "minor", "major"], help="Version segment to bump"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Show actions without mutating anything"
+    )
+    parser.add_argument(
+        "--skip-tests", action="store_true", help="Skip validation commands"
+    )
+    parser.add_argument(
+        "--yes", "-y", action="store_true", help="Skip confirmation prompt"
+    )
     return parser.parse_args()
 
 
@@ -171,7 +183,9 @@ def main() -> None:
     create_tag(next_version)
     push_release(next_version)
 
-    release_url = f"https://github.com/goodkiwillc/good-agent/releases/new?tag=v{next_version}"
+    release_url = (
+        f"https://github.com/goodkiwillc/good-agent/releases/new?tag=v{next_version}"
+    )
     print("\nRelease tag created. Create a GitHub release at:")
     print(release_url)
 
