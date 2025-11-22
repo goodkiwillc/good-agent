@@ -8,8 +8,12 @@ from litellm.types.utils import Choices
 
 
 @pytest.mark.asyncio
+@pytest.mark.llm
 async def test_simple_vcr_without_agent():
     """Test VCR without agent complexity - direct API call."""
+    if not os.getenv("OPENAI_API_KEY"):
+        pytest.skip("OPENAI_API_KEY required to run live llm tests")
+
     import litellm
 
     # Simple direct litellm call

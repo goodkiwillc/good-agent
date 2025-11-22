@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
-import warnings
 import weakref
 from collections.abc import (
     AsyncIterator,
@@ -416,13 +415,6 @@ class Agent(EventRouter):
                 filtered.append(name)
         return sorted(filtered)
 
-    def _warn_event_facade(self, method: str) -> None:
-        warnings.warn(
-            f"Agent.{method}() is deprecated. Use agent.events.{method}() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
     _init_task: asyncio.Task | None = None
     _conversation: Conversation | None = None
     _id: ULID
@@ -445,12 +437,6 @@ class Agent(EventRouter):
     @staticmethod
     def context_providers(name: str):
         """Register a global context provider"""
-
-        warnings.warn(
-            "Agent.context_providers() is deprecated. Use agent.context_manager.context_providers() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return ContextManager.context_providers(name)
 
     def as_tool(
@@ -1172,12 +1158,6 @@ class Agent(EventRouter):
 
     async def ready(self) -> None:
         """Deprecated shim for :meth:`Agent.initialize`."""
-
-        warnings.warn(
-            "Agent.ready() is deprecated. Use agent.initialize() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         await self.initialize()
 
     @on(AgentEvents.AGENT_INIT_AFTER)
@@ -1610,13 +1590,6 @@ class Agent(EventRouter):
                 # Use instead
                 agent.append("result", role="tool", tool_call_id="123")
         """
-        warnings.warn(
-            "add_tool_response() is deprecated. "
-            "Use append(content, role='tool', tool_call_id=...) instead. "
-            "This method will be removed in version 1.0.0.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         self.append(
             content,
             role="tool",
