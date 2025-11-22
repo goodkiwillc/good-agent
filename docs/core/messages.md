@@ -187,6 +187,228 @@ if isinstance(msg, ToolMessage):
     print(f"Response: {msg.tool_response}")
 ```
 
+## Message Templating
+
+Good Agent supports Jinja2-based templating in message content, allowing dynamic variable substitution, context providers, custom filters, and structured content generation.
+
+### Basic Template Variables
+
+Use `{{variable}}` syntax in message content and provide values via the `context` parameter:
+
+```python
+# Simple variable substitution
+agent.append(
+    "The weather in {{city}} is {{temp}}°F",
+    context={"city": "Paris", "temp": 72}
+)
+
+# System messages with templates
+from good_agent.messages import SystemMessage
+system_msg = SystemMessage(
+    "You are an expert in {{domain}}",
+    context={"domain": "machine learning"}
+)
+```
+
+### Context Providers
+
+Context providers are functions that dynamically supply values to templates. They're called automatically when a template references their variable name.
+
+#### Global Context Providers
+
+Register global context providers that work across all agents:
+
+```python
+from good_agent import Agent
+
+# Register global context provider
+@Agent.context_providers("current_user")
+def get_current_user():
+    return "chris@example.com"
+
+@Agent.context_providers("now")
+def current_time():
+    from datetime import datetime
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+# Use in any agent
+async with Agent("Current time is {{now}}") as agent:
+    # System prompt automatically includes timestamp
+    print(agent[0].content)  # "Current time is 2025-11-21 15:30:00"
+```
+
+#### Instance Context Providers
+
+Register context providers specific to an agent instance:
+
+```python
+async with Agent("Assistant") as agent:
+    # Register instance-specific provider
+    @agent.context.context_provider("session_id")
+    def get_session():
+        return "sess_abc123"
+
+    # Use in messages
+    agent.append("Session: {{session_id}}")
+    # Renders as: "Session: sess_abc123"
+```
+
+#### Built-in Context Providers
+
+Good Agent includes built-in context providers:
+
+- `{{now}}` - Current datetime
+- `{{today}}` - Current date at midnight
+
+```python
+agent.append("Today's date: {{today}}, current time: {{now}}")
+```
+
+### Agent Context Management
+
+Agents have a context dictionary that can be set at initialization or modified later:
+
+```python
+# Set context at initialization
+async with Agent("Assistant", context={"env": "production", "version": "1.0"}) as agent:
+    agent.append("Running in {{env}} environment, version {{version}}")
+
+    # Access context
+    print(agent.context.as_dict())  # {"env": "production", "version": "1.0"}
+
+    # Context values override provider values
+    agent.append("Time: {{now}}")  # Uses built-in provider
+```
+
+### Template Inheritance and Includes
+
+Templates support Jinja2's inheritance and include features:
+
+```python
+# Register named templates
+agent.template_manager.add_template(
+    "greeting",
+    "Hello {{name}}, welcome to {{service}}!"
+)
+
+# Use in messages
+agent.append(
+    "{% include 'greeting' %}",
+    context={"name": "Alice", "service": "Good Agent"}
+)
+```
+
+### Custom Jinja2 Filters
+
+Good Agent includes custom Jinja2 filters for advanced formatting:
+
+```python
+# Using built-in section filter for structured content
+agent.append("""
+{% section "instructions" type="list" %}
+Step 1: Connect to database
+Step 2: Run query
+Step 3: Process results
+{% end section %}
+""")
+```
+
+### Line Statements and Comments
+
+Templates support line-statement syntax with `!#` prefix and comments with `!##`:
+
+```python
+agent.append("""
+!# set title = "Analysis Report"
+!## This is a comment and won't render
+<h1>{{ title }}</h1>
+!# section "content"
+Report body here
+!# end section
+""")
+```
+
+### Template Validation
+
+Access undefined variables to detect templating errors:
+
+```python
+# This will warn about undefined variables in strict mode
+agent.append("Test {{undefined_var}}")
+
+# Extract variables from a template
+variables = agent.template_manager.extract_template_variables(
+    "Hello {{name}}, your score is {{score}}"
+)
+print(variables)  # ['name', 'score']
+```
+
+### Context Priority
+
+Context values are resolved in this priority order (highest to lowest):
+
+1. Message-level `context` parameter
+2. Agent context (`agent.context`)
+3. Instance context providers
+4. Global context providers
+
+```python
+@Agent.context_providers("value")
+def global_value():
+    return "global"
+
+async with Agent("Assistant", context={"value": "agent"}) as agent:
+    @agent.context.context_provider("value")
+    def instance_value():
+        return "instance"
+
+    # Message context takes highest priority
+    agent.append("Value: {{value}}", context={"value": "message"})
+    # Renders as: "Value: message"
+
+    # Without message context, uses agent context
+    agent.append("Value: {{value}}")
+    # Renders as: "Value: agent"
+```
+
+### File-Based Templates
+
+Templates can be loaded from files in a `prompts/` directory:
+
+```python
+# prompts/system/assistant.txt contains:
+# "You are a helpful assistant specialized in {{domain}}"
+
+async with Agent() as agent:
+    # Load and render file template
+    await agent.template_manager.preload_templates(["system/assistant"])
+
+    agent.system.set(
+        "{% include 'system/assistant' %}",
+        context={"domain": "Python programming"}
+    )
+```
+
+### Dependency Injection in Context Providers
+
+Context providers support dependency injection for agent and message access:
+
+```python
+from good_agent import Agent
+from good_agent.messages import Message
+
+async with Agent("Assistant") as agent:
+    @agent.context.context_provider("last_user_message")
+    def get_last_user_msg(agent: Agent, message: Message):
+        # Access agent and current message
+        if agent.user:
+            return agent.user[-1].content
+        return "No user messages yet"
+
+    agent.append("User")
+    agent.append("Last user said: {{last_user_message}}")
+```
+
 ## Message Operations
 
 ### Adding Messages
