@@ -284,6 +284,7 @@ async with Agent("Assistant", context={"env": "production", "version": "1.0"}) a
 
 Templates support Jinja2's inheritance and include features:
 
+{% raw %}
 ```python
 # Register named templates
 agent.template_manager.add_template(
@@ -293,10 +294,12 @@ agent.template_manager.add_template(
 
 # Use in messages
 agent.append(
-    "{% include 'greeting' %}",
+    "{% include 'gree"
+    "ting' %}",
     context={"name": "Alice", "service": "Good Agent"}
 )
 ```
+{% endraw %}
 
 ### Custom Jinja2 Filters
 
@@ -611,17 +614,16 @@ async def on_version_change(ctx):
 - **Limit message history** in long-running applications
 - **Use structured content** for complex data instead of plain strings
 
-### Performance
+### Templating
 
-- **Batch role-based operations** to minimize filtering overhead
-- **Cache message lists** when accessing multiple times
-- **Monitor message count** and implement pruning strategies
-- **Use message IDs** for efficient lookups in large histories
+- **Use context providers** for dynamic values that change per request
+- **Set agent context** at initialization for values shared across messages
+- **Template validation** to catch undefined variables early
+- **File-based templates** for reusable prompts and system messages
 
 ### Content Management
 
 - **Render appropriately** for the target audience (DISPLAY vs LLM)
-- **Template variables** for dynamic content generation
 - **Rich content types** for multimodal interactions
 - **Validate content** before sending to LLM
 
