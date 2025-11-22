@@ -1,5 +1,8 @@
 # Messages & History
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 Good Agent provides a sophisticated message system for managing conversation history, with strong typing, role-based filtering, and powerful content handling. This page covers message types, history management, and advanced message operations.
 
 ## Message Types

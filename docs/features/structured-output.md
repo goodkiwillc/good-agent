@@ -1,5 +1,8 @@
 # Structured Output
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 Good Agent provides first-class support for extracting structured, typed data from LLM responses using Pydantic models and the Instructor library. This enables reliable data extraction with automatic validation, retry logic, and type safety.
 
 ## Overview
