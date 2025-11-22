@@ -2,7 +2,7 @@ site_name: Good Agent
 site_description: "An adequate library for agent orchestration."
 site_url: "https://goodkiwillc.github.io/good-agent/"
 repo_url: "https://github.com/goodkiwillc/good-agent"
-repo_name: "goodkiwi/good-agent"
+repo_name: "goodkiwillc/good-agent"
 
 theme:
   name: material
