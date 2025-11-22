@@ -13,16 +13,18 @@ def search_web(query: str) -> str:
     Note: This is a reference implementation using DuckDuckGo.
     You may need to install 'duckduckgo-search': pip install duckduckgo-search
     """
-    try:
-        from duckduckgo_search import DDGS
-
-        with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=5))
-            return str(results)
-    except ImportError:
-        return "Error: duckduckgo-search is not installed. Please install it to use this tool: pip install duckduckgo-search"
-    except Exception as e:
-        return f"Error performing search: {e}"
+    # Temporarily disabled because duckduckgo_search is unavailable in this environment.
+    # try:
+    #     from duckduckgo_search import DDGS
+    #
+    #     with DDGS() as ddgs:
+    #         results = list(ddgs.text(query, max_results=5))
+    #         return str(results)
+    # except ImportError:
+    #     return "Error: duckduckgo-search is not installed. Please install it to use this tool: pip install duckduckgo-search"
+    # except Exception as e:
+    #     return f"Error performing search: {e}"
+    return "DuckDuckGo search temporarily disabled. Install duckduckgo-search to re-enable."
 
 
 @tool

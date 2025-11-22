@@ -153,7 +153,7 @@ def _augment_tool_message_for_context(message: ToolMessage) -> ToolMessage:
     if augmented_content == base_content:
         return message
 
-    return _ToolMessageContextView(message, augmented_content)
+    return cast(ToolMessage, _ToolMessageContextView(message, augmented_content))
 
 
 class MockToolCall(TypedDict):

@@ -9,7 +9,7 @@ from types import MappingProxyType
 from typing import Any, TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:  # pragma: no cover - import cycles guarded at type-check time
-    from good_agent.components import AgentComponent
+    from good_agent.core.components import AgentComponent
 
     from good_agent.agent.core import Agent
 
