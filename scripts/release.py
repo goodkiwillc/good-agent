@@ -84,8 +84,8 @@ def replace_line(path: Path, pattern: re.Pattern[str], replacement: str) -> None
 def update_versions(new_version: str) -> None:
     pyproject_pattern = re.compile(r'(?m)^(version\s*=\s*")([^\"]+)(")')
     init_pattern = re.compile(r'(?m)^(__version__\s*=\s*")([^\"]+)(")')
-    replace_line(PYPROJECT_PATH, pyproject_pattern, rf"\1{new_version}\3")
-    replace_line(INIT_PATH, init_pattern, rf"\1{new_version}\3")
+    replace_line(PYPROJECT_PATH, pyproject_pattern, rf"\g<1>{new_version}\g<3>")
+    replace_line(INIT_PATH, init_pattern, rf"\g<1>{new_version}\g<3>")
 
 
 def update_changelog(version: str) -> None:

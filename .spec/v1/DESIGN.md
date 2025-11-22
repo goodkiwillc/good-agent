@@ -12,7 +12,7 @@ from good_agent import Agent
 
 async with Agent("You are a helpful assistant.") as agent:
     agent.append("What is 2+2?")
-    
+
     # Simple non-streaming call
     response = await agent.call()
     assert response.content == "4"
@@ -86,6 +86,7 @@ await agent.tools.load_mcp_servers(["filesystem-server"])
 Modes allow agents to switch behaviors, toolsets, and context scopes dynamically.
 *See `.spec/v1/features/agent-modes.md` for full specification.*
 
+<!-- add_system_message - that's not the right way to do it - should use context -->
 ```python
 @agent.modes('research')
 async def research_mode(ctx: AgentContext):
@@ -110,7 +111,7 @@ writer = Agent("Writer")
 async with (researcher | writer) as convo:
     # Researcher's output becomes Writer's input
     researcher.append("Find data", role="assistant")
-    await writer.call() 
+    await writer.call()
 ```
 
 ### Stateful Resources (MDXL)
@@ -143,13 +144,13 @@ Suspend for a single value or choice.
 ```python
 # Agent requests input (suspends execution)
 await agent.handoff(
-    "Approve deployment?", 
+    "Approve deployment?",
     options=["Approve", "Reject"]
 )
 
 # Host application resumes later
 if agent.state == AgentState.WAITING_FOR_INPUT:
-    await agent.resume("Approve") 
+    await agent.resume("Approve")
 ```
 
 #### 2. Structured Wizards (Forms)
@@ -178,7 +179,7 @@ await agent.handoff(
     mode="interactive_chat"
 )
 
-# The host system now treats inputs as chat messages, 
+# The host system now treats inputs as chat messages,
 # not just answers to a specific question.
 ```
 
@@ -199,7 +200,7 @@ original_version = agent.version_id
 agent.append("Mistake", role="user")
 
 # Revert to previous state (undo)
-agent.versioning.revert_to_version(0) 
+agent.versioning.revert_to_version(0)
 assert agent.version_id != original_version # New version created for the revert
 ```
 
@@ -215,7 +216,7 @@ if agent.state == AgentState.READY:
     print("Agent is ready for input")
 
 # Wait for initialization to complete
-await agent.initialize() 
+await agent.initialize()
 assert agent.is_ready
 ```
 
@@ -255,4 +256,3 @@ async def log_tool_result(ctx: EventContext[ToolCallAfterParams, None]):
 # Trigger an event manually (if needed)
 agent.do(AgentEvents.CUSTOM_EVENT, data="payload")
 ```
-
