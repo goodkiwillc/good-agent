@@ -1,5 +1,8 @@
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+import json
 from collections.abc import Callable
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, TypeVar, cast
+from unittest.mock import MagicMock, patch
 
 import pytest
 from good_agent import Agent, AgentComponent, tool
@@ -105,8 +108,50 @@ async def test_component_tools_execution():
         "You are a task management assistant. Use the tools to manage tasks.",
         extensions=[task_manager],
     ) as agent:
+        @dataclass
+        class MockFunction:
+            name: str
+            arguments: str
+
+        @dataclass
+        class MockToolCall:
+            id: str
+            type: str = "function"
+            function: MockFunction | None = None
+
+        mock_tool_response = MagicMock()
+        mock_tool_choice = MagicMock()
+        mock_tool_choice.__class__.__name__ = "Choices"
+        mock_tool_response.choices = [mock_tool_choice]
+        mock_tool_choice.message = MagicMock()
+        mock_tool_choice.message.content = ""
+        mock_tool_choice.message.tool_calls = [
+            MockToolCall(
+                id="call_create_list",
+                function=MockFunction(
+                    name="create_list", arguments=json.dumps({"name": "Work Tasks"})
+                ),
+            )
+        ]
+
+        mock_final_response = MagicMock()
+        mock_final_choice = MagicMock()
+        mock_final_choice.__class__.__name__ = "Choices"
+        mock_final_response.choices = [mock_final_choice]
+        mock_final_choice.message = MagicMock()
+        mock_final_choice.message.content = "Created list"
+        mock_final_choice.message.tool_calls = None
+
+        responses = [mock_tool_response, mock_final_response]
+
+        async def mock_complete(*args, **kwargs):
+            if responses:
+                return responses.pop(0)
+            return mock_final_response
+
         # Call agent with a request that should use tools
-        await agent.call("Create a new list called 'Work Tasks'")
+        with patch.object(agent.model, "complete", side_effect=mock_complete):
+            await agent.call("Create a new list called 'Work Tasks'")
 
         # Check that a list was created
         assert len(task_manager.lists) > 0

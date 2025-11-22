@@ -1,6 +1,7 @@
 import asyncio
 import signal
 import sys
+from contextlib import contextmanager
 from typing import Sequence, cast
 from unittest.mock import MagicMock, patch
 
@@ -9,6 +10,28 @@ from good_agent import Agent
 from good_agent.agent import AgentState
 from good_agent.tools import tool
 from litellm.types.completion import ChatCompletionMessageParam
+
+
+def _make_mock_llm_response(content: str = "mock response"):
+    response = MagicMock()
+    choice = MagicMock()
+    choice.__class__.__name__ = "Choices"
+    choice.message = MagicMock()
+    choice.message.content = content
+    choice.message.tool_calls = None
+    response.choices = [choice]
+    return response
+
+
+@contextmanager
+def _stub_agent_complete(agent, *, delay: float = 0.0, content: str = "mock response"):
+    async def _fake_complete(*args, **kwargs):
+        if delay:
+            await asyncio.sleep(delay)
+        return _make_mock_llm_response(content)
+
+    with patch.object(agent.model, "complete", new=_fake_complete):
+        yield
 
 
 class TestAgentInterruption:
@@ -31,17 +54,18 @@ class TestAgentInterruption:
 
         setattr(agent.events, "close", tracked_close)
 
-        # Simulate some work
-        task = asyncio.create_task(agent.call("Generate a long response"))
+        with _stub_agent_complete(agent, delay=5.0):
+            # Simulate some work
+            task = asyncio.create_task(agent.call("Generate a long response"))
 
-        # Cancel after a short delay
-        await asyncio.sleep(0.1)
-        task.cancel()
+            # Cancel after a short delay
+            await asyncio.sleep(0.1)
+            task.cancel()
 
-        try:
-            await task
-        except asyncio.CancelledError:
-            await agent.events.close()
+            try:
+                await task
+            except asyncio.CancelledError:
+                await agent.events.close()
 
         assert cleanup_called
         assert len(agent._managed_tasks) == 0
@@ -184,12 +208,13 @@ class TestAgentInterruption:
                 agent.on("agent:close:before")(track_event)
                 agent.on("agent:close:after")(track_event)
 
-                # Start some work
-                task = asyncio.create_task(agent.call("Generate something"))
+                with _stub_agent_complete(agent, delay=5.0):
+                    # Start some work
+                    task = asyncio.create_task(agent.call("Generate something"))
 
-                # Simulate interruption
-                await asyncio.sleep(0.05)
-                task.cancel()
+                    # Simulate interruption
+                    await asyncio.sleep(0.05)
+                    task.cancel()
 
                 # Context manager should handle cleanup
         except asyncio.CancelledError:
@@ -480,21 +505,22 @@ class TestMemoryLeaksAndDeadlocks:
         agent = Agent("Test assistant")
         await agent.initialize()
 
-        for i in range(10):
-            # Start operation
-            task = asyncio.create_task(agent.call(f"Request {i}"))
+        with _stub_agent_complete(agent, delay=0.5):
+            for i in range(10):
+                # Start operation
+                task = asyncio.create_task(agent.call(f"Request {i}"))
 
-            # Quick cancel
-            await asyncio.sleep(0.01)
-            task.cancel()
+                # Quick cancel
+                await asyncio.sleep(0.01)
+                task.cancel()
 
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
 
-            # Check for task accumulation
-            assert len(agent._managed_tasks) < 5  # Some tolerance for cleanup delay
+                # Check for task accumulation
+                assert len(agent._managed_tasks) < 5  # Some tolerance for cleanup delay
 
         # Final cleanup
         await agent.events.close()
@@ -514,17 +540,18 @@ class TestRobustness:
         agent = Agent("Test assistant")
         await agent.initialize()
 
-        tasks = []
-        for i in range(5):
-            task = asyncio.create_task(agent.call(f"Request {i}"))
-            tasks.append(task)
+        with _stub_agent_complete(agent, delay=0.5):
+            tasks = []
+            for i in range(5):
+                task = asyncio.create_task(agent.call(f"Request {i}"))
+                tasks.append(task)
 
-        # Rapidly cancel all tasks
-        for task in tasks:
-            task.cancel()
+            # Rapidly cancel all tasks
+            for task in tasks:
+                task.cancel()
 
-        # Should handle all cancellations gracefully
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+            # Should handle all cancellations gracefully
+            results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # All should be CancelledError
         for result in results:

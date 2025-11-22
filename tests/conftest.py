@@ -1,6 +1,7 @@
 import logging
 import os
 import warnings
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -203,6 +204,53 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+LLM_API_ENV_PLACEHOLDERS = {
+    "OPENAI_API_KEY": "test-openai-placeholder",
+    "OPENROUTER_API_KEY": "test-openrouter-placeholder",
+    "ANTHROPIC_API_KEY": "test-anthropic-placeholder",
+    "GOOGLE_API_KEY": "test-google-placeholder",
+}
+
+_RECORD_MODES_REQUIRING_LIVE_KEYS = {"all", "new_episodes"}
+
+
+@contextmanager
+def _temporary_llm_keys(record_mode: str, cassette_path: Path):
+    """Inject placeholder API keys when replaying VCR cassettes."""
+
+    playback_only = record_mode not in _RECORD_MODES_REQUIRING_LIVE_KEYS
+
+    if playback_only and not cassette_path.exists():
+        raise RuntimeError(
+            "Missing LLM cassette at"
+            f" {cassette_path}. Set VCR_RECORD_MODE=new_episodes and record it"
+            " with real API keys before running the suite."
+        )
+
+    if playback_only:
+        injected: list[str] = []
+        for env_var, placeholder in LLM_API_ENV_PLACEHOLDERS.items():
+            if not os.environ.get(env_var):
+                os.environ[env_var] = placeholder
+                injected.append(env_var)
+
+        try:
+            yield
+        finally:
+            for env_var in injected:
+                os.environ.pop(env_var, None)
+        return
+
+    if not any(os.environ.get(env) for env in LLM_API_ENV_PLACEHOLDERS):
+        joined = ", ".join(LLM_API_ENV_PLACEHOLDERS)
+        raise RuntimeError(
+            f"VCR_RECORD_MODE={record_mode} requires a real LLM API key."
+            f" Export one of: {joined}."
+        )
+
+    yield
+
+
 # Plugin code directly in conftest for now
 
 
@@ -379,6 +427,7 @@ def vcr_cassette(vcr_config, vcr_cassette_dir, vcr_cassette_name):
 def llm_vcr(vcr_cassette_dir, vcr_cassette_name):
     """Fixture specifically for LLM API calls with appropriate matching."""
     cassette_path = Path(vcr_cassette_dir) / f"llm_{vcr_cassette_name}"
+    record_mode = os.environ.get("VCR_RECORD_MODE", "once")
 
     # Configure LiteLLM to use standard httpx transport for VCR compatibility
     import litellm
@@ -388,13 +437,13 @@ def llm_vcr(vcr_cassette_dir, vcr_cassette_name):
     logger.debug("Disabled LiteLLM aiohttp transport for VCR compatibility")
 
     # Delete existing cassette if in record mode to force re-recording
-    if os.environ.get("VCR_RECORD_MODE") == "new_episodes" and cassette_path.exists():
+    if record_mode == "new_episodes" and cassette_path.exists():
         os.remove(cassette_path)
 
     # Special configuration for LLM calls
     llm_vcr = vcr.VCR(
         cassette_library_dir=vcr_cassette_dir,
-        record_mode=os.environ.get("VCR_RECORD_MODE", "once"),
+        record_mode=record_mode,
         match_on=[
             "method",
             "scheme",
@@ -417,8 +466,9 @@ def llm_vcr(vcr_cassette_dir, vcr_cassette_name):
     )
 
     try:
-        with llm_vcr.use_cassette(str(cassette_path)) as cassette:
-            yield cassette
+        with _temporary_llm_keys(record_mode, cassette_path):
+            with llm_vcr.use_cassette(str(cassette_path)) as cassette:
+                yield cassette
     finally:
         # Restore original LiteLLM aiohttp transport setting
         litellm.disable_aiohttp_transport = original_disable_aiohttp
