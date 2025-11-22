@@ -1,5 +1,8 @@
 # Events
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 Good Agent provides a comprehensive event-driven architecture that enables reactive programming, lifecycle hooks, and extensible component interactions. The event system allows you to monitor, modify, and respond to agent operations in real-time.
 
 ## Event System Overview

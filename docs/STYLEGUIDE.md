@@ -1,5 +1,8 @@
 # Good Agent Style Guide
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 **"Aggressively Adequate"**
 
 This document outlines the visual and tonal standards for the Good Agent project. Our aesthetic is inspired by mid-century bureaucracy, municipal utility providers, and Ron Swanson's "Very Good Building & Development Co."

@@ -1,5 +1,8 @@
 # Documentation Code Example Migration Guide
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 We are migrating inline Python code blocks from Markdown documentation into executable, tested Python files. This ensures our documentation examples remain valid, runnable, and up-to-date with the codebase.
 
 ## Status

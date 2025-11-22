@@ -1,5 +1,8 @@
 # Task Management
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 Good Agent provides comprehensive task management capabilities for both background asyncio tasks and conceptual todo list management. The system includes lifecycle management, monitoring, and cleanup mechanisms for robust task orchestration.
 
 ## Background Task Management

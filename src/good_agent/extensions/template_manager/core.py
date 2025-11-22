@@ -27,9 +27,26 @@ _GLOBAL_CONTEXT_PROVIDERS: dict[str, Callable[[], Any]] = {}
 
 
 def global_context_provider(name: str):
-    """Register a global context provider"""
+    """Register a global context provider.
+
+    Args:
+        name: Name of the context provider
+
+    Warning:
+        Emits a warning if overwriting an existing context provider.
+    """
+    import warnings
 
     def decorator(func: Callable[[], Any]) -> Callable[[], Any]:
+        if name in _GLOBAL_CONTEXT_PROVIDERS:
+            existing_func = _GLOBAL_CONTEXT_PROVIDERS[name]
+            warnings.warn(
+                f"Overwriting existing global context provider '{name}' "
+                f"(was: {existing_func.__module__}.{existing_func.__name__}, "
+                f"now: {func.__module__}.{func.__name__})",
+                UserWarning,
+                stacklevel=3,
+            )
         _GLOBAL_CONTEXT_PROVIDERS[name] = func
         return func
 

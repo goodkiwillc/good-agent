@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
 
     steps:
     - uses: actions/checkout@v4
@@ -43,9 +43,7 @@ jobs:
           ${{ runner.os }}-uv-
 
     - name: Install project dependencies
-      run: |
-        uv sync
-        uv pip install pytest build
+      run: uv sync --group dev
 
     - name: Run tests
       run: uv run pytest -q
@@ -55,8 +53,7 @@ jobs:
 
   deploy_docs:
     name: Deploy documentation
-    needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read

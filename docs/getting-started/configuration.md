@@ -1,5 +1,8 @@
 # Configuration
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 Good Agent provides extensive configuration options to customize your agent's behavior, from LLM parameters to debugging options. This page covers all configuration options with examples and best practices.
 
 ## Configuration Categories

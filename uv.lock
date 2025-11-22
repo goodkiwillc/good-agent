@@ -846,15 +846,10 @@ dependencies = [
     { name = "types-lxml" },
 ]
 
-[package.optional-dependencies]
-server = [
-    { name = "fastapi" },
-    { name = "uvicorn" },
-]
-
 [package.dev-dependencies]
 dev = [
     { name = "coverage" },
+    { name = "fastapi" },
     { name = "good-dev" },
     { name = "ipykernel" },
     { name = "mkdocs" },
@@ -871,13 +866,13 @@ dev = [
     { name = "ruff" },
     { name = "types-markdown" },
     { name = "types-pyyaml" },
+    { name = "uvicorn" },
     { name = "vcrpy" },
     { name = "watchdog" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.121.3" },
     { name = "good-common", specifier = ">=1.2.1" },
     { name = "instructor", specifier = ">=1.12.0" },
     { name = "jinja2", specifier = ">=3.1.6" },
@@ -891,13 +886,12 @@ requires-dist = [
     { name = "python-magic", specifier = ">=0.4.27" },
     { name = "rich", specifier = ">=13.7.0" },
     { name = "types-lxml", specifier = ">=2025.8.25" },
-    { name = "uvicorn", marker = "extra == 'server'", specifier = ">=0.38.0" },
 ]
-provides-extras = ["server"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "coverage", specifier = ">=7.11.3" },
+    { name = "fastapi", specifier = ">=0.121.3" },
     { name = "good-dev", specifier = ">=0.1.1" },
     { name = "ipykernel", specifier = ">=7.1.0" },
     { name = "mkdocs", specifier = ">=1.6.1" },
@@ -914,6 +908,7 @@ dev = [
     { name = "ruff", specifier = ">=0.14.3" },
     { name = "types-markdown", specifier = ">=3.10.0.20251106" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250915" },
+    { name = "uvicorn", specifier = ">=0.38.0" },
     { name = "vcrpy", specifier = ">=7.0.0" },
     { name = "watchdog", specifier = ">=4.0.0,<6.0.0" },
 ]
