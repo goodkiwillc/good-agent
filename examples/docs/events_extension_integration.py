@@ -33,9 +33,7 @@ async def main():
             error = ctx.parameters["error"]
             context = ctx.parameters["context"]
 
-            print(
-                f"⚠️ Extension {type(extension).__name__} error in {context}: {error}"
-            )
+            print(f"⚠️ Extension {type(extension).__name__} error in {context}: {error}")
 
         print("Agent with extension is ready")
 

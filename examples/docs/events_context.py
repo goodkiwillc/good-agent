@@ -25,6 +25,7 @@ async def main():
 
             # Access agent that emitted the event
             agent_ref = ctx.parameters["agent"]
+            print(f"Agent name: {agent_ref.name}")
 
             # Check for output from other handlers
             if ctx.output:
