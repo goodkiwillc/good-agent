@@ -18,9 +18,9 @@ async with agent.config(model="gpt-4o", temperature=0.7):
 # Configuration reverts to original settings here
 ```
 
-### Tempalte Context Variables
+### Template Context Variables
 
-Use `agent.context()` to inject temporary variables into the agent's template context . These are accessible to templates and tools during execution.
+Use `agent.context()` to inject temporary variables into the agent's template context. These are accessible to templates and tools during execution.
 
 ```python
 # Temporarily inject context variables
