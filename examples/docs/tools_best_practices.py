@@ -33,11 +33,11 @@ def good_tool(param: str) -> str:
 
 
 # ❌ Sync tool with async dependency - this won't work correctly
-@tool
-def sync_tool_bad(db: AsyncDB = Depends(get_async_db)):  # type: ignore
-    """Sync tool trying to use async dependency (won't work)."""
-    # This will fail because sync functions can't await
-    pass
+# @tool  # Don't actually create this - it will fail!
+# def sync_tool_bad(db: AsyncDB = Depends(get_async_db)):
+#     """Sync tool trying to use async dependency (won't work)."""
+#     # This will fail because sync functions can't await
+#     pass
 
 
 # ✅ Async tool with async dependency - correct approach

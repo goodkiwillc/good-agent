@@ -9,7 +9,7 @@ async def background_monitor():
 async def main():
     async with Agent("Assistant") as agent:
         # Create managed task
-        task = agent.create_task(
+        agent.create_task(
             background_monitor(), 
             name="monitor",
             wait_on_ready=False  # Don't block initialization

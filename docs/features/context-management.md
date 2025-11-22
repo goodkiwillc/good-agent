@@ -20,28 +20,50 @@ async with agent.config(model="gpt-4o", temperature=0.7):
 
 ### Template Context Variables
 
-Use `agent.context()` to inject temporary variables into the agent's template context. These are accessible to templates and tools during execution.
+Use `agent.context()` to inject temporary variables into the agent's template context. These are accessible to templates and tools during execution using Jinja2 syntax (`{{variable_name}}`).
 
 ```python
-# Temporarily inject context variables
-# @TODO: is context() an async context manager?
-async with agent.context(user_id="123", environment="prod"):
-    # @TODO: this example needs to actually make use of the context variables - maybe show before and after the agent.context context-manager
-    await agent.call("Check system status")
+# Set initial context
+async with Agent("Base prompt", context={"env": "prod", "user": "alice"}) as agent:
+    # Override context temporarily
+    with agent.context(env="dev", debug=True):
+        agent.append("Debug info for {{user}} in {{env}}: {{debug}}")
+        # Renders: "Debug info for alice in dev: True"
+        print(agent[-1].content)
+
+    # Back to original context
+    agent.append("User {{user}} in {{env}}")
+    # Renders: "User alice in prod"
+    print(agent[-1].content)
 ```
 
 ### Fork Context
 
-Use `agent.fork_context()` (or `agent.context_manager.fork_context()`) to create a **fully isolated copy** of the agent. This is ideal for exploratory queries or side-tasks where you don't want the conversation history to persist in the main agent.
+Use `agent.fork_context()` (or `agent.context_manager.fork_context()`) to create a **fully isolated copy** of the agent with its own ID and message history. This is ideal for exploratory queries, parallel processing, or side-tasks where you don't want the conversation history to persist in the main agent.
 
-<!-- @TODO: is this a confusing API vs agent.fork()? what is used when? -->
 ```python
-# Create a temporary fork
-async with agent.fork_context() as forked_agent:
-    # Messages added here exist ONLY in the fork
-    await forked_agent.call("Summarize previous conversation")
+async with Agent("Base agent") as agent:
+    agent.append("Shared context")
 
-# Main 'agent' is untouched and doesn't contain the summary
+    # Fork for parallel processing
+    async with agent.fork_context() as fork1, agent.fork_context() as fork2:
+        # Each fork is a separate agent with independent message history
+        task1 = asyncio.create_task(fork1.call("Process option A"))
+        task2 = asyncio.create_task(fork2.call("Process option B"))
+
+        results = await asyncio.gather(task1, task2)
+
+    # Original agent unchanged by fork operations
+    assert len(agent) == 2  # SystemMessage + "Shared context"
+    # Fork messages don't appear in original agent
+```
+
+You can also truncate history when forking:
+
+```python
+async with agent.fork_context(truncate_at=5) as fork:
+    # Fork only has the first 5 messages from the original
+    await fork.call("Based on recent context...")
 ```
 
 ### Thread Context

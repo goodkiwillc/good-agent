@@ -18,7 +18,9 @@ async def main():
             complex_analysis = await expensive_computation()
             large_data = load_massive_dataset()
 
-            ctx.add_system_message(f"Heavy mode with {len(large_data)} items")
+            ctx.add_system_message(
+                f"Heavy mode with {len(large_data)} items; analysis={complex_analysis}"
+            )
 
         # ✅ Optimized mode handler
         @agent.modes("optimized")
@@ -29,7 +31,9 @@ async def main():
 
             # Use cached data
             analysis = ctx.state["analysis_cache"]
-            ctx.add_system_message(f"Optimized mode using cached analysis")
+            ctx.add_system_message(
+                f"Optimized mode using cached analysis: {analysis}"
+            )
 
             # Cleanup state when appropriate
             if ctx.state.get("cleanup_needed"):

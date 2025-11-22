@@ -10,7 +10,7 @@ async def main():
     editor = Agent("You are an editor. Polish the content.")
 
     # Pipeline composition
-    async with researcher | writer | editor as workflow:
+    async with researcher | writer | editor:
         researcher.append("Research quantum computing")
 
         # Each agent processes the previous agent's output

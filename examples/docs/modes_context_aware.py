@@ -25,8 +25,9 @@ async def main():
 
             # Add contextual system message
             ctx.add_system_message(
-                f"Context: {total_messages} total messages, recent topics: {recent_topics}. "
-                f"Tailor your response to build on this conversation history."
+                f"Context: {total_messages} total messages "
+                f"({user_messages} user / {assistant_messages} assistant), "
+                f"recent topics: {recent_topics}. Tailor your response accordingly."
             )
 
             # Store context analysis

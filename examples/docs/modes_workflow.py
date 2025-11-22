@@ -63,7 +63,7 @@ async def main():
             agent.modes.set_state("project_type", "web application")
 
             # This will progress through: start → analyze → design → implement → complete
-            response = await agent.call("Help me build a task management system")
+            await agent.call("Help me build a task management system")
 
             workflow_id = agent.modes.get_state("workflow_id")
             current_step = agent.modes.get_state("current_step")
