@@ -195,16 +195,21 @@ async def main():
 Automatic conversation config. Assistant messages of one agent become user messages of the other.
 
 ```python
-researcher = Agent("Researcher", model="gpt-4o")
-writer = Agent("Technical Writer", model="gpt-4o")
+manager = Agent("manager prompt", model="gpt-4o")
+researcher = Agent("researcher prompt", model="gpt-4o", tools=[...])
 
-async with researcher | writer as workflow:
-    # The researcher processes the input first
-    researcher.assistant.append("Find key facts about Python 3.12")
-
-    # The writer receives the researcher's output and formats it
-    final_response = await writer.call()
-    print(final_response.content)
+async with manager | researcher as convo:
+    # manager messages from researcher become user messages to writer
+    manager.assistant.append("Find key facts about Python 3.12")
+    
+    async for message in convo.execute():
+        match message:
+            case Message(agent=agent) if agent = manager:
+                print(agent.name, message.content)
+            case Message(agent=agent) if agent = researcher:
+                print(agent.name, message.content)
+        
+    
 ```
 
 ### 7. CLI Interface
