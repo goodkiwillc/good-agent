@@ -192,15 +192,15 @@ async def main():
 
 ### 6. Composing Agents
 
-Chain agents together to create workflows. The output of one agent becomes the input of the next.
+Automatic conversation config. Assistant messages of one agent become user messages of the other.
 
 ```python
 researcher = Agent("Researcher", model="gpt-4o")
 writer = Agent("Technical Writer", model="gpt-4o")
 
-async with (researcher | writer) as workflow:
+async with researcher | writer as workflow:
     # The researcher processes the input first
-    researcher.append("Find key facts about Python 3.12")
+    researcher.assistant.append("Find key facts about Python 3.12")
 
     # The writer receives the researcher's output and formats it
     final_response = await writer.call()
