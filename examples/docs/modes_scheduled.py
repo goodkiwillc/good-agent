@@ -26,21 +26,21 @@ async def main():
             ctx.add_system_message("Research mode active.")
 
         # Normal call
-        response = await agent.call("Hello")
+        await agent.call("Hello")
         print(f"Mode: {agent.current_mode}")  # None
 
         # Tool schedules research mode
         await enter_research_mode(agent=agent)
 
         # Next call will be in research mode
-        response = await agent.call("Tell me about AI")
+        await agent.call("Tell me about AI")
         print(f"Mode: {agent.current_mode}")  # "research"
 
         # Tool schedules mode exit
         await exit_current_mode(agent=agent)
 
         # Next call will be in normal mode
-        response = await agent.call("Thanks!")
+        await agent.call("Thanks!")
         print(f"Mode: {agent.current_mode}")  # None
 
 if __name__ == "__main__":

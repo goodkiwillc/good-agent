@@ -28,7 +28,7 @@ async def main():
         async with agent.modes["project"]:
             async with agent.modes["planning"]:
                 # Inner mode can see both project and planning state
-                response = await agent.call("What's our first milestone?")
+                await agent.call("What's our first milestone?")
 
                 # State is scoped - planning state shadows project if keys conflict
                 print(f"Project: {agent.modes.get_state('project_name')}")

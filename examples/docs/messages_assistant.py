@@ -1,7 +1,6 @@
 import asyncio
 from good_agent.messages import AssistantMessage
 from good_agent.tools import ToolCall, ToolCallFunction
-import orjson
 
 async def main():
     # Text response

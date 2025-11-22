@@ -252,13 +252,27 @@ def __getattr__(name: str):
         module_path = _LAZY_IMPORTS[name]
         import importlib
 
-        # Check if this is an external module (starts with a known external package)
-        if module_path.startswith("good_agent."):
-            # External import from another package
-            module = importlib.import_module(module_path)
-        else:
-            # Internal import - always relative to this package
+        # Internal modules start with these prefixes
+        _INTERNAL_PREFIXES = (
+            "agent",
+            "content",
+            "core",
+            "extensions",
+            "model",
+            "mcp",
+            "messages",
+            "mock",
+            "resources",
+            "tools",
+        )
+
+        # Check if this is an internal module (relative to good_agent package)
+        if any(module_path.split(".")[0] == prefix for prefix in _INTERNAL_PREFIXES):
+            # Internal import - relative to this package
             module = importlib.import_module(f".{module_path}", __package__)
+        else:
+            # External import - absolute import
+            module = importlib.import_module(module_path)
 
         # Get the attribute from the module
         attr = getattr(module, name)

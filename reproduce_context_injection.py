@@ -1,7 +1,6 @@
 import asyncio
 from good_agent import Agent, tool
 from good_agent.tools import ToolContext
-from fast_depends import Depends
 
 @tool
 async def tool_without_depends(

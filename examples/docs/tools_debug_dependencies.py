@@ -2,13 +2,16 @@
 
 import asyncio
 
-from good_agent import Agent, Depends, tool
+from good_agent import Agent, tool
 from good_agent.tools import ToolContext
 
 
 @tool
-async def debug_tool(param: str, context: ToolContext = Depends()) -> str:
-    """Tool for debugging dependencies."""
+async def debug_tool(param: str, context: ToolContext) -> str:
+    """Tool for debugging dependencies.
+
+    ToolContext is automatically injected - no Depends() needed.
+    """
     print(f"Agent: {context.agent}")
     print(f"Tool call: {context.tool_call}")
     return f"Debug: {param}"

@@ -106,7 +106,7 @@ def update_changelog(version: str) -> None:
 def run_validations() -> None:
     commands = [
         "uv sync --group dev --extra server",
-        "uv run ruff check .",
+        "uv run ruff check src scripts tests",
         "uv run pytest -q",
         "uv run python -m compileall src",
         "uv run mkdocs build --clean --site-dir site",

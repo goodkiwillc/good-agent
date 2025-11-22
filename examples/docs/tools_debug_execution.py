@@ -27,8 +27,6 @@ async def main():
         if not result.success:
             print(f"Tool failed: {result.error}")
             print(f"Parameters used: {result.parameters}")
-            if result.traceback:
-                print(f"Traceback available: {len(result.traceback)} characters")
 
 
 if __name__ == "__main__":

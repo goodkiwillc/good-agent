@@ -22,7 +22,8 @@ async def main():
         # Check specific tool
         if "my_tool" in agent.tools:
             tool_instance = agent.tools["my_tool"]
-            print("Tool metadata:", tool_instance.metadata)
+            print("Tool name:", tool_instance.name)
+            print("Tool description:", tool_instance.description)
         else:
             print("Tool 'my_tool' not found!")
 

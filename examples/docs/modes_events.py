@@ -1,6 +1,5 @@
 import asyncio
 from good_agent import Agent, ModeContext
-from good_agent.events import AgentEvents
 from good_agent.core.event_router import EventContext
 
 async def main():

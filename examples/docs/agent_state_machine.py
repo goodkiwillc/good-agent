@@ -6,6 +6,7 @@ async def main():
     async with Agent("Assistant") as agent:
         # During context manager entry
         print(agent.state)  # AgentState.INITIALIZING → AgentState.READY
+        print(f"Is ready? {agent.state is AgentState.READY}")
         
         # During execution
         agent.append("Calculate 2+2")
