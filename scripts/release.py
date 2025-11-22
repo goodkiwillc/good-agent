@@ -52,7 +52,7 @@ def ensure_clean_worktree() -> None:
 
 
 def read_pyproject_version() -> str:
-    data = tomllib.loads(PYPROJECT_PATH.read_bytes())
+    data = tomllib.loads(PYPROJECT_PATH.read_text(encoding="utf-8"))
     try:
         return data["project"]["version"]
     except KeyError as exc:
