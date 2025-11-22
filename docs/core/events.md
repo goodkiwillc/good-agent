@@ -374,16 +374,7 @@ def on_successful_search(ctx):
 Stop event propagation or cancel operations:
 
 ```python
-from good_agent.core.event_router import ApplyInterrupt
-
-@agent.on(AgentEvents.TOOL_CALL_BEFORE, priority=200)
-def security_check(ctx):
-    tool_name = ctx.parameters["tool_name"]
-    
-    # Block dangerous tools
-    if tool_name in ["delete_file", "system_command"]:
-        print(f"⛔ Blocked dangerous tool: {tool_name}")
-        raise ApplyInterrupt("Security policy violation")
+--8<-- "examples/docs/events_interrupting_flows.py"
 ```
 
 ## Event-Based Components
@@ -393,36 +384,7 @@ def security_check(ctx):
 Build components that respond to events:
 
 ```python
-from good_agent import AgentComponent
-from good_agent.events import AgentEvents
-
-class LoggingComponent(AgentComponent):
-    def __init__(self, log_file: str = "agent.log"):
-        super().__init__()
-        self.log_file = log_file
-        
-    async def install(self, agent):
-        await super().install(agent)
-        
-        # Set up event handlers during installation
-        @agent.on(AgentEvents.MESSAGE_APPEND_AFTER)
-        def log_message(ctx):
-            message = ctx.parameters["message"]
-            with open(self.log_file, "a") as f:
-                f.write(f"{message.role}: {message.content}\n")
-        
-        @agent.on(AgentEvents.TOOL_CALL_AFTER)
-        def log_tool_call(ctx):
-            tool_name = ctx.parameters["tool_name"]
-            success = ctx.parameters["success"]
-            with open(self.log_file, "a") as f:
-                f.write(f"Tool {tool_name}: {'✅' if success else '❌'}\n")
-
-# Usage
-logger = LoggingComponent("session.log")
-async with Agent("Assistant", extensions=[logger]) as agent:
-    # All messages and tool calls will be logged
-    await agent.call("Hello world!")
+--8<-- "examples/docs/events_reactive_components.py"
 ```
 
 ### Stateful Event Handlers
@@ -430,40 +392,7 @@ async with Agent("Assistant", extensions=[logger]) as agent:
 Maintain state across event invocations:
 
 ```python
-class MetricsComponent(AgentComponent):
-    def __init__(self):
-        super().__init__()
-        self.message_count = 0
-        self.tool_calls = 0
-        self.errors = 0
-        
-    async def install(self, agent):
-        await super().install(agent)
-        
-        @agent.on(AgentEvents.MESSAGE_APPEND_AFTER)
-        def count_message(ctx):
-            self.message_count += 1
-        
-        @agent.on(AgentEvents.TOOL_CALL_AFTER)
-        def count_tool_call(ctx):
-            self.tool_calls += 1
-            if not ctx.parameters["success"]:
-                self.errors += 1
-    
-    def get_stats(self) -> dict:
-        return {
-            "messages": self.message_count,
-            "tool_calls": self.tool_calls,
-            "errors": self.errors,
-            "success_rate": (self.tool_calls - self.errors) / max(1, self.tool_calls)
-        }
-
-# Usage
-metrics = MetricsComponent()
-async with Agent("Assistant", extensions=[metrics]) as agent:
-    await agent.call("Do some work")
-    stats = metrics.get_stats()
-    print(f"Session stats: {stats}")
+--8<-- "examples/docs/events_stateful_handlers.py"
 ```
 
 ## Event Testing
@@ -473,48 +402,7 @@ async with Agent("Assistant", extensions=[metrics]) as agent:
 Test that events are emitted and handled correctly:
 
 ```python
-import pytest
-from unittest.mock import Mock
-
-@pytest.mark.asyncio
-async def test_message_event_handling():
-    async with Agent("Test agent") as agent:
-        # Set up mock handler
-        handler = Mock()
-        agent.on(AgentEvents.MESSAGE_APPEND_AFTER)(handler)
-        
-        # Trigger event
-        agent.append("Test message")
-        
-        # Verify handler was called
-        handler.assert_called_once()
-        call_args = handler.call_args[0][0]  # EventContext
-        assert call_args.parameters["message"].content == "Test message"
-
-@pytest.mark.asyncio
-async def test_tool_event_modification():
-    from good_agent import tool
-    
-    @tool
-    def test_tool(value: int) -> int:
-        return value * 2
-    
-    async with Agent("Test agent", tools=[test_tool]) as agent:
-        # Handler that modifies arguments
-        @agent.on(AgentEvents.TOOL_CALL_BEFORE)
-        def modify_args(ctx):
-            args = ctx.parameters["arguments"]
-            if "value" in args:
-                modified = args.copy()
-                modified["value"] = 10  # Force value to 10
-                ctx.output = modified
-                return modified
-        
-        # Invoke tool with different value
-        result = await agent.tool_calls.invoke(test_tool, value=5)
-        
-        # Should use modified value (10 * 2 = 20)
-        assert result.response == 20
+--8<-- "examples/docs/events_testing_handlers.py"
 ```
 
 ### Event Mocking
@@ -522,21 +410,7 @@ async def test_tool_event_modification():
 Mock events for testing components:
 
 ```python
-@pytest.mark.asyncio
-async def test_component_event_handling():
-    component = LoggingComponent("test.log")
-    agent = Agent("Test")
-    await component.install(agent)
-    
-    # Emit test event
-    await agent.events.apply(AgentEvents.MESSAGE_APPEND_AFTER,
-                           message=UserMessage("Test"),
-                           agent=agent)
-    
-    # Verify logging occurred
-    with open("test.log") as f:
-        content = f.read()
-        assert "user: Test" in content
+--8<-- "examples/docs/events_mocking.py"
 ```
 
 ## Performance Considerations
@@ -549,49 +423,13 @@ async def test_component_event_handling():
 - **Minimize event subscriptions** - Only subscribe to events you need
 
 ```python
-# ❌ Heavy computation in handler
-@agent.on(AgentEvents.MESSAGE_APPEND_AFTER)
-def slow_handler(ctx):
-    time.sleep(5)  # Blocks entire event system
-    heavy_computation()
-
-# ✅ Lightweight handler with background processing
-@agent.on(AgentEvents.MESSAGE_APPEND_AFTER)
-async def fast_handler(ctx):
-    # Quick processing
-    message = ctx.parameters["message"]
-    
-    # Delegate heavy work to background task
-    asyncio.create_task(process_message_background(message))
+--8<-- "examples/docs/events_performance.py"
 ```
 
 ### Event System Optimization
 
 ```python
-# Batch related events when possible
-class BatchProcessor(AgentComponent):
-    def __init__(self, batch_size: int = 10):
-        super().__init__()
-        self.batch_size = batch_size
-        self.message_buffer = []
-        
-    async def install(self, agent):
-        await super().install(agent)
-        
-        @agent.on(AgentEvents.MESSAGE_APPEND_AFTER)
-        def buffer_message(ctx):
-            self.message_buffer.append(ctx.parameters["message"])
-            
-            if len(self.message_buffer) >= self.batch_size:
-                self.process_batch()
-    
-    def process_batch(self):
-        # Process messages in batches for efficiency
-        messages = self.message_buffer.copy()
-        self.message_buffer.clear()
-        
-        # Batch processing logic
-        print(f"Processing batch of {len(messages)} messages")
+--8<-- "examples/docs/events_batch_processing.py"
 ```
 
 ## Complete Example
@@ -599,7 +437,7 @@ class BatchProcessor(AgentComponent):
 Here's a comprehensive example showing multiple event patterns:
 
 ```python
---8<-- "examples/events/basic_events.py"
+--8<-- "examples/docs/events_basic_subscription.py"
 ```
 
 ## Best Practices
@@ -621,16 +459,7 @@ Here's a comprehensive example showing multiple event patterns:
 ### Debugging Events
 
 ```python
-# Enable event debugging
-import logging
-logging.getLogger("good_agent.events").setLevel(logging.DEBUG)
-
-# Add debug handler to see all events
-@agent.on("*")  # Listen to all events
-def debug_all_events(ctx):
-    event_name = ctx.event_name
-    params = list(ctx.parameters.keys())
-    print(f"Event: {event_name} with params: {params}")
+--8<-- "examples/docs/events_debugging.py"
 ```
 
 ## Troubleshooting
@@ -638,40 +467,13 @@ def debug_all_events(ctx):
 ### Common Issues
 
 ```python
-# ❌ Handler not called
-@agent.on("typo:event:name")  # Wrong event name
-def handler(ctx): pass
-
-# ✅ Use correct event names from AgentEvents
-@agent.on(AgentEvents.MESSAGE_APPEND_AFTER)
-def handler(ctx): pass
-
-# ❌ Handler exceptions breaking event chain
-@agent.on(AgentEvents.TOOL_CALL_AFTER)
-def bad_handler(ctx):
-    raise ValueError("Oops")  # Breaks other handlers
-
-# ✅ Handle exceptions gracefully
-@agent.on(AgentEvents.TOOL_CALL_AFTER)
-def good_handler(ctx):
-    try:
-        # Handler logic
-        pass
-    except Exception as e:
-        print(f"Handler error: {e}")
-        # Don't re-raise unless intentionally interrupting
+--8<-- "examples/docs/events_troubleshooting.py"
 ```
 
 ### Event Debugging
 
 ```python
-# Check if handlers are registered
-print(f"Handlers for MESSAGE_APPEND_AFTER: {len(agent.events._handlers.get(AgentEvents.MESSAGE_APPEND_AFTER, []))}")
-
-# Log all event emissions
-@agent.on("*", priority=1000)  # Highest priority
-def event_logger(ctx):
-    print(f"Event emitted: {ctx.event_name}")
+--8<-- "examples/docs/events_debugging_advanced.py"
 ```
 
 ## Next Steps

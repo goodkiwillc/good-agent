@@ -17,10 +17,11 @@ async def main():
             message = ctx.parameters["message"]
 
             # Add metadata to messages
-            if not hasattr(message, "metadata"):
+            if not hasattr(message, "metadata") or message.metadata is None:
                 message.metadata = {}
-            message.metadata["timestamp"] = datetime.now().isoformat()
-            message.metadata["handler_processed"] = True
+            if message.metadata is not None:
+                message.metadata["timestamp"] = datetime.now().isoformat()
+                message.metadata["handler_processed"] = True
 
         @agent.on(AgentEvents.MESSAGE_APPEND_AFTER)
         def after_message_append(ctx: EventContext[MessageAppendParams, None]):

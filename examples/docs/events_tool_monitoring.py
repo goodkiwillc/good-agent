@@ -10,7 +10,7 @@ from good_agent.events import AgentEvents, ToolCallAfterParams, ToolCallBeforePa
 @tool
 async def search(query: str, limit: int = 5) -> list[str]:
     """Search for items."""
-    return [f"Result {i+1} for '{query}'" for i in range(limit)]
+    return [f"Result {i + 1} for '{query}'" for i in range(limit)]
 
 
 async def main():

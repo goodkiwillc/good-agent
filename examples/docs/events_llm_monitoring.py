@@ -23,7 +23,7 @@ async def main():
         @agent.on(AgentEvents.LLM_COMPLETE_AFTER)
         def after_llm_call(ctx: EventContext[LLMCompleteParams, None]):
             response = ctx.parameters.get("response")
-            if response:
+            if response and hasattr(response, "content"):
                 print(f"✅ LLM responded with {len(response.content)} characters")
 
         response = await agent.call("What is 2+2?")

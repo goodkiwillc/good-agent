@@ -17,7 +17,11 @@ async def main():
             mode = ctx.parameters["mode"]
 
             # Add custom rendering for specific message types
-            if hasattr(message, "metadata") and "sensitive" in message.metadata:
+            if (
+                hasattr(message, "metadata")
+                and message.metadata is not None
+                and "sensitive" in message.metadata
+            ):
                 if mode == "display":
                     # Mask sensitive content in display mode
                     ctx.output = ["[REDACTED - Sensitive Content]"]
