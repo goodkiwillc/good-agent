@@ -1,5 +1,8 @@
 # Event System Integration
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 Components integrate with their parent agent through a powerful event system, enabling sophisticated orchestration, monitoring, and behavior modification.
 
 ## Event Handler Registration

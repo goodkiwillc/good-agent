@@ -1,5 +1,8 @@
 # Tool Adapters
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 Tool Adapters allow components to transparently intercept and modify tool behavior without changing the original tool implementations. This pattern enables powerful cross-cutting concerns like parameter transformation, authentication injection, caching, and citation management.
 
 ## Overview

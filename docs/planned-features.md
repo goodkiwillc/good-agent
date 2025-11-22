@@ -1,5 +1,8 @@
 # Planned Features
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 This page documents features that are under design or development but not yet available in Good Agent. These features are informed by design specifications in `.spec/v1/features/` and will be implemented in future releases.
 
 !!! info "Tracking Progress"

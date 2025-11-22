@@ -1,7 +1,8 @@
 # Good Agent
 
-!!! warning "⚠️ Under Active Development"
-    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+> ⚠️ **Under Active Development**
+>
+> This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
 
 A Pythonic, async-first framework for building composable, stateful AI agents.
 
@@ -205,3 +206,33 @@ async with (researcher | writer) as workflow:
     final_response = await writer.call()
     print(final_response.content)
 ```
+
+### 7. CLI Interface
+
+Run any agent interactively from the terminal without writing Python code each time.
+
+```bash
+# Install with CLI extras
+pip install good-agent[cli]
+
+# Run a saved agent instance
+good-agent run examples.sales:agent
+
+# Run with overrides
+good-agent run examples.sales:agent --model gpt-4o --temperature 0.1
+
+# Use built-in agents
+good-agent run research
+good-agent run good-agent
+
+# Run a factory function with arguments
+good-agent run examples.factory:build_support_agent prod us-east
+```
+
+The CLI provides an interactive session with:
+- Rich markdown rendering for assistant responses
+- Visual panels showing tool calls and outputs
+- Session controls (`exit`, `clear`, Ctrl+C to cancel)
+- Command history (use up-arrow to recall previous inputs)
+
+See the [CLI documentation](docs/cli/run.md) for more details on built-in aliases, troubleshooting, and advanced usage.

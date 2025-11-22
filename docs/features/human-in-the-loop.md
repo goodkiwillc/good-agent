@@ -1,5 +1,8 @@
 # Human-in-the-Loop
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 !!! warning "Planned Feature"
     Most programmatic human-in-the-loop APIs described in this document (such as `agent.handoff()`, `ctx.ask_user()`, and routing decorators) are **planned features** and not yet implemented. See the [Planned Features](#planned-features) section at the bottom of this page.
     

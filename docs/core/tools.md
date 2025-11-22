@@ -1,5 +1,8 @@
 # Tools
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 Good Agent provides a powerful tool system that enables agents to interact with external services, APIs, and custom functions. Tools use standard Python functions with dependency injection, type hints, and automatic schema generation. This page covers tool definition, registration, execution, and integration patterns.
 
 ## Tool Basics

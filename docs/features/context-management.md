@@ -1,5 +1,8 @@
 # Context Management
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 Good Agent provides powerful mechanisms to manage execution context, allowing you to isolate configurations, inject variables, and branch conversation history without affecting the main agent state.
 
 ## Context Isolation
