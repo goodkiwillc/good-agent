@@ -10,37 +10,7 @@ Good Agent's tool system allows you to create custom tools with parameter valida
 Tools are Python functions decorated with `@tool`:
 
 ```python
-from good_agent import Agent, tool
-
-@tool
-async def calculate(x: int, y: int, operation: str = "add") -> int:
-    """Perform basic arithmetic operations.
-
-    Args:
-        x: First number
-        y: Second number
-        operation: Operation to perform (add, subtract, multiply, divide)
-
-    Returns:
-        Result of the operation
-    """
-    if operation == "add":
-        return x + y
-    elif operation == "subtract":
-        return x - y
-    elif operation == "multiply":
-        return x * y
-    elif operation == "divide":
-        if y == 0:
-            raise ValueError("Cannot divide by zero")
-        return x // y
-    else:
-        raise ValueError(f"Unknown operation: {operation}")
-
-# Use the tool with an agent
-async with Agent("Math assistant", tools=[calculate]) as agent:
-    response = await agent.call("What is 15 + 27?")
-    print(response.content)
+--8<-- "examples/docs/custom_tools_basic.py"
 ```
 
 ## Parameter Validation with Pydantic
@@ -48,36 +18,7 @@ async with Agent("Math assistant", tools=[calculate]) as agent:
 Use Pydantic's `Field` for comprehensive parameter validation:
 
 ```python
-from good_agent import tool
-from pydantic import Field
-from typing import Literal
-
-@tool
-async def search(
-    query: str = Field(min_length=1, description="Search query"),
-    category: Literal["web", "academic", "news"] = Field(default="web"),
-    max_results: int = Field(default=10, ge=1, le=100, description="Maximum results (1-100)")
-) -> list[dict]:
-    """
-    Search with validated parameters.
-
-    Args:
-        query: The search query (must not be empty)
-        category: Category to search
-        max_results: Maximum number of results to return
-
-    Returns:
-        List of search results
-    """
-    # Validation happens automatically via Pydantic
-    results = []
-    for i in range(min(max_results, 5)):
-        results.append({
-            "title": f"Result {i+1} for '{query}'",
-            "url": f"https://example.com/{i}",
-            "category": category
-        })
-    return results
+--8<-- "examples/docs/custom_tools_parameter_validation.py"
 ```
 
 ## Structured Return Types

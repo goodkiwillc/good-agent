@@ -107,7 +107,6 @@ nav:
   - Project Info:
     - Test Coverage: project-info/test-coverage.md
     - Changelog: CHANGELOG.md
-    - Decisions: DECISIONS.md
     - Tech Debt: TECH_DEBT.md
 
 watch:
