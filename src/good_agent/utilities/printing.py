@@ -2,7 +2,13 @@ import base64
 import json
 from typing import TYPE_CHECKING, Literal
 
-import magic
+try:
+    import magic
+
+    HAS_MAGIC = True
+except ImportError:
+    HAS_MAGIC = False
+
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
@@ -490,6 +496,29 @@ def print_message(
         )
 
 
+def _detect_mime_type_from_bytes(image_bytes: bytes) -> str:
+    """Detect MIME type from image byte headers.
+
+    Args:
+        image_bytes: Image file bytes
+
+    Returns:
+        Detected MIME type string
+    """
+    # Check common image format signatures
+    if image_bytes.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    elif image_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    elif image_bytes[8:12] == b"WEBP":
+        return "image/webp"
+    elif image_bytes.startswith(b"GIF87a") or image_bytes.startswith(b"GIF89a"):
+        return "image/gif"
+    else:
+        # Default to JPEG for unknown types
+        return "image/jpeg"
+
+
 def url_to_base64(image_bytes):
     """
     Fetches an image from a URL and returns it as a base64 encoded data URL.
@@ -502,13 +531,18 @@ def url_to_base64(image_bytes):
         str: Base64 encoded data URL of the image
     """
 
-    # Determine MIME type using python-magic
-    mime_type = magic.Magic(mime=True).from_buffer(image_bytes)
+    # Determine MIME type
+    if HAS_MAGIC:
+        # Use python-magic if available
+        mime_type = magic.Magic(mime=True).from_buffer(image_bytes)
 
-    # Check if the detected type is one of our supported types
-    if mime_type not in ["image/jpeg", "image/png", "image/webp", "image/gif"]:
-        # Default to JPEG for unsupported types
-        mime_type = "image/jpeg"
+        # Check if the detected type is one of our supported types
+        if mime_type not in ["image/jpeg", "image/png", "image/webp", "image/gif"]:
+            # Default to JPEG for unsupported types
+            mime_type = "image/jpeg"
+    else:
+        # Fallback to byte header detection
+        mime_type = _detect_mime_type_from_bytes(image_bytes)
 
     # Encode the image data to base64
     base64_encoded = base64.b64encode(image_bytes).decode("utf-8")
