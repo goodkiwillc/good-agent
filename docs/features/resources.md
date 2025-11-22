@@ -1,5 +1,8 @@
 # Stateful Resources
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 Stateful resources provide persistent, editable data containers that can be seamlessly integrated with agents. Good Agent offers specialized resources for YAML configuration files and MDXL (Markdown XML) documents, with extensible patterns for custom resource types.
 
 ## Core Concepts

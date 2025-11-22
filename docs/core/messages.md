@@ -293,11 +293,11 @@ agent.template_manager.add_template(
 )
 
 # Use in messages
-agent.append(
-    "{% include 'gree"
-    "ting' %}",
+rendered = agent.template_manager.render(
+    "greeting",
     context={"name": "Alice", "service": "Good Agent"}
 )
+agent.append(rendered)
 ```
 {% endraw %}
 
@@ -356,22 +356,32 @@ Context values are resolved in this priority order (highest to lowest):
 4. Global context providers
 
 ```python
-@Agent.context_providers("value")
+@Agent.context_providers("global_var")
 def global_value():
     return "global"
 
-async with Agent("Assistant", context={"value": "agent"}) as agent:
-    @agent.context.context_provider("value")
+async with Agent("Assistant") as agent:
+    # Register instance context provider
+    @agent.context.context_provider("instance_var")
     def instance_value():
         return "instance"
 
-    # Message context takes highest priority
-    agent.append("Value: {{value}}", context={"value": "message"})
-    # Renders as: "Value: message"
+    # Use instance context provider (no overrides)
+    agent.append("Instance value: {{instance_var}}")
+    # Renders as: "Instance value: instance"
 
-    # Without message context, uses agent context
-    agent.append("Value: {{value}}")
-    # Renders as: "Value: agent"
+    # Use global context provider (no overrides)
+    agent.append("Global value: {{global_var}}")
+    # Renders as: "Global value: global"
+
+    # Agent context overrides instance/global providers
+    agent.context["instance_var"] = "agent-level"
+    agent.append("Agent context: {{instance_var}}")
+    # Renders as: "Agent context: agent-level"
+
+    # Message context takes highest priority
+    agent.append("Message context: {{instance_var}}", context={"instance_var": "message-level"})
+    # Renders as: "Message context: message-level"
 ```
 
 ### File-Based Templates
@@ -387,8 +397,10 @@ async with Agent() as agent:
     await agent.template_manager.preload_templates(["system/assistant"])
 
     agent.system.set(
-        "{% include 'system/assistant' %}",
-        context={"domain": "Python programming"}
+        agent.template_manager.render(
+            "system/assistant",
+            context={"domain": "Python programming"}
+        )
     )
 ```
 

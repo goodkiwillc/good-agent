@@ -1,5 +1,8 @@
 # Component Dependencies
 
+!!! warning "⚠️ Under Active Development"
+    This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
+
 Components can declare dependencies on other components:
 
 ```python
