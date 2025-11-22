@@ -323,45 +323,6 @@ for msg_id in message_ids:
         print(f"Found: {historical_msg.content}")
 ```
 
-## Performance & Memory Management
-
-### Message Limits
-
-For long-running agents, manage message history:
-
-```python
-async with Agent("Long-running assistant") as agent:
-    # Monitor message count
-    if len(agent) > 1000:
-        # Keep system message + last 100 messages
-        system_msg = agent[0] if agent[0].role == "system" else None
-        recent_messages = agent.messages[-100:]
-        
-        # Clear and rebuild
-        agent.messages.clear()
-        if system_msg:
-            agent.messages.append(system_msg)
-        agent.messages.extend(recent_messages)
-        
-        print(f"Trimmed to {len(agent)} messages")
-```
-
-### Efficient Message Access
-
-```python
-# Efficient patterns
-last_user_msg = agent.user[-1]           # O(n) scan
-last_assistant_msg = agent.assistant[-1] # O(n) scan
-
-# More efficient for multiple accesses
-user_msgs = list(agent.user)     # Single scan
-assistant_msgs = list(agent.assistant)  # Single scan
-
-# Batch operations
-for role in ["user", "assistant", "tool"]:
-    role_messages = getattr(agent, role)
-    print(f"{role}: {len(role_messages)} messages")
-```
 
 ## Integration with Features
 
