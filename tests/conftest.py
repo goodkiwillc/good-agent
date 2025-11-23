@@ -57,6 +57,17 @@ warnings.filterwarnings(
     module="litellm.llms.custom_httpx.async_client_cleanup",
 )
 
+# Disable LiteLLM background logging/telemetry to prevent "Queue bound to different event loop" errors
+try:
+    import litellm
+
+    litellm.telemetry = False
+    litellm.success_callback = []
+    litellm.failure_callback = []
+    litellm.callbacks = []
+except ImportError:
+    pass
+
 
 # Monkey-patch VCR's httpx stub to fix _decoder assertion issue and compression
 # This is a workaround for https://github.com/kevin1024/vcrpy/issues/895

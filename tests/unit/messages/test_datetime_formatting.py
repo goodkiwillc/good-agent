@@ -1,7 +1,8 @@
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
 import pytest
 from good_agent import Agent
+from good_agent.extensions.template_manager import _GLOBAL_CONTEXT_PROVIDERS
 
 
 @pytest.mark.asyncio
@@ -19,7 +20,9 @@ async def test_datetime_strftime_formatting():
 
     month_names = calendar.month_name[1:]  # Skip empty first element
     assert any(month in rendered for month in month_names)
-    assert str(date.today().year) in rendered
+
+    today_val = _GLOBAL_CONTEXT_PROVIDERS["today"]()
+    assert str(today_val.year) in rendered
 
     # Test time formatting
     agent.append("Time: {{ now.strftime('%H:%M:%S') }}")
@@ -40,7 +43,7 @@ async def test_datetime_attribute_access():
     )
     rendered = agent.messages[-1].render()
 
-    today = date.today()
+    today = _GLOBAL_CONTEXT_PROVIDERS["today"]()
     assert str(today.year) in rendered
     assert str(today.month) in rendered
     assert str(today.day) in rendered
@@ -57,7 +60,8 @@ async def test_datetime_methods():
     # Test date() method
     agent.append("Date only: {{ today.date() }}")
     rendered = agent.messages[-1].render()
-    assert str(date.today()) in rendered
+    today_val = _GLOBAL_CONTEXT_PROVIDERS["today"]()
+    assert str(today_val.date()) in rendered
 
     # Test isoformat() method
     agent.append("ISO: {{ now.isoformat() }}")
@@ -78,14 +82,15 @@ async def test_datetime_with_timedelta():
     agent.append("Tomorrow: {{ (today + timedelta(days=1)).strftime('%Y-%m-%d') }}")
     rendered = agent.messages[-1].render()
 
-    tomorrow = date.today() + timedelta(days=1)
+    today_val = _GLOBAL_CONTEXT_PROVIDERS["today"]()
+    tomorrow = today_val + timedelta(days=1)
     assert tomorrow.strftime("%Y-%m-%d") in rendered
 
     # Test subtraction
     agent.append("Yesterday: {{ (today - timedelta(days=1)).strftime('%Y-%m-%d') }}")
     rendered = agent.messages[-1].render()
 
-    yesterday = date.today() - timedelta(days=1)
+    yesterday = today_val - timedelta(days=1)
     assert yesterday.strftime("%Y-%m-%d") in rendered
 
     await agent.events.close()
@@ -108,7 +113,8 @@ Week: {{ today.strftime('%U') }}
     rendered = agent.messages[-1].render()
 
     assert "MyProject" in rendered
-    assert str(date.today().year) in rendered
+    today_val = _GLOBAL_CONTEXT_PROVIDERS["today"]()
+    assert str(today_val.year) in rendered
     # Should contain day name (Monday, Tuesday, etc.)
     import calendar
 

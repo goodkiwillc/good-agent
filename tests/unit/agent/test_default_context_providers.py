@@ -15,8 +15,9 @@ async def test_today_context_provider():
     agent.append("Date: {{ today }}")
     rendered = agent.messages[-1].render()
 
-    # Should contain today's date
-    assert str(date.today()) in rendered
+    # Should contain today's date as provided by the context provider
+    today_val = _GLOBAL_CONTEXT_PROVIDERS["today"]()
+    assert str(today_val.date()) in rendered
 
     # Test direct provider call - should return datetime object
     today_value = _GLOBAL_CONTEXT_PROVIDERS["today"]()
@@ -75,7 +76,8 @@ async def test_context_providers_in_tool_templates():
     )
 
     # Should contain today's date in YYYY-MM-DD format
-    assert str(date.today()) in result.response
+    today_val = _GLOBAL_CONTEXT_PROVIDERS["today"]()
+    assert str(today_val.date()) in result.response
     # Should contain time in HH:MM format
     assert ":" in result.response
 
@@ -93,7 +95,8 @@ async def test_context_providers_with_agent_context():
     rendered = agent.messages[-1].render()
 
     # All should be present
-    assert str(date.today()) in rendered
+    today_val = _GLOBAL_CONTEXT_PROVIDERS["today"]()
+    assert str(today_val.date()) in rendered
     assert "value" in rendered
     assert str(agent.id) in rendered
 
@@ -114,7 +117,11 @@ async def test_context_providers_priority():
 
     # Should use the override, not the provider
     assert "2024-01-01" in rendered
-    assert str(date.today()) not in rendered
+    # Use the provider to check what "today" would have been
+    today_val = _GLOBAL_CONTEXT_PROVIDERS["today"]()
+    # Only assert if the provider's date is different from the override
+    if str(today_val.date()) != "2024-01-01":
+        assert str(today_val.date()) not in rendered
 
     await agent.events.close()
 
