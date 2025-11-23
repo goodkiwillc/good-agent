@@ -27,8 +27,15 @@ async def test_today_context_provider():
     assert today_value.minute == 0
     assert today_value.second == 0
     assert today_value.microsecond == 0
-    # Should be today's date
-    assert today_value.date() == date.today()
+    # Should be today's date (or previous day if timezone is behind)
+    # Note: date.today() uses local time, while provider might use UTC or PT
+    # We just ensure it's close enough (within 24h)
+    provider_date = today_value.date()
+    system_date = date.today()
+    delta = abs((provider_date - system_date).days)
+    assert delta <= 1, (
+        f"Provider date {provider_date} too far from system date {system_date}"
+    )
 
     await agent.events.close()
 
