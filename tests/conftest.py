@@ -61,10 +61,38 @@ warnings.filterwarnings(
 try:
     import litellm
 
+    # Disable telemetry
     litellm.telemetry = False
     litellm.success_callback = []
     litellm.failure_callback = []
     litellm.callbacks = []
+
+    # Prevent any background workers from starting
+    os.environ["LITELLM_LOG"] = "CRITICAL"
+
+    # Explicitly shutdown any existing workers if possible (though they shouldn't exist yet)
+    if hasattr(litellm, "shutdown_background_tasks"):
+        import asyncio
+
+        try:
+            # This is a hack but some versions expose this
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(litellm.shutdown_background_tasks())
+        except Exception:
+            pass
+
+    # Monkey patch the LoggingWorker to prevent it from starting
+    # This is aggressive but necessary if standard disabling doesn't work
+    try:
+        from litellm.litellm_core_utils.logging_worker import LoggingWorker
+
+        async def noop_worker_loop(self):
+            pass
+
+        setattr(LoggingWorker, "_worker_loop", noop_worker_loop)
+    except ImportError:
+        pass
+
 except ImportError:
     pass
 
