@@ -188,3 +188,20 @@ snapshot_id = agent.version_id
 await agent.call("Something wrong")
 agent.versioning.revert_to_version(snapshot_id)
 ```
+
+## 10. CLI Configuration
+
+Manage global API keys and settings using the CLI. Values are stored in `~/.good-agent/config.toml`.
+
+```bash
+# Set API keys (aliases like 'openai' map to OPENAI_API_KEY)
+good-agent config set openai sk-...
+good-agent config set anthropic sk-...
+
+# Use Profiles (dev, prod, personal, etc.)
+good-agent config set openai sk-dev-key --profile dev
+good-agent run --profile dev my_agent.py
+
+# List configuration
+good-agent config list
+```

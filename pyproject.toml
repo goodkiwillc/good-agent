@@ -21,6 +21,7 @@ dependencies = [
     "python-magic>=0.4.27",
     "types-lxml>=2025.8.25",
     "prompt-toolkit>=3.0.52",
+    "tomli-w>=1.0.0",
 ]
 
 [project.optional-dependencies]

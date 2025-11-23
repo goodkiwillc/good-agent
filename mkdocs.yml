@@ -96,7 +96,9 @@ nav:
     - Testing: components/testing.md
     - Best Practices: components/best-practices.md
   - Command Line Interface:
-    - CLI Usage: cli/run.md
+    - Run Agent: cli/run.md
+    - Serve Agent: cli/serve.md
+    - Configuration: cli/config.md
   - Reference:
     - API Reference: api-reference.md
     # - Style Guide: STYLEGUIDE.md

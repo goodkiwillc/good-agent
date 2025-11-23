@@ -47,6 +47,7 @@ async def test_simple_vcr_with_marking(llm_vcr):
 
 
 @pytest.mark.asyncio
+@pytest.mark.llm
 async def test_language_model_without_vcr():
     """Test LanguageModel without VCR to ensure it works."""
     # Skip if no API key
