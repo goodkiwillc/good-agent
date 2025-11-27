@@ -359,7 +359,7 @@ async def chain_events(ctx):
     
     if tool_name == "search" and success:
         # Emit custom event for successful searches
-        await agent.events.apply("search:success", 
+        await agent.apply("search:success", 
                                  result=ctx.parameters["response"])
 
 # Handle custom event

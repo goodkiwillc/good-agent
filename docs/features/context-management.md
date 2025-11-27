@@ -42,7 +42,7 @@ async with Agent("Base prompt", context={"env": "prod", "user": "alice"}) as age
 
 ### Fork Context
 
-Use `agent.fork_context()` (or `agent.context_manager.fork_context()`) to create a **fully isolated copy** of the agent with its own ID and message history. This is ideal for exploratory queries, parallel processing, or side-tasks where you don't want the conversation history to persist in the main agent.
+Use `agent.fork_context()` to create a **fully isolated copy** of the agent with its own ID and message history. This is ideal for exploratory queries, parallel processing, or side-tasks where you don't want the conversation history to persist in the main agent.
 
 ```python
 async with Agent("Base agent") as agent:

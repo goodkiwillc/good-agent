@@ -223,13 +223,14 @@ Register global context providers that work across all agents:
 
 ```python
 from good_agent import Agent
+from good_agent.agent.context import ContextManager
 
 # Register global context provider
-@Agent.context_providers("current_user")
+@ContextManager.context_providers("current_user")
 def get_current_user():
     return "chris@example.com"
 
-@Agent.context_providers("now")
+@ContextManager.context_providers("now")
 def current_time():
     from datetime import datetime
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -359,7 +360,9 @@ Context values are resolved in this priority order (highest to lowest):
 4. Global context providers
 
 ```python
-@Agent.context_providers("global_var")
+from good_agent.agent.context import ContextManager
+
+@ContextManager.context_providers("global_var")
 def global_value():
     return "global"
 
