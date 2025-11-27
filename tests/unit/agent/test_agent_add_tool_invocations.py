@@ -6,7 +6,7 @@ from good_agent.tools import ToolResponse, tool
 
 
 class TestAddToolInvocations:
-    """Test the agent.tool_calls.record_invocations() method"""
+    """Test the agent.add_tool_invocations() method"""
 
     @pytest.mark.asyncio
     async def test_add_tool_invocations_with_parallel_support(self, monkeypatch):
@@ -37,7 +37,7 @@ class TestAddToolInvocations:
             ]
 
             # Add multiple invocations
-            agent.tool_calls.record_invocations(calculator, invocations)
+            agent.add_tool_invocations(calculator, invocations)
 
             # Should have added 1 assistant message + 3 tool messages = 4 total
             assert len(agent) == initial_len + 4
@@ -84,7 +84,7 @@ class TestAddToolInvocations:
             ]
 
             # Add multiple invocations
-            agent.tool_calls.record_invocations(simple_tool, invocations)
+            agent.add_tool_invocations(simple_tool, invocations)
 
             # Without parallel support, should add 2 assistant messages + 2 tool messages = 4 total
             # Each tool call gets its own assistant message when parallel is not supported
@@ -162,9 +162,7 @@ class TestAddToolInvocations:
                 ({"message": "World"}, "Echo: World"),
             ]
 
-            agent.tool_calls.record_invocations(
-                echo, invocations, skip_assistant_message=True
-            )
+            agent.add_tool_invocations(echo, invocations, skip_assistant_message=True)
 
             # Should only add tool response messages (2 messages)
             assert len(agent) == initial_len + 2
@@ -216,7 +214,7 @@ class TestAddToolInvocations:
                 ),
             ]
 
-            agent.tool_calls.record_invocations(process, invocations)
+            agent.add_tool_invocations(process, invocations)
 
             # Check messages were added correctly
             assert len(agent) == initial_len + 3  # 1 assistant + 2 tool messages
@@ -247,7 +245,7 @@ class TestAddToolInvocations:
             initial_len = len(agent)
 
             # Add empty invocations
-            agent.tool_calls.record_invocations(dummy_tool, [])
+            agent.add_tool_invocations(dummy_tool, [])
 
             # No messages should be added
             assert len(agent) == initial_len
@@ -273,7 +271,7 @@ class TestAddToolInvocations:
             ]
 
             # Use tool name as string instead of the tool object
-            agent.tool_calls.record_invocations("named_tool", invocations)
+            agent.add_tool_invocations("named_tool", invocations)
 
             # Should work the same way
             assert len(agent) == initial_len + 3  # 1 assistant + 2 tool messages

@@ -116,7 +116,7 @@ class TestVersioningWithAgentOperations:
         original_count = len(agent.messages)
 
         # Use thread context to truncate and add new message
-        async with agent.context_manager.thread_context(truncate_at=3) as ctx_agent:
+        async with agent.thread_context(truncate_at=3) as ctx_agent:
             # Should only see system + first Q&A
             assert len(ctx_agent.messages) == 3
 
@@ -143,7 +143,7 @@ class TestVersioningWithAgentOperations:
         original_version_count = agent._version_manager.version_count
 
         # Use fork context
-        async with agent.context_manager.fork_context() as forked:
+        async with agent.fork_context() as forked:
             # Forked agent should have same messages
             assert len(forked.messages) == original_count
 
@@ -455,7 +455,7 @@ class TestEdgeCases:
             agent.revert_to_version(0)
 
         # Thread context should work
-        async with agent.context_manager.thread_context() as ctx:
+        async with agent.thread_context() as ctx:
             assert len(ctx.messages) == 0
             ctx.append("New message")
 

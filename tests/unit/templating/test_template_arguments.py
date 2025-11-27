@@ -31,7 +31,7 @@ async def test_invoke_with_template_argument():
     await agent.tools.register_tool(search_web, name="search_web")
 
     # Invoke with Template argument
-    result = await agent.tool_calls.invoke(
+    result = await agent.invoke(
         "search_web",
         query=Template("{{subject}} {{region}}"),
         search_type="news",
@@ -53,7 +53,7 @@ async def test_invoke_with_template_default():
     await agent.tools.register_tool(search_web, name="search_web")
 
     # Use template with default value
-    result = await agent.tool_calls.invoke(
+    result = await agent.invoke(
         "search_web",
         query=Template("{{subject}}"),
         time_period=Template("{{time_period|default('last_month')}}"),
@@ -76,7 +76,7 @@ async def test_invoke_many_with_templates():
     await agent.tools.register_tool(simple_tool, name="simple_tool")
 
     # Multiple invocations with templates
-    results = await agent.tool_calls.invoke_many(
+    results = await agent.invoke_many(
         [
             (
                 "search_web",
@@ -120,7 +120,7 @@ async def test_template_with_missing_variable():
     await agent.tools.register_tool(simple_tool, name="simple_tool")
 
     # Non-strict template with missing variable
-    result = await agent.tool_calls.invoke(
+    result = await agent.invoke(
         "simple_tool", message=Template("{{subject}} {{missing_var}}", strict=False)
     )
 
@@ -143,7 +143,7 @@ async def test_template_strict_mode():
     template = Template("{{subject}} {{missing_var}}", strict=True)
 
     # The render will fail but the tool should still be invoked with the template string
-    result = await agent.tool_calls.invoke("simple_tool", message=template)
+    result = await agent.invoke("simple_tool", message=template)
 
     # The tool should still be called, but the parameter might be the unrendered template
     # or might fail - depends on implementation
@@ -160,7 +160,7 @@ async def test_mixed_template_and_regular_parameters():
 
     await agent.tools.register_tool(search_web, name="search_web")
 
-    result = await agent.tool_calls.invoke(
+    result = await agent.invoke(
         "search_web",
         query=Template("{{search_term}}"),
         search_type="news",  # Regular string
@@ -181,13 +181,13 @@ async def test_context_providers_with_templates():
     agent = Agent("You are a helpful assistant.", context={"base": "value"})
 
     # Add a context provider
-    @agent.context_manager.context_provider("dynamic_value")
+    @agent.context_provider("dynamic_value")
     def provide_dynamic():
         return "dynamically_generated"
 
     await agent.tools.register_tool(simple_tool, name="simple_tool")
 
-    result = await agent.tool_calls.invoke(
+    result = await agent.invoke(
         "simple_tool", message=Template("Base: {{base}}, Dynamic: {{dynamic_value}}")
     )
 
@@ -211,7 +211,7 @@ async def test_hide_parameter_with_template():
     await agent.tools.register_tool(api_tool, name="api_tool")
 
     # Invoke with hidden parameter
-    result = await agent.tool_calls.invoke(
+    result = await agent.invoke(
         "api_tool",
         query=Template("{{query_text}}"),
         api_key=Template("{{api_key}}"),

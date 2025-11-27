@@ -11,7 +11,7 @@ from good_agent.tools import ToolCallFunction, ToolContext, ToolResponse, tool
 
 
 class TestAgentInvoke:
-    """Test the agent.tool_calls.invoke() method"""
+    """Test the agent.invoke() method"""
 
     @pytest.mark.asyncio
     async def test_basic_invoke(self):
@@ -31,7 +31,7 @@ class TestAgentInvoke:
             initial_len = len(agent)  # Just system message
 
             # Directly invoke the tool - this will CREATE an assistant message
-            result = await agent.tool_calls.invoke(calculate, operation="add", a=5, b=3)
+            result = await agent.invoke(calculate, operation="add", a=5, b=3)
 
             assert result.success is True
             assert result.response == 8
@@ -72,7 +72,7 @@ class TestAgentInvoke:
             return x * 2
 
         async with Agent("Test agent", tools=[simple_tool_custom_id]) as agent:
-            result = await agent.tool_calls.invoke(
+            result = await agent.invoke(
                 simple_tool_custom_id, tool_call_id="custom_id_123", x=10
             )
 
@@ -114,7 +114,7 @@ class TestAgentInvoke:
             )
 
             # Now process the tool call - skip creating assistant message
-            await agent.tool_calls.invoke(
+            await agent.invoke(
                 echo_tool,
                 tool_call_id="llm_generated_id",
                 skip_assistant_message=True,
@@ -149,12 +149,12 @@ class TestAgentInvoke:
 
         async with Agent("Test agent", tools=[risky_tool]) as agent:
             # Successful invocation
-            result = await agent.tool_calls.invoke(risky_tool, x=5)
+            result = await agent.invoke(risky_tool, x=5)
             assert result.success is True
             assert result.response == 10
 
             # Failed invocation
-            result = await agent.tool_calls.invoke(risky_tool, x=-1)
+            result = await agent.invoke(risky_tool, x=-1)
             assert result.success is False
             assert result.error is not None
             assert "x must be non-negative" in result.error
@@ -175,7 +175,7 @@ class TestAgentInvoke:
             return text.upper()
 
         async with Agent("Test agent", tools=[sync_tool]) as agent:
-            result = await agent.tool_calls.invoke(sync_tool, text="hello world")
+            result = await agent.invoke(sync_tool, text="hello world")
 
             assert result.success is True
             assert result.response == "HELLO WORLD"
@@ -191,7 +191,7 @@ class TestAgentInvoke:
             return f"Agent {ctx.agent.session_id} processing: {query}"
 
         async with Agent("Test agent", tools=[context_aware_tool]) as agent:
-            result = await agent.tool_calls.invoke(
+            result = await agent.invoke(
                 context_aware_tool, query="test query"
             )
 
@@ -225,12 +225,12 @@ class TestAgentInvoke:
 
         async with Agent("Test agent", tools=[smart_tool]) as agent:
             # Successful call
-            result = await agent.tool_calls.invoke(smart_tool, value=5)
+            result = await agent.invoke(smart_tool, value=5)
             assert result.success is True
             assert result.response == 15
 
             # Failed call
-            result = await agent.tool_calls.invoke(smart_tool, value=-1)
+            result = await agent.invoke(smart_tool, value=-1)
             assert result.success is False
             assert result.error == "Value must be non-negative"
 
@@ -249,7 +249,7 @@ class TestAgentInvoke:
             agent.append("Please process this message")
 
             # Invoke creates assistant message THEN tool response
-            result = await agent.tool_calls.invoke(test_tool, message="Hello")
+            result = await agent.invoke(test_tool, message="Hello")
 
             # Should add 2 messages: assistant with tool call, and tool response
             assert len(agent) == initial_len + 3  # user + assistant + tool
@@ -287,7 +287,7 @@ class TestAgentInvoke:
         )(calc_impl)
 
         async with Agent("Test agent", tools=[calc]) as agent:
-            result = await agent.tool_calls.invoke(calc, x=10, y=20)
+            result = await agent.invoke(calc, x=10, y=20)
 
             assert result.tool_name == "custom_calculator"
             assistant_msg = agent[-2]
@@ -298,7 +298,7 @@ class TestAgentInvoke:
 
 
 class TestAgentInvokeFunc:
-    """Test the agent.tool_calls.invoke_func() method"""
+    """Test the agent.invoke_func() method"""
 
     @pytest.mark.asyncio
     async def test_basic_invoke_func(self):
@@ -310,7 +310,7 @@ class TestAgentInvokeFunc:
 
         async with Agent("Test agent", tools=[multiply]) as agent:
             # Create bound function
-            multiply_by_5 = agent.tool_calls.invoke_func(multiply, y=5)
+            multiply_by_5 = agent.invoke_func(multiply, y=5)
 
             # Call it later
             result = await multiply_by_5(x=10)
@@ -327,7 +327,7 @@ class TestAgentInvokeFunc:
 
         async with Agent("Test agent", tools=[format_message]) as agent:
             # Create bound function with some params preset
-            greet = agent.tool_calls.invoke_func(
+            greet = agent.invoke_func(
                 format_message, prefix="Hello", suffix="!"
             )
 
@@ -344,7 +344,7 @@ class TestAgentInvokeFunc:
             return x * 2
 
         async with Agent("Test agent", tools=[simple_tool_with_id]) as agent:
-            bound_func = agent.tool_calls.invoke_func(
+            bound_func = agent.invoke_func(
                 simple_tool_with_id, tool_call_id="preset_id_456"
             )
 
@@ -363,7 +363,7 @@ class TestAgentInvokeFunc:
             return f"{x} + {y} = {x + y}"
 
         async with Agent("Test agent", tools=[typed_tool]) as agent:
-            bound_func = agent.tool_calls.invoke_func(typed_tool, y=3.14)
+            bound_func = agent.invoke_func(typed_tool, y=3.14)
 
             # The bound function should work with proper types
             result = await bound_func(x=10)
@@ -371,7 +371,7 @@ class TestAgentInvokeFunc:
 
 
 class TestAgentInvokeMany:
-    """Test the agent.tool_calls.invoke_many() method"""
+    """Test the agent.invoke_many() method"""
 
     @pytest.mark.asyncio
     async def test_basic_invoke_many(self):
@@ -386,7 +386,7 @@ class TestAgentInvokeMany:
             return x * y
 
         async with Agent("Test agent", tools=[add, multiply]) as agent:
-            results = await agent.tool_calls.invoke_many(
+            results = await agent.invoke_many(
                 [(add, {"x": 5, "y": 3}), (multiply, {"x": 4, "y": 7})]
             )
 
@@ -412,7 +412,7 @@ class TestAgentInvokeMany:
             return len(text)
 
         async with Agent("Test agent", tools=[process_data, count_chars]) as agent:
-            results = await agent.tool_calls.invoke_many(
+            results = await agent.invoke_many(
                 [
                     ("process_data", {"data": "hello world"}),
                     ("count_chars", {"text": "hello world"}),
@@ -441,7 +441,7 @@ class TestAgentInvokeMany:
             raise RuntimeError("This tool always fails")
 
         async with Agent("Test agent", tools=[safe_tool, failing_tool]) as agent:
-            results = await agent.tool_calls.invoke_many(
+            results = await agent.invoke_many(
                 [(safe_tool, {"x": 10}), (failing_tool, {"x": 20})]
             )
 
@@ -460,7 +460,7 @@ class TestAgentInvokeMany:
         """Test invoke_many with empty calls"""
 
         async with Agent("Test agent") as agent:
-            results = await agent.tool_calls.invoke_many([])
+            results = await agent.invoke_many([])
             assert results == []
 
     @pytest.mark.asyncio
@@ -480,7 +480,7 @@ class TestAgentInvokeMany:
         async with Agent("Test agent", tools=[slow_tool]) as agent:
             start_time = asyncio.get_event_loop().time()
 
-            results = await agent.tool_calls.invoke_many(
+            results = await agent.invoke_many(
                 [
                     (slow_tool, {"name": "first", "delay": 0.1}),
                     (slow_tool, {"name": "second", "delay": 0.1}),
@@ -509,7 +509,7 @@ class TestAgentInvokeMany:
             return x * 2
 
         async with Agent("Test agent", tools=[tool_a, tool_b]) as agent:
-            results = await agent.tool_calls.invoke_many(
+            results = await agent.invoke_many(
                 [(tool_a, {"x": 10}), ("tool_b", {"x": 20})]
             )
 
@@ -537,7 +537,7 @@ class TestAgentInvokeMany:
             # Add user context
             agent.append("Please run some calculations")
 
-            await agent.tool_calls.invoke_many([(tool1, {"x": 5}), (tool2, {"x": 10})])
+            await agent.invoke_many([(tool1, {"x": 5}), (tool2, {"x": 10})])
 
             # The exact number of messages depends on whether the model supports
             # multiple tool calls in a single message. It could be either:
@@ -568,7 +568,7 @@ class TestAgentInvokeMany:
             return x * 2
 
         async with Agent("Test agent", tools=[real_tool]) as agent:
-            results = await agent.tool_calls.invoke_many(
+            results = await agent.invoke_many(
                 [
                     (real_tool, {"x": 10}),
                     ("nonexistent_tool", {"x": 20}),
@@ -586,7 +586,7 @@ class TestAgentInvokeMany:
 
 
 class TestAgentInvokeManyFunc:
-    """Test the agent.tool_calls.invoke_many_func() method"""
+    """Test the agent.invoke_many_func() method"""
 
     @pytest.mark.asyncio
     async def test_basic_invoke_many_func(self):
@@ -604,7 +604,7 @@ class TestAgentInvokeManyFunc:
 
         async with Agent("Test agent", tools=[calculate, format_result]) as agent:
             # Create bound batch function
-            calc_batch = agent.tool_calls.invoke_many_func(
+            calc_batch = agent.invoke_many_func(
                 [
                     (calculate, {"operation": "add", "a": 5, "b": 3}),
                     (format_result, {"value": 42}),
@@ -634,7 +634,7 @@ class TestAgentInvokeManyFunc:
 
         async with Agent("Test agent", tools=[counting_tool]) as agent:
             # Create bound function
-            bound_func = agent.tool_calls.invoke_many_func([(counting_tool, {"x": 10})])
+            bound_func = agent.invoke_many_func([(counting_tool, {"x": 10})])
 
             # Tool should not have executed yet
             assert execution_count == 0
@@ -662,7 +662,7 @@ class TestAgentInvokeManyFunc:
             return val * 10
 
         async with Agent("Test agent", tools=[tool_x, tool_y]) as agent:
-            bound_func = agent.tool_calls.invoke_many_func(
+            bound_func = agent.invoke_many_func(
                 [(tool_x, {"val": 5}), ("tool_y", {"val": 7})]
             )
 
@@ -686,7 +686,7 @@ class TestAgentInvokeEdgeCases:
 
         async with Agent("Test agent") as agent:
             # Should still work
-            result = await agent.tool_calls.invoke(plain_function, x=10)
+            result = await agent.invoke(plain_function, x=10)
             assert result.success is True
             assert result.response == 20
             assert result.tool_name == "plain_function"
@@ -705,11 +705,11 @@ class TestAgentInvokeEdgeCases:
 
         async with Agent("Test agent", tools=[return_dict, return_list]) as agent:
             # Dict return
-            result = await agent.tool_calls.invoke(return_dict, key="test", value=42)
+            result = await agent.invoke(return_dict, key="test", value=42)
             assert result.response == {"test": 42}
 
             # List return
-            result = await agent.tool_calls.invoke(return_list, items=5)
+            result = await agent.invoke(return_list, items=5)
             assert result.response == [0, 1, 2, 3, 4]
 
     @pytest.mark.asyncio
@@ -722,7 +722,7 @@ class TestAgentInvokeEdgeCases:
 
         async with Agent("Test agent", tools=[dummy_tool]) as agent:
             # No pending calls initially
-            assert agent.tool_calls.get_pending_tool_calls() == []
+            assert agent.get_pending_tool_calls() == []
 
             # Add assistant message with tool calls
             tool_call = ToolCall(
@@ -735,13 +735,13 @@ class TestAgentInvokeEdgeCases:
             agent.assistant.append("", tool_calls=[tool_call])
 
             # Should have pending call
-            pending = agent.tool_calls.get_pending_tool_calls()
+            pending = agent.get_pending_tool_calls()
             assert len(pending) == 1
             assert pending[0].id == "test_call_1"
 
             # Resolve the call - now returns an async iterator
             resolved = []
-            async for tool_msg in agent.tool_calls.resolve_pending_tool_calls():
+            async for tool_msg in agent.resolve_pending_tool_calls():
                 resolved.append(tool_msg)
 
             # Should have resolved one message
@@ -749,7 +749,7 @@ class TestAgentInvokeEdgeCases:
             assert resolved[0].role == "tool"
 
             # No more pending calls
-            assert agent.tool_calls.get_pending_tool_calls() == []
+            assert agent.get_pending_tool_calls() == []
 
     @pytest.mark.asyncio
     async def test_resolve_pending_tool_calls_with_invalid_json(self):
@@ -770,7 +770,7 @@ class TestAgentInvokeEdgeCases:
 
             # Resolve should handle the error gracefully - consume the iterator
             resolved = []
-            async for tool_msg in agent.tool_calls.resolve_pending_tool_calls():
+            async for tool_msg in agent.resolve_pending_tool_calls():
                 resolved.append(tool_msg)
 
             # Should have resolved one message
@@ -801,7 +801,7 @@ class TestAgentInvokeEdgeCases:
 
             # Resolve should handle gracefully - consume the iterator
             resolved = []
-            async for tool_msg in agent.tool_calls.resolve_pending_tool_calls():
+            async for tool_msg in agent.resolve_pending_tool_calls():
                 resolved.append(tool_msg)
 
             # Should have resolved one message
@@ -830,7 +830,7 @@ class TestAgentInvokeEdgeCases:
             agent.on("tool:call:before")(event_handler)
             agent.on("tool:call:after")(event_handler)
 
-            await agent.tool_calls.invoke(event_tool, x=10)
+            await agent.invoke(event_tool, x=10)
 
             # Wait for all events to be processed
             await agent.join()
@@ -861,7 +861,7 @@ class TestAgentInvokeEdgeCases:
             pass
 
         async with Agent("Test agent", tools=[void_tool]) as agent:
-            result = await agent.tool_calls.invoke(void_tool, message="test")
+            result = await agent.invoke(void_tool, message="test")
             assert result.success is True
             assert result.response is None
             assert agent[-1].content == "None"

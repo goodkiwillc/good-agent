@@ -51,7 +51,7 @@ async def test_extension_forking():
         ext.add("Test content")
 
         # Fork the agent
-        forked = agent.context_manager.fork()
+        forked = agent.fork()
 
         # Verify extension is preserved
         forked_ext = forked[DataExtension]

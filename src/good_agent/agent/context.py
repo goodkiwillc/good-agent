@@ -164,7 +164,7 @@ class ContextManager:
             ForkContext instance to use with async with
 
         Example:
-            async with agent.context_manager.fork_context(truncate_at=5) as forked:
+            async with agent.fork_context(truncate_at=5) as forked:
                 response = await forked.call("Summarize")
                 # Response only exists in fork
         """
@@ -182,7 +182,7 @@ class ContextManager:
             ThreadContext instance to use with async with
 
         Example:
-            async with agent.context_manager.thread_context(truncate_at=5) as ctx_agent:
+            async with agent.thread_context(truncate_at=5) as ctx_agent:
                 response = await ctx_agent.call("Summarize")
                 # After context, agent has original messages + response
         """

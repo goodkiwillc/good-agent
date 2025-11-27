@@ -6,15 +6,20 @@ from typing import cast
 import pytest
 
 from good_agent.agent import Agent
-from good_agent.agent.events import AgentEventsFacade
 from good_agent.core.components import AgentComponent
 from good_agent.core.event_router import EventContext, EventRouter, on
 
 
 class DummyAgent(EventRouter):
+    """Test stub that mimics Agent's events property (returns self)."""
+
     def __init__(self) -> None:
         super().__init__()
-        self.events = AgentEventsFacade(cast(Agent, self))
+
+    @property
+    def events(self) -> DummyAgent:
+        """Mimic Agent.events which returns self for backwards compatibility."""
+        return self
 
 
 class DemoComponent(AgentComponent):

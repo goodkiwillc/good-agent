@@ -173,7 +173,7 @@ class TestSystemMessageVersioningFix:
         agent.append("Message 2")
 
         # Use thread context to modify system message
-        async with agent.context_manager.thread_context() as ctx:
+        async with agent.thread_context() as ctx:
             # Replace system message in context
             ctx.set_system_message("Temporary system")
 
@@ -203,7 +203,7 @@ class TestSystemMessageVersioningFix:
         agent.append("Original message")
 
         # Fork the agent
-        forked = agent.context_manager.fork(include_messages=True)
+        forked = agent.fork(include_messages=True)
         await forked.initialize()
 
         # Modify system message in fork

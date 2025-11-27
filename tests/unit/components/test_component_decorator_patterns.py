@@ -83,103 +83,109 @@ class TestComponentDecoratorPatterns:
         assert AgentEvents.AGENT_INIT_AFTER in config["events"]
 
         # Create agent - this should trigger decorator registration
-        async with Agent("Test system", extensions=[component]):
-            # Give async event handlers time to complete
-            await asyncio.sleep(0.01)
+        agent = Agent("Test system", extensions=[component])
+        await agent.initialize()
 
-            # Decorator handlers should have fired during initialization
-            assert "decorator:agent_init" in component.events
+        # Give async event handlers time to complete
+        await asyncio.sleep(0.01)
 
-            # Verify component inherits EventRouter correctly
-            assert hasattr(component, "on")
-            assert hasattr(component, "do")
-            assert hasattr(component, "apply")
+        # Decorator handlers should have fired during initialization
+        assert "decorator:agent_init" in component.events
+
+        # Verify component inherits EventRouter correctly
+        assert hasattr(component, "on")
+        assert hasattr(component, "do")
+        assert hasattr(component, "apply")
 
     async def test_manual_vs_decorator_handlers(self):
         """Test that both manual and decorator handlers work together."""
         component = SimpleDecoratorComponent()
-        async with Agent("Test system", extensions=[component]) as agent:
-            # Give async event handlers time to complete
-            await asyncio.sleep(0.01)
+        agent = Agent("Test system", extensions=[component])
+        await agent.initialize()
 
-            # Clear initialization events
-            component.events.clear()
+        # Give async event handlers time to complete
+        await asyncio.sleep(0.01)
 
-            # Add a message to trigger manual handler
-            agent.append("Test message")
+        # Clear initialization events
+        component.events.clear()
 
-            # Manual handler should have fired
-            assert "manual:message_append" in component.events
+        # Add a message to trigger manual handler
+        agent.append("Test message")
 
-            # Execute tool via agent to trigger decorator handlers
-            result = await agent.tool_calls.invoke("test_tool", value="test")
+        # Manual handler should have fired
+        assert "manual:message_append" in component.events
 
-            # Verify tool executed
-            assert result.success
-            assert result.response == "result:test"
+        # Execute tool via agent to trigger decorator handlers
+        result = await agent.invoke("test_tool", value="test")
 
-            # Wait for async event handlers to complete
-            await asyncio.sleep(0.01)
+        # Verify tool executed
+        assert result.success
+        assert result.response == "result:test"
 
-            # Both decorator and tool execution should be recorded
-            assert "tool_executed:test" in component.events
-            assert any("decorator:tool_before" in event for event in component.events)
-            assert any("decorator:tool_after" in event for event in component.events)
+        # Wait for async event handlers to complete
+        await asyncio.sleep(0.01)
+
+        # Both decorator and tool execution should be recorded
+        assert "tool_executed:test" in component.events
+        assert any("decorator:tool_before" in event for event in component.events)
+        assert any("decorator:tool_after" in event for event in component.events)
 
     async def test_component_enabled_state(self):
         """Test that handlers respect component enabled state."""
         component = SimpleDecoratorComponent()
-        async with Agent("Test system", extensions=[component]) as agent:
-            # Clear initialization events
-            component.events.clear()
+        agent = Agent("Test system", extensions=[component])
+        await agent.initialize()
 
-            # Test enabled state (default)
-            assert component.enabled
-            agent.append("Message 1")
-            enabled_count = len(
-                [e for e in component.events if "manual:message_append" in e]
-            )
-            assert enabled_count > 0
+        # Clear initialization events
+        component.events.clear()
 
-            # Disable component
-            component.events.clear()
-            component.enabled = False
-            agent.append("Message 2")
+        # Test enabled state (default)
+        assert component.enabled
+        agent.append("Message 1")
+        enabled_count = len(
+            [e for e in component.events if "manual:message_append" in e]
+        )
+        assert enabled_count > 0
 
-            # Manual handlers should respect enabled state
-            disabled_count = len(
-                [e for e in component.events if "manual:message_append" in e]
-            )
-            assert disabled_count == 0, "Manual handlers should respect enabled state"
+        # Disable component
+        component.events.clear()
+        component.enabled = False
+        agent.append("Message 2")
 
-            # Note: @on decorator handlers don't automatically check enabled state
-            # They would need to check self.enabled explicitly in their implementation
+        # Manual handlers should respect enabled state
+        disabled_count = len(
+            [e for e in component.events if "manual:message_append" in e]
+        )
+        assert disabled_count == 0, "Manual handlers should respect enabled state"
+
+        # Note: @on decorator handlers don't automatically check enabled state
+        # They would need to check self.enabled explicitly in their implementation
 
     async def test_manual_only_component(self):
         """Test component that uses only manual registration."""
         component = ManualOnlyComponent()
-        async with Agent("Test system", extensions=[component]) as agent:
-            # Give async event handlers time to complete
-            await asyncio.sleep(0.01)
+        agent = Agent("Test system", extensions=[component])
+        await agent.initialize()
 
-            # Should have manual init event
-            assert "manual_only:init" in component.events
+        # Give async event handlers time to complete
+        await asyncio.sleep(0.01)
 
-            # Test message handling
-            component.events.clear()
-            agent.append("Test message")
-            assert "manual_only:message" in component.events
+        # Should have manual init event
+        assert "manual_only:init" in component.events
 
-            # Test enabled state
-            component.events.clear()
-            component.enabled = False
-            agent.append("Another message")
+        # Test message handling
+        component.events.clear()
+        agent.append("Test message")
+        assert "manual_only:message" in component.events
 
-            # Should not fire when disabled
-            disabled_events = [
-                e for e in component.events if "manual_only:message" in e
-            ]
-            assert len(disabled_events) == 0
+        # Test enabled state
+        component.events.clear()
+        component.enabled = False
+        agent.append("Another message")
+
+        # Should not fire when disabled
+        disabled_events = [e for e in component.events if "manual_only:message" in e]
+        assert len(disabled_events) == 0
 
     async def test_event_handler_priorities(self):
         """Test that event handler priorities work correctly."""
@@ -205,17 +211,19 @@ class TestComponentDecoratorPatterns:
                     self.execution_order.append("manual_mid")
 
         component = PriorityTestComponent()
-        async with Agent("Test system", extensions=[component]):
-            # Give async event handlers time to complete
-            await asyncio.sleep(0.01)
+        agent = Agent("Test system", extensions=[component])
+        await agent.initialize()
 
-            # Should have all three events
-            assert len(component.execution_order) == 3
+        # Give async event handlers time to complete
+        await asyncio.sleep(0.01)
 
-            # Should contain all expected events (order may vary due to EventRouter implementation)
-            assert "decorator_high" in component.execution_order
-            assert "manual_mid" in component.execution_order
-            assert "decorator_low" in component.execution_order
+        # Should have all three events
+        assert len(component.execution_order) == 3
+
+        # Should contain all expected events (order may vary due to EventRouter implementation)
+        assert "decorator_high" in component.execution_order
+        assert "manual_mid" in component.execution_order
+        assert "decorator_low" in component.execution_order
 
     async def test_async_event_handlers(self):
         """Test that async event handlers work correctly."""
@@ -248,19 +256,21 @@ class TestComponentDecoratorPatterns:
                 return f"triggered:{value}"
 
         component = AsyncTestComponent()
-        async with Agent("Test system", extensions=[component]) as agent:
-            # Execute tool via agent to trigger async handlers
-            result = await agent.tool_calls.invoke("trigger_tool", value="async_test")
+        agent = Agent("Test system", extensions=[component])
+        await agent.initialize()
 
-            assert result.success
-            assert result.response == "triggered:async_test"
+        # Execute tool via agent to trigger async handlers
+        result = await agent.invoke("trigger_tool", value="async_test")
 
-            # Wait for async handlers to complete
-            await asyncio.sleep(0.01)
+        assert result.success
+        assert result.response == "triggered:async_test"
 
-            # Both async handlers should have executed
-            assert "async_manual" in component.events
-            assert "async_decorator" in component.events
+        # Wait for async handlers to complete
+        await asyncio.sleep(0.01)
+
+        # Both async handlers should have executed
+        assert "async_manual" in component.events
+        assert "async_decorator" in component.events
 
 
 @pytest.mark.asyncio

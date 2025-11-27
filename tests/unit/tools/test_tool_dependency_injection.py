@@ -85,7 +85,7 @@ class TestAgentInjection:
 
         async with Agent("Test system", tools=[get_session_info]) as agent:
             # Test direct invocation
-            result: ToolResponse[str] = await agent.tool_calls.invoke(get_session_info)
+            result: ToolResponse[str] = await agent.invoke(get_session_info)
 
             assert result.success
             response_text = cast(str, result.response)
@@ -117,7 +117,7 @@ class TestAgentInjection:
         async with Agent("Test system", tools=[process_with_context]) as agent:
             agent.append("User message")
 
-            result: ToolResponse[str] = await agent.tool_calls.invoke(
+            result: ToolResponse[str] = await agent.invoke(
                 process_with_context, query="test query", limit=5
             )
 
@@ -156,7 +156,7 @@ class TestAgentInjection:
             agent.append("Tell me about AI")
 
             # Manually execute the tool to test injection
-            result: ToolResponse[str] = await agent.tool_calls.invoke(
+            result: ToolResponse[str] = await agent.invoke(
                 analyze_conversation, topic="AI"
             )
 
@@ -190,7 +190,7 @@ class TestAgentComponentInjection:
         async with Agent(
             "Test system", tools=[save_data], extensions=[data_store]
         ) as agent:
-            result: ToolResponse[str] = await agent.tool_calls.invoke(
+            result: ToolResponse[str] = await agent.invoke(
                 save_data, key="test_key", value="test_value"
             )
 
@@ -230,13 +230,13 @@ class TestAgentComponentInjection:
             "Test system", tools=[complex_operation], extensions=[data_store, counter]
         ) as agent:
             # First call
-            result1: ToolResponse[str] = await agent.tool_calls.invoke(
+            result1: ToolResponse[str] = await agent.invoke(
                 complex_operation, operation="first"
             )
             assert cast(str, result1.response) == "Operation 1: first"
 
             # Second call
-            result2: ToolResponse[str] = await agent.tool_calls.invoke(
+            result2: ToolResponse[str] = await agent.invoke(
                 complex_operation, operation="second"
             )
             assert cast(str, result2.response) == "Operation 2: second"
@@ -268,7 +268,7 @@ class TestAgentComponentInjection:
             agent.append("What is the name?")
 
             # Manually execute the tool to test injection
-            result: ToolResponse[str] = await agent.tool_calls.invoke(
+            result: ToolResponse[str] = await agent.invoke(
                 lookup_data, key="name"
             )
 
@@ -306,7 +306,7 @@ class TestMixedInjection:
         async with Agent(
             "Test system", tools=[comprehensive_tool], extensions=[data_store]
         ) as agent:
-            result: ToolResponse[str] = await agent.tool_calls.invoke(
+            result: ToolResponse[str] = await agent.invoke(
                 comprehensive_tool, input_data="test data"
             )
 
@@ -347,7 +347,7 @@ class TestMixedInjection:
             return f"Message: {message}, Agent: {agent_id}, Call: {call_id}"
 
         async with Agent("Test system", tools=[context_aware_tool]) as agent:
-            result: ToolResponse[str] = await agent.tool_calls.invoke(
+            result: ToolResponse[str] = await agent.invoke(
                 context_aware_tool, message="Hello"
             )
 
@@ -379,7 +379,7 @@ class TestInjectionEdgeCases:
 
         # Create agent WITHOUT the required extension
         async with Agent("Test system", tools=[requires_store]) as agent:
-            result: ToolResponse[str] = await agent.tool_calls.invoke(
+            result: ToolResponse[str] = await agent.invoke(
                 requires_store, data="test"
             )
 
@@ -406,7 +406,7 @@ class TestInjectionEdgeCases:
         async with Agent(
             "Test system", tools=[capture_store], extensions=[data_store]
         ) as agent:
-            await agent.tool_calls.invoke(capture_store)
+            await agent.invoke(capture_store)
 
             # Verify injected component is the same as agent[DataStore]
             assert injected_store is not None
@@ -423,7 +423,7 @@ class TestInjectionEdgeCases:
             return f"Sync: {value}, Agent: {str(agent.session_id)[:8]}"
 
         async with Agent("Test system", tools=[sync_tool]) as agent:
-            result: ToolResponse[str] = await agent.tool_calls.invoke(
+            result: ToolResponse[str] = await agent.invoke(
                 sync_tool, value="test"
             )
 
@@ -453,7 +453,7 @@ class TestInjectionWithStreaming:
             agent.append("User message")
 
             # Note: Modified to return collected string instead of generator
-            result: ToolResponse[str] = await agent.tool_calls.invoke(
+            result: ToolResponse[str] = await agent.invoke(
                 streaming_tool, prompt="hello world"
             )
 

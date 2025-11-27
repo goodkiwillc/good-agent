@@ -75,7 +75,7 @@ async def test_context_providers_in_tool_templates():
     await agent.initialize()
 
     # Use context providers in Template parameter with formatting
-    result = await agent.tool_calls.invoke(
+    result = await agent.invoke(
         test_tool,
         message=Template(
             "Event on {{ today.strftime('%Y-%m-%d') }} at {{ now.strftime('%H:%M') }}"

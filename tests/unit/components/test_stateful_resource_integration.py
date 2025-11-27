@@ -13,68 +13,67 @@ async def test_full_integration_with_thread_context_and_tools():
         return "default"
 
     agent = Agent("System prompt", tools=[default_tool])
-    async with agent:
-        # Create a resource
-        resource = EditableResource("Hello world", name="doc")
+    await agent.initialize()
 
-        # Verify initial state
-        assert "default_tool" in agent.tools
-        assert len(agent.messages) == 1  # Just system message
+    # Create a resource
+    resource = EditableResource("Hello world", name="doc")
 
-        # Track what happens inside the context
-        messages_modified = False
-        tools_replaced = False
+    # Verify initial state
+    assert "default_tool" in agent.tools
+    assert len(agent.messages) == 1  # Just system message
 
-        # Mock thread_context to track calls
-        original_thread_context = agent.context_manager.thread_context
+    # Track what happens inside the context
+    messages_modified = False
+    tools_replaced = False
 
-        from contextlib import asynccontextmanager
+    # Mock thread_context to track calls
+    original_thread_context = agent._context_manager.thread_context
 
-        @asynccontextmanager
-        async def tracking_thread_context(truncate_at: int | None = None):
-            nonlocal messages_modified
-            async with original_thread_context(truncate_at) as messages:
-                original_content = messages[0].content if messages else None
-                yield messages
-                # Check if system message was modified
-                if messages and messages[0].content != original_content:
-                    messages_modified = True
+    from contextlib import asynccontextmanager
 
-        setattr(agent.context_manager, "thread_context", tracking_thread_context)
+    @asynccontextmanager
+    async def tracking_thread_context(truncate_at: int | None = None):
+        nonlocal messages_modified
+        async with original_thread_context(truncate_at) as messages:
+            original_content = messages[0].content if messages else None
+            yield messages
+            # Check if system message was modified
+            if messages and messages[0].content != original_content:
+                messages_modified = True
 
-        # Use the resource
-        async with resource(agent):
-            # Tools should be replaced
-            assert "default_tool" not in agent.tools
-            assert "read" in agent.tools
-            assert "replace" in agent.tools
-            tools_replaced = True
+    setattr(agent._context_manager, "thread_context", tracking_thread_context)
 
-            # Test a tool works
-            read_tool = agent.tools["read"]
-            result = await read_tool(_agent=agent)
-            assert "Hello world" in result.response
+    # Use the resource
+    async with resource(agent):
+        # Tools should be replaced
+        assert "default_tool" not in agent.tools
+        assert "read" in agent.tools
+        assert "replace" in agent.tools
+        tools_replaced = True
 
-            # Modify content
-            replace_tool = agent.tools["replace"]
-            result = await replace_tool(
-                _agent=agent, old_text="world", new_text="universe"
-            )
-            assert resource.state == "Hello universe"
+        # Test a tool works
+        read_tool = agent.tools["read"]
+        result = await read_tool(_agent=agent)
+        assert "Hello world" in result.response
 
-        # After context: tools should be restored
-        assert "default_tool" in agent.tools
-        assert "read" not in agent.tools
-
-        # Verify tracking flags
-        assert messages_modified, "System message should have been modified"
-        assert tools_replaced, "Tools should have been replaced"
-
-        # Resource should maintain its state
+        # Modify content
+        replace_tool = agent.tools["replace"]
+        result = await replace_tool(_agent=agent, old_text="world", new_text="universe")
         assert resource.state == "Hello universe"
 
-        # Restore original thread_context
-        setattr(agent.context_manager, "thread_context", original_thread_context)
+    # After context: tools should be restored
+    assert "default_tool" in agent.tools
+    assert "read" not in agent.tools
+
+    # Verify tracking flags
+    assert messages_modified, "System message should have been modified"
+    assert tools_replaced, "Tools should have been replaced"
+
+    # Resource should maintain its state
+    assert resource.state == "Hello universe"
+
+    # Restore original thread_context
+    setattr(agent._context_manager, "thread_context", original_thread_context)
 
 
 @pytest.mark.asyncio
@@ -82,32 +81,34 @@ async def test_nested_resource_contexts():
     """Test that nested resource contexts work correctly."""
     from good_agent.resources import EditableResource
 
-    async with Agent("Test agent") as agent:
-        resource1 = EditableResource("Document 1", name="doc1")
-        resource2 = EditableResource("Document 2", name="doc2")
+    agent = Agent("Test agent")
+    await agent.initialize()
 
-        # Nested contexts should work but are unusual
-        async with resource1(agent):
+    resource1 = EditableResource("Document 1", name="doc1")
+    resource2 = EditableResource("Document 2", name="doc2")
+
+    # Nested contexts should work but are unusual
+    async with resource1(agent):
+        assert "read" in agent.tools
+
+        # Nested context would replace tools again
+        # This is an edge case but should work
+        async with resource2(agent):
+            # doc2 tools should be available (same tool names)
             assert "read" in agent.tools
 
-            # Nested context would replace tools again
-            # This is an edge case but should work
-            async with resource2(agent):
-                # doc2 tools should be available (same tool names)
-                assert "read" in agent.tools
+            # Can edit doc2
+            replace_tool = agent.tools["replace"]
+            await replace_tool(
+                _agent=agent, old_text="Document 2", new_text="Modified Doc 2"
+            )
+            assert resource2.state == "Modified Doc 2"
 
-                # Can edit doc2
-                replace_tool = agent.tools["replace"]
-                await replace_tool(
-                    _agent=agent, old_text="Document 2", new_text="Modified Doc 2"
-                )
-                assert resource2.state == "Modified Doc 2"
+        # Back to doc1 context - tools restored to doc1
+        assert "read" in agent.tools
 
-            # Back to doc1 context - tools restored to doc1
-            assert "read" in agent.tools
-
-        # All tools restored
-        assert len(agent.tools) == 0  # Agent had no initial tools
+    # All tools restored
+    assert len(agent.tools) == 0  # Agent had no initial tools
 
 
 @pytest.mark.asyncio
@@ -118,32 +119,34 @@ async def test_resource_with_agent_call():
     # This test is more of a smoke test since we can't easily test
     # the full LLM interaction without mocking
 
-    async with Agent("You are a helpful editor") as agent:
-        resource = EditableResource(
-            "This is a test dokument with misteaks.", name="document"
-        )
+    agent = Agent("You are a helpful editor")
+    await agent.initialize()
 
-        async with resource(agent):
-            # Agent should have editing tools available
-            assert "read" in agent.tools
-            assert "replace" in agent.tools
-            assert "save" in agent.tools
+    resource = EditableResource(
+        "This is a test dokument with misteaks.", name="document"
+    )
 
-            # The agent could now be called with:
-            # response = await agent.call("Fix the spelling mistakes")
-            # But we can't test this without an actual LLM
+    async with resource(agent):
+        # Agent should have editing tools available
+        assert "read" in agent.tools
+        assert "replace" in agent.tools
+        assert "save" in agent.tools
 
-            # Instead, verify the tools work manually
-            read_tool = agent.tools["read"]
-            content = await read_tool(_agent=agent)
-            assert "dokument" in content.response
+        # The agent could now be called with:
+        # response = await agent.call("Fix the spelling mistakes")
+        # But we can't test this without an actual LLM
 
-            # Fix a typo manually
-            replace_tool = agent.tools["replace"]
-            await replace_tool(_agent=agent, old_text="dokument", new_text="document")
-            await replace_tool(_agent=agent, old_text="misteaks", new_text="mistakes")
+        # Instead, verify the tools work manually
+        read_tool = agent.tools["read"]
+        content = await read_tool(_agent=agent)
+        assert "dokument" in content.response
 
-            assert resource.state == "This is a test document with mistakes."
+        # Fix a typo manually
+        replace_tool = agent.tools["replace"]
+        await replace_tool(_agent=agent, old_text="dokument", new_text="document")
+        await replace_tool(_agent=agent, old_text="misteaks", new_text="mistakes")
+
+        assert resource.state == "This is a test document with mistakes."
 
 
 @pytest.mark.asyncio
@@ -162,16 +165,18 @@ async def test_resource_error_handling():
             return {}
 
     resource = FailingResource("test")
-    async with Agent("Test") as agent:
-        # Should raise the initialization error
-        with pytest.raises(ValueError, match="Initialization failed"):
-            async with resource(agent):
-                pass
+    agent = Agent("Test")
+    await agent.initialize()
 
-        # Agent should still be in valid state
-        from good_agent.agent import AgentState
+    # Should raise the initialization error
+    with pytest.raises(ValueError, match="Initialization failed"):
+        async with resource(agent):
+            pass
 
-        assert agent.state == AgentState.READY
+    # Agent should still be in valid state
+    from good_agent.agent import AgentState
+
+    assert agent.state == AgentState.READY
 
 
 @pytest.mark.asyncio
@@ -179,30 +184,32 @@ async def test_resource_state_persistence():
     """Test that resource state persists across multiple uses."""
     from good_agent.resources import EditableResource
 
-    async with Agent("Test agent") as agent:
-        resource = EditableResource("Initial content", name="doc")
+    agent = Agent("Test agent")
+    await agent.initialize()
 
-        # First use - modify content
-        async with resource(agent):
-            replace_tool = agent.tools["replace"]
-            await replace_tool(_agent=agent, old_text="Initial", new_text="Modified")
+    resource = EditableResource("Initial content", name="doc")
 
-        assert resource.state == "Modified content"
+    # First use - modify content
+    async with resource(agent):
+        replace_tool = agent.tools["replace"]
+        await replace_tool(_agent=agent, old_text="Initial", new_text="Modified")
 
-        # Second use - content should be preserved
-        async with resource(agent):
-            read_tool = agent.tools["read"]
-            result = await read_tool(_agent=agent)
-            assert "Modified content" in result.response
+    assert resource.state == "Modified content"
 
-            # Further modify
-            replace_tool = agent.tools["replace"]
-            await replace_tool(_agent=agent, old_text="content", new_text="text")
+    # Second use - content should be preserved
+    async with resource(agent):
+        read_tool = agent.tools["read"]
+        result = await read_tool(_agent=agent)
+        assert "Modified content" in result.response
 
-        assert resource.state == "Modified text"
+        # Further modify
+        replace_tool = agent.tools["replace"]
+        await replace_tool(_agent=agent, old_text="content", new_text="text")
 
-        # Resource only initializes once
-        assert resource._initialized is True
+    assert resource.state == "Modified text"
+
+    # Resource only initializes once
+    assert resource._initialized is True
 
 
 @pytest.mark.asyncio
@@ -210,24 +217,26 @@ async def test_multiple_resources_sequential():
     """Test using multiple resources sequentially."""
     from good_agent.resources import EditableResource
 
-    async with Agent("Test agent") as agent:
-        doc1 = EditableResource("Document 1", name="doc1")
-        doc2 = EditableResource("Document 2", name="doc2")
+    agent = Agent("Test agent")
+    await agent.initialize()
 
-        # Edit first document
-        async with doc1(agent):
-            replace = agent.tools["replace"]
-            await replace(_agent=agent, old_text="1", new_text="One")
+    doc1 = EditableResource("Document 1", name="doc1")
+    doc2 = EditableResource("Document 2", name="doc2")
 
-        assert doc1.state == "Document One"
+    # Edit first document
+    async with doc1(agent):
+        replace = agent.tools["replace"]
+        await replace(_agent=agent, old_text="1", new_text="One")
 
-        # Edit second document
-        async with doc2(agent):
-            replace = agent.tools["replace"]
-            await replace(_agent=agent, old_text="2", new_text="Two")
+    assert doc1.state == "Document One"
 
-        assert doc2.state == "Document Two"
+    # Edit second document
+    async with doc2(agent):
+        replace = agent.tools["replace"]
+        await replace(_agent=agent, old_text="2", new_text="Two")
 
-        # Both documents maintain their state
-        assert doc1.state == "Document One"
-        assert doc2.state == "Document Two"
+    assert doc2.state == "Document Two"
+
+    # Both documents maintain their state
+    assert doc1.state == "Document One"
+    assert doc2.state == "Document Two"

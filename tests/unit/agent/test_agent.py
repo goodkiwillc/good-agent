@@ -196,7 +196,9 @@ class TestAgentInitialization:
         from datetime import datetime, timedelta
 
         # global context providers
-        @Agent.context_providers("ten")
+        from good_agent.agent.context import ContextManager
+
+        @ContextManager.context_providers("ten")
         def return_10():
             return 10
 
@@ -206,7 +208,7 @@ class TestAgentInitialization:
         ) as agent:
             _mock_current_time = datetime.now()
 
-            @agent.context_manager.context_provider("current_time")
+            @agent.context_provider("current_time")
             def current_time_provider():
                 return str(
                     _mock_current_time

@@ -172,7 +172,7 @@ class TestBasicUsage:
             logger.info("Original agent response:", response1.content)
 
             # Fork the agent
-            forked_agent = agent.context_manager.fork()
+            forked_agent = agent.fork()
             forked_agent.append("What is the capital of Germany?")
             response2 = await forked_agent.call()
             logger.info("Forked agent response:", response2.content)
@@ -189,9 +189,9 @@ class TestBasicUsage:
             logger.info("Original agent response:", response1.content)
 
             # Copy the agent
-            copied_agent = agent.context_manager.copy()
+            copied_agent = agent.copy()
 
-            # agent.context_manager.copy(
+            # agent.copy(
             # include_system=True,
             # include_tools=True,
             # components="persist", # initialize
@@ -328,7 +328,7 @@ class TestToolAdvancedFeatures:
             "You are a research agent. Search for information and write a report based on the results.",
             tools=[search_web],
         ) as agent:
-            hits = await agent.tool_calls.invoke(
+            hits = await agent.invoke(
                 search_web, query="python decorators", limit=5, fetch_pages=True
             )
 
@@ -364,7 +364,7 @@ class TestComponents:
             "Research with citations and todos.", extensions=[cites, tasks]
         ) as agent:
             # Use component tools directly via invoke
-            await agent.tool_calls.invoke(
+            await agent.invoke(
                 "create_list", name="plan", items=["search", "summarize"]
             )
             agent.append("Research Python pattern matching; cite sources.")
