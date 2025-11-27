@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PYPROJECT_PATH = ROOT / "pyproject.toml"
 INIT_PATH = ROOT / "src" / "good_agent" / "__init__.py"
 CHANGELOG_PATH = ROOT / "CHANGELOG.md"
+LOCK_PATH = ROOT / "uv.lock"
 
 
 def run_command(
@@ -176,6 +177,9 @@ def main() -> None:
     files_to_add = [PYPROJECT_PATH, INIT_PATH]
     if CHANGELOG_PATH.exists():
         files_to_add.append(CHANGELOG_PATH)
+    # Include uv.lock if it was modified by uv sync
+    if LOCK_PATH.exists():
+        files_to_add.append(LOCK_PATH)
     paths = " ".join(str(path.relative_to(ROOT)) for path in files_to_add)
     run_command(f"git add {paths}")
     run_command(f'git commit -m "Prepare release v{next_version}"', check=False)
