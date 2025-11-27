@@ -3,12 +3,12 @@ from typing import Any
 from good_agent.agent.config.manager import ConfigStack
 
 
-class Context(ConfigStack):
-    """Layer local overrides on top of agent config data for template/tool use.
+class AgentContext(ConfigStack):
+    """Runtime context store for agent variables and config overrides.
 
-    Behaves like a hierarchical dict and supports scoped overrides via
-    ``with context(...)``; see ``examples/context/thread_context.py`` for a
-    runnable sample.
+    Provides a hierarchical dict-like interface for storing and accessing
+    runtime context values. Supports scoped overrides via context manager.
+    See ``examples/context/thread_context.py`` for usage.
     """
 
     def __init__(self, agent_config=None, **kwargs):

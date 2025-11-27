@@ -58,11 +58,9 @@ if TYPE_CHECKING:
 from good_agent.agent.config import (
     AGENT_CONFIG_KEYS,
     AgentConfigManager,
+    AgentContext,
     AgentOnlyConfig,
     LLMCommonConfig,
-)
-from good_agent.agent.config import (
-    Context as AgentContext,
 )
 from good_agent.agent.pool import AgentPool
 from good_agent.content import FileContentPart, ImageContentPart

@@ -1,4 +1,4 @@
-from good_agent.agent.config.context import Context
+from good_agent.agent.config.context import AgentContext
 from good_agent.agent.config.manager import (
     AgentConfigManager,
     ConfigField,
@@ -20,8 +20,12 @@ from good_agent.agent.config.types import (
     ReasoningConfig,
 )
 
+# Backwards compatibility alias (deprecated)
+Context = AgentContext
+
 __all__ = [
-    "Context",
+    "AgentContext",
+    "Context",  # Deprecated alias
     "AgentConfigManager",
     "ConfigField",
     "ConfigStack",

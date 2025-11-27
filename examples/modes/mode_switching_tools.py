@@ -5,20 +5,18 @@ from __future__ import annotations
 import asyncio
 
 from good_agent import Agent, ModeContext, tool
-from good_agent.agent.config import Context
 from good_agent.messages import SystemMessage
 
 
 @tool
-async def enter_research_mode(agent: Agent = Context()) -> str:
+async def enter_research_mode(agent: Agent) -> str:
     """Schedule research mode for the next response."""
-
     agent.modes.schedule_mode_switch("research")
     return "Will enter research mode after the current response."
 
 
 @tool
-async def exit_current_mode(agent: Agent = Context()) -> str:
+async def exit_current_mode(agent: Agent) -> str:
     """Schedule exiting the current mode on the next call."""
 
     if not agent.current_mode:
@@ -55,13 +53,13 @@ async def main() -> None:
             print(response.content)
 
             print("\n=== Tool schedules research mode ===")
-            await enter_research_mode(agent=agent)
+            await enter_research_mode(_agent=agent)  # type: ignore[call-arg,misc]
             response = await agent.call("Need deep research next")
             print(response.content)
             print(f"Current mode: {agent.current_mode}")
 
             print("\n=== Tool schedules exit ===")
-            await exit_current_mode(agent=agent)
+            await exit_current_mode(_agent=agent)  # type: ignore[call-arg,misc]
             response = await agent.call("Back to normal please")
             print(response.content)
             print(f"Current mode: {agent.current_mode}")
