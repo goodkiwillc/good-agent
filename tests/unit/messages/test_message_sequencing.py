@@ -26,7 +26,7 @@ class TestMessageSequencing:
             agent.append("What's the weather and time?")
 
             # Use invoke_many for parallel execution
-            await agent.tool_calls.invoke_many(
+            await agent.invoke_many(
                 [
                     (get_weather, {"location": "Paris"}),
                     (get_time, {"timezone": "Europe/Paris"}),
@@ -86,7 +86,7 @@ class TestMessageSequencing:
             agent.append("Process these numbers")
 
             # Execute multiple tools in parallel
-            await agent.tool_calls.invoke_many(
+            await agent.invoke_many(
                 [(tool_a, {"x": 5}), (tool_b, {"x": 5}), (tool_c, {"x": 5})]
             )
 
@@ -119,13 +119,13 @@ class TestMessageSequencing:
 
         async with Agent("Test agent", tools=[search_web]) as agent:
             # Create bound function
-            news_search = agent.tool_calls.invoke_func(search_web, source="news")
-            web_search = agent.tool_calls.invoke_func(search_web, source="web")
+            news_search = agent.invoke_func(search_web, source="news")
+            web_search = agent.invoke_func(search_web, source="web")
 
             agent.append("Search for Python tutorials")
 
             # This WILL create bad sequencing with current implementation
-            await agent.tool_calls.invoke_many(
+            await agent.invoke_many(
                 [
                     (news_search, {"query": "Python tutorials"}),
                     (web_search, {"query": "Python tutorials"}),
@@ -178,20 +178,20 @@ class TestMessageSequencing:
 
         async with Agent("Test agent", tools=[process_data]) as agent:
             # Create multiple bound functions
-            upper_processor = agent.tool_calls.invoke_func(
+            upper_processor = agent.invoke_func(
                 process_data, operation="UPPER"
             )
-            lower_processor = agent.tool_calls.invoke_func(
+            lower_processor = agent.invoke_func(
                 process_data, operation="lower"
             )
-            title_processor = agent.tool_calls.invoke_func(
+            title_processor = agent.invoke_func(
                 process_data, operation="Title"
             )
 
             agent.append("Process this data")
 
             # All bound functions - should each create their own assistant/tool pairs
-            await agent.tool_calls.invoke_many(
+            await agent.invoke_many(
                 [
                     (upper_processor, {"data": "hello"}),
                     (lower_processor, {"data": "WORLD"}),
@@ -232,7 +232,7 @@ class TestMessageSequencing:
             agent.append("Fetch data from multiple sources")
 
             # These should be consolidated into one assistant message
-            await agent.tool_calls.invoke_many(
+            await agent.invoke_many(
                 [
                     (fetch_data, {"source": "database"}),
                     (fetch_data, {"source": "api"}),

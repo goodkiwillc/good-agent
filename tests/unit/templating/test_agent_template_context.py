@@ -96,7 +96,7 @@ async def test_agent_available_in_tool_templates():
     await agent.initialize()
 
     # Invoke tool with Template that uses agent
-    result = await agent.tool_calls.invoke(
+    result = await agent.invoke(
         test_tool, query=Template("Search from agent {{ agent.id }}")
     )
 

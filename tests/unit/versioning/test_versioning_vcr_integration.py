@@ -139,7 +139,7 @@ class TestVersioningWithRealLLM:
         original_last_msg = str(agent.messages[-1])
 
         # Use ThreadContext to branch the story
-        async with agent.context_manager.thread_context(truncate_at=3) as ctx:
+        async with agent.thread_context(truncate_at=3) as ctx:
             # Should have system + first Q&A only
             assert len(ctx.messages) == 3
 
@@ -187,7 +187,7 @@ class TestVersioningWithRealLLM:
         original_count = len(agent.messages)
 
         # Fork for alternative conversation
-        async with agent.context_manager.fork_context() as fork:
+        async with agent.fork_context() as fork:
             # Fork has same initial state
             assert len(fork.messages) == original_count
 
@@ -219,7 +219,7 @@ class TestVersioningWithRealLLM:
         dog_response = str(agent.messages[-1])
 
         # Use ThreadContext to replace the topic
-        async with agent.context_manager.thread_context() as ctx:
+        async with agent.thread_context() as ctx:
             # Replace user's question
             from good_agent.content.parts import TextContentPart
 

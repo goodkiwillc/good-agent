@@ -139,7 +139,7 @@ class TestSimpleVersioning:
         agent.append("Message 3")
 
         # Use thread context to truncate
-        async with agent.context_manager.thread_context(truncate_at=2) as ctx:
+        async with agent.thread_context(truncate_at=2) as ctx:
             # Should only see first 2 messages
             assert len(ctx.messages) == 2
 
@@ -164,7 +164,7 @@ class TestSimpleVersioning:
         original_count = len(agent.messages)
 
         # Use fork context
-        async with agent.context_manager.fork_context() as forked:
+        async with agent.fork_context() as forked:
             assert forked is not agent
             assert len(forked.messages) == original_count
 

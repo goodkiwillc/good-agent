@@ -164,7 +164,7 @@ class TestAgentVersioning:
         versioned_agent.append("Test")
 
         # Test thread_context method
-        async with versioned_agent.context_manager.thread_context(truncate_at=0) as ctx:
+        async with versioned_agent.thread_context(truncate_at=0) as ctx:
             assert ctx is versioned_agent
             assert len(ctx.messages) == 0
             ctx.append("New")
@@ -172,7 +172,7 @@ class TestAgentVersioning:
         assert len(versioned_agent.messages) == 2
 
         # Test fork_context method
-        async with versioned_agent.context_manager.fork_context(truncate_at=1) as fork:
+        async with versioned_agent.fork_context(truncate_at=1) as fork:
             assert fork is not versioned_agent
             assert len(fork.messages) == 1
 
@@ -254,7 +254,7 @@ class TestAgentVersioning:
         versioned_agent.append("Original")
 
         # Fork the agent
-        forked = versioned_agent.context_manager.fork(include_messages=True)
+        forked = versioned_agent.fork(include_messages=True)
         await forked.initialize()
 
         # Forked agent should have its own version manager
@@ -347,12 +347,12 @@ class TestBackwardCompatibility:
         agent.append("Message")
 
         # Fork without messages
-        fork1 = agent.context_manager.fork(include_messages=False)
+        fork1 = agent.fork(include_messages=False)
         await fork1.initialize()
         assert len(fork1.messages) == 0
 
         # Fork with messages
-        fork2 = agent.context_manager.fork(include_messages=True)
+        fork2 = agent.fork(include_messages=True)
         await fork2.initialize()
         assert len(fork2.messages) == 2  # System message + user message
         assert str(fork2.messages[-1]) == str(

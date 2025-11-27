@@ -266,7 +266,7 @@ async def test_agent_search_integration():
     if "search_entities" in agent.tools:
         print("\n--- Testing search_entities tool ---")
         try:
-            result = await agent.tool_calls.invoke(
+            result = await agent.invoke(
                 "search",
                 query="AI technology",
                 platforms=["google"] if WebSearchProvider else ["twitter"],
@@ -315,7 +315,7 @@ async def test_date_range_functionality():
             ) as mock_search:
                 mock_search.return_value = []
 
-        response = await agent.tool_calls.invoke(
+        response = await agent.invoke(
             "search",
             query="test query with date range",
             since=datetime.combine(date(2024, 1, 1), datetime.min.time()),
@@ -326,7 +326,7 @@ async def test_date_range_functionality():
         print(f"Response type: {type(response)}")
 
         # Test relative date functionality
-        response = await agent.tool_calls.invoke(
+        response = await agent.invoke(
             "search", query="recent news", last_week=True
         )
 

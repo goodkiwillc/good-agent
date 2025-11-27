@@ -87,7 +87,7 @@ class TestVersioningWithRealOperations:
         assert agent._version_manager.version_count == 1
 
         # Manually invoke tool (simulating what LLM would do)
-        result = await agent.tool_calls.invoke("add_numbers", a=5, b=3)
+        result = await agent.invoke("add_numbers", a=5, b=3)
 
         # Tool invocation creates versions for tool request/response messages
         # The exact count depends on how the tool system handles messages
@@ -145,7 +145,7 @@ class TestVersioningWithRealOperations:
         initial_versions = agent._version_manager.version_count
 
         # ThreadContext with truncation
-        async with agent.context_manager.thread_context(truncate_at=2) as ctx:
+        async with agent.thread_context(truncate_at=2) as ctx:
             # Truncation creates new version
             assert agent._version_manager.version_count > initial_versions
             assert len(ctx.messages) == 2
@@ -160,7 +160,7 @@ class TestVersioningWithRealOperations:
         assert final_versions > initial_versions
 
         # ForkContext
-        async with agent.context_manager.fork_context() as forked:
+        async with agent.fork_context() as forked:
             # Forked has separate version manager
             assert forked._version_manager is not agent._version_manager
 

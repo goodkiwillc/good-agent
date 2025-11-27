@@ -36,7 +36,7 @@ Another source [!CITE_2!] confirms this.
         await agent.initialize()
 
         # Call the tool
-        result = await agent.tool_calls.invoke(get_ground_truth)
+        result = await agent.invoke(get_ground_truth)
 
         # Verify tool response is correct
         assert result.success

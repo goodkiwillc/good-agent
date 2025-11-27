@@ -143,13 +143,13 @@ async def test_bound_tools_work_with_agent():
     assert agent_tool is cast(Tool[Any, Any], getattr(component, "increment"))
 
     # Test calling through agent
-    result = await agent.tool_calls.invoke("increment", amount=7)
+    result = await agent.invoke("increment", amount=7)
     assert result.success
     assert result.response == 7
     assert component.state["counter"] == 7
 
     # Reset through agent
-    result = await agent.tool_calls.invoke("reset_counter")
+    result = await agent.invoke("reset_counter")
     assert result.success
     assert result.response == "Counter reset"
     assert component.state["counter"] == 0

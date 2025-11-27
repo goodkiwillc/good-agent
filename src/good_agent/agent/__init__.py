@@ -7,7 +7,6 @@ from __future__ import annotations
 from .components import ComponentRegistry
 from .context import ContextManager
 from .core import Agent, AgentConfigParameters, AgentInitialize
-from .events import AgentEventsFacade
 from .llm import LLMCoordinator
 from .messages import MessageManager
 from .modes import ModeContext, ModeManager, ModeTransition
@@ -27,7 +26,6 @@ __all__: list[str] = [
     "LLMCoordinator",
     "ComponentRegistry",
     "ContextManager",
-    "AgentEventsFacade",
     "AgentVersioningManager",
     "AgentInitialize",
     "ModeManager",

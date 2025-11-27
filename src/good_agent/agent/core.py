@@ -33,9 +33,7 @@ from ulid import ULID
 
 from good_agent.core.event_router import (
     EventContext,
-    EventName,
     EventRouter,
-    TypedApply,
     on,
 )
 from good_agent.core.types import URL
@@ -45,7 +43,6 @@ from good_agent.core.ulid_monotonic import (
 
 from .components import ComponentRegistry
 from .context import ContextManager
-from .events import AgentEventsFacade
 from .llm import LLMCoordinator
 from .messages import MessageManager
 from .modes import MODE_HANDLER_SKIP_KWARG, ModeManager, ModeTransition
@@ -293,134 +290,11 @@ class Agent(EventRouter):
                 return agent
         return None
 
-    # Convienience aliases
+    # Convenience aliases
 
     EVENTS: ClassVar[type[AgentEvents]] = AgentEvents
 
-    _PUBLIC_ATTRIBUTE_NAMES: ClassVar[tuple[str, ...]] = (
-        "EVENTS",
-        "append",
-        "attach_file",
-        "attach_image",
-        "assistant",
-        "call",
-        "config",
-        "context",
-        "context_manager",
-        "current_mode",
-        "do",
-        "enter_mode",
-        "exit_mode",
-        "schedule_mode_exit",
-        "schedule_mode_switch",
-        "events",
-        "execute",
-        "extensions",
-        "id",
-        "in_mode",
-        "messages",
-        "mode_stack",
-        "modes",
-        "model",
-        "name",
-        "on",
-        "initialize",
-        "is_ready",
-        "session_id",
-        "state",
-        "system",
-        "task_count",
-        "tasks",
-        "tool",
-        "tool_calls",
-        "tools",
-        "user",
-        "validate_message_sequence",
-        "version_id",
-        "versioning",
-    )
-
-    _LEGACY_ATTRIBUTE_NAMES: ClassVar[frozenset[str]] = frozenset(
-        {
-            "add_tool_invocation",
-            "add_tool_invocations",
-            "add_tool_response",
-            # events
-            "apply",
-            "apply_async",
-            "apply_sync",
-            "apply_typed",
-            "apply_typed_sync",
-            "async_close",
-            "broadcast_to",
-            "consume_from",
-            # lifecycle
-            "close",
-            "chat",
-            "context_provider",
-            "context_providers",
-            "copy",
-            "create_task",
-            "ctx",
-            "current_version",
-            "event_trace_enabled",
-            "fork_context",
-            "get",
-            "get_by_name",
-            "get_pending_tool_calls",
-            "get_rendering_context",
-            "get_rendering_context_async",
-            "get_task_count",
-            "get_task_stats",
-            "get_token_count",
-            "get_token_count_by_role",
-            "has_pending_tool_calls",
-            "invoke",
-            "invoke_func",
-            "invoke_many",
-            "invoke_many_func",
-            "join",
-            "join_async",
-            "merge",
-            "print",
-            "replace_message",
-            "resolve_pending_tool_calls",
-            "ready",
-            "revert_to_version",
-            "set_event_trace",
-            "set_system_message",
-            "spawn",
-            "thread_context",
-            "wait_for_tasks",
-        }
-    )
-
     _MAX_MODE_TRANSITIONS_PER_CALL: ClassVar[int] = 8
-
-    @classmethod
-    def public_attribute_names(cls) -> tuple[str, ...]:
-        """Names considered part of the supported public Agent API."""
-
-        return cls._PUBLIC_ATTRIBUTE_NAMES
-
-    def __dir__(self) -> list[str]:
-        base_dir = super().__dir__()
-        filtered = [
-            name
-            for name in base_dir
-            if name.startswith("_") or name in self._PUBLIC_ATTRIBUTE_NAMES
-        ]
-        for name in self._PUBLIC_ATTRIBUTE_NAMES:
-            if name not in filtered:
-                filtered.append(name)
-        return sorted(filtered)
-
-    def _warn_event_facade(self, method: str) -> None:
-        warnings.warn(
-            f"Agent.{method}() is deprecated. Use agent.events.{method}() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
 
     _init_task: asyncio.Task | None = None
     _conversation: Conversation | None = None
@@ -443,10 +317,16 @@ class Agent(EventRouter):
 
     @staticmethod
     def context_providers(name: str):
-        """Register a global context provider"""
+        """Register a global context provider.
 
+        .. deprecated::
+            Use ``ContextManager.context_providers()`` for global providers
+            or ``agent.context_provider()`` for instance-specific providers.
+        """
         warnings.warn(
-            "Agent.context_providers() is deprecated. Use agent.context_manager.context_providers() instead.",
+            "Agent.context_providers() is deprecated. "
+            "Use ContextManager.context_providers() for global providers "
+            "or agent.context_provider() for instance-specific providers.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -610,8 +490,6 @@ class Agent(EventRouter):
             _event_trace=_event_trace or False,
         )
 
-        self._events_facade = AgentEventsFacade(self)
-
         # Get sandbox config, defaulting to True for security
         use_sandbox = config.get("use_template_sandbox", True)
 
@@ -678,105 +556,45 @@ class Agent(EventRouter):
 
     @property
     def tool_calls(self) -> ToolExecutor:
-        """Tool execution facade (``agent.tool_calls``).
+        """Access the tool executor (deprecated).
 
-        Prefer ``await agent.tool_calls.invoke("name", **kwargs)`` or
-        ``agent.tool_calls.record_invocation(...)`` instead of legacy helpers.
-        A runnable sample lives in :mod:`examples.tools.basic_tool`.
+        .. deprecated::
+            Use direct Agent methods like ``agent.invoke()``, ``agent.record_invocation()``,
+            or ``agent.record_invocations()`` instead.
         """
+        warnings.warn(
+            "agent.tool_calls is deprecated. Use agent.invoke(), agent.record_invocation(), "
+            "or agent.record_invocations() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._tool_executor
 
     @property
     def context_manager(self) -> ContextManager:
-        """Context lifecycle facade (``agent.context_manager``).
+        """Access the context manager (deprecated).
 
-        Provides ``fork()``, ``thread_context()``, and scoped overrides; see
-        :mod:`examples.context.thread_context` for the recommended pattern.
+        .. deprecated::
+            Use direct Agent methods like ``agent.fork()``, ``agent.fork_context()``,
+            ``agent.thread_context()``, or ``agent.context_provider()`` instead.
         """
+        warnings.warn(
+            "agent.context_manager is deprecated. Use agent.fork(), agent.fork_context(), "
+            "agent.thread_context(), or agent.context_provider() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._context_manager
 
     @property
-    def events(self) -> AgentEventsFacade:
-        """EventRouter facade (``agent.events``).
+    def events(self) -> Self:
+        """Backwards-compatible alias returning self.
 
-        Use ``await agent.events.apply("topic", **payload)`` or
-        ``agent.events.broadcast_to(...)`` instead of the deprecated Agent methods.
-        End-to-end usage appears in :mod:`examples.event_router.basic_usage`.
+        Agent inherits from EventRouter, so all event methods are available
+        directly on the Agent instance. This property exists for code that
+        uses ``agent.events.apply(...)`` - it now just returns ``self``.
         """
-        return self._events_facade
-
-    async def apply(self, *args: Any, **kwargs: Any) -> EventContext[Any, Any]:
-        """Deprecated wrapper delegating to :attr:`events`."""
-
-        return await self.events.apply(*args, **kwargs)
-
-    async def apply_async(
-        self, event: EventName, **kwargs: Any
-    ) -> EventContext[Any, Any]:
-        """Deprecated wrapper delegating to :attr:`events`."""
-
-        return await self.events.apply_async(event, **kwargs)
-
-    def apply_sync(self, event: EventName, **kwargs: Any) -> EventContext[Any, Any]:
-        """Deprecated wrapper delegating to :attr:`events`."""
-
-        return self.events.apply_sync(event, **kwargs)
-
-    async def apply_typed(
-        self,
-        event: EventName,
-        params_type: type[Any] | None = None,
-        return_type: type[Any] | None = None,
-        **kwargs: Any,
-    ) -> EventContext[Any, Any]:
-        return await self.events.apply_typed(event, params_type, return_type, **kwargs)
-
-    def apply_typed_sync(
-        self,
-        event: EventName,
-        params_type: type[Any] | None = None,
-        return_type: type[Any] | None = None,
-        **kwargs: Any,
-    ) -> EventContext[Any, Any]:
-        return self.events.apply_typed_sync(event, params_type, return_type, **kwargs)
-
-    def typed(
-        self,
-        params_type: type[Any] | None = None,
-        return_type: type[Any] | None = None,
-    ) -> TypedApply[Any, Any]:
-        return self.events.typed(params_type, return_type)
-
-    def broadcast_to(self, obs: EventRouter) -> int:
-        return self.events.broadcast_to(obs)
-
-    def consume_from(self, obs: EventRouter) -> None:
-        self.events.consume_from(obs)
-
-    def set_event_trace(
-        self, enabled: bool, verbosity: int = 1, use_rich: bool = True
-    ) -> None:
-        self.events.set_event_trace(enabled, verbosity=verbosity, use_rich=use_rich)
-
-    @property
-    def event_trace_enabled(self) -> bool:
-        return self.events.event_trace_enabled
-
-    @property
-    def ctx(self) -> EventContext:
-        return self.events.ctx
-
-    async def join(self, timeout: float = 5.0):
-        await self.events.join(timeout=timeout)
-
-    def join_sync(self, timeout: float = 5.0):
-        self.events.join_sync(timeout=timeout)
-
-    async def close(self):
-        await self.events.close()
-
-    def close_sync(self):
-        self.events.close_sync()
+        return self
 
     @property
     def versioning(self) -> AgentVersioningManager:
@@ -950,11 +768,11 @@ class Agent(EventRouter):
             ForkContext instance to use with async with
 
         Example:
-            async with agent.context_manager.fork_context(truncate_at=5) as forked:
+            async with agent.fork_context(truncate_at=5) as forked:
                 response = await forked.call("Summarize")
                 # Response only exists in fork
         """
-        return self.context_manager.fork_context(truncate_at, **fork_kwargs)
+        return self._context_manager.fork_context(truncate_at, **fork_kwargs)
 
     def thread_context(self, truncate_at: int | None = None) -> ThreadContext:
         """Create a thread context for temporary modifications.
@@ -966,7 +784,7 @@ class Agent(EventRouter):
             ThreadContext instance to use with async with
 
         Example:
-            async with agent.context_manager.thread_context(truncate_at=5) as ctx_agent:
+            async with agent.thread_context(truncate_at=5) as ctx_agent:
                 response = await ctx_agent.call("Summarize")
                 # After context, agent has original messages + response
         """
@@ -1777,12 +1595,12 @@ class Agent(EventRouter):
         # Check and resolve any pending tool calls first
 
         message_index = 0
-        pending_tool_calls = self.tool_calls.get_pending_tool_calls()
+        pending_tool_calls = self._tool_executor.get_pending_tool_calls()
         if pending_tool_calls:
             logger.debug(
                 f"Resolving {len(pending_tool_calls)} pending tool calls before execution"
             )
-            async for tool_message in self.tool_calls.resolve_pending_tool_calls():
+            async for tool_message in self._tool_executor.resolve_pending_tool_calls():
                 # Create and yield tool message for each resolved call
                 tool_message._i = message_index
                 message_index += 1
@@ -1811,7 +1629,9 @@ class Agent(EventRouter):
             # Check if the response has tool calls that need to be executed
             if response.tool_calls:
                 # Resolve the tool calls that were just added
-                async for tool_message in self.tool_calls.resolve_pending_tool_calls():
+                async for (
+                    tool_message
+                ) in self._tool_executor.resolve_pending_tool_calls():
                     tool_message._i = message_index
                     message_index += 1
                     # Yield each tool response message
@@ -1841,7 +1661,7 @@ class Agent(EventRouter):
             self.print(message, mode=self.config.print_messages_mode)
 
     def copy(self, include_messages: bool = True, **config):
-        return self.context_manager.copy(include_messages=include_messages, **config)
+        return self._context_manager.copy(include_messages=include_messages, **config)
 
     @ensure_ready
     async def chat(
@@ -1893,11 +1713,11 @@ class Agent(EventRouter):
         Returns:
             AgentPool containing spawned agents
         """
-        return await self.context_manager.spawn(n=n, prompts=prompts, **configuration)
+        return await self._context_manager.spawn(n=n, prompts=prompts, **configuration)
 
     def context_provider(self, name: str):
         """Register an instance-specific context provider"""
-        return self.context_manager.context_provider(name)
+        return self._context_manager.context_provider(name)
 
     @ensure_ready
     async def merge(
@@ -1916,7 +1736,7 @@ class Agent(EventRouter):
                 - "interleaved": Interleave all messages from source agents (not implemented)
             **kwargs: Additional merge options
         """
-        await self.context_manager.merge(*agents, method=method, **kwargs)
+        await self._context_manager.merge(*agents, method=method, **kwargs)
 
     def get_rendering_context(
         self, additional_context: dict[str, Any] | None = None
@@ -2155,7 +1975,7 @@ class Agent(EventRouter):
     ) -> None:
         """Record a tool invocation via the tool execution manager."""
 
-        self.tool_calls.record_invocation(
+        self._tool_executor.record_invocation(
             tool,
             response,
             parameters,
@@ -2171,7 +1991,7 @@ class Agent(EventRouter):
     ) -> None:
         """Record multiple tool invocations via the tool execution manager."""
 
-        self.tool_calls.record_invocations(
+        self._tool_executor.record_invocations(
             tool,
             invocations,
             skip_assistant_message=skip_assistant_message,
@@ -2234,7 +2054,7 @@ class Agent(EventRouter):
             ToolResponse with execution result
         """
 
-        return await self.tool_calls.invoke(
+        return await self._tool_executor.invoke(
             tool,
             tool_name=tool_name,
             tool_call_id=tool_call_id,
@@ -2256,7 +2076,7 @@ class Agent(EventRouter):
             List of ToolResponse objects in invocation order
         """
 
-        return await self.tool_calls.invoke_many(invocations)
+        return await self._tool_executor.invoke_many(invocations)
 
     def invoke_func(
         self,
@@ -2269,7 +2089,7 @@ class Agent(EventRouter):
     ) -> Callable[..., Awaitable[ToolResponse]]:
         """Create a bound function that invokes a tool with preset parameters."""
 
-        return self.tool_calls.invoke_func(
+        return self._tool_executor.invoke_func(
             tool,
             tool_name=tool_name,
             hide=hide,
@@ -2283,7 +2103,7 @@ class Agent(EventRouter):
     ) -> Callable[[], Awaitable[list[ToolResponse]]]:
         """Create a bound coroutine that executes a batch of tool invocations."""
 
-        return self.tool_calls.invoke_many_func(invocations)
+        return self._tool_executor.invoke_many_func(invocations)
 
     def get_pending_tool_calls(self) -> list[ToolCall]:
         """Get list of tool calls that don't have corresponding responses.
@@ -2292,7 +2112,7 @@ class Agent(EventRouter):
             List of ToolCall objects that are pending execution
         """
 
-        return self.tool_calls.get_pending_tool_calls()
+        return self._tool_executor.get_pending_tool_calls()
 
     def has_pending_tool_calls(self) -> bool:
         """Check if there are any pending tool calls.
@@ -2300,7 +2120,7 @@ class Agent(EventRouter):
         Returns:
             True if there are pending tool calls
         """
-        return self.tool_calls.has_pending_tool_calls()
+        return self._tool_executor.has_pending_tool_calls()
 
     async def resolve_pending_tool_calls(self) -> AsyncIterator[ToolMessage]:
         """Find and execute all pending tool calls in conversation.
@@ -2308,7 +2128,7 @@ class Agent(EventRouter):
         Yields:
             ToolMessage for each resolved tool call
         """
-        async for msg in self.tool_calls.resolve_pending_tool_calls():
+        async for msg in self._tool_executor.resolve_pending_tool_calls():
             yield msg
 
     @overload
@@ -2538,7 +2358,7 @@ class Agent(EventRouter):
         # Cancel managed tasks
         await self.tasks.cancel_all()
 
-        await self.events.join()
+        await self.join()
 
     def get_token_count(
         self,

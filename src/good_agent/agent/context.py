@@ -164,7 +164,7 @@ class ContextManager:
             ForkContext instance to use with async with
 
         Example:
-            async with agent.context_manager.fork_context(truncate_at=5) as forked:
+            async with agent.fork_context(truncate_at=5) as forked:
                 response = await forked.call("Summarize")
                 # Response only exists in fork
         """
@@ -182,7 +182,7 @@ class ContextManager:
             ThreadContext instance to use with async with
 
         Example:
-            async with agent.context_manager.thread_context(truncate_at=5) as ctx_agent:
+            async with agent.thread_context(truncate_at=5) as ctx_agent:
                 response = await ctx_agent.call("Summarize")
                 # After context, agent has original messages + response
         """
@@ -190,7 +190,7 @@ class ContextManager:
 
         return ThreadContext(self.agent, truncate_at)
 
-    def copy(self, include_messages: bool = True, **config: Any) -> "Agent":
+    def copy(self, include_messages: bool = True, **config: Any) -> Agent:
         """Clone the underlying agent with optional configuration overrides."""
 
         copied = self.agent.__class__(**config)
@@ -247,7 +247,7 @@ class ContextManager:
 
     async def merge(
         self,
-        *agents: "Agent",
+        *agents: Agent,
         method: Literal["tool_call", "interleaved"] = "tool_call",
         **kwargs: Any,
     ) -> None:
@@ -281,7 +281,7 @@ class ContextManager:
             result="success",
         )
 
-    async def _merge_as_tool_calls(self, *agents: "Agent", **kwargs: Any) -> None:
+    async def _merge_as_tool_calls(self, *agents: Agent, **kwargs: Any) -> None:
         """Helper that converts child outputs into tool calls on the parent."""
 
         tool_calls: list[ToolCall] = []

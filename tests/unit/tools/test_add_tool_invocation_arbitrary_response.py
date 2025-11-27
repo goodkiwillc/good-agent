@@ -33,7 +33,7 @@ class TestAddToolInvocationArbitraryResponse:
         )
 
         # Add tool invocation
-        agent.tool_calls.record_invocation(
+        agent.add_tool_invocation(
             tool="search", response=response, parameters={"query": "test"}
         )
 
@@ -62,7 +62,7 @@ class TestAddToolInvocationArbitraryResponse:
         agent = Agent("Test agent")
 
         # Add tool invocation with string response
-        agent.tool_calls.record_invocation(
+        agent.add_tool_invocation(
             tool="calculator",
             response="42",  # Simple string response
             parameters={"expression": "40 + 2"},
@@ -89,7 +89,7 @@ class TestAddToolInvocationArbitraryResponse:
         # Add tool invocation with dict response
         response_data = {"results": ["item1", "item2", "item3"], "total": 3, "page": 1}
 
-        agent.tool_calls.record_invocation(
+        agent.add_tool_invocation(
             tool="list_items",
             response=response_data,  # Dict response
             parameters={"page": 1, "limit": 10},
@@ -116,7 +116,7 @@ class TestAddToolInvocationArbitraryResponse:
             metadata={"timestamp": "2025-01-13T10:00:00Z"},
         )
 
-        agent.tool_calls.record_invocation(
+        agent.add_tool_invocation(
             tool="fetch_data",
             response=custom_response,  # Pydantic model response
             parameters={"source": "database"},
@@ -144,7 +144,7 @@ class TestAddToolInvocationArbitraryResponse:
         # Add tool invocation with list response
         response_list = [1, 2, 3, 4, 5]
 
-        agent.tool_calls.record_invocation(
+        agent.add_tool_invocation(
             tool="get_numbers", response=response_list, parameters={"count": 5}
         )
 
@@ -162,7 +162,7 @@ class TestAddToolInvocationArbitraryResponse:
         agent = Agent("Test agent")
 
         # Add tool invocation with None response
-        agent.tool_calls.record_invocation(
+        agent.add_tool_invocation(
             tool="void_function", response=None, parameters={"action": "delete"}
         )
 
@@ -187,7 +187,7 @@ class TestAddToolInvocationArbitraryResponse:
         agent = Agent("Test agent")
 
         # Add tool invocation with Tool instance
-        agent.tool_calls.record_invocation(
+        agent.add_tool_invocation(
             tool=my_tool,  # Tool instance
             response="Processed: test",
             parameters={"input": "test"},
@@ -209,7 +209,7 @@ class TestAddToolInvocationArbitraryResponse:
         agent = Agent("Test agent")
 
         # Add tool invocation with callable
-        agent.tool_calls.record_invocation(
+        agent.add_tool_invocation(
             tool=regular_function,  # Regular callable
             response=10,
             parameters={"x": 5},
@@ -239,7 +239,7 @@ class TestAddToolInvocationArbitraryResponse:
         agent.append(assistant_msg)
 
         # Now add tool invocation, skipping assistant message
-        agent.tool_calls.record_invocation(
+        agent.add_tool_invocation(
             tool="test_tool",
             response="Tool executed successfully",
             parameters={"param": "value"},
@@ -269,7 +269,7 @@ class TestAddToolInvocationArbitraryResponse:
         )
 
         # Add with override tool name but preserve other fields
-        agent.tool_calls.record_invocation(
+        agent.add_tool_invocation(
             tool="override_tool",  # This should override tool_name
             response=original_response,
             tool_call_id="new_id",  # This should override tool_call_id
@@ -302,7 +302,7 @@ class TestAddToolInvocationArbitraryResponse:
             "metadata": {"timestamp": 1234567890, "version": "1.0.0"},
         }
 
-        agent.tool_calls.record_invocation(
+        agent.add_tool_invocation(
             tool="get_user_data", response=complex_response, parameters={"user_id": 123}
         )
 

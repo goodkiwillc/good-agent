@@ -118,7 +118,7 @@ async def test_tool_parameter_templates():
     )
 
     # Add the tool invocation to history
-    agent.tool_calls.record_invocation("fetch", response, rendered_params)
+    agent.add_tool_invocation("fetch", response, rendered_params)
 
     # Verify the tool message was added
     tool_msg = agent.messages[-1]

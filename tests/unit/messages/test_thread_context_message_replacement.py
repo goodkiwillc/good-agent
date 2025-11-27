@@ -64,7 +64,7 @@ class TestThreadContextMessageReplacement:
         original_last_msg = agent.messages[-1]
 
         # Use ThreadContext to truncate before tool messages
-        async with agent.context_manager.thread_context(truncate_at=3) as ctx:
+        async with agent.thread_context(truncate_at=3) as ctx:
             # Should only have system + first user + first assistant
             assert len(ctx.messages) == 3
             assert isinstance(ctx.messages[0], SystemMessage)
@@ -120,7 +120,7 @@ class TestThreadContextMessageReplacement:
         original_version_count = agent._version_manager.version_count
 
         # Use ThreadContext to truncate at message 2 (account for system message)
-        async with agent.context_manager.thread_context(truncate_at=5) as ctx:
+        async with agent.thread_context(truncate_at=5) as ctx:
             # Should have system + first 4 messages (up to Response 2)
             assert len(ctx.messages) == 5
 
@@ -175,7 +175,7 @@ class TestThreadContextMessageReplacement:
         original_ids = [msg.id for msg in agent.messages]
 
         # First context: truncate to system + 6 messages
-        async with agent.context_manager.thread_context(truncate_at=7) as ctx1:
+        async with agent.thread_context(truncate_at=7) as ctx1:
             assert len(ctx1.messages) == 7
 
             # Modify in first context
@@ -232,7 +232,7 @@ class TestThreadContextMessageReplacement:
         assert len(agent.messages) == 6  # system + 5 user messages
 
         # Use ThreadContext
-        async with agent.context_manager.thread_context() as ctx:
+        async with agent.thread_context() as ctx:
             # Revert to original state within context
             ctx.revert_to_version(version_after_original - 1)
 
@@ -276,7 +276,7 @@ class TestThreadContextMessageReplacement:
         original_ids = [msg.id for msg in agent.messages]
 
         # Use ForkContext to create isolated changes
-        async with agent.context_manager.fork_context(truncate_at=3) as fork:
+        async with agent.fork_context(truncate_at=3) as fork:
             # Fork only has system + first 2 messages
             assert len(fork.messages) == 3
 
@@ -315,7 +315,7 @@ class TestThreadContextMessageReplacement:
         original_system = agent.messages[0]
 
         # Use ThreadContext to replace system message
-        async with agent.context_manager.thread_context() as ctx:
+        async with agent.thread_context() as ctx:
             # Replace system message in context
             ctx.messages[0] = SystemMessage(
                 content_parts=[TextContentPart(text="Modified system prompt")]
