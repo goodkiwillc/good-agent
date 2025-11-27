@@ -11,7 +11,7 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 
 # Everything else is lazy-loaded via __getattr__
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 
 # For static type checking only
 if TYPE_CHECKING:
