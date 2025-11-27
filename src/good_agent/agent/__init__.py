@@ -9,7 +9,12 @@ from good_agent.agent.context import ContextManager
 from good_agent.agent.core import Agent, AgentConfigParameters, AgentInitialize
 from good_agent.agent.llm import LLMCoordinator
 from good_agent.agent.messages import MessageManager
-from good_agent.agent.modes import ModeContext, ModeManager, ModeTransition
+from good_agent.agent.modes import (
+    ModeAccessor,
+    ModeContext,
+    ModeManager,
+    ModeTransition,
+)
 from good_agent.agent.state import AgentState, AgentStateMachine
 from good_agent.agent.tasks import AgentTaskManager
 from good_agent.agent.tools import ToolExecutor
@@ -28,6 +33,7 @@ __all__: list[str] = [
     "ContextManager",
     "AgentVersioningManager",
     "AgentInitialize",
+    "ModeAccessor",
     "ModeManager",
     "ModeContext",
     "ModeTransition",

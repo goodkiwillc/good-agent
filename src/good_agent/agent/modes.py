@@ -6,9 +6,12 @@ transformations, and capabilities. Modes are optional, stackable, and composable
 
 from __future__ import annotations
 
+import inspect
+import warnings
 from collections.abc import Awaitable, Callable, MutableMapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypeVar
 
 
@@ -20,6 +23,56 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 MODE_HANDLER_SKIP_KWARG = "__good_agent_internal_skip_mode_handler__"
+
+# Type for new-style agent-centric handler functions
+AgentModeHandler = Callable[["Agent"], Awaitable[Any]]
+
+
+class HandlerStyle(Enum):
+    """Indicates the signature style of a mode handler."""
+
+    LEGACY = auto()  # Handler takes ModeContext as first param
+    AGENT_CENTRIC = auto()  # Handler takes Agent as first param
+
+
+def _detect_handler_style(handler: Callable[..., Any]) -> HandlerStyle:
+    """Detect if handler uses legacy ModeContext or new Agent-centric style.
+
+    Args:
+        handler: The mode handler function
+
+    Returns:
+        HandlerStyle indicating the handler's signature style
+    """
+    sig = inspect.signature(handler)
+    params = list(sig.parameters.values())
+
+    if not params:
+        # No parameters - treat as legacy for safety
+        return HandlerStyle.LEGACY
+
+    first_param = params[0]
+    annotation = first_param.annotation
+
+    # Check if annotation is Agent or "Agent" (string annotation)
+    if annotation is inspect.Parameter.empty:
+        # No annotation - check parameter name as fallback
+        if first_param.name == "agent":
+            return HandlerStyle.AGENT_CENTRIC
+        return HandlerStyle.LEGACY
+
+    # Handle string annotations
+    if isinstance(annotation, str):
+        if annotation == "Agent":
+            return HandlerStyle.AGENT_CENTRIC
+        return HandlerStyle.LEGACY
+
+    # Handle actual type annotations
+    type_name = getattr(annotation, "__name__", str(annotation))
+    if type_name == "Agent":
+        return HandlerStyle.AGENT_CENTRIC
+
+    return HandlerStyle.LEGACY
 
 
 @dataclass(slots=True)
@@ -34,7 +87,7 @@ class ModeTransition:
 class ModeStateView(MutableMapping[str, Any]):
     """Mutable mapping facade that proxies state operations to ModeManager."""
 
-    def __init__(self, manager: "ModeManager"):
+    def __init__(self, manager: ModeManager):
         self._manager = manager
 
     def __getitem__(self, key: str) -> Any:
@@ -61,8 +114,114 @@ class ModeStateView(MutableMapping[str, Any]):
         return f"ModeStateView({self._manager.get_all_state()!r})"
 
 
+class ModeAccessor:
+    """Provides access to current mode information via agent.mode property.
+
+    This is the new agent-centric API for accessing mode state from within
+    mode handlers. Instead of receiving a ModeContext, handlers now receive
+    the Agent directly and access mode info via agent.mode.
+
+    Example:
+        @agent.modes('research')
+        async def research_mode(agent: Agent):
+            # Access mode info via agent.mode
+            agent.mode.state['topic'] = 'quantum'
+            print(f"In mode: {agent.mode.name}")
+            print(f"Stack: {agent.mode.stack}")
+    """
+
+    def __init__(self, manager: ModeManager):
+        """Initialize mode accessor.
+
+        Args:
+            manager: The ModeManager instance to proxy
+        """
+        self._manager = manager
+        self._entered_at: datetime | None = None
+
+    @property
+    def name(self) -> str | None:
+        """Get current mode name (top of stack), or None if not in a mode."""
+        return self._manager.current_mode
+
+    @property
+    def stack(self) -> list[str]:
+        """Get list of active modes (bottom to top)."""
+        return self._manager.mode_stack
+
+    @property
+    def state(self) -> ModeStateView:
+        """Get mutable state view for current mode scope."""
+        return ModeStateView(self._manager)
+
+    @property
+    def duration(self) -> timedelta:
+        """Get duration in current mode."""
+        if self._entered_at is None:
+            return timedelta(0)
+        return datetime.now() - self._entered_at
+
+    def in_mode(self, mode_name: str) -> bool:
+        """Check if mode is active (anywhere in stack).
+
+        Args:
+            mode_name: Mode name to check
+
+        Returns:
+            True if mode is in stack
+        """
+        return self._manager.in_mode(mode_name)
+
+    def switch(self, mode_name: str, **parameters: Any) -> ModeTransition:
+        """Request switching to another mode.
+
+        Args:
+            mode_name: Target mode name
+            **parameters: Parameters to pass to new mode
+
+        Returns:
+            ModeTransition instruction
+        """
+        return ModeTransition(
+            transition_type="switch",
+            target_mode=mode_name,
+            parameters=parameters or None,
+        )
+
+    def push(self, mode_name: str, **parameters: Any) -> ModeTransition:
+        """Request pushing a new mode on top of current.
+
+        Args:
+            mode_name: Mode to push
+            **parameters: Parameters to pass to new mode
+
+        Returns:
+            ModeTransition instruction
+        """
+        return ModeTransition(
+            transition_type="push",
+            target_mode=mode_name,
+            parameters=parameters or None,
+        )
+
+    def exit(self) -> ModeTransition:
+        """Request exiting the current mode.
+
+        Returns:
+            ModeTransition instruction
+        """
+        return ModeTransition(transition_type="exit")
+
+    def __repr__(self) -> str:  # pragma: no cover - trivial
+        return f"ModeAccessor(name={self.name!r}, stack={self.stack!r})"
+
+
 class ModeContext:
     """Context object passed to mode handlers with mode-specific operations.
+
+    .. deprecated::
+        Use agent-centric handlers with `agent: Agent` parameter instead.
+        Access mode state via `agent.mode.state` instead of `ctx.state`.
 
     Provides access to agent, mode state, and methods for context transformations.
     """
@@ -73,7 +232,7 @@ class ModeContext:
         mode_name: str,
         mode_stack: list[str],
         state: MutableMapping[str, Any] | None = None,
-        manager: "ModeManager" | None = None,
+        manager: ModeManager | None = None,
     ):
         """Initialize mode context.
 
@@ -289,6 +448,7 @@ class ModeInfo:
         self.name = name
         self.handler = handler
         self.description = description or handler.__doc__
+        self.style = _detect_handler_style(handler)
 
     def info(self) -> dict[str, Any]:
         """Get mode metadata as dictionary.
@@ -300,6 +460,7 @@ class ModeInfo:
             "name": self.name,
             "description": self.description,
             "handler": self.handler,
+            "style": self.style.name,
         }
 
 
@@ -422,6 +583,44 @@ class ModeManager:
         if info is None:
             return None
         return info.handler
+
+    async def execute_handler(self, mode_name: str) -> Any:
+        """Execute the handler for a mode with proper DI based on handler style.
+
+        This method detects whether the handler uses the legacy ModeContext
+        signature or the new agent-centric signature and calls it appropriately.
+
+        Args:
+            mode_name: Name of the mode whose handler to execute
+
+        Returns:
+            The result from the handler (ModeTransition, AssistantMessage, or None)
+
+        Raises:
+            KeyError: If mode is not registered
+        """
+        info = self._registry.get(mode_name)
+        if info is None:
+            raise KeyError(f"Mode '{mode_name}' is not registered")
+
+        handler = info.handler
+
+        if info.style == HandlerStyle.AGENT_CENTRIC:
+            # New-style handler: inject Agent directly
+            # Type ignore: handler is typed as ModeHandler but runtime dispatch
+            # ensures it actually accepts Agent for AGENT_CENTRIC style
+            return await handler(self._agent)  # type: ignore[arg-type]
+        else:
+            # Legacy handler: create ModeContext (with deprecation warning)
+            warnings.warn(
+                f"Mode handler '{mode_name}' uses deprecated ModeContext signature. "
+                "Update to use 'agent: Agent' parameter instead. "
+                "Access mode state via agent.mode.state instead of ctx.state.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+            ctx = self.create_context()
+            return await handler(ctx)
 
     async def _enter_mode(self, mode_name: str, **params: Any) -> None:
         """Enter a mode (internal).

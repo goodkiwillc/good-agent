@@ -645,13 +645,21 @@ def _wrap_legacy_handler(handler):
 
 ## 12. Acceptance Criteria
 
-### Phase 1: Agent-Centric Handlers
-- [ ] Mode handlers can declare `agent: Agent` parameter
-- [ ] Agent is injected via FastDepends (same as tools)
-- [ ] `agent.mode` accessor works inside handlers
-- [ ] `agent.mode` returns None/raises outside handlers
-- [ ] ModeContext still works with deprecation warnings
-- [ ] All existing tests pass
+### Phase 1: Agent-Centric Handlers ✅ COMPLETE (2024-11-27)
+- [x] Mode handlers can declare `agent: Agent` parameter
+- [x] Agent is injected directly (handler style detection, not FastDepends)
+- [x] `agent.mode` accessor works inside handlers (ModeAccessor class)
+- [x] `agent.mode` returns None for name/empty stack outside handlers
+- [x] ModeContext still works with deprecation warnings
+- [x] All existing tests pass (1455 tests, 23 mode tests)
+
+**Implementation Notes:**
+- Created `ModeAccessor` class with `name`, `stack`, `state`, `duration`, `in_mode()`, `switch()`, `push()`, `exit()`
+- Added `agent.mode` property returning ModeAccessor
+- `HandlerStyle` enum and `_detect_handler_style()` for signature detection
+- `ModeManager.execute_handler()` dispatches to correct handler style
+- Legacy handlers emit deprecation warning with migration guidance
+- Exported `ModeAccessor` from `good_agent` and `good_agent.agent`
 
 ### Phase 2: System Prompt Manager
 - [ ] `agent.system` property exists

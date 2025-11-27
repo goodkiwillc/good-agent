@@ -35,7 +35,12 @@ from good_agent.agent.components import ComponentRegistry
 from good_agent.agent.context import ContextManager
 from good_agent.agent.llm import LLMCoordinator
 from good_agent.agent.messages import MessageManager
-from good_agent.agent.modes import MODE_HANDLER_SKIP_KWARG, ModeManager, ModeTransition
+from good_agent.agent.modes import (
+    MODE_HANDLER_SKIP_KWARG,
+    ModeAccessor,
+    ModeManager,
+    ModeTransition,
+)
 from good_agent.agent.state import AgentState, AgentStateMachine
 from good_agent.agent.tasks import AgentTaskManager
 from good_agent.agent.tools import ToolExecutor
@@ -489,8 +494,9 @@ class Agent(EventRouter):
         # Back-compat: legacy code inspects _managed_tasks directly
         self._managed_tasks = self._task_manager._managed_tasks
 
-        # Initialize mode manager
+        # Initialize mode manager and accessor
         self._mode_manager = ModeManager(self)
+        self._mode_accessor = ModeAccessor(self._mode_manager)
 
         # Initialize message sequence validator
         validation_mode = config.get("message_validation_mode", "warn")
@@ -678,6 +684,24 @@ class Agent(EventRouter):
         ``async with agent.modes['name']:`` to enter them.
         """
         return self._mode_manager
+
+    @property
+    def mode(self) -> ModeAccessor:
+        """Access current mode information (``agent.mode``).
+
+        Provides access to mode state and info from within mode handlers.
+        This is the preferred way to access mode state in agent-centric handlers.
+
+        Example:
+            @agent.modes('research')
+            async def research_mode(agent: Agent):
+                agent.mode.state['topic'] = 'quantum'
+                print(f"In mode: {agent.mode.name}")
+
+        Returns:
+            ModeAccessor providing access to current mode state
+        """
+        return self._mode_accessor
 
     @property
     def current_mode(self) -> str | None:
@@ -1550,8 +1574,11 @@ class Agent(EventRouter):
     async def _run_active_mode_handlers(
         self,
     ) -> AssistantMessage | AssistantMessageStructuredOutput | None:
-        """Execute mode handlers before making an LLM call."""
+        """Execute mode handlers before making an LLM call.
 
+        Supports both legacy ModeContext handlers and new agent-centric handlers.
+        Legacy handlers will receive a deprecation warning.
+        """
         transition_count = 0
         while True:
             current_mode = self.current_mode
@@ -1562,8 +1589,9 @@ class Agent(EventRouter):
             if handler is None:
                 return None
 
-            ctx = self._mode_manager.create_context()
-            result = await handler(ctx)
+            # Use execute_handler which handles both legacy (ModeContext)
+            # and new agent-centric (Agent) handler signatures
+            result = await self._mode_manager.execute_handler(current_mode)
 
             if isinstance(result, ModeTransition):
                 transition_count += 1

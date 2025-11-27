@@ -439,17 +439,23 @@ class CitationManager(AgentComponent):
         if mode is None:
             mode = RenderMode.DISPLAY
 
+        def safe_render(part: Any, render_mode: RenderMode) -> str:
+            """Safely render a content part, falling back to str() on error."""
+            if not hasattr(part, "render"):
+                return str(part)
+            try:
+                return part.render(render_mode)
+            except Exception:
+                # Template may reference undefined variables - fall back to str()
+                return str(part)
+
         # If we already have citations and proper format, AND there are no XML URLs to extract,
         # return as-is. Messages with XML may have additional URLs to extract even when citations are provided.
         # Use the specified render mode to check for citation patterns
         has_cite_format = any(
-            "[!CITE_" in (part.render(mode) if hasattr(part, "render") else str(part))
-            for part in content_parts
+            "[!CITE_" in safe_render(part, mode) for part in content_parts
         )
-        has_xml_urls = any(
-            'url="' in (part.render(mode) if hasattr(part, "render") else str(part))
-            for part in content_parts
-        )
+        has_xml_urls = any('url="' in safe_render(part, mode) for part in content_parts)
 
         if citations and has_cite_format and not has_xml_urls:
             return content_parts, citations
