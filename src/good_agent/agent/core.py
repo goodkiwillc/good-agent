@@ -42,6 +42,7 @@ from good_agent.agent.modes import (
     ModeTransition,
 )
 from good_agent.agent.state import AgentState, AgentStateMachine
+from good_agent.agent.system_prompt import SystemPromptManager
 from good_agent.agent.tasks import AgentTaskManager
 from good_agent.agent.tools import ToolExecutor
 from good_agent.agent.versioning import AgentVersioningManager
@@ -498,6 +499,9 @@ class Agent(EventRouter):
         self._mode_manager = ModeManager(self)
         self._mode_accessor = ModeAccessor(self._mode_manager)
 
+        # Initialize system prompt manager
+        self._system_prompt_manager = SystemPromptManager(self)
+
         # Initialize message sequence validator
         validation_mode = config.get("message_validation_mode", "warn")
         self._sequence_validator = MessageSequenceValidator(
@@ -702,6 +706,28 @@ class Agent(EventRouter):
             ModeAccessor providing access to current mode state
         """
         return self._mode_accessor
+
+    @property
+    def prompt(self) -> SystemPromptManager:
+        """System prompt management (``agent.prompt``).
+
+        Provides dynamic system prompt composition with mode-scoped changes
+        and auto-restore on mode exit.
+
+        Example:
+            @agent.modes('research')
+            async def research_mode(agent: Agent):
+                # These changes are restored when mode exits
+                agent.prompt.append("Focus on citations.")
+                agent.prompt.sections['mode'] = "RESEARCH MODE"
+
+                # This change persists after mode exit
+                agent.prompt.append("Always be thorough.", persist=True)
+
+        Returns:
+            SystemPromptManager for dynamic prompt composition
+        """
+        return self._system_prompt_manager
 
     @property
     def current_mode(self) -> str | None:

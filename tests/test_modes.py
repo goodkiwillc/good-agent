@@ -569,3 +569,179 @@ async def test_mixed_handler_styles():
 
     assert "legacy:outer_legacy" in calls
     assert "modern:inner_modern" in calls
+
+
+# =============================================================================
+# Phase 2: SystemPromptManager Tests
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_system_prompt_manager_basic():
+    """Test basic append/prepend/sections functionality."""
+    agent = Agent("Base system prompt")
+
+    # Test append
+    agent.prompt.append("Appended content")
+    assert agent.prompt.has_modifications
+    assert len(agent.prompt._appends) == 1
+
+    # Test prepend
+    agent.prompt.prepend("Prepended content")
+    assert len(agent.prompt._prepends) == 1
+
+    # Test sections
+    agent.prompt.sections["mode"] = "Research mode"
+    assert "mode" in agent.prompt.sections
+    assert agent.prompt.sections["mode"] == "Research mode"
+
+    # Test render
+    rendered = agent.prompt.render()
+    assert "Prepended content" in rendered
+    assert "Base system prompt" in rendered
+    assert "Research mode" in rendered
+    assert "Appended content" in rendered
+
+    # Verify order: prepends, base, sections, appends
+    assert rendered.index("Prepended content") < rendered.index("Base system prompt")
+    assert rendered.index("Base system prompt") < rendered.index("Research mode")
+    assert rendered.index("Research mode") < rendered.index("Appended content")
+
+
+@pytest.mark.asyncio
+async def test_system_prompt_manager_mode_restore():
+    """Test that system prompt changes are restored on mode exit.
+
+    Note: Mode handlers run during agent.call(), so we test the
+    snapshot/restore mechanism directly by modifying prompt in the mode.
+    """
+    agent = Agent("Base prompt")
+
+    @agent.modes("research")
+    async def research_mode(agent_param: Agent):
+        pass  # Handler for mode registration
+
+    async with agent:
+        # Verify no modifications before mode
+        assert not agent.prompt.has_modifications
+
+        async with agent.modes["research"]:
+            # Manually add modifications while in mode
+            agent.prompt.append("Research-specific instruction")
+            agent.prompt.sections["context"] = "Research context"
+            assert agent.prompt.has_modifications
+
+        # After exiting mode, modifications should be restored
+        assert not agent.prompt.has_modifications
+        assert len(agent.prompt._appends) == 0
+        assert len(agent.prompt.sections) == 0
+
+
+@pytest.mark.asyncio
+async def test_system_prompt_manager_persist():
+    """Test persist=True survives mode exit."""
+    agent = Agent("Base prompt")
+
+    @agent.modes("research")
+    async def research_mode(agent_param: Agent):
+        pass  # Handler for mode registration
+
+    async with agent:
+        async with agent.modes["research"]:
+            # Add modifications while in mode
+            agent.prompt.append("Temporary change")
+            agent.prompt.append("Permanent change", persist=True)
+            agent.prompt.sections["temp"] = "Temporary section"
+            agent.prompt.set_section("perm", "Permanent section", persist=True)
+
+            assert len(agent.prompt._appends) == 2
+            assert len(agent.prompt.sections) == 2
+
+        # After mode exit: only persistent changes remain
+        assert len(agent.prompt._appends) == 1
+        assert agent.prompt._appends[0].content == "Permanent change"
+        assert len(agent.prompt.sections) == 1
+        assert "perm" in agent.prompt.sections
+
+
+@pytest.mark.asyncio
+async def test_system_prompt_manager_nested_modes():
+    """Test system prompt snapshot/restore with nested modes."""
+    agent = Agent("Base prompt")
+
+    @agent.modes("outer")
+    async def outer_mode(agent_param: Agent):
+        pass
+
+    @agent.modes("inner")
+    async def inner_mode(agent_param: Agent):
+        pass
+
+    async with agent:
+        async with agent.modes["outer"]:
+            # Add content while in outer mode
+            agent.prompt.append("Outer content")
+            outer_rendered = agent.prompt.render()
+            assert "Outer content" in outer_rendered
+            assert "Inner content" not in outer_rendered
+
+            async with agent.modes["inner"]:
+                # Add content while in inner mode
+                agent.prompt.append("Inner content")
+                inner_rendered = agent.prompt.render()
+                assert "Outer content" in inner_rendered
+                assert "Inner content" in inner_rendered
+
+            # After inner exit, inner content gone but outer remains
+            after_inner = agent.prompt.render()
+            assert "Outer content" in after_inner
+            assert "Inner content" not in after_inner
+
+        # After outer exit, all content gone
+        after_outer = agent.prompt.render()
+        assert "Outer content" not in after_outer
+        assert "Inner content" not in after_outer
+
+
+@pytest.mark.asyncio
+async def test_system_prompt_manager_clear():
+    """Test clearing system prompt modifications."""
+    agent = Agent("Base prompt")
+
+    agent.prompt.append("Content 1")
+    agent.prompt.append("Content 2", persist=True)
+    agent.prompt.sections["a"] = "Section A"
+
+    # Clear non-persistent
+    agent.prompt.clear()
+    assert len(agent.prompt._appends) == 1  # Only persistent remains
+    assert agent.prompt._appends[0].content == "Content 2"
+    assert len(agent.prompt.sections) == 0
+
+    # Clear all including persistent
+    agent.prompt.clear(include_persistent=True)
+    assert len(agent.prompt._appends) == 0
+
+
+@pytest.mark.asyncio
+async def test_system_prompt_manager_sections_view():
+    """Test SectionsView dict-like behavior."""
+    agent = Agent("Base prompt")
+
+    # Test setitem/getitem
+    agent.prompt.sections["mode"] = "Research"
+    assert agent.prompt.sections["mode"] == "Research"
+
+    # Test delitem
+    del agent.prompt.sections["mode"]
+    assert "mode" not in agent.prompt.sections
+
+    # Test KeyError on missing
+    with pytest.raises(KeyError):
+        _ = agent.prompt.sections["nonexistent"]
+
+    # Test iteration
+    agent.prompt.sections["a"] = "A"
+    agent.prompt.sections["b"] = "B"
+    assert list(agent.prompt.sections) == ["a", "b"]
+    assert len(agent.prompt.sections) == 2

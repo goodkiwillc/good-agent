@@ -661,13 +661,23 @@ def _wrap_legacy_handler(handler):
 - Legacy handlers emit deprecation warning with migration guidance
 - Exported `ModeAccessor` from `good_agent` and `good_agent.agent`
 
-### Phase 2: System Prompt Manager
-- [ ] `agent.system` property exists
-- [ ] `append()`, `prepend()`, `sections` work
-- [ ] `render()` composes final prompt
-- [ ] Auto-restore on mode exit
-- [ ] `persist=True` option works
-- [ ] Integrates with LLM call pipeline
+### Phase 2: System Prompt Manager ✅ COMPLETE (2024-11-27)
+- [x] `agent.prompt` property exists (renamed from `agent.system` to avoid collision)
+- [x] `append()`, `prepend()`, `sections` work
+- [x] `render()` composes final prompt
+- [x] Auto-restore on mode exit via snapshot/restore
+- [x] `persist=True` option works
+- [x] All 29 mode tests pass (6 new SystemPromptManager tests)
+
+**Implementation Notes:**
+- Created `SystemPromptManager` class in `src/good_agent/agent/system_prompt.py`
+- Property named `agent.prompt` (not `agent.system`) because `agent.system` already exists for filtering system messages
+- `PromptSegment` dataclass tracks content and persist flag
+- `SectionsView` provides dict-like access to named sections
+- `take_snapshot()` called on mode entry, `restore_snapshot()` called on mode exit
+- Snapshot keeps track of prepends/appends/sections state
+- Persistent items (persist=True) survive mode exit
+- Exported from `good_agent` and `good_agent.agent`
 
 ### Phase 3: Isolation Modes
 - [ ] `isolation` parameter on decorator

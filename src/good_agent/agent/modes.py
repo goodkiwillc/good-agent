@@ -636,6 +636,9 @@ class ModeManager:
         if self._mode_stack.current == mode_name:
             return
 
+        # Take snapshot of system prompt state for restore on exit
+        self._agent._system_prompt_manager.take_snapshot()
+
         # Push mode onto stack
         self._mode_stack.push(mode_name, dict(params))
 
@@ -662,6 +665,9 @@ class ModeManager:
 
         # Pop mode from stack
         self._mode_stack.pop()
+
+        # Restore system prompt state to pre-mode snapshot
+        self._agent._system_prompt_manager.restore_snapshot()
 
         # Emit mode:exited event
         from good_agent.events.agent import AgentEvents

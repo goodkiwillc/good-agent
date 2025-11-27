@@ -26,6 +26,7 @@ if TYPE_CHECKING:
         ModeContext,
         ModeManager,
         ModeTransition,
+        SystemPromptManager,
     )
     from good_agent.agent.config import AgentConfigManager, Context
     from good_agent.agent.conversation import Conversation
@@ -139,6 +140,7 @@ _LAZY_IMPORTS = {
     "ModeManager": "agent",
     "ModeContext": "agent",
     "ModeTransition": "agent",
+    "SystemPromptManager": "agent",
     # Content parts (beyond the eager imports)
     "BaseContentPart": "content",
     "ContentPartType": "content",
@@ -311,6 +313,7 @@ __all__ = [
     "ModeManager",
     "ModeContext",
     "ModeTransition",
+    "SystemPromptManager",
     # Component system
     "AgentComponentType",
     "MessageInjectorComponent",
