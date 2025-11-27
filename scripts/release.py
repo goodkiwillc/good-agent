@@ -109,14 +109,19 @@ def update_changelog(version: str) -> None:
 
 
 def run_validations() -> None:
+    """Run validation commands (linting, compilation, docs build)."""
     commands = [
-        "uv sync --group dev",
         "uv run ruff check src scripts tests",
         "uv run python -m compileall src",
         "uv run mkdocs build --clean --site-dir site",
     ]
     for cmd in commands:
         run_command(cmd)
+
+
+def sync_lockfile() -> None:
+    """Sync uv.lock after version bump to include new version."""
+    run_command("uv sync --group dev")
 
 
 def create_tag(version: str) -> None:
@@ -173,6 +178,9 @@ def main() -> None:
 
     update_versions(next_version)
     update_changelog(next_version)
+
+    # Sync lockfile AFTER version bump so it includes the new version
+    sync_lockfile()
 
     files_to_add = [PYPROJECT_PATH, INIT_PATH]
     if CHANGELOG_PATH.exists():
