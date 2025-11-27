@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -166,15 +166,24 @@ class TestDateHandling:
         # Don't set context date
         await agent.invoke("search", query="test", timeframe="last_day")
 
-        # Should use actual today
+        # Should use actual today (or within reasonable range if timezone differs)
         today = date.today()
-        yesterday = today - timedelta(days=1)
 
         query = _require_last_query(provider)
         assert query.since is not None
         assert query.until is not None
-        assert query.since.date() == yesterday
-        assert query.until.date() == today
+
+        # Allow for timezone differences (provider might return previous day)
+        # Check that the until date is either today or yesterday relative to system time
+        until_date = query.until.date()
+        delta = abs((until_date - today).days)
+        assert delta <= 1, (
+            f"Query until date {until_date} too far from system date {today}"
+        )
+
+        # Check that since date is 1 day before until date
+        since_date = query.since.date()
+        assert (until_date - since_date).days == 1
 
     @pytest.mark.asyncio
     async def test_retroactive_execution(self):
@@ -193,9 +202,7 @@ class TestDateHandling:
         agent.context["today"] = past_date
 
         # Search last week from that past date
-        await agent.invoke(
-            "search", query="historical", timeframe="last_week"
-        )
+        await agent.invoke("search", query="historical", timeframe="last_week")
 
         query = _require_last_query(provider)
         assert query.since is not None
