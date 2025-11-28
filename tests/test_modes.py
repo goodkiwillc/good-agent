@@ -1123,3 +1123,171 @@ async def test_non_invokable_no_tool():
         info = agent.modes.get_info("private")
         assert info["invokable"] is False
         assert info["tool_name"] is None
+
+
+# =============================================================================
+# Phase 5: Standalone Modes Tests
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_standalone_mode_decorator():
+    """Test @mode() decorator creates StandaloneMode."""
+    from good_agent.agent.modes import StandaloneMode, mode
+
+    @mode("research")
+    async def research_mode(agent: Agent):
+        """Research mode for investigation."""
+        agent.mode.state["researching"] = True
+
+    # Decorator returns StandaloneMode
+    assert isinstance(research_mode, StandaloneMode)
+    assert research_mode.name == "research"
+    assert research_mode.handler is not None
+    assert "Research mode" in (research_mode.handler.__doc__ or "")
+
+
+@pytest.mark.asyncio
+async def test_standalone_mode_with_options():
+    """Test @mode() decorator with isolation and invokable options."""
+    from good_agent.agent.modes import IsolationLevel, StandaloneMode, mode
+
+    @mode("sandbox", isolation="fork", invokable=True, tool_name="start_sandbox")
+    async def sandbox_mode(agent: Agent):
+        """Sandbox mode with isolation."""
+        pass
+
+    assert isinstance(sandbox_mode, StandaloneMode)
+    assert sandbox_mode.name == "sandbox"
+    assert sandbox_mode.isolation == IsolationLevel.FORK
+    assert sandbox_mode.invokable is True
+    assert sandbox_mode.tool_name == "start_sandbox"
+
+
+@pytest.mark.asyncio
+async def test_modes_register_standalone():
+    """Test agent.modes.register() with StandaloneMode."""
+    from good_agent.agent.modes import mode
+
+    @mode("analysis")
+    async def analysis_mode(agent: Agent):
+        """Analysis mode."""
+        agent.mode.state["analyzing"] = True
+
+    agent = Agent("Test agent")
+
+    # Register standalone mode
+    agent.modes.register(analysis_mode)
+
+    # Mode should be registered
+    assert "analysis" in agent.modes.list_modes()
+
+    async with agent:
+        async with agent.modes["analysis"]:
+            with agent.mock("ok"):
+                await agent.call("test")
+            assert agent.modes.get_state("analyzing") is True
+
+
+@pytest.mark.asyncio
+async def test_modes_register_raw_handler():
+    """Test agent.modes.register() with raw handler function."""
+    agent = Agent("Test agent")
+
+    async def my_handler(agent: Agent):
+        """My custom handler."""
+        agent.mode.state["custom"] = True
+
+    # Register with explicit name
+    agent.modes.register(my_handler, name="custom_mode")
+
+    assert "custom_mode" in agent.modes.list_modes()
+
+    async with agent:
+        async with agent.modes["custom_mode"]:
+            with agent.mock("ok"):
+                await agent.call("test")
+            assert agent.modes.get_state("custom") is True
+
+
+@pytest.mark.asyncio
+async def test_modes_register_raw_handler_requires_name():
+    """Test agent.modes.register() raises error without name for raw handler."""
+    agent = Agent("Test agent")
+
+    async def anonymous_handler(agent: Agent):
+        pass
+
+    # Raw handler without @mode decorator requires explicit name
+    with pytest.raises(ValueError, match="name is required"):
+        agent.modes.register(anonymous_handler)
+
+
+@pytest.mark.asyncio
+async def test_agent_constructor_with_modes():
+    """Test Agent(modes=[...]) constructor parameter."""
+    from good_agent.agent.modes import mode
+
+    @mode("research", invokable=True)
+    async def research_mode(agent: Agent):
+        """Research mode."""
+        agent.mode.state["in_research"] = True
+
+    @mode("writing")
+    async def writing_mode(agent: Agent):
+        """Writing mode."""
+        agent.mode.state["in_writing"] = True
+
+    # Pass modes to constructor
+    agent = Agent("Test agent", modes=[research_mode, writing_mode])
+
+    # Both modes should be registered
+    assert "research" in agent.modes.list_modes()
+    assert "writing" in agent.modes.list_modes()
+
+    # Invokable mode should have tool
+    from good_agent.tools import ToolManager
+
+    async with agent:
+        tool_manager = agent[ToolManager]
+        assert "enter_research_mode" in tool_manager._tools
+
+
+@pytest.mark.asyncio
+async def test_standalone_mode_with_register_invokable():
+    """Test registering invokable standalone mode generates tool."""
+    from good_agent.agent.modes import mode
+    from good_agent.tools import ToolManager
+
+    @mode("planning", invokable=True)
+    async def planning_mode(agent: Agent):
+        """Enter planning mode."""
+        agent.mode.state["planning"] = True
+
+    agent = Agent("Test agent")
+    agent.modes.register(planning_mode)
+
+    async with agent:
+        tool_manager = agent[ToolManager]
+        assert "enter_planning_mode" in tool_manager._tools
+
+        # Tool should work
+        tool = tool_manager["enter_planning_mode"]
+        result = await tool()
+        assert "Will enter planning mode" in result.response
+
+
+@pytest.mark.asyncio
+async def test_standalone_mode_callable():
+    """Test StandaloneMode is callable (delegates to handler)."""
+    from good_agent.agent.modes import mode
+
+    @mode("test_mode")
+    async def test_handler(agent: Agent):
+        """Test handler."""
+        return "handler_called"
+
+    # Can call the StandaloneMode directly (for testing)
+    agent = Agent("Test agent")
+    result = await test_handler(agent)
+    assert result == "handler_called"

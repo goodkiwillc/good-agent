@@ -1064,3 +1064,147 @@ class ModeManager:
                 "A mode change is already scheduled for the next call; "
                 "wait for it to complete before scheduling another."
             )
+
+    def register(
+        self,
+        mode_or_handler: StandaloneMode | ModeHandler,
+        name: str | None = None,
+    ) -> None:
+        """Register a standalone mode or handler function with this agent.
+
+        Args:
+            mode_or_handler: Either a StandaloneMode created by @mode() decorator
+                or a raw handler function
+            name: Mode name (required if passing a raw handler, optional for StandaloneMode)
+
+        Raises:
+            ValueError: If name is required but not provided
+            TypeError: If mode_or_handler is not a valid type
+
+        Example:
+            # Register a standalone mode
+            @mode('research')
+            async def research_mode(agent: Agent):
+                agent.prompt.append("Research mode active")
+
+            agent.modes.register(research_mode)
+
+            # Register with custom name
+            agent.modes.register(some_handler, name='custom')
+        """
+        if isinstance(mode_or_handler, StandaloneMode):
+            standalone = mode_or_handler
+            mode_name = name or standalone.name
+            handler = standalone.handler
+            isolation = standalone.isolation
+            invokable = standalone.invokable
+            tool_name = standalone.tool_name
+        elif callable(mode_or_handler):
+            if name is None:
+                raise ValueError(
+                    "name is required when registering a raw handler function. "
+                    "Use @mode('name') decorator or pass name='...' parameter."
+                )
+            mode_name = name
+            handler = mode_or_handler
+            isolation = IsolationLevel.NONE
+            invokable = False
+            tool_name = None
+        else:
+            raise TypeError(
+                f"Expected StandaloneMode or callable, got {type(mode_or_handler).__name__}"
+            )
+
+        # Extract description from docstring
+        description = handler.__doc__
+
+        # Create and register ModeInfo
+        mode_info = ModeInfo(
+            mode_name,
+            handler,
+            description,
+            isolation=isolation,
+            invokable=invokable,
+            tool_name=tool_name,
+        )
+        self._registry[mode_name] = mode_info
+
+        # Generate and register tool if invokable
+        if invokable:
+            self._register_invokable_tool(mode_info)
+
+
+@dataclass
+class StandaloneMode:
+    """A mode definition created by the @mode() decorator.
+
+    This allows defining modes outside of an agent class and registering
+    them later via agent.modes.register() or Agent(modes=[...]).
+    """
+
+    name: str
+    handler: ModeHandler
+    isolation: IsolationLevel = IsolationLevel.NONE
+    invokable: bool = False
+    tool_name: str | None = None
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Allow calling the underlying handler directly (for testing)."""
+        return self.handler(*args, **kwargs)
+
+
+def mode(
+    name: str,
+    *,
+    isolation: IsolationLevel | str = IsolationLevel.NONE,
+    invokable: bool = False,
+    tool_name: str | None = None,
+) -> Callable[[ModeHandler], StandaloneMode]:
+    """Decorator for defining standalone modes outside of an agent.
+
+    Creates a StandaloneMode that can be registered with an agent later
+    via agent.modes.register() or passed to Agent(modes=[...]).
+
+    Args:
+        name: Name of the mode
+        isolation: Isolation level ('none', 'config', 'thread', 'fork')
+        invokable: If True, generates a tool for agent to enter this mode
+        tool_name: Custom name for generated tool (default: 'enter_{name}_mode')
+
+    Returns:
+        Decorator that wraps handler in StandaloneMode
+
+    Example:
+        @mode('research', invokable=True)
+        async def research_mode(agent: Agent):
+            '''Enter research mode for investigation.'''
+            agent.prompt.append("Focus on thorough research.")
+
+        # Later, register with an agent
+        agent.modes.register(research_mode)
+
+        # Or pass to constructor
+        agent = Agent("System prompt", modes=[research_mode])
+    """
+    # Convert string to IsolationLevel if needed
+    if isinstance(isolation, str):
+        try:
+            isolation_level = IsolationLevel[isolation.upper()]
+        except KeyError:
+            valid = ", ".join(level.name.lower() for level in IsolationLevel)
+            raise ValueError(
+                f"Invalid isolation level '{isolation}'. Must be one of: {valid}"
+            ) from None
+    else:
+        isolation_level = isolation
+
+    def decorator(func: ModeHandler) -> StandaloneMode:
+        return StandaloneMode(
+            name=name,
+            handler=func,
+            isolation=isolation_level,
+            invokable=invokable,
+            tool_name=tool_name,
+        )
+
+    return decorator

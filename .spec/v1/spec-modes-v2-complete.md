@@ -715,10 +715,19 @@ def _wrap_legacy_handler(handler):
 - Description extracted from first line of handler docstring
 - 6 new tests covering invokable modes (44 total mode tests)
 
-### Phase 5: Standalone Modes
-- [ ] `@mode('name')` decorator works outside agent
-- [ ] `agent.modes.register(mode_fn)` works
-- [ ] `Agent(modes=[...])` constructor works
+### Phase 5: Standalone Modes ✅ COMPLETE (2024-11-27)
+- [x] `@mode('name')` decorator works outside agent
+- [x] `agent.modes.register(mode_fn)` works
+- [x] `Agent(modes=[...])` constructor works
+
+**Implementation Notes:**
+- Added `StandaloneMode` dataclass to hold mode configuration
+- Added `mode()` decorator function for defining modes outside agent
+- Added `ModeManager.register()` method to register StandaloneMode or raw handlers
+- Added `modes` parameter to Agent constructor
+- Mode registration deferred until after ToolManager is available (for invokable tools)
+- 8 new tests covering standalone modes (52 total mode tests)
+- Exported `mode` and `StandaloneMode` from `good_agent` and `good_agent.agent`
 
 ### Phase 6: Declarative Tool Invocation
 - [ ] `agent.invoke(tool_name, **params)` works

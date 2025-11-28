@@ -38,8 +38,10 @@ from good_agent.agent.messages import MessageManager
 from good_agent.agent.modes import (
     MODE_HANDLER_SKIP_KWARG,
     ModeAccessor,
+    ModeHandler,
     ModeManager,
     ModeTransition,
+    StandaloneMode,
 )
 from good_agent.agent.state import AgentState, AgentStateMachine
 from good_agent.agent.system_prompt import SystemPromptManager
@@ -413,6 +415,7 @@ class Agent(EventRouter):
         template_manager: TemplateManager | None = None,
         mock: AgentMockInterface | None = None,
         extensions: list[AgentComponent] | None = None,
+        modes: list[StandaloneMode | ModeHandler] | None = None,
         _event_trace: bool | None = None,
         **config: Unpack[AgentConfigParameters],
     ):
@@ -430,6 +433,7 @@ class Agent(EventRouter):
             template_manager: Template processor (creates default if None)
             mock: Mock interface for testing (creates default if None)
             extensions: List of AgentComponent instances
+            modes: List of StandaloneMode or handler functions to register
             _event_trace: Enable event tracing for debugging
             **config: Configuration parameters (model, temperature, tools, etc.)
 
@@ -499,6 +503,9 @@ class Agent(EventRouter):
         self._mode_manager = ModeManager(self)
         self._mode_accessor = ModeAccessor(self._mode_manager)
 
+        # Store modes for registration after extensions are ready
+        self._pending_modes = modes
+
         # Initialize system prompt manager
         self._system_prompt_manager = SystemPromptManager(self)
 
@@ -546,6 +553,23 @@ class Agent(EventRouter):
 
         # Validate component dependencies after all are registered
         self._component_registry.validate_component_dependencies()
+
+        # Register any modes passed to constructor (after ToolManager is available)
+        if self._pending_modes:
+            for mode_def in self._pending_modes:
+                if isinstance(mode_def, StandaloneMode):
+                    self._mode_manager.register(mode_def)
+                elif callable(mode_def):
+                    # Raw handler - need to extract name from function
+                    name = getattr(mode_def, "__name__", None)
+                    if name:
+                        self._mode_manager.register(mode_def, name=name)
+                    else:
+                        raise ValueError(
+                            f"Cannot determine name for mode handler {mode_def}. "
+                            "Use @mode('name') decorator or pass a StandaloneMode."
+                        )
+            self._pending_modes = None  # Clear after registration
 
         if system_prompt_parts:
             self.set_system_message(*system_prompt_parts)

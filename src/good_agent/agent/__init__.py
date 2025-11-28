@@ -15,6 +15,8 @@ from good_agent.agent.modes import (
     ModeContext,
     ModeManager,
     ModeTransition,
+    StandaloneMode,
+    mode,
 )
 from good_agent.agent.state import AgentState, AgentStateMachine
 from good_agent.agent.system_prompt import SystemPromptManager
@@ -40,5 +42,7 @@ __all__: list[str] = [
     "ModeManager",
     "ModeContext",
     "ModeTransition",
+    "StandaloneMode",
     "SystemPromptManager",
+    "mode",
 ]
