@@ -1,10 +1,10 @@
-"""Demonstrate agents self-switching modes via tools and transitions."""
+"""Demonstrate agents self-switching modes via tools and transitions (v2 API)."""
 
 from __future__ import annotations
 
 import asyncio
 
-from good_agent import Agent, ModeContext, tool
+from good_agent import Agent, tool
 from good_agent.extensions.template_manager.injection import ContextValue
 from good_agent.messages import SystemMessage
 
@@ -23,10 +23,10 @@ async def enter_research_mode(
 async def exit_mode_after_response(agent: Agent) -> str:
     """Exit whatever mode is currently active on the next call."""
 
-    if not agent.current_mode:
+    if not agent.mode.name:
         return "Not in a mode right now."
     agent.modes.schedule_mode_exit()
-    return f"Will exit {agent.current_mode} mode after this response."
+    return f"Will exit {agent.mode.name} mode after this response."
 
 
 async def main() -> None:
@@ -39,23 +39,23 @@ async def main() -> None:
     )
 
     @agent.modes("research")
-    async def research_mode(ctx: ModeContext):
-        topic = ctx.state.get("topic", "the user's request")
-        ctx.add_system_message(f"Research mode: dig deep into {topic} with citations.")
+    async def research_mode(agent: Agent):
+        topic = agent.mode.state.get("topic", "the user's request")
+        agent.prompt.append(f"Research mode: dig deep into {topic} with citations.")
 
         # After one research call, automatically transition to writing
-        if ctx.state.get("handoff_to_writing"):
-            return ctx.switch_mode("writing", report_topic=topic)
+        if agent.mode.state.get("handoff_to_writing"):
+            return agent.mode.switch("writing", report_topic=topic)
 
-        ctx.state["handoff_to_writing"] = True
+        agent.mode.state["handoff_to_writing"] = True
 
     @agent.modes("writing")
-    async def writing_mode(ctx: ModeContext):
-        report_topic = ctx.state.get("report_topic", "the prior topic")
-        ctx.add_system_message(
+    async def writing_mode(agent: Agent):
+        report_topic = agent.mode.state.get("report_topic", "the prior topic")
+        agent.prompt.append(
             f"Writing mode: produce a structured report about {report_topic}."
         )
-        return ctx.exit_mode()
+        return agent.mode.exit()
 
     async with agent:
         with agent.mock(
@@ -74,19 +74,19 @@ async def main() -> None:
             )
             reply = await agent.call("Take a closer look")
             print(reply.content)
-            print(f"Current mode: {agent.current_mode}")
+            print(f"Current mode: {agent.mode.name}")
             print(f"Mode state: {agent.modes.get_state('topic')}")
 
             print("\n=== Automatic transition into writing mode ===")
             reply = await agent.call("Ready to summarize?")
             print(reply.content)
-            print(f"Current mode after handoff: {agent.current_mode}")
+            print(f"Current mode after handoff: {agent.mode.name}")
 
             print("\n=== Exit mode via tool ===")
             await exit_mode_after_response(_agent=agent)  # type: ignore[call-arg,misc]
             reply = await agent.call("Wrap up")
             print(reply.content)
-            print(f"Current mode: {agent.current_mode}")
+            print(f"Current mode: {agent.mode.name}")
 
 
 if __name__ == "__main__":

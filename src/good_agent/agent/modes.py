@@ -475,8 +475,10 @@ class ModeStack:
         return False
 
 
-# Type for mode handler functions
-ModeHandler = Callable[[ModeContext], Awaitable[Any]]
+# Type for mode handler functions (supports both legacy ModeContext and v2 Agent styles)
+ModeHandler = (
+    Callable[[ModeContext], Awaitable[Any]] | Callable[["Agent"], Awaitable[Any]]
+)
 
 
 class ModeContextManager:
@@ -789,7 +791,9 @@ class ModeManager:
                 stacklevel=3,
             )
             ctx = self.create_context()
-            return await handler(ctx)
+            # Type ignore: handler is typed as ModeHandler union but runtime dispatch
+            # ensures it actually accepts ModeContext for LEGACY style
+            return await handler(ctx)  # type: ignore[arg-type]
 
     def _create_isolation_snapshot(
         self, mode_name: str, isolation: IsolationLevel

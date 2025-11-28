@@ -1,6 +1,6 @@
 # Agent Modes
 
-!!! warning "⚠️ Under Active Development"
+!!! warning "Under Active Development"
     This project is in early-stage development. APIs may change, break, or be completely rewritten without notice. Use at your own risk in production environments.
 
 Agent modes provide a powerful way to give your agents distinct behavioral states, specialized tools, and contextual knowledge. Modes enable agents to switch between different "personalities" or capabilities dynamically, while maintaining state isolation and composability.
@@ -9,12 +9,15 @@ Agent modes provide a powerful way to give your agents distinct behavioral state
 
 ### Key Concepts
 
-- **Mode Handlers** - Functions that configure agent behavior when entering a mode
-- **State Scoping** - Each mode maintains isolated state with inheritance
+- **Mode Handlers** - Functions that configure agent behavior when entering a mode (receive `agent: Agent` parameter)
+- **State Scoping** - Each mode maintains isolated state with inheritance via `agent.mode.state`
 - **Mode Stacking** - Modes can be nested and composed hierarchically
-- **Transitions** - Modes can automatically switch to other modes
+- **Transitions** - Modes can automatically switch to other modes via `agent.mode.switch()`
 - **Scheduling** - Mode changes can be scheduled for future calls
 - **Tool Integration** - Tools can trigger mode switches programmatically
+- **Isolation Levels** - Control how much state isolation each mode has (`none`, `config`, `thread`, `fork`)
+- **Invokable Modes** - Generate tools that allow the agent to switch modes autonomously
+- **Standalone Modes** - Define modes outside the agent class using the `@mode()` decorator
 
 ### Benefits
 
@@ -23,6 +26,42 @@ Agent modes provide a powerful way to give your agents distinct behavioral state
 - **Dynamic Adaptation** - Switch agent capabilities based on user needs
 - **Workflow Management** - Chain modes together for complex multi-step processes
 - **State Persistence** - Maintain mode-specific state across conversations
+
+## API Reference
+
+### Mode Handler Signature (v2)
+
+Mode handlers receive the agent instance directly:
+
+```python
+@agent.modes("research")
+async def research_mode(agent: Agent):
+    """Handler receives agent: Agent parameter."""
+    # Access mode state via agent.mode.state
+    agent.mode.state["key"] = "value"
+    
+    # Add system prompt via agent.prompt.append()
+    agent.prompt.append("You are in research mode.")
+    
+    # Access mode info via agent.mode
+    print(agent.mode.name)   # Current mode name
+    print(agent.mode.stack)  # Full mode stack
+    
+    # Transition to another mode
+    return agent.mode.switch("writing")
+```
+
+### Key Properties
+
+| Property | Description |
+|----------|-------------|
+| `agent.mode.name` | Current mode name (or `None` if not in a mode) |
+| `agent.mode.stack` | List of all active modes (stack) |
+| `agent.mode.state` | Dict-like access to current mode's state |
+| `agent.mode.in_mode(name)` | Check if a mode is active anywhere in the stack |
+| `agent.mode.switch(name)` | Request transition to another mode |
+| `agent.mode.exit()` | Request exit from current mode |
+| `agent.prompt.append(msg)` | Add to system prompt (auto-restored on mode exit) |
 
 ## Basic Mode Usage
 
@@ -194,12 +233,79 @@ Optimize mode state handling:
 --8<-- "examples/docs/modes_performance_efficiency.py"
 ```
 
-## Complete Examples
+## Isolation Levels
 
-Here's a comprehensive example demonstrating advanced mode usage:
+Control how much state isolation each mode has:
 
 ```python
---8<-- "examples/modes/comprehensive_modes.py"
+from good_agent import Agent
+
+async with Agent("Isolated agent") as agent:
+    # No isolation (default) - shared state and messages
+    @agent.modes("shared", isolation="none")
+    async def shared_mode(agent: Agent):
+        pass
+    
+    # Config isolation - tools isolated, messages shared
+    @agent.modes("config_isolated", isolation="config")
+    async def config_mode(agent: Agent):
+        pass
+    
+    # Thread isolation - messages are a temp view, new ones kept
+    @agent.modes("threaded", isolation="thread")
+    async def thread_mode(agent: Agent):
+        pass
+    
+    # Fork isolation - complete isolation, nothing persists back
+    @agent.modes("forked", isolation="fork")
+    async def fork_mode(agent: Agent):
+        pass
+```
+
+## Invokable Modes
+
+Generate tools that allow the agent to switch modes autonomously:
+
+```python
+from good_agent import Agent
+
+async with Agent("Self-switching agent") as agent:
+    # Creates a tool called "enter_research_mode"
+    @agent.modes("research", invokable=True)
+    async def research_mode(agent: Agent):
+        """Enter research mode for deep investigation."""
+        agent.prompt.append("Focus on research and citations.")
+    
+    # Custom tool name
+    @agent.modes("writing", invokable=True, tool_name="start_writing")
+    async def writing_mode(agent: Agent):
+        """Start writing mode for drafting content."""
+        agent.prompt.append("Focus on clear, concise writing.")
+```
+
+## Standalone Modes
+
+Define modes outside the agent class for reusability:
+
+```python
+from good_agent import Agent, mode
+
+# Define standalone modes
+@mode("research", invokable=True)
+async def research_mode(agent: Agent):
+    """Reusable research mode."""
+    agent.prompt.append("Research mode active.")
+
+@mode("writing", isolation="thread")
+async def writing_mode(agent: Agent):
+    """Reusable writing mode."""
+    agent.prompt.append("Writing mode active.")
+
+# Register with an agent
+agent = Agent("My agent", modes=[research_mode, writing_mode])
+
+# Or register after creation
+agent.modes.register(research_mode)
 ```
 
 ## Best Practices

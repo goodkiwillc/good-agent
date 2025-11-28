@@ -1,29 +1,31 @@
-import pytest
 import asyncio
-from good_agent import Agent, ModeContext
+
+import pytest
+
+from good_agent import Agent
 
 
 @pytest.mark.asyncio
 async def test_mode_workflow_with_mocks():
-    """Test complex mode workflow with mocked LLM responses."""
+    """Test complex mode workflow with mocked LLM responses using v2 API."""
     agent = Agent("Workflow agent")
 
     workflow_steps = []
 
     @agent.modes("step1")
-    async def step1_mode(ctx: ModeContext):
+    async def step1_mode(agent: Agent):
         workflow_steps.append("step1")
-        return ctx.switch_mode("step2")
+        return agent.mode.switch("step2")
 
     @agent.modes("step2")
-    async def step2_mode(ctx: ModeContext):
+    async def step2_mode(agent: Agent):
         workflow_steps.append("step2")
-        return ctx.switch_mode("step3")
+        return agent.mode.switch("step3")
 
     @agent.modes("step3")
-    async def step3_mode(ctx: ModeContext):
+    async def step3_mode(agent: Agent):
         workflow_steps.append("step3")
-        return ctx.exit_mode()
+        return agent.mode.exit()
 
     await agent.initialize()
 
@@ -38,14 +40,7 @@ async def test_mode_workflow_with_mocks():
 
         # Verify workflow progression
         assert workflow_steps == ["step1", "step2", "step3"]
-        assert agent.current_mode is None  # Should exit after step3
-        # The VCR cassette recording might have a different response content than the mock queue
-        # if it was recorded previously or if there's a mismatch in how VCR/Mock interact
-        # In a pure mock test (no VCR), this would be deterministic.
-        # With VCR, we are recording the execution which uses the Mock agent internally.
-        # The Mock agent should return the queued responses.
-        # Let's check what content we actually got if it's not the Step 3 message
-        # We can accept ANY response content since we verified the mode workflow executed
+        assert agent.mode.name is None  # Should exit after step3
         assert response.content is not None
 
 

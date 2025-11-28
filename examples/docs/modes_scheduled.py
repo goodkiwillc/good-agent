@@ -1,6 +1,6 @@
 import asyncio
 
-from good_agent import Agent, ModeContext, tool
+from good_agent import Agent, tool
 
 
 @tool
@@ -13,11 +13,11 @@ async def enter_research_mode(agent: Agent) -> str:
 @tool
 async def exit_current_mode(agent: Agent) -> str:
     """Schedule exiting current mode."""
-    if not agent.current_mode:
+    if not agent.mode.name:
         return "Not currently in any mode."
 
     agent.modes.schedule_mode_exit()
-    return f"Will exit {agent.current_mode} mode after this response."
+    return f"Will exit {agent.mode.name} mode after this response."
 
 
 async def main():
@@ -27,26 +27,26 @@ async def main():
     ) as agent:
 
         @agent.modes("research")
-        async def research_mode(ctx: ModeContext):
-            ctx.add_system_message("Research mode active.")
+        async def research_mode(agent: Agent):
+            agent.prompt.append("Research mode active.")
 
         # Normal call
         await agent.call("Hello")
-        print(f"Mode: {agent.current_mode}")  # None
+        print(f"Mode: {agent.mode.name}")  # None
 
         # Tool schedules research mode
         await enter_research_mode(_agent=agent)  # type: ignore[call-arg,misc]
 
         # Next call will be in research mode
         await agent.call("Tell me about AI")
-        print(f"Mode: {agent.current_mode}")  # "research"
+        print(f"Mode: {agent.mode.name}")  # "research"
 
         # Tool schedules mode exit
         await exit_current_mode(_agent=agent)  # type: ignore[call-arg,misc]
 
         # Next call will be in normal mode
         await agent.call("Thanks!")
-        print(f"Mode: {agent.current_mode}")  # None
+        print(f"Mode: {agent.mode.name}")  # None
 
 
 if __name__ == "__main__":

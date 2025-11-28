@@ -1,10 +1,10 @@
-"""Tools that schedule mode switches for the next agent call."""
+"""Tools that schedule mode switches for the next agent call (v2 API)."""
 
 from __future__ import annotations
 
 import asyncio
 
-from good_agent import Agent, ModeContext, tool
+from good_agent import Agent, tool
 from good_agent.messages import SystemMessage
 
 
@@ -19,11 +19,11 @@ async def enter_research_mode(agent: Agent) -> str:
 async def exit_current_mode(agent: Agent) -> str:
     """Schedule exiting the current mode on the next call."""
 
-    if not agent.current_mode:
+    if not agent.mode.name:
         return "Not in any mode right now."
 
     agent.modes.schedule_mode_exit()
-    return f"Will exit {agent.current_mode} mode after this response."
+    return f"Will exit {agent.mode.name} mode after this response."
 
 
 async def main() -> None:
@@ -38,9 +38,9 @@ async def main() -> None:
     )
 
     @agent.modes("research")
-    async def research_mode(ctx: ModeContext):
-        ctx.add_system_message("Research mode: cite authoritative sources.")
-        ctx.state["tool_triggered"] = True
+    async def research_mode(agent: Agent):
+        agent.prompt.append("Research mode: cite authoritative sources.")
+        agent.mode.state["tool_triggered"] = True
 
     async with agent:
         with agent.mock(
@@ -56,13 +56,13 @@ async def main() -> None:
             await enter_research_mode(_agent=agent)  # type: ignore[call-arg,misc]
             response = await agent.call("Need deep research next")
             print(response.content)
-            print(f"Current mode: {agent.current_mode}")
+            print(f"Current mode: {agent.mode.name}")
 
             print("\n=== Tool schedules exit ===")
             await exit_current_mode(_agent=agent)  # type: ignore[call-arg,misc]
             response = await agent.call("Back to normal please")
             print(response.content)
-            print(f"Current mode: {agent.current_mode}")
+            print(f"Current mode: {agent.mode.name}")
 
 
 if __name__ == "__main__":

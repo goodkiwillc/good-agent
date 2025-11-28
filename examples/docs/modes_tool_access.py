@@ -1,5 +1,6 @@
 import asyncio
-from good_agent import Agent, ModeContext, tool
+
+from good_agent import Agent, tool
 
 
 # Research-specific tools
@@ -32,42 +33,35 @@ async def main():
     async with Agent("Multi-tool assistant") as agent:
 
         @agent.modes("research")
-        async def research_mode(ctx: ModeContext):
+        async def research_mode(agent: Agent):
             """Research mode with academic tools."""
-            ctx.add_system_message(
+            agent.prompt.append(
                 "Research mode: Use search_academic_papers and cite_source tools."
             )
 
-            # Context managers for tool registration are currently provided via
-            # agent.context_manager.temporary_tools() or context manager on agent.tools
-            # The example used agent.temporary_tools which might be a shortcut
-            # that existed in older versions or planned.
-            # Let's use the verified approach for now: registering tools on the fly
-
             # Register temporary tools
-            await ctx.agent.tools.register_tool(search_academic_papers)
-            await ctx.agent.tools.register_tool(cite_source)
+            await agent.tools.register_tool(search_academic_papers)
+            await agent.tools.register_tool(cite_source)
 
             try:
-                return await ctx.call()
+                return await agent.call()
             finally:
                 # Cleanup tools (manual context management simulation)
                 # In a real 'temporary_tools' context manager implementation, this would be automatic
-                # For this example, we'll leave them as is or rely on mode exit cleanup if implemented
                 pass
 
         @agent.modes("creative")
-        async def creative_mode(ctx: ModeContext):
+        async def creative_mode(agent: Agent):
             """Creative mode with storytelling tools."""
-            ctx.add_system_message(
+            agent.prompt.append(
                 "Creative mode: Use generate_character and story_prompt tools."
             )
 
             # Register temporary tools
-            await ctx.agent.tools.register_tool(generate_character)
-            await ctx.agent.tools.register_tool(story_prompt)
+            await agent.tools.register_tool(generate_character)
+            await agent.tools.register_tool(story_prompt)
 
-            return await ctx.call()
+            return await agent.call()
 
         # Usage - tools are automatically available in each mode
         async with agent.modes["research"]:

@@ -729,10 +729,17 @@ def _wrap_legacy_handler(handler):
 - 8 new tests covering standalone modes (52 total mode tests)
 - Exported `mode` and `StandaloneMode` from `good_agent` and `good_agent.agent`
 
-### Phase 6: Declarative Tool Invocation
-- [ ] `agent.invoke(tool_name, **params)` works
-- [ ] `agent.invoke(tool_instance, **params)` works
-- [ ] Works inside mode handlers
+### Phase 6: Declarative Tool Invocation ✅ COMPLETE (2024-11-28)
+- [x] `agent.invoke(tool_name, **params)` works
+- [x] `agent.invoke(tool_instance, **params)` works
+- [x] Works inside mode handlers
+
+**Implementation Notes:**
+- `agent.invoke()` method already exists in `Agent` class (src/good_agent/agent/core.py)
+- Supports tool invocation by name (string), Tool instance, or callable
+- Returns `ToolResponse` with proper typing via overloads
+- Can be used inside mode handlers to programmatically invoke tools
+- Also available via `agent.tools.invoke()` on ToolExecutor
 
 ---
 
