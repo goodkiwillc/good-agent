@@ -983,10 +983,10 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
                     and param_name not in kwargs
                 ):
                     context_value: _ContextValueDescriptor = param.default
-                    # Try to get from agent context
-                    if agent and hasattr(agent, "context"):
-                        # Try to get the value from context
-                        context_val = agent.context.get(context_value.name)
+                    # Try to get from agent vars (template variables)
+                    if agent and hasattr(agent, "vars"):
+                        # Try to get the value from vars
+                        context_val = agent.vars.get(context_value.name)
                         if context_val is not None:
                             kwargs[param_name] = context_val
                         elif context_value.default is not ContextValue._MISSING:  # type: ignore[attr-defined]
@@ -1000,10 +1000,10 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
                                 MissingContextValueError,
                             )
 
-                            # Get available keys from context if possible
+                            # Get available keys from vars if possible
                             available_keys = []
-                            if hasattr(agent.context, "as_dict"):
-                                available_keys = list(agent.context.as_dict().keys())
+                            if hasattr(agent.vars, "as_dict"):
+                                available_keys = list(agent.vars.as_dict().keys())
                             raise MissingContextValueError(
                                 context_value.name, available_keys
                             )

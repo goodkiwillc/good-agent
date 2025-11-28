@@ -112,15 +112,15 @@ class StatefulResource(ABC, Generic[T], metaclass=StatefulResourceMeta):
     async def __call__(self, agent: "Agent"):
         """Bind resource to agent temporarily.
 
-        Uses agent's thread_context and tools context managers for clean isolation.
+        Uses agent's branch and tools context managers for clean isolation.
         """
         # Initialize if needed
         if not self._initialized:
             await self.initialize()
             self._initialized = True
 
-        # Use thread context for message isolation
-        async with agent.thread_context() as messages:
+        # Use branch context for message isolation
+        async with agent.branch() as messages:
             # Update system message with edit context
             if messages[0] is not None and messages[0].role == "system":
                 original_content = messages[0].content

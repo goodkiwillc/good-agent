@@ -9,12 +9,12 @@ from good_agent.messages import (
 )
 
 
-class TestThreadContextMessageReplacement:
-    """Test ThreadContext with message replacement scenarios."""
+class TestBranchMessageReplacement:
+    """Test branch() with message replacement scenarios."""
 
     @pytest.mark.asyncio
-    async def test_thread_context_truncates_tool_messages(self):
-        """Test that ThreadContext can truncate tool messages and restore them."""
+    async def test_branch_truncates_tool_messages(self):
+        """Test that branch() can truncate tool messages and restore them."""
 
         # Create agent with a tool
         @tool
@@ -63,8 +63,8 @@ class TestThreadContextMessageReplacement:
         )  # system + user + assistant + tool_call + tool_response + assistant
         original_last_msg = agent.messages[-1]
 
-        # Use ThreadContext to truncate before tool messages
-        async with agent.thread_context(truncate_at=3) as ctx:
+        # Use branch to truncate before tool messages
+        async with agent.branch(truncate_at=3) as ctx:
             # Should only have system + first user + first assistant
             assert len(ctx.messages) == 3
             assert isinstance(ctx.messages[0], SystemMessage)
@@ -102,8 +102,8 @@ class TestThreadContextMessageReplacement:
         await agent.events.close()
 
     @pytest.mark.asyncio
-    async def test_thread_context_replace_messages_before_fork(self):
-        """Test replacing messages before the fork point in ThreadContext."""
+    async def test_branch_replace_messages_before_fork(self):
+        """Test replacing messages before the fork point in branch()."""
         agent = Agent("You are a helpful assistant")
         await agent.initialize()
 
@@ -119,8 +119,8 @@ class TestThreadContextMessageReplacement:
         original_ids = [msg.id for msg in agent.messages]
         original_version_count = agent._version_manager.version_count
 
-        # Use ThreadContext to truncate at message 2 (account for system message)
-        async with agent.thread_context(truncate_at=5) as ctx:
+        # Use Branch to truncate at message 2 (account for system message)
+        async with agent.branch(truncate_at=5) as ctx:
             # Should have system + first 4 messages (up to Response 2)
             assert len(ctx.messages) == 5
 
@@ -160,8 +160,8 @@ class TestThreadContextMessageReplacement:
         await agent.events.close()
 
     @pytest.mark.asyncio
-    async def test_thread_context_multiple_truncations(self):
-        """Test multiple nested truncations with ThreadContext."""
+    async def test_branch_multiple_truncations(self):
+        """Test multiple nested truncations with Branch."""
         agent = Agent("You are a helpful assistant")
         await agent.initialize()
 
@@ -175,7 +175,7 @@ class TestThreadContextMessageReplacement:
         original_ids = [msg.id for msg in agent.messages]
 
         # First context: truncate to system + 6 messages
-        async with agent.thread_context(truncate_at=7) as ctx1:
+        async with agent.branch(truncate_at=7) as ctx1:
             assert len(ctx1.messages) == 7
 
             # Modify in first context
@@ -183,7 +183,7 @@ class TestThreadContextMessageReplacement:
             assert len(ctx1.messages) == 8
 
             # Nested context: further truncate to system + 4
-            async with ctx1.thread_context(truncate_at=5) as ctx2:
+            async with ctx1.branch(truncate_at=5) as ctx2:
                 assert len(ctx2.messages) == 5
 
                 # Replace a message in nested context
@@ -212,8 +212,8 @@ class TestThreadContextMessageReplacement:
         await agent.events.close()
 
     @pytest.mark.asyncio
-    async def test_thread_context_with_version_revert(self):
-        """Test ThreadContext combined with version reverting."""
+    async def test_branch_with_version_revert(self):
+        """Test Branch combined with version reverting."""
         agent = Agent("You are a helpful assistant")
         await agent.initialize()
 
@@ -231,8 +231,8 @@ class TestThreadContextMessageReplacement:
 
         assert len(agent.messages) == 6  # system + 5 user messages
 
-        # Use ThreadContext
-        async with agent.thread_context() as ctx:
+        # Use Branch
+        async with agent.branch() as ctx:
             # Revert to original state within context
             ctx.revert_to_version(version_after_original - 1)
 
@@ -244,7 +244,7 @@ class TestThreadContextMessageReplacement:
             ctx.append("Added after revert")
             assert len(ctx.messages) == 5
 
-        # After context: ThreadContext without truncate_at restores original state
+        # After context: Branch without truncate_at restores original state
         # Since we reverted to 4 and added 1 (=5), which is less than original 6,
         # no new messages are appended beyond the original
         assert len(agent.messages) == 6
@@ -260,8 +260,8 @@ class TestThreadContextMessageReplacement:
         await agent.events.close()
 
     @pytest.mark.asyncio
-    async def test_fork_context_preserves_original(self):
-        """Test that ForkContext completely isolates changes."""
+    async def test_isolated_preserves_original(self):
+        """Test that Isolated completely isolates changes."""
         agent = Agent("You are a helpful assistant")
         await agent.initialize()
 
@@ -275,8 +275,8 @@ class TestThreadContextMessageReplacement:
         original_count = len(agent.messages)
         original_ids = [msg.id for msg in agent.messages]
 
-        # Use ForkContext to create isolated changes
-        async with agent.fork_context(truncate_at=3) as fork:
+        # Use Isolated to create isolated changes
+        async with agent.isolated(truncate_at=3) as fork:
             # Fork only has system + first 2 messages
             assert len(fork.messages) == 3
 
@@ -304,8 +304,8 @@ class TestThreadContextMessageReplacement:
         await agent.events.close()
 
     @pytest.mark.asyncio
-    async def test_thread_context_with_system_message_replacement(self):
-        """Test that system messages can be replaced in ThreadContext."""
+    async def test_branch_with_system_message_replacement(self):
+        """Test that system messages can be replaced in Branch."""
         agent = Agent("Original system prompt")
         await agent.initialize()
 
@@ -314,8 +314,8 @@ class TestThreadContextMessageReplacement:
 
         original_system = agent.messages[0]
 
-        # Use ThreadContext to replace system message
-        async with agent.thread_context() as ctx:
+        # Use Branch to replace system message
+        async with agent.branch() as ctx:
             # Replace system message in context
             ctx.messages[0] = SystemMessage(
                 content_parts=[TextContentPart(text="Modified system prompt")]

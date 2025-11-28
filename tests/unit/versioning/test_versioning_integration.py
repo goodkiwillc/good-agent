@@ -105,8 +105,8 @@ class TestVersioningWithAgentOperations:
         await agent.events.close()
 
     @pytest.mark.asyncio
-    async def test_thread_context_with_call(self, agent_with_mock_llm):
-        """Test ThreadContext with actual call() operations."""
+    async def test_branch_with_call(self, agent_with_mock_llm):
+        """Test branch() with actual call() operations."""
         agent, _ = agent_with_mock_llm
 
         # Add some initial messages
@@ -115,8 +115,8 @@ class TestVersioningWithAgentOperations:
 
         original_count = len(agent.messages)
 
-        # Use thread context to truncate and add new message
-        async with agent.thread_context(truncate_at=3) as ctx_agent:
+        # Use branch to truncate and add new message
+        async with agent.branch(truncate_at=3) as ctx_agent:
             # Should only see system + first Q&A
             assert len(ctx_agent.messages) == 3
 
@@ -133,8 +133,8 @@ class TestVersioningWithAgentOperations:
         await agent.events.close()
 
     @pytest.mark.asyncio
-    async def test_fork_context_with_call(self, agent_with_mock_llm):
-        """Test ForkContext with actual call() operations."""
+    async def test_isolated_with_call(self, agent_with_mock_llm):
+        """Test isolated() with actual call() operations."""
         agent, _ = agent_with_mock_llm
 
         # Add initial messages
@@ -142,8 +142,8 @@ class TestVersioningWithAgentOperations:
         original_count = len(agent.messages)
         original_version_count = agent._version_manager.version_count
 
-        # Use fork context
-        async with agent.fork_context() as forked:
+        # Use isolated session
+        async with agent.isolated() as forked:
             # Forked agent should have same messages
             assert len(forked.messages) == original_count
 
@@ -454,8 +454,8 @@ class TestEdgeCases:
         with pytest.raises(IndexError):
             agent.revert_to_version(0)
 
-        # Thread context should work
-        async with agent.thread_context() as ctx:
+        # Branch should work
+        async with agent.branch() as ctx:
             assert len(ctx.messages) == 0
             ctx.append("New message")
 

@@ -144,8 +144,8 @@ class TestVersioningWithRealOperations:
 
         initial_versions = agent._version_manager.version_count
 
-        # ThreadContext with truncation
-        async with agent.thread_context(truncate_at=2) as ctx:
+        # Branch with truncation
+        async with agent.branch(truncate_at=2) as ctx:
             # Truncation creates new version
             assert agent._version_manager.version_count > initial_versions
             assert len(ctx.messages) == 2
@@ -159,8 +159,8 @@ class TestVersioningWithRealOperations:
         final_versions = agent._version_manager.version_count
         assert final_versions > initial_versions
 
-        # ForkContext
-        async with agent.fork_context() as forked:
+        # Isolated session
+        async with agent.isolated() as forked:
             # Forked has separate version manager
             assert forked._version_manager is not agent._version_manager
 

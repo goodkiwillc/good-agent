@@ -3,8 +3,8 @@ from good_agent import Agent, tool
 
 
 @pytest.mark.asyncio
-async def test_full_integration_with_thread_context_and_tools():
-    """Test that StatefulResource properly uses both thread_context and tools."""
+async def test_full_integration_with_branch_and_tools():
+    """Test that StatefulResource properly uses both branch and tools."""
     from good_agent.resources import EditableResource
 
     # Create an agent with some default tools
@@ -26,22 +26,22 @@ async def test_full_integration_with_thread_context_and_tools():
     messages_modified = False
     tools_replaced = False
 
-    # Mock thread_context to track calls
-    original_thread_context = agent._context_manager.thread_context
+    # Mock branch to track calls (internal API via thread_context)
+    original_branch = agent._context_manager.thread_context
 
     from contextlib import asynccontextmanager
 
     @asynccontextmanager
-    async def tracking_thread_context(truncate_at: int | None = None):
+    async def tracking_branch(truncate_at: int | None = None):
         nonlocal messages_modified
-        async with original_thread_context(truncate_at) as messages:
+        async with original_branch(truncate_at) as messages:
             original_content = messages[0].content if messages else None
             yield messages
             # Check if system message was modified
             if messages and messages[0].content != original_content:
                 messages_modified = True
 
-    setattr(agent._context_manager, "thread_context", tracking_thread_context)
+    setattr(agent._context_manager, "thread_context", tracking_branch)
 
     # Use the resource
     async with resource(agent):
@@ -72,8 +72,8 @@ async def test_full_integration_with_thread_context_and_tools():
     # Resource should maintain its state
     assert resource.state == "Hello universe"
 
-    # Restore original thread_context
-    setattr(agent._context_manager, "thread_context", original_thread_context)
+    # Restore original branch
+    setattr(agent._context_manager, "thread_context", original_branch)
 
 
 @pytest.mark.asyncio

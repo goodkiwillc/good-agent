@@ -7,7 +7,7 @@ async def main():
         agent.append("Shared context")
 
         # Fork for parallel processing
-        async with agent.fork_context() as fork1, agent.fork_context() as fork2:
+        async with agent.isolated() as fork1, agent.isolated() as fork2:
             # Each fork has independent message history
             task1 = asyncio.create_task(fork1.call("Process option A"))
             task2 = asyncio.create_task(fork2.call("Process option B"))

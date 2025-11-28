@@ -130,28 +130,28 @@ class TestStatefulResourceBase:
         resource = TestResource("doc")
 
         async with Agent("Original system prompt") as agent:
-            # Track if thread_context was called
+            # Track if branch was called
             context_called = False
-            original_thread_context = agent._context_manager.thread_context
+            original_branch = agent._context_manager.thread_context
 
             from contextlib import asynccontextmanager
 
             @asynccontextmanager
-            async def mock_thread_context(truncate_at: int | None = None):
+            async def mock_branch(truncate_at: int | None = None):
                 nonlocal context_called
                 context_called = True
-                async with original_thread_context(truncate_at) as messages:
+                async with original_branch(truncate_at) as messages:
                     yield messages
 
-            # Replace thread_context temporarily
-            setattr(agent._context_manager, "thread_context", mock_thread_context)
+            # Replace thread_context temporarily (internal API)
+            setattr(agent._context_manager, "thread_context", mock_branch)
 
             async with resource(agent):
-                # thread_context should have been called
+                # branch should have been called
                 assert context_called
 
             # Restore original
-            setattr(agent._context_manager, "thread_context", original_thread_context)
+            setattr(agent._context_manager, "thread_context", original_branch)
 
     @pytest.mark.asyncio
     async def test_stateful_resource_only_initializes_once(self):

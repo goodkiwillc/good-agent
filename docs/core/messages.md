@@ -381,7 +381,7 @@ async with Agent("Assistant") as agent:
     # Renders as: "Global value: global"
 
     # Agent context overrides instance/global providers
-    agent.context["instance_var"] = "agent-level"
+    agent.vars["instance_var"] = "agent-level"
     agent.append("Agent context: {{instance_var}}")
     # Renders as: "Agent context: agent-level"
 

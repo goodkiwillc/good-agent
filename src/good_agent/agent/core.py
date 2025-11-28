@@ -445,8 +445,8 @@ class Agent(EventRouter):
         extensions = extensions or []
         self.config = config_manager or AgentConfigManager(**config)
         self.config._set_agent(self)  # Set agent reference for version updates
-        self.context = agent_context or AgentContext()
-        self.context._set_agent_config(self.config)
+        self._context = agent_context or AgentContext()
+        self._context._set_agent_config(self.config)
 
         tools: Sequence[str | Callable[..., Any] | Tool | ToolCallFunction | Agent] = (
             config.pop("tools", []) or []
@@ -898,10 +898,44 @@ class Agent(EventRouter):
         """
         self.versioning.revert_to_version(version_index)
 
-    def fork_context(
-        self, truncate_at: int | None = None, **fork_kwargs
-    ) -> ForkContext:
-        """Create a fork context for isolated operations.
+    @property
+    def vars(self) -> AgentContext:
+        """Runtime variables for templates.
+
+        A key-value store for template variables and runtime context.
+
+        Example:
+            agent.vars['user_name'] = 'Alice'
+            agent.vars['session_id'] = '12345'
+
+        Returns:
+            AgentContext instance for storing template variables
+        """
+        return self._context
+
+    @property
+    def context(self) -> AgentContext:
+        """Runtime context store for agent variables.
+
+        .. deprecated::
+            Use ``agent.vars`` instead.
+
+        Returns:
+            AgentContext instance for storing template variables
+        """
+        warnings.warn(
+            "agent.context is deprecated, use agent.vars instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._context
+
+    def isolated(self, truncate_at: int | None = None, **fork_kwargs) -> ForkContext:
+        """Create an isolated session where all changes are discarded on exit.
+
+        Creates a complete fork of the agent for isolated operations.
+        When the context exits, the forked agent is discarded - no changes
+        persist to the original agent.
 
         Args:
             truncate_at: Optional index to truncate messages at
@@ -911,14 +945,18 @@ class Agent(EventRouter):
             ForkContext instance to use with async with
 
         Example:
-            async with agent.fork_context(truncate_at=5) as forked:
-                response = await forked.call("Summarize")
-                # Response only exists in fork
+            async with agent.isolated() as sandbox:
+                await sandbox.call("Try something risky")
+                # All changes discarded when exiting
         """
         return self._context_manager.fork_context(truncate_at, **fork_kwargs)
 
-    def thread_context(self, truncate_at: int | None = None) -> ThreadContext:
-        """Create a thread context for temporary modifications.
+    def branch(self, truncate_at: int | None = None) -> ThreadContext:
+        """Create a conversation branch where new messages are preserved.
+
+        Allows temporary modifications to the conversation (like truncation)
+        while preserving any new messages added during the context.
+        On exit, original messages are restored but new additions are kept.
 
         Args:
             truncate_at: Optional index to truncate messages at
@@ -927,10 +965,51 @@ class Agent(EventRouter):
             ThreadContext instance to use with async with
 
         Example:
-            async with agent.thread_context(truncate_at=5) as ctx_agent:
-                response = await ctx_agent.call("Summarize")
-                # After context, agent has original messages + response
+            async with agent.branch(truncate_at=5) as branched:
+                response = await branched.call("Summarize the above")
+                # After exit: original messages + new response preserved
         """
+        return self._context_manager.thread_context(truncate_at)
+
+    def fork_context(
+        self, truncate_at: int | None = None, **fork_kwargs
+    ) -> ForkContext:
+        """Create a fork context for isolated operations.
+
+        .. deprecated::
+            Use ``agent.isolated()`` instead.
+
+        Args:
+            truncate_at: Optional index to truncate messages at
+            **fork_kwargs: Additional arguments to pass to fork()
+
+        Returns:
+            ForkContext instance to use with async with
+        """
+        warnings.warn(
+            "agent.fork_context() is deprecated, use agent.isolated() instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._context_manager.fork_context(truncate_at, **fork_kwargs)
+
+    def thread_context(self, truncate_at: int | None = None) -> ThreadContext:
+        """Create a thread context for temporary modifications.
+
+        .. deprecated::
+            Use ``agent.branch()`` instead.
+
+        Args:
+            truncate_at: Optional index to truncate messages at
+
+        Returns:
+            ThreadContext instance to use with async with
+        """
+        warnings.warn(
+            "agent.thread_context() is deprecated, use agent.branch() instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._context_manager.thread_context(truncate_at)
 
     async def initialize(self) -> None:
@@ -1937,8 +2016,8 @@ class Agent(EventRouter):
         context = {}
 
         # 2. Add agent context (includes config via ChainMap)
-        if self.context:
-            context.update(self.context.as_dict())
+        if self._context:
+            context.update(self._context.as_dict())
 
         # 3. Add the agent instance itself
         context["agent"] = self
@@ -1975,8 +2054,8 @@ class Agent(EventRouter):
         context = {}
 
         # 2. Add agent context (includes config via ChainMap)
-        if self.context:
-            context.update(self.context.as_dict())
+        if self._context:
+            context.update(self._context.as_dict())
 
         # 3. Add the agent instance itself
         context["agent"] = self

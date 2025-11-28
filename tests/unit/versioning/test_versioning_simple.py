@@ -128,8 +128,8 @@ class TestSimpleVersioning:
         await agent.events.close()
 
     @pytest.mark.asyncio
-    async def test_thread_context_basic(self):
-        """Test basic thread context functionality."""
+    async def test_branch_basic(self):
+        """Test basic branch functionality."""
         agent = Agent()
         await agent.initialize()
 
@@ -138,8 +138,8 @@ class TestSimpleVersioning:
         agent.append("Message 2")
         agent.append("Message 3")
 
-        # Use thread context to truncate
-        async with agent.thread_context(truncate_at=2) as ctx:
+        # Use branch to truncate
+        async with agent.branch(truncate_at=2) as ctx:
             # Should only see first 2 messages
             assert len(ctx.messages) == 2
 
@@ -155,16 +155,16 @@ class TestSimpleVersioning:
         await agent.events.close()
 
     @pytest.mark.asyncio
-    async def test_fork_context_basic(self):
-        """Test basic fork context functionality."""
+    async def test_isolated_basic(self):
+        """Test basic isolated session functionality."""
         agent = Agent()
         await agent.initialize()
 
         agent.append("Original message")
         original_count = len(agent.messages)
 
-        # Use fork context
-        async with agent.fork_context() as forked:
+        # Use isolated session
+        async with agent.isolated() as forked:
             assert forked is not agent
             assert len(forked.messages) == original_count
 

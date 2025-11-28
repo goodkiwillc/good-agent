@@ -123,8 +123,8 @@ class TestVersioningWithRealLLM:
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
-    async def test_thread_context_with_real_llm(self, llm_vcr):
-        """Test ThreadContext with real LLM interactions."""
+    async def test_branch_with_real_llm(self, llm_vcr):
+        """Test branch() with real LLM interactions."""
         agent = Agent(
             "You are a story writer. Be creative but very concise (1-2 sentences).",
             model="gpt-4.1-mini",
@@ -138,8 +138,8 @@ class TestVersioningWithRealLLM:
         original_msg_count = len(agent.messages)
         original_last_msg = str(agent.messages[-1])
 
-        # Use ThreadContext to branch the story
-        async with agent.thread_context(truncate_at=3) as ctx:
+        # Use branch to branch the story
+        async with agent.branch(truncate_at=3) as ctx:
             # Should have system + first Q&A only
             assert len(ctx.messages) == 3
 
@@ -174,8 +174,8 @@ class TestVersioningWithRealLLM:
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
-    async def test_fork_context_with_real_llm(self, llm_vcr):
-        """Test ForkContext with real LLM interactions."""
+    async def test_isolated_with_real_llm(self, llm_vcr):
+        """Test isolated() with real LLM interactions."""
         agent = Agent(
             "You are a helpful assistant. Be very concise.", model="gpt-4.1-mini"
         )
@@ -186,8 +186,8 @@ class TestVersioningWithRealLLM:
         original_response = str(agent.messages[-1])
         original_count = len(agent.messages)
 
-        # Fork for alternative conversation
-        async with agent.fork_context() as fork:
+        # Isolated session for alternative conversation
+        async with agent.isolated() as fork:
             # Fork has same initial state
             assert len(fork.messages) == original_count
 
@@ -218,8 +218,8 @@ class TestVersioningWithRealLLM:
         await agent.call("Tell me about dogs in one sentence.")
         dog_response = str(agent.messages[-1])
 
-        # Use ThreadContext to replace the topic
-        async with agent.thread_context() as ctx:
+        # Use branch to replace the topic
+        async with agent.branch() as ctx:
             # Replace user's question
             from good_agent.content.parts import TextContentPart
 

@@ -547,7 +547,7 @@ class ConfigurationComponent(AgentComponent):
         self.editor = EditableYAML(yaml_content, name="app-config")
 
         # Add configuration management context
-        agent.context["config_editor"] = self.editor
+        agent.vars["config_editor"] = self.editor
 
     @property
     def config_resource(self) -> EditableYAML:
@@ -559,7 +559,7 @@ async with Agent("Configuration manager") as agent:
     await config_component.install(agent)
 
     # Access configuration resource
-    async with agent.context["config_editor"](agent):
+    async with agent.vars["config_editor"](agent):
         response = await agent.call("Update the API timeout to 30 seconds")
 ```
 

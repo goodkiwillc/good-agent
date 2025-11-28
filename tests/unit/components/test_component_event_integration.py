@@ -63,13 +63,13 @@ class DecoratorPatternComponent(AgentComponent):
             """Handler registered during install phase."""
             if not self.enabled:
                 return
-            # Can access agent context and other components
-            # Context is a special object, access its internal dict representation
-            if hasattr(agent, "context"):
-                # The context object uses a ChainMap internally
+            # Can access agent vars and other components
+            # Vars is a special object, access its internal dict representation
+            if hasattr(agent, "vars"):
+                # The vars object uses a ChainMap internally
                 context_dict = (
-                    dict(agent.context._chainmap)
-                    if hasattr(agent.context, "_chainmap")
+                    dict(agent.vars._chainmap)
+                    if hasattr(agent.vars, "_chainmap")
                     else {}
                 )
                 context_keys = list(context_dict.keys())

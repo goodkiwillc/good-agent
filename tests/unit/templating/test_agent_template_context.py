@@ -20,8 +20,8 @@ async def test_agent_available_in_template_context():
     rendered = agent.messages[-1].render()
     assert str(len(agent.messages)) in rendered
 
-    # Test accessing agent context through agent variable
-    agent.append("Value via agent: {{ agent.context.custom_value }}")
+    # Test accessing agent vars through agent variable
+    agent.append("Value via agent: {{ agent.vars.custom_value }}")
     rendered = agent.messages[-1].render()
     assert "test123" in rendered
 

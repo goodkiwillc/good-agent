@@ -21,15 +21,15 @@ async with agent.config(model="gpt-4o", temperature=0.7):
 # Configuration reverts to original settings here
 ```
 
-### Template Context Variables
+### Template Variables
 
-Use `agent.context()` to inject temporary variables into the agent's template context. These are accessible to templates and tools during execution using Jinja2 syntax (`{{variable_name}}`).
+Use `agent.vars` to store runtime variables for templates. These are accessible to templates and tools during execution using Jinja2 syntax (`{{variable_name}}`).
 
 ```python
 # Set initial context
 async with Agent("Base prompt", context={"env": "prod", "user": "alice"}) as agent:
     # Override context temporarily
-    with agent.context(env="dev", debug=True):
+    with agent.vars(env="dev", debug=True):
         agent.append("Debug info for {{user}} in {{env}}: {{debug}}")
         # Renders: "Debug info for alice in dev: True"
         print(agent[-1].content)
@@ -40,16 +40,16 @@ async with Agent("Base prompt", context={"env": "prod", "user": "alice"}) as age
     print(agent[-1].content)
 ```
 
-### Fork Context
+### Isolated Sessions
 
-Use `agent.fork_context()` to create a **fully isolated copy** of the agent with its own ID and message history. This is ideal for exploratory queries, parallel processing, or side-tasks where you don't want the conversation history to persist in the main agent.
+Use `agent.isolated()` to create a **fully isolated copy** of the agent with its own ID and message history. This is ideal for exploratory queries, parallel processing, or side-tasks where you don't want the conversation history to persist in the main agent. All changes are discarded when the context exits.
 
 ```python
 async with Agent("Base agent") as agent:
     agent.append("Shared context")
 
-    # Fork for parallel processing
-    async with agent.fork_context() as fork1, agent.fork_context() as fork2:
+    # Isolated sessions for parallel processing
+    async with agent.isolated() as fork1, agent.isolated() as fork2:
         # Each fork is a separate agent with independent message history
         task1 = asyncio.create_task(fork1.call("Process option A"))
         task2 = asyncio.create_task(fork2.call("Process option B"))
@@ -61,23 +61,23 @@ async with Agent("Base agent") as agent:
     # Fork messages don't appear in original agent
 ```
 
-You can also truncate history when forking:
+You can also truncate history when creating an isolated session:
 
 ```python
-async with agent.fork_context(truncate_at=5) as fork:
-    # Fork only has the first 5 messages from the original
-    await fork.call("Based on recent context...")
+async with agent.isolated(truncate_at=5) as sandbox:
+    # Sandbox only has the first 5 messages from the original
+    await sandbox.call("Based on recent context...")
+    # All changes discarded when exiting
 ```
 
-### Thread Context
+### Conversation Branches
 
-Use `agent.thread_context()` to temporarily modify the conversation view (e.g., truncating history) while preserving new messages. Unlike a fork, new messages generated during this context are merged back into the main agent's history, but the view modifications are reverted.
+Use `agent.branch()` to temporarily modify the conversation view (e.g., truncating history) while preserving new messages. Unlike `isolated()`, new messages generated during this context are merged back into the main agent's history, but the view modifications are reverted.
 
 ```python
 # Temporarily truncate history to the last 5 messages to save tokens
-# @TODO what are the other options for thread_context?
-async with agent.thread_context(truncate_at=5):
-    await agent.call("Based on this recent context...")
+async with agent.branch(truncate_at=5) as branched:
+    await branched.call("Based on this recent context...")
 
 # Agent history is restored, but the new assistant response is added
 ```

@@ -245,7 +245,7 @@ class TestTokenCountingWithTemplates:
     def test_template_message_renders_before_counting(self):
         """Test that templates are rendered before counting tokens."""
         agent = Agent()
-        agent.context["name"] = "Alice"
+        agent.vars["name"] = "Alice"
 
         msg = UserMessage(template="Hello, {{ name }}!")
         agent.append(msg)

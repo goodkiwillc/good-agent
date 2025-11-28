@@ -143,30 +143,30 @@ class TestAgentInitialization:
             context={"a": 1, "b": 10, "c": 15},
             undefined_behavior="silent",
         ) as agent:
-            assert agent.context["a"] == 1
-            assert agent.context["b"] == 10
-            assert agent.context["c"] == 15
+            assert agent.vars["a"] == 1
+            assert agent.vars["b"] == 10
+            assert agent.vars["c"] == 15
 
             with agent.config(context={"a": 2, "b": 12, "c": 15}):
-                assert agent.context["a"] == 2
-                assert agent.context["b"] == 12
-                assert agent.context["c"] == 15
+                assert agent.vars["a"] == 2
+                assert agent.vars["b"] == 12
+                assert agent.vars["c"] == 15
 
-            assert agent.context["a"] == 1
-            assert agent.context["b"] == 10
-            assert agent.context["c"] == 15
+            assert agent.vars["a"] == 1
+            assert agent.vars["b"] == 10
+            assert agent.vars["c"] == 15
 
-            with agent.context(a=3, b=14, d=20):
-                assert agent.context["a"] == 3
-                assert agent.context["b"] == 14
-                assert agent.context["c"] == 15
-                assert agent.context["d"] == 20
+            with agent.vars(a=3, b=14, d=20):
+                assert agent.vars["a"] == 3
+                assert agent.vars["b"] == 14
+                assert agent.vars["c"] == 15
+                assert agent.vars["d"] == 20
 
             # message level inheritance
 
-            assert agent.context["a"] == 1
-            assert agent.context["b"] == 10
-            assert agent.context["c"] == 15
+            assert agent.vars["a"] == 1
+            assert agent.vars["b"] == 10
+            assert agent.vars["c"] == 15
 
             agent.append(
                 "This is a user message with context {{a}} {{b}} {{c}} {{d}}.",

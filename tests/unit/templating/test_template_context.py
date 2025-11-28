@@ -14,8 +14,8 @@ class TestTemplateContext:
             "System prompt", context={"location": "New York", "unit": "Celsius"}
         )
 
-        assert agent.context["location"] == "New York"
-        assert agent.context["unit"] == "Celsius"
+        assert agent.vars["location"] == "New York"
+        assert agent.vars["unit"] == "Celsius"
 
     def test_context_manager(self):
         """Test temporary context override"""
@@ -24,17 +24,17 @@ class TestTemplateContext:
         )
 
         # Test original context
-        assert agent.context["location"] == "New York"
+        assert agent.vars["location"] == "New York"
 
         # Test temporary override
-        with agent.context(location="London", temp=20):
-            assert agent.context["location"] == "London"
-            assert agent.context["unit"] == "Celsius"  # Not overridden
-            assert agent.context["temp"] == 20  # New value
+        with agent.vars(location="London", temp=20):
+            assert agent.vars["location"] == "London"
+            assert agent.vars["unit"] == "Celsius"  # Not overridden
+            assert agent.vars["temp"] == 20  # New value
 
         # Test context restored
-        assert agent.context["location"] == "New York"
-        assert "temp" not in agent.context
+        assert agent.vars["location"] == "New York"
+        assert "temp" not in agent.vars
 
     def test_message_context(self):
         """Test message-level context"""
@@ -111,24 +111,24 @@ class TestTemplateContext:
         agent = Agent("System prompt", context={"a": 1, "b": 2, "c": 3})
 
         # Test base context
-        assert agent.context["a"] == 1
-        assert agent.context["b"] == 2
-        assert agent.context["c"] == 3
+        assert agent.vars["a"] == 1
+        assert agent.vars["b"] == 2
+        assert agent.vars["c"] == 3
 
         # Test temporary override
-        with agent.context(a=10, d=4):
-            assert agent.context["a"] == 10
-            assert agent.context["b"] == 2
-            assert agent.context["c"] == 3
-            assert agent.context["d"] == 4
+        with agent.vars(a=10, d=4):
+            assert agent.vars["a"] == 10
+            assert agent.vars["b"] == 2
+            assert agent.vars["c"] == 3
+            assert agent.vars["d"] == 4
 
             # Test nested override
-            with agent.context(b=20, e=5):
-                assert agent.context["a"] == 10  # From parent override
-                assert agent.context["b"] == 20  # From this override
-                assert agent.context["c"] == 3  # From base
-                assert agent.context["d"] == 4  # From parent override
-                assert agent.context["e"] == 5  # From this override
+            with agent.vars(b=20, e=5):
+                assert agent.vars["a"] == 10  # From parent override
+                assert agent.vars["b"] == 20  # From this override
+                assert agent.vars["c"] == 3  # From base
+                assert agent.vars["d"] == 4  # From parent override
+                assert agent.vars["e"] == 5  # From this override
 
     def test_template_rendering(self):
         """Test basic template rendering"""
@@ -172,13 +172,13 @@ class TestTemplateContext:
 
                 # Test resolution - agent context should win over providers
                 resolved = await agent.template.resolve_context(
-                    agent.context.as_dict(), None
+                    agent.vars.as_dict(), None
                 )
                 assert resolved["priority_test"] == "agent"
 
                 # Test with message context - should override everything
                 resolved = await agent.template.resolve_context(
-                    agent.context.as_dict(), {"priority_test": "message"}
+                    agent.vars.as_dict(), {"priority_test": "message"}
                 )
                 assert resolved["priority_test"] == "message"
         finally:

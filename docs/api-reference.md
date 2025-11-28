@@ -17,9 +17,9 @@ suite executes all examples to prevent `DeprecationWarning` regressions.
 | `append` | Method | Canonical way to add user/assistant/tool/system messages; supersedes `set_system_message()` and `replace_message()`. | [examples/agent/basic_chat.py](https://github.com/goodkiwi/good-agent/blob/main/examples/agent/basic_chat.py) |
 | `assistant` | Property | Filtered `MessageList` exposing only assistant authored messages (useful for telemetry or analytics). | [examples/agent/basic_chat.py](https://github.com/goodkiwi/good-agent/blob/main/examples/agent/basic_chat.py) |
 | `call` | Async method | Single LLM turn that returns the final `AssistantMessage`. | [examples/agent/basic_chat.py](https://github.com/goodkiwi/good-agent/blob/main/examples/agent/basic_chat.py) |
-| `config` | Attribute | `AgentConfigManager` bound to this agent; mutate to tweak temperature, provider defaults, and render modes. | [examples/context/thread_context.py](https://github.com/goodkiwi/good-agent/blob/main/examples/context/thread_context.py) |
-| `context` | Attribute | `AgentContext` shared with templates and events; layered overrides live here. | [examples/context/thread_context.py](https://github.com/goodkiwi/good-agent/blob/main/examples/context/thread_context.py) |
-| `context_manager` | Facade | **Deprecated.** Use direct methods: `fork()`, `fork_context()`, `thread_context()`, `context_provider()`. | [examples/context/thread_context.py](https://github.com/goodkiwi/good-agent/blob/main/examples/context/thread_context.py) |
+| `config` | Attribute | `AgentConfigManager` bound to this agent; mutate to tweak temperature, provider defaults, and render modes. | [examples/context/branch.py](https://github.com/goodkiwi/good-agent/blob/main/examples/context/branch.py) |
+| `context` | Attribute | `AgentContext` shared with templates and events; layered overrides live here. | [examples/context/branch.py](https://github.com/goodkiwi/good-agent/blob/main/examples/context/branch.py) |
+| `context_manager` | Facade | **Deprecated.** Use direct methods: `fork()`, `isolated()`, `branch()`, `context_provider()`. | [examples/context/branch.py](https://github.com/goodkiwi/good-agent/blob/main/examples/context/branch.py) |
 | `do` | Method | Fire EventRouter events synchronously; ideal for instrumentation hooks that should not await. | [examples/event_router/basic_usage.py](https://github.com/goodkiwi/good-agent/blob/main/examples/event_router/basic_usage.py) |
 | `events` | Property | Returns `self` (Agent inherits from EventRouter). Use `agent.apply()`, `agent.on()` directly. | [examples/event_router/basic_usage.py](https://github.com/goodkiwi/good-agent/blob/main/examples/event_router/basic_usage.py) |
 | `execute` | Async iterator | Runs the multi-turn loop, yielding every assistant/tool/system message until completion. | [examples/agent/basic_chat.py](https://github.com/goodkiwi/good-agent/blob/main/examples/agent/basic_chat.py) |
@@ -44,10 +44,10 @@ suite executes all examples to prevent `DeprecationWarning` regressions.
 | `invoke_func` | Async method | Execute a tool function with partial arguments. Replaces `tool_calls.invoke_func()`. | [examples/tools/basic_tool.py](https://github.com/goodkiwi/good-agent/blob/main/examples/tools/basic_tool.py) |
 | `invoke_many` | Async method | Execute multiple tools in parallel. Replaces `tool_calls.invoke_many()`. | [examples/tools/basic_tool.py](https://github.com/goodkiwi/good-agent/blob/main/examples/tools/basic_tool.py) |
 | `add_tool_invocation` | Method | Record a tool invocation result. Replaces `tool_calls.record_invocation()`. | [examples/tools/basic_tool.py](https://github.com/goodkiwi/good-agent/blob/main/examples/tools/basic_tool.py) |
-| `fork` | Async method | Create a forked copy of the agent. Replaces `context_manager.fork()`. | [examples/context/thread_context.py](https://github.com/goodkiwi/good-agent/blob/main/examples/context/thread_context.py) |
-| `fork_context` | Method | Context manager for forked agent operations. Replaces `context_manager.fork_context()`. | [examples/context/thread_context.py](https://github.com/goodkiwi/good-agent/blob/main/examples/context/thread_context.py) |
-| `thread_context` | Method | Context manager for temporary message modifications. Replaces `context_manager.thread_context()`. | [examples/context/thread_context.py](https://github.com/goodkiwi/good-agent/blob/main/examples/context/thread_context.py) |
-| `context_provider` | Decorator | Register instance-specific context providers. | [examples/context/thread_context.py](https://github.com/goodkiwi/good-agent/blob/main/examples/context/thread_context.py) |
+| `fork` | Async method | Create a forked copy of the agent. Replaces `context_manager.fork()`. | [examples/context/branch.py](https://github.com/goodkiwi/good-agent/blob/main/examples/context/branch.py) |
+| `isolated` | Method | Context manager for forked agent operations. Replaces `context_manager.isolated()`. | [examples/context/branch.py](https://github.com/goodkiwi/good-agent/blob/main/examples/context/branch.py) |
+| `branch` | Method | Context manager for temporary message modifications. Replaces `context_manager.branch()`. | [examples/context/branch.py](https://github.com/goodkiwi/good-agent/blob/main/examples/context/branch.py) |
+| `context_provider` | Decorator | Register instance-specific context providers. | [examples/context/branch.py](https://github.com/goodkiwi/good-agent/blob/main/examples/context/branch.py) |
 | `validate_message_sequence` | Method | Validates ordering/roles before sending to the LLM; typically called before custom LLM integrations. | [tests/unit/agent/test_agent_message_store_integration.py](https://github.com/goodkiwi/good-agent/blob/main/tests/unit/agent/test_agent_message_store_integration.py) |
 | `version_id` | Property | ULID that increments when the message list mutates; use for optimistic concurrency. | [examples/resources/editable_mdxl.py](https://github.com/goodkiwi/good-agent/blob/main/examples/resources/editable_mdxl.py) |
 | `versioning` | Facade | Access to `AgentVersioningManager` (revert, audit history). | [examples/resources/editable_mdxl.py](https://github.com/goodkiwi/good-agent/blob/main/examples/resources/editable_mdxl.py) |
@@ -63,7 +63,7 @@ suite executes all examples to prevent `DeprecationWarning` regressions.
 ### Usage Notes
 
 - **Direct methods preferred** – The `context_manager` and `tool_calls` facades are
-  deprecated. Use direct Agent methods like `invoke()`, `fork()`, `thread_context()` instead.
+  deprecated. Use direct Agent methods like `invoke()`, `fork()`, `branch()` instead.
   The `events` property now returns `self` since Agent inherits from EventRouter.
 - **Active facades** – `tasks` and `versioning` remain the recommended facades for
   task orchestration and version management.

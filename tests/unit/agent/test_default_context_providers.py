@@ -117,7 +117,7 @@ async def test_context_providers_priority():
     await agent.initialize()
 
     # Override 'today' with custom value
-    agent.context._chainmap.maps[0]["today"] = "2024-01-01"
+    agent.vars._chainmap.maps[0]["today"] = "2024-01-01"
 
     agent.append("Date: {{ today }}")
     rendered = agent.messages[-1].render()

@@ -164,8 +164,8 @@ class TestSystemMessageVersioningFix:
         await agent.events.close()
 
     @pytest.mark.asyncio
-    async def test_system_message_versioning_with_thread_context(self):
-        """ThreadContext should work with system message versioning."""
+    async def test_system_message_versioning_with_branch(self):
+        """Branch should work with system message versioning."""
         agent = Agent("Original system")
         await agent.initialize()
 
@@ -173,7 +173,7 @@ class TestSystemMessageVersioningFix:
         agent.append("Message 2")
 
         # Use thread context to modify system message
-        async with agent.thread_context() as ctx:
+        async with agent.branch() as ctx:
             # Replace system message in context
             ctx.set_system_message("Temporary system")
 

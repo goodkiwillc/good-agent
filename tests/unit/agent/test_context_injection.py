@@ -199,7 +199,7 @@ class TestContextInjectionIntegration:
 
         # Create agent with context
         agent = Agent("Test")
-        agent.context["user_id"] = "123"
+        agent.vars["user_id"] = "123"
 
         # Invoke tool
         result = await agent.invoke(search, query="python")
@@ -226,16 +226,16 @@ class TestContextInjectionIntegration:
     async def test_context_provider_with_agent_injection(self):
         """Test context providers can receive both Agent and context values."""
         agent = Agent("Test")
-        agent.context["multiplier"] = 3
+        agent.vars["multiplier"] = 3
 
         @agent.context_provider("computed")
         async def provider(agent: Agent, mult: int = ContextValue("multiplier")) -> str:
             return f"Agent {agent.id} with multiplier {mult}"
 
-        # Pass the agent's context as base context
+        # Pass the agent's vars as base context
         base_context = (
-            agent.context.as_dict()
-            if hasattr(agent.context, "as_dict")
+            agent.vars.as_dict()
+            if hasattr(agent.vars, "as_dict")
             else {"multiplier": 3}
         )
         context = await agent.template.resolve_context(base_context)

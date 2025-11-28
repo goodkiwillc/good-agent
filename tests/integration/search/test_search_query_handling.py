@@ -95,7 +95,7 @@ class TestDateHandling:
 
         # Set a specific date in context
         test_date = date(2024, 6, 15)
-        agent.context["today"] = test_date
+        agent.vars["today"] = test_date
 
         # Test last_day
         await agent.invoke("search", query="test", timeframe="last_day")
@@ -133,7 +133,7 @@ class TestDateHandling:
         agent = Agent("Test", extensions=[search])
         await agent.initialize()
 
-        agent.context["today"] = date(2024, 6, 15)
+        agent.vars["today"] = date(2024, 6, 15)
 
         # Provide both explicit dates and relative window
         await agent.invoke(
@@ -199,7 +199,7 @@ class TestDateHandling:
 
         # Set context to a past date
         past_date = date(2023, 3, 15)
-        agent.context["today"] = past_date
+        agent.vars["today"] = past_date
 
         # Search last week from that past date
         await agent.invoke("search", query="historical", timeframe="last_week")

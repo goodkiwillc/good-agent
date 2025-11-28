@@ -107,8 +107,8 @@ class TestAgentVersioning:
         await versioned_agent.events.close()
 
     @pytest.mark.asyncio
-    async def test_thread_context_manager(self, versioned_agent):
-        """ThreadContext should allow temporary modifications."""
+    async def test_branch_context_manager(self, versioned_agent):
+        """Branch should allow temporary modifications."""
         versioned_agent.append("Message 1")
         versioned_agent.append("Message 2")
         versioned_agent.append("Message 3")
@@ -132,8 +132,8 @@ class TestAgentVersioning:
         await versioned_agent.events.close()
 
     @pytest.mark.asyncio
-    async def test_fork_context_manager(self, versioned_agent):
-        """ForkContext should create isolated fork."""
+    async def test_isolated_context_manager(self, versioned_agent):
+        """Isolated session should create isolated fork."""
         versioned_agent.append("Message 1")
         versioned_agent.append("Message 2")
         versioned_agent.append("Message 3")
@@ -163,16 +163,16 @@ class TestAgentVersioning:
         """Test convenience methods for context managers."""
         versioned_agent.append("Test")
 
-        # Test thread_context method
-        async with versioned_agent.thread_context(truncate_at=0) as ctx:
+        # Test branch method
+        async with versioned_agent.branch(truncate_at=0) as ctx:
             assert ctx is versioned_agent
             assert len(ctx.messages) == 0
             ctx.append("New")
 
         assert len(versioned_agent.messages) == 2
 
-        # Test fork_context method
-        async with versioned_agent.fork_context(truncate_at=1) as fork:
+        # Test isolated method
+        async with versioned_agent.isolated(truncate_at=1) as fork:
             assert fork is not versioned_agent
             assert len(fork.messages) == 1
 

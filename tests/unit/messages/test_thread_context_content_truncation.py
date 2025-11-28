@@ -4,12 +4,12 @@ from good_agent.content.parts import TextContentPart
 from good_agent.messages import AssistantMessage
 
 
-class TestThreadContextContentTruncation:
-    """Test ThreadContext with message content truncation/condensing."""
+class TestBranchContentTruncation:
+    """Test Branch with message content truncation/condensing."""
 
     @pytest.mark.asyncio
-    async def test_thread_context_truncates_message_content(self):
-        """Test replacing verbose messages with condensed versions in ThreadContext."""
+    async def test_branch_truncates_message_content(self):
+        """Test replacing verbose messages with condensed versions in Branch."""
         agent = Agent("You are a helpful assistant")
         await agent.initialize()
 
@@ -47,8 +47,8 @@ class TestThreadContextContentTruncation:
         [msg for msg in agent.messages]
         original_verbose_content = str(agent.messages[2])  # The verbose response
 
-        # Use ThreadContext to work with condensed versions
-        async with agent.thread_context() as ctx:
+        # Use Branch to work with condensed versions
+        async with agent.branch() as ctx:
             # Replace verbose message with condensed version
             # This simulates what an agent might do to save context window space
             condensed_msg = AssistantMessage(
@@ -94,7 +94,7 @@ class TestThreadContextContentTruncation:
         await agent.events.close()
 
     @pytest.mark.asyncio
-    async def test_thread_context_condense_multiple_tool_responses(self):
+    async def test_branch_condense_multiple_tool_responses(self):
         """Test condensing multiple tool responses to save context."""
 
         @tool
@@ -126,22 +126,18 @@ class TestThreadContextContentTruncation:
         agent.append(str(tool_response_1), role="assistant")
 
         agent.append("Now search for neural networks")
-        tool_response_2 = await agent.invoke(
-            "search_web", query="neural networks"
-        )
+        tool_response_2 = await agent.invoke("search_web", query="neural networks")
         agent.append(str(tool_response_2), role="assistant")
 
         agent.append("Finally, search for deep learning")
-        tool_response_3 = await agent.invoke(
-            "search_web", query="deep learning"
-        )
+        tool_response_3 = await agent.invoke("search_web", query="deep learning")
         agent.append(str(tool_response_3), role="assistant")
 
         # Original messages are verbose
         original_total_length = sum(len(str(msg)) for msg in agent.messages)
 
-        # Use ThreadContext to condense tool responses
-        async with agent.thread_context() as ctx:
+        # Use Branch to condense tool responses
+        async with agent.branch() as ctx:
             # Find and replace tool responses with condensed versions
             for i, msg in enumerate(ctx.messages):
                 if isinstance(msg, AssistantMessage) and "Result 1:" in str(msg):
@@ -180,8 +176,8 @@ class TestThreadContextContentTruncation:
         await agent.events.close()
 
     @pytest.mark.asyncio
-    async def test_fork_context_with_aggressive_truncation(self):
-        """Test using ForkContext for aggressive truncation without affecting original."""
+    async def test_isolated_with_aggressive_truncation(self):
+        """Test using Isolated for aggressive truncation without affecting original."""
         agent = Agent()
         await agent.initialize()
 
@@ -217,8 +213,8 @@ class TestThreadContextContentTruncation:
 
         original_messages = list(agent.messages)
 
-        # Use ForkContext for aggressive truncation
-        async with agent.fork_context() as fork:
+        # Use Isolated for aggressive truncation
+        async with agent.isolated() as fork:
             # In fork, replace everything with bullet points
             for i, msg in enumerate(fork.messages):
                 if isinstance(msg, AssistantMessage):
@@ -277,7 +273,7 @@ class TestThreadContextContentTruncation:
         original_response = str(agent.messages[1])
 
         # First level context - moderate truncation
-        async with agent.thread_context() as ctx1:
+        async with agent.branch() as ctx1:
             # Moderately condense
             ctx1.messages[1] = AssistantMessage(
                 content_parts=[
@@ -291,7 +287,7 @@ class TestThreadContextContentTruncation:
             moderate_length = len(str(ctx1.messages[1]))
 
             # Nested context - aggressive truncation
-            async with ctx1.thread_context() as ctx2:
+            async with ctx1.branch() as ctx2:
                 # Aggressively condense
                 ctx2.messages[1] = AssistantMessage(
                     content_parts=[
@@ -333,7 +329,7 @@ class TestThreadContextContentTruncation:
         agent.append("Verbose answer 2 with even more details...", role="assistant")
 
         # Use context to work with truncated versions
-        async with agent.thread_context() as ctx:
+        async with agent.branch() as ctx:
             # Truncate both answers
             ctx.messages[1] = AssistantMessage(
                 content_parts=[TextContentPart(text="[A1-condensed]")]

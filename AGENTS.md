@@ -192,6 +192,20 @@ tool_outputs = agent.tool         # Only tool outputs
 snapshot_id = agent.version_id
 await agent.call("Something wrong")
 agent.versioning.revert_to_version(snapshot_id)
+
+# Template Variables
+agent.vars['user_name'] = 'Alice'
+agent.vars['session_id'] = '12345'
+
+# Isolated Session (sandbox - all changes discarded on exit)
+async with agent.isolated() as sandbox:
+    await sandbox.call("Try something risky")
+    # All changes discarded when exiting
+
+# Conversation Branch (new messages preserved on exit)
+async with agent.branch(truncate_at=5) as branched:
+    response = await branched.call("Summarize the above")
+    # After exit: original messages + new response preserved
 ```
 
 ## 10. CLI Configuration

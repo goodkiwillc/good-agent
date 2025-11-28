@@ -1079,7 +1079,7 @@ class TestRenderRecursionGuard:
 
         try:
             # Add context for template rendering first
-            agent.context["name"] = "World"
+            agent.vars["name"] = "World"
 
             # Create a message with template content
             msg = UserMessage("Hello {{ name }}")
@@ -1194,7 +1194,7 @@ class TestRenderRecursionGuard:
 
         try:
             # Add context for template rendering
-            agent.context["name"] = "Test"
+            agent.vars["name"] = "Test"
 
             # Create a message with template (won't be cached)
             msg = UserMessage("Hello {{ name }}")

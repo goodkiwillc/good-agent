@@ -99,7 +99,7 @@ class AgentSearch(AgentComponent):
         limit = limit or self.default_limit
 
         # Calculate date range based on relative time windows
-        today = self.agent.context.get("today", now_pt().date())
+        today = self.agent.vars.get("today", now_pt().date())
 
         # Relative time windows override explicit dates
         if timeframe == "last_day":
