@@ -101,6 +101,18 @@ class HandlerType(Enum):
     GENERATOR = "generator"  # Async generator with yield (setup/cleanup)
 
 
+class ModeExitBehavior(Enum):
+    """What to do after mode cleanup completes.
+
+    Used by generator handlers to control whether the execute() loop
+    should call the LLM again after mode exit.
+    """
+
+    CONTINUE = "continue"  # Always call LLM after mode exit
+    STOP = "stop"  # Never call LLM, return control immediately
+    AUTO = "auto"  # Call LLM only if conversation is "pending"
+
+
 def _detect_handler_type(handler: Callable[..., Any]) -> HandlerType:
     """Detect if handler is a simple async function or async generator.
 
@@ -277,6 +289,27 @@ class ModeAccessor:
             ModeTransition instruction
         """
         return ModeTransition(transition_type="exit")
+
+    def set_exit_behavior(self, behavior: ModeExitBehavior) -> None:
+        """Set the exit behavior for when this mode exits.
+
+        Used by generator handlers during cleanup to control whether
+        execute() should call the LLM again after mode exit.
+
+        Args:
+            behavior: What to do after mode cleanup completes
+                - CONTINUE: Always call LLM after mode exit
+                - STOP: Never call LLM, return control immediately
+                - AUTO: Call LLM only if conversation is "pending"
+
+        Example:
+            @agent.modes('research')
+            async def research_mode(agent: Agent):
+                yield agent
+                # Cleanup - don't call LLM after this mode exits
+                agent.mode.set_exit_behavior(ModeExitBehavior.STOP)
+        """
+        self.state["_exit_behavior"] = behavior
 
     def __repr__(self) -> str:  # pragma: no cover - trivial
         return f"ModeAccessor(name={self.name!r}, stack={self.stack!r})"
@@ -552,9 +585,14 @@ class ModeContextManager:
         return self._manager._agent
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Exit the mode."""
-        await self._manager._exit_mode()
-        return False
+        """Exit the mode, passing any exception to the generator handler."""
+        if exc_val is not None:
+            # Exception occurred - pass to generator for handling
+            suppressed = await self._manager._exit_mode_with_exception(exc_val)
+            return suppressed  # True if generator suppressed the exception
+        else:
+            await self._manager._exit_mode()
+            return False
 
 
 class ModeInfo:
@@ -896,16 +934,20 @@ class ModeManager:
                 started_at=datetime.now(),
             )
 
-    async def _run_handler_cleanup(self, entry: ModeStackEntry) -> None:
+    async def _run_handler_cleanup(self, entry: ModeStackEntry) -> ModeExitBehavior:
         """Run handler cleanup phase (after yield).
 
         Resumes the generator from yield and handles completion.
+        The generator can return a ModeExitBehavior to control post-exit behavior.
 
         Args:
             entry: Stack entry with active generator
+
+        Returns:
+            ModeExitBehavior indicating what execute() should do after mode exit
         """
         if entry.active_generator is None:
-            return
+            return ModeExitBehavior.AUTO
 
         gen = entry.active_generator.generator
 
@@ -918,8 +960,13 @@ class ModeManager:
                     f"Mode handler '{entry.name}' yielded more than once"
                 )
             except StopAsyncIteration:
-                # Generator completed normally
-                pass
+                # Generator completed - check if handler set exit behavior in state
+                exit_behavior = entry.state.get("_exit_behavior")
+                if exit_behavior is not None and isinstance(
+                    exit_behavior, ModeExitBehavior
+                ):
+                    return exit_behavior
+                return ModeExitBehavior.AUTO
         finally:
             # Ensure generator is closed
             await gen.aclose()
@@ -1075,23 +1122,28 @@ class ModeManager:
             timestamp=datetime.now(),
         )
 
-    async def _exit_mode(self) -> None:
-        """Exit current mode (internal)."""
+    async def _exit_mode(self) -> ModeExitBehavior:
+        """Exit current mode (internal).
+
+        Returns:
+            ModeExitBehavior indicating what execute() should do after mode exit
+        """
         if not self._mode_stack.current:
-            return
+            return ModeExitBehavior.AUTO
 
         # Get current mode entry before popping
         entry = self._mode_stack.current_entry
         if entry is None:
-            return
+            return ModeExitBehavior.AUTO
 
         mode_name = entry.name
         isolation_snapshot = entry.isolation_snapshot
         entered_at = entry.entered_at or datetime.now()
+        exit_behavior = ModeExitBehavior.AUTO
 
         # Run cleanup for generator handlers
         try:
-            await self._run_handler_cleanup(entry)
+            exit_behavior = await self._run_handler_cleanup(entry)
         finally:
             # Always restore state even if cleanup fails
             # Pop mode from stack
@@ -1114,6 +1166,73 @@ class ModeManager:
             duration=datetime.now() - entered_at,
             timestamp=datetime.now(),
         )
+
+        return exit_behavior
+
+    async def _exit_mode_with_exception(self, exception: BaseException) -> bool:
+        """Exit current mode when an exception occurred during active phase.
+
+        Passes the exception to the generator handler via athrow(), allowing
+        the handler to catch, handle, or suppress the exception.
+
+        Args:
+            exception: The exception that occurred during active phase
+
+        Returns:
+            True if the generator suppressed the exception, False otherwise
+        """
+        if not self._mode_stack.current:
+            return False
+
+        entry = self._mode_stack.current_entry
+        if entry is None:
+            return False
+
+        mode_name = entry.name
+        isolation_snapshot = entry.isolation_snapshot
+        entered_at = entry.entered_at or datetime.now()
+        suppressed = False
+
+        try:
+            if entry.active_generator is not None:
+                gen = entry.active_generator.generator
+                try:
+                    # Pass exception to generator via athrow
+                    await gen.athrow(exception)
+                    # If generator yields again after handling exception, that's an error
+                    raise RuntimeError(
+                        f"Mode handler '{entry.name}' yielded more than once"
+                    )
+                except StopAsyncIteration:
+                    # Generator completed after handling exception - suppressed
+                    suppressed = True
+                except type(exception):
+                    # Generator re-raised the same exception type - not suppressed
+                    pass
+                except Exception:
+                    # Generator raised a different exception - propagate it
+                    raise
+                finally:
+                    await gen.aclose()
+        finally:
+            # Always restore state even if cleanup fails
+            self._mode_stack.pop()
+            self._agent._system_prompt_manager.restore_snapshot()
+            self._restore_from_isolation_snapshot(isolation_snapshot)
+
+        # Emit mode:exited event
+        from good_agent.events.agent import AgentEvents
+
+        self._agent.do(
+            AgentEvents.MODE_EXITED,
+            agent=self._agent,
+            mode_name=mode_name,
+            mode_stack=self.mode_stack,
+            duration=datetime.now() - entered_at,
+            timestamp=datetime.now(),
+        )
+
+        return suppressed
 
     async def enter_mode(self, mode_name: str, **params: Any) -> None:
         """Enter a mode directly (non-context-manager).

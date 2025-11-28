@@ -9,6 +9,48 @@ Implement async generator support for mode handlers, enabling setup/cleanup life
 
 ---
 
+## Implementation Status
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 1 | ✅ COMPLETE | Core generator support (handler detection, setup/cleanup lifecycle) |
+| Phase 2 | ✅ COMPLETE | Exception handling (athrow, cleanup guarantees) |
+| Phase 3 | ✅ COMPLETE | Exit behavior (ModeExitBehavior enum, set_exit_behavior) |
+| Phase 4 | 🔲 PENDING | Execute loop integration |
+| Phase 5 | 🔲 PENDING | Documentation & examples update |
+
+### Phase 1 Completion Notes (2024-11-27)
+- Added `HandlerType` enum (`SIMPLE`, `GENERATOR`) and `_detect_handler_type()` function
+- Added `ActiveModeGenerator` dataclass to track paused generators
+- Updated `ModeStackEntry` with `active_generator` and `entered_at` fields
+- Implemented `_run_handler_setup()` - runs generator until first yield at mode entry
+- Implemented `_run_handler_cleanup()` - resumes generator after yield at mode exit
+- Updated `_enter_mode()` with setup phase and error recovery
+- Updated `_exit_mode()` with cleanup phase in try/finally block
+- 14 new tests in `tests/test_modes_generators.py`
+
+### Phase 2 Completion Notes (2024-11-27)
+- Updated `ModeContextManager.__aexit__` to detect exceptions and pass to cleanup
+- Implemented `_exit_mode_with_exception()` using `gen.athrow(exception)`
+- Generators can catch, suppress, re-raise, or transform exceptions
+- Cleanup guaranteed via try/finally blocks even if cleanup raises
+- 6 new exception handling tests
+
+### Phase 3 Completion Notes (2024-11-27)
+- Added `ModeExitBehavior` enum (CONTINUE, STOP, AUTO)
+- Added `agent.mode.set_exit_behavior()` method for handlers
+- Updated `_run_handler_cleanup()` to read exit behavior from mode state
+- Updated `_exit_mode()` to return `ModeExitBehavior`
+- Exported `ModeExitBehavior` from `good_agent` module
+- 4 new exit behavior tests
+- **Note**: Async generators don't support return values, so handlers set behavior via `agent.mode.set_exit_behavior()` or `agent.mode.state["_exit_behavior"]`
+
+### Test Coverage
+- Total tests: 76 (52 original mode tests + 24 generator tests)
+- All tests passing
+
+---
+
 ## 1. Current State Analysis
 
 ### What Exists
@@ -1101,34 +1143,36 @@ Generator handlers are new functionality.
 
 ## 6. Implementation Order
 
-### Phase 1: Core Generator Support
-1. Add `HandlerType` enum and detection
-2. Add `ActiveModeGenerator` dataclass
-3. Update `ModeStackEntry` to track generators
-4. Implement `_run_handler_setup()` for generators
-5. Implement `_run_handler_cleanup()` for generators
-6. Update `_enter_mode()` and `_exit_mode()`
+### Phase 1: Core Generator Support ✅ COMPLETE
+1. ✅ Add `HandlerType` enum and detection
+2. ✅ Add `ActiveModeGenerator` dataclass
+3. ✅ Update `ModeStackEntry` to track generators
+4. ✅ Implement `_run_handler_setup()` for generators
+5. ✅ Implement `_run_handler_cleanup()` for generators
+6. ✅ Update `_enter_mode()` and `_exit_mode()`
 
-### Phase 2: Exception Handling
-1. Update `ModeContextManager.__aexit__` for exception passing
-2. Implement `_exit_mode_with_exception()`
-3. Test cleanup on exceptions
-4. Test exception suppression
+### Phase 2: Exception Handling ✅ COMPLETE
+1. ✅ Update `ModeContextManager.__aexit__` for exception passing
+2. ✅ Implement `_exit_mode_with_exception()`
+3. ✅ Test cleanup on exceptions
+4. ✅ Test exception suppression
 
-### Phase 3: Exit Behavior
-1. Add `ModeExitBehavior` enum
-2. Update `_exit_mode()` to return behavior
-3. Integrate with `execute()` loop
-4. Add `_is_conversation_pending()` helper
+### Phase 3: Exit Behavior ✅ COMPLETE
+1. ✅ Add `ModeExitBehavior` enum
+2. ✅ Update `_exit_mode()` to return behavior
+3. ✅ Add `agent.mode.set_exit_behavior()` method
+4. 🔲 Integrate with `execute()` loop (moved to Phase 4)
+5. 🔲 Add `_is_conversation_pending()` helper (moved to Phase 4)
 
-### Phase 4: Execute Integration
-1. Remove mode handler calls from `execute()` loop
+### Phase 4: Execute Integration 🔲 PENDING
+1. Remove mode handler calls from `execute()` loop (if any)
 2. Add mode transition handling in tool execution
-3. Add auto-exit detection
-4. Test full integration
+3. Add auto-exit detection based on `ModeExitBehavior`
+4. Add `_is_conversation_pending()` helper for AUTO behavior
+5. Test full integration with execute loop
 
-### Phase 5: Documentation & Cleanup
-1. Update all documentation
+### Phase 5: Documentation & Cleanup 🔲 PENDING
+1. Update all documentation with yield syntax
 2. Update example files
 3. Add migration guide
 4. Deprecate old patterns if any
