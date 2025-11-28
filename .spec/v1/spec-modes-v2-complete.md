@@ -699,11 +699,21 @@ def _wrap_legacy_handler(handler):
 - Config isolation: restores tool state, shares messages
 - Exported `IsolationLevel` from `good_agent` and `good_agent.agent`
 
-### Phase 4: Agent-Invoked Modes
-- [ ] `invokable=True` generates tool
-- [ ] Tool schedules mode switch
-- [ ] Custom tool_name works
-- [ ] Tool description from docstring
+### Phase 4: Agent-Invoked Modes ✅ COMPLETE (2024-11-27)
+- [x] `invokable=True` generates tool
+- [x] Tool schedules mode switch
+- [x] Custom tool_name works
+- [x] Tool description from docstring
+
+**Implementation Notes:**
+- Added `invokable` and `tool_name` parameters to `@agent.modes()` decorator
+- Added `ModeInfo.invokable` and `ModeInfo.tool_name` attributes
+- Implemented `_register_invokable_tool()` method in ModeManager
+- Generated tools use `@tool` decorator with name and description from mode
+- Tool calls `manager.schedule_mode_switch(mode_name)` to schedule transition
+- Default tool name: `enter_{mode_name}_mode`
+- Description extracted from first line of handler docstring
+- 6 new tests covering invokable modes (44 total mode tests)
 
 ### Phase 5: Standalone Modes
 - [ ] `@mode('name')` decorator works outside agent

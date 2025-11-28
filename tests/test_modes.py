@@ -969,3 +969,157 @@ async def test_isolation_config_restores_tools():
         restored_tools = set(tool_manager._tools.keys())
         assert "mode_tool" not in restored_tools
         assert "original_tool" in restored_tools
+
+
+# =============================================================================
+# Phase 4: Agent-Invoked Modes Tests
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_invokable_generates_tool():
+    """Test invokable=True generates a tool for mode switching."""
+    from good_agent.tools import ToolManager
+
+    agent = Agent("Test agent")
+
+    @agent.modes("research", invokable=True)
+    async def research_mode(agent: Agent):
+        """Enter research mode for deep investigation."""
+        agent.mode.state["in_research"] = True
+
+    async with agent:
+        tool_manager = agent[ToolManager]
+
+        # Tool should be registered with default name
+        assert "enter_research_mode" in tool_manager._tools
+
+        # Mode info should reflect invokable settings
+        info = agent.modes.get_info("research")
+        assert info["invokable"] is True
+        assert info["tool_name"] == "enter_research_mode"
+
+
+@pytest.mark.asyncio
+async def test_invokable_custom_tool_name():
+    """Test custom tool_name parameter for invokable modes."""
+    from good_agent.tools import ToolManager
+
+    agent = Agent("Test agent")
+
+    @agent.modes("analysis", invokable=True, tool_name="start_analysis")
+    async def analysis_mode(agent: Agent):
+        """Begin analysis mode."""
+        pass
+
+    async with agent:
+        tool_manager = agent[ToolManager]
+
+        # Custom tool name should be used
+        assert "start_analysis" in tool_manager._tools
+        assert "enter_analysis_mode" not in tool_manager._tools
+
+        # Mode info should have custom name
+        info = agent.modes.get_info("analysis")
+        assert info["tool_name"] == "start_analysis"
+
+
+@pytest.mark.asyncio
+async def test_invokable_tool_schedules_switch():
+    """Test generated tool schedules mode switch for next call."""
+    from good_agent.tools import ToolManager
+
+    agent = Agent("Test agent")
+
+    @agent.modes("planning", invokable=True)
+    async def planning_mode(agent: Agent):
+        """Enter planning mode."""
+        agent.mode.state["planning_active"] = True
+
+    async with agent:
+        tool_manager = agent[ToolManager]
+
+        # Get the generated tool
+        tool = tool_manager["enter_planning_mode"]
+
+        # Call the tool directly
+        result = await tool()
+        assert "Will enter planning mode" in result.response
+
+        # Mode switch should be scheduled, not immediate
+        assert agent.current_mode is None
+        assert agent.modes._pending_mode_switch == ("planning", {})
+
+        # Apply scheduled changes (happens at next call)
+        with agent.mock("ok"):
+            await agent.call("test")
+
+        # Now mode should be active
+        assert agent.current_mode == "planning"
+        assert agent.modes.get_state("planning_active") is True
+
+
+@pytest.mark.asyncio
+async def test_invokable_tool_description():
+    """Test tool description is extracted from handler docstring."""
+    from good_agent.tools import ToolManager
+
+    agent = Agent("Test agent")
+
+    @agent.modes("deep_dive", invokable=True)
+    async def deep_dive_mode(agent: Agent):
+        """Perform deep analysis on complex topics.
+
+        This mode focuses on thorough investigation.
+        """
+        pass
+
+    async with agent:
+        tool_manager = agent[ToolManager]
+        tool = tool_manager["enter_deep_dive_mode"]
+
+        # First line of docstring should be the description
+        assert "Perform deep analysis on complex topics" in tool.description
+
+
+@pytest.mark.asyncio
+async def test_invokable_no_docstring():
+    """Test default description when handler has no docstring."""
+    from good_agent.tools import ToolManager
+
+    agent = Agent("Test agent")
+
+    @agent.modes("quick", invokable=True)
+    async def quick_mode(agent: Agent):
+        pass
+
+    async with agent:
+        tool_manager = agent[ToolManager]
+        tool = tool_manager["enter_quick_mode"]
+
+        # Default description should be used
+        assert "Enter quick mode" in tool.description
+
+
+@pytest.mark.asyncio
+async def test_non_invokable_no_tool():
+    """Test non-invokable modes don't generate tools."""
+    from good_agent.tools import ToolManager
+
+    agent = Agent("Test agent")
+
+    @agent.modes("private")
+    async def private_mode(agent: Agent):
+        """Private mode not accessible to agent."""
+        pass
+
+    async with agent:
+        tool_manager = agent[ToolManager]
+
+        # No tool should be generated
+        assert "enter_private_mode" not in tool_manager._tools
+
+        # Mode info should reflect non-invokable
+        info = agent.modes.get_info("private")
+        assert info["invokable"] is False
+        assert info["tool_name"] is None

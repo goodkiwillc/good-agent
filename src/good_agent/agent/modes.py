@@ -516,6 +516,8 @@ class ModeInfo:
         handler: ModeHandler,
         description: str | None = None,
         isolation: IsolationLevel = IsolationLevel.NONE,
+        invokable: bool = False,
+        tool_name: str | None = None,
     ):
         """Initialize mode info.
 
@@ -524,12 +526,16 @@ class ModeInfo:
             handler: Mode handler function
             description: Mode description (from docstring)
             isolation: Isolation level for this mode
+            invokable: If True, generate a tool for agent to enter this mode
+            tool_name: Custom tool name (default: 'enter_{name}_mode')
         """
         self.name = name
         self.handler = handler
         self.description = description or handler.__doc__
         self.style = _detect_handler_style(handler)
         self.isolation = isolation
+        self.invokable = invokable
+        self.tool_name = tool_name or f"enter_{name}_mode"
 
     def info(self) -> dict[str, Any]:
         """Get mode metadata as dictionary.
@@ -543,6 +549,8 @@ class ModeInfo:
             "handler": self.handler,
             "style": self.style.name,
             "isolation": self.isolation.name,
+            "invokable": self.invokable,
+            "tool_name": self.tool_name if self.invokable else None,
         }
 
 
@@ -569,6 +577,8 @@ class ModeManager:
         name: str,
         *,
         isolation: IsolationLevel | str = IsolationLevel.NONE,
+        invokable: bool = False,
+        tool_name: str | None = None,
     ) -> Callable[[ModeHandler], ModeHandler]:
         """Decorator for registering a mode handler.
 
@@ -576,6 +586,10 @@ class ModeManager:
             name: Name of the mode
             isolation: Isolation level for this mode. Can be IsolationLevel enum
                 or string ('none', 'config', 'thread', 'fork'). Default is 'none'.
+            invokable: If True, generates a tool that allows the agent to enter
+                this mode. The tool schedules a mode switch for the next call.
+            tool_name: Custom name for the generated tool. Default is
+                'enter_{name}_mode'.
 
         Returns:
             Decorator function
@@ -590,6 +604,12 @@ class ModeManager:
             async def sandbox_mode(agent: Agent):
                 # Complete isolation - changes don't persist
                 return await agent.call()
+
+            @agent.modes('planning', invokable=True)
+            async def planning_mode(agent: Agent):
+                '''Enter planning mode for strategic thinking.'''
+                agent.prompt.append("Focus on planning and strategy.")
+                # Agent can call 'enter_planning_mode' tool to switch here
         """
         # Convert string to IsolationLevel if needed
         if isinstance(isolation, str):
@@ -607,14 +627,56 @@ class ModeManager:
             # Extract description from docstring
             description = func.__doc__
 
-            # Register mode with isolation level
-            self._registry[name] = ModeInfo(
-                name, func, description, isolation=isolation_level
+            # Register mode with isolation level and invokable settings
+            mode_info = ModeInfo(
+                name,
+                func,
+                description,
+                isolation=isolation_level,
+                invokable=invokable,
+                tool_name=tool_name,
             )
+            self._registry[name] = mode_info
+
+            # Generate and register tool if invokable
+            if invokable:
+                self._register_invokable_tool(mode_info)
 
             return func
 
         return decorator
+
+    def _register_invokable_tool(self, mode_info: ModeInfo) -> None:
+        """Generate and register a tool for agent-invoked mode switching.
+
+        Args:
+            mode_info: Mode metadata containing name, description, tool_name
+        """
+        from good_agent.tools import ToolManager, tool
+
+        mode_name = mode_info.name
+        generated_tool_name = mode_info.tool_name
+
+        # Build tool description from mode docstring
+        if mode_info.description:
+            # Use first line of docstring as tool description
+            first_line = mode_info.description.strip().split("\n")[0]
+            tool_description = f"{first_line}"
+        else:
+            tool_description = f"Enter {mode_name} mode."
+
+        # Capture mode_name and manager in closure
+        manager = self
+
+        @tool(name=generated_tool_name, description=tool_description)
+        def mode_switch_tool() -> str:
+            """Generated tool to schedule mode switch."""
+            manager.schedule_mode_switch(mode_name)
+            return f"Will enter {mode_name} mode."
+
+        # Register tool with agent's ToolManager using __setitem__
+        tool_manager = self._agent[ToolManager]
+        tool_manager[generated_tool_name] = mode_switch_tool
 
     def __getitem__(self, name: str) -> ModeContextManager:
         """Get mode context manager for entering a mode.
