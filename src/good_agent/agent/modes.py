@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import inspect
 import warnings
-from collections.abc import Awaitable, Callable, MutableMapping
-from dataclasses import dataclass
+from collections.abc import AsyncGenerator, Awaitable, Callable, MutableMapping
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum, IntEnum, auto
 from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypeVar

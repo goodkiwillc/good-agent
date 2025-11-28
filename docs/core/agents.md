@@ -39,6 +39,86 @@ Agents register themselves globally for debugging and monitoring:
 --8<-- "examples/docs/agent_registry.py"
 ```
 
+## Mode Accessor
+
+The `agent.mode` property provides access to the current mode context:
+
+```python
+from good_agent import Agent
+
+async with Agent("Assistant") as agent:
+    @agent.modes("research")
+    async def research_mode(agent: Agent):
+        # Access mode state
+        agent.mode.state["topic"] = "quantum computing"
+        
+        # Add to system prompt (auto-restored on exit)
+        agent.prompt.append("Focus on research and citations.")
+    
+    async with agent.modes["research"]:
+        # Mode properties
+        print(agent.mode.name)              # "research"
+        print(agent.mode.stack)             # ["research"]
+        print(agent.mode.in_mode("research"))  # True
+        print(agent.mode.state["topic"])    # "quantum computing"
+        
+        # Transition to another mode
+        # agent.mode.switch("writing")
+        # agent.mode.exit()
+```
+
+**Key Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `agent.mode.name` | `str \| None` | Current mode name (top of stack) |
+| `agent.mode.stack` | `list[str]` | All active modes (LIFO order) |
+| `agent.mode.state` | `dict` | Current mode's state dictionary |
+| `agent.mode.in_mode(name)` | `bool` | Check if mode is anywhere in stack |
+| `agent.mode.switch(name)` | `ModeTransition` | Request transition to another mode |
+| `agent.mode.exit()` | `ModeTransition` | Request exit from current mode |
+
+## System Prompt Manager
+
+The `agent.prompt` property manages dynamic system prompts with automatic restoration:
+
+```python
+from good_agent import Agent
+
+async with Agent("Assistant") as agent:
+    # Render the current system prompt
+    print(agent.prompt.render())
+    
+    @agent.modes("expert")
+    async def expert_mode(agent: Agent):
+        # Append to system prompt (restored on mode exit)
+        agent.prompt.append("You are an expert. Use technical language.")
+        
+        # Prepend to system prompt
+        agent.prompt.prepend("IMPORTANT: Be precise.")
+        
+        # Named sections
+        agent.prompt.sections["context"] = "Current project: AI Research"
+        
+        # Persist changes beyond mode exit
+        agent.prompt.append("Always be helpful.", persist=True)
+    
+    async with agent.modes["expert"]:
+        # Prompt includes all additions
+        print(agent.prompt.render())
+    
+    # After mode exit: appends/prepends restored, persist=True kept
+```
+
+**Key Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `agent.prompt.append(msg, persist=False)` | Add to end of prompt |
+| `agent.prompt.prepend(msg, persist=False)` | Add to start of prompt |
+| `agent.prompt.sections[name] = content` | Set named section |
+| `agent.prompt.render()` | Get composed prompt string |
+
 ## Agent Lifecycle
 
 ### State Machine

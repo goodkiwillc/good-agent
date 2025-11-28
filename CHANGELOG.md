@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Agent Modes v2 API**: New agent-centric mode handler signature `async def handler(agent: Agent)`
+  - `agent.mode.name` - Current mode name
+  - `agent.mode.stack` - Active mode stack
+  - `agent.mode.state` - Mode state dictionary
+  - `agent.mode.switch(name)` - Request mode transition
+  - `agent.mode.exit()` - Request mode exit
+  - `agent.mode.in_mode(name)` - Check if mode is active
+- **SystemPromptManager** (`agent.prompt`) for dynamic system prompt composition
+  - `agent.prompt.append(msg)` / `agent.prompt.prepend(msg)` - Add to prompt
+  - `agent.prompt.sections[name]` - Named prompt sections
+  - `agent.prompt.render()` - Get composed prompt
+  - Auto-restore on mode exit (unless `persist=True`)
+- **Isolation Levels**: `none`, `config`, `thread`, `fork` for mode isolation
+- **Invokable Modes**: Generate tools for agent self-switching with `invokable=True`
+- **Standalone Modes**: `@mode()` decorator for reusable mode definitions
+
+### Deprecated
+- `ModeContext` signature - Use `agent: Agent` parameter instead
+
 ## [0.5.2] - 2025-11-26
 
 - TODO: Document release notes.

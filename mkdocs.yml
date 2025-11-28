@@ -86,6 +86,8 @@ nav:
     - Context Management: features/context-management.md
     - Interactive Execution: features/interactive-execution.md
     - Human-in-the-Loop: features/human-in-the-loop.md
+  - Guides:
+    - Mode Patterns: guides/mode-patterns.md
   - Components & Extensions:
     - Overview: components/index.md
     - Creating Components: components/creating-components.md

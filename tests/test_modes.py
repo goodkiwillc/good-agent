@@ -14,7 +14,7 @@ async def test_mode_registration():
     agent = Agent("Test agent")
 
     @agent.modes("test-mode")
-    async def test_mode_handler(ctx: ModeContext):
+    async def test_mode_handler(agent_param: Agent):
         return "test response"
 
     assert "test-mode" in agent.modes.list_modes()
@@ -28,8 +28,8 @@ async def test_mode_context_manager():
     agent = Agent("Test agent")
 
     @agent.modes("research")
-    async def research_mode(ctx: ModeContext):
-        return await ctx.call()
+    async def research_mode(agent_param: Agent):
+        return await agent_param.call()
 
     async with agent:
         assert agent.current_mode is None
@@ -49,16 +49,16 @@ async def test_mode_stacking():
     agent = Agent("Test agent")
 
     @agent.modes("outer")
-    async def outer_mode(ctx: ModeContext):
-        ctx.state["outer_var"] = "outer"
-        return await ctx.call()
+    async def outer_mode(agent_param: Agent):
+        agent_param.mode.state["outer_var"] = "outer"
+        return await agent_param.call()
 
     @agent.modes("inner")
-    async def inner_mode(ctx: ModeContext):
-        ctx.state["inner_var"] = "inner"
+    async def inner_mode(agent_param: Agent):
+        agent_param.mode.state["inner_var"] = "inner"
         # Should see outer_var
-        assert ctx.state.get("outer_var") == "outer"
-        return await ctx.call()
+        assert agent_param.mode.state.get("outer_var") == "outer"
+        return await agent_param.call()
 
     async with agent:
         async with agent.modes["outer"]:
@@ -82,22 +82,22 @@ async def test_scoped_state():
     agent = Agent("Test agent")
 
     @agent.modes("outer")
-    async def outer_mode(ctx: ModeContext):
-        ctx.state["x"] = "outer"
-        ctx.state["y"] = "only-outer"
-        return await ctx.call()
+    async def outer_mode(agent_param: Agent):
+        agent_param.mode.state["x"] = "outer"
+        agent_param.mode.state["y"] = "only-outer"
+        return await agent_param.call()
 
     @agent.modes("inner")
-    async def inner_mode(ctx: ModeContext):
+    async def inner_mode(agent_param: Agent):
         # Read inherited state
-        assert ctx.state.get("x") == "outer"
-        assert ctx.state.get("y") == "only-outer"
+        assert agent_param.mode.state.get("x") == "outer"
+        assert agent_param.mode.state.get("y") == "only-outer"
 
         # Shadow outer state
-        ctx.state["x"] = "inner"
-        ctx.state["z"] = "only-inner"
+        agent_param.mode.state["x"] = "inner"
+        agent_param.mode.state["z"] = "only-inner"
 
-        return await ctx.call()
+        return await agent_param.call()
 
     async with agent:
         async with agent.modes["outer"]:
@@ -133,8 +133,8 @@ async def test_direct_mode_entry_exit():
     agent = Agent("Test agent")
 
     @agent.modes("test")
-    async def test_mode(ctx: ModeContext):
-        return await ctx.call()
+    async def test_mode(agent_param: Agent):
+        return await agent_param.call()
 
     async with agent:
         # Enter mode directly
@@ -167,8 +167,8 @@ async def test_mode_idempotent_entry():
     agent = Agent("Test agent")
 
     @agent.modes("test")
-    async def test_mode(ctx: ModeContext):
-        return await ctx.call()
+    async def test_mode(agent_param: Agent):
+        return await agent_param.call()
 
     async with agent:
         await agent.modes.enter_mode("test")
@@ -197,8 +197,8 @@ async def test_mode_events():
         pass
 
     @agent.modes("test")
-    async def test_mode(ctx: ModeContext):
-        return await ctx.call()
+    async def test_mode(agent_param: Agent):
+        return await agent_param.call()
 
     async with agent:
         # Just verify modes work
@@ -214,8 +214,11 @@ async def test_mode_context_add_system_message():
     agent = Agent("Test agent", model="gpt-4o-mini")
 
     @agent.modes("research")
-    async def research_mode(ctx: ModeContext):
-        ctx.add_system_message("You are in research mode. Focus on accuracy.")
+    async def research_mode(agent_param: Agent):
+        # Use agent.append() to add system message to conversation
+        agent_param.append(
+            "You are in research mode. Focus on accuracy.", role="system"
+        )
         return None
 
     async with agent:
@@ -236,11 +239,11 @@ async def test_mode_list():
     agent = Agent("Test agent")
 
     @agent.modes("mode1")
-    async def mode1(ctx: ModeContext):
+    async def mode1(agent_param: Agent):
         pass
 
     @agent.modes("mode2")
-    async def mode2(ctx: ModeContext):
+    async def mode2(agent_param: Agent):
         pass
 
     modes = agent.modes.list_modes()
@@ -255,7 +258,7 @@ async def test_mode_info():
     agent = Agent("Test agent")
 
     @agent.modes("test")
-    async def test_mode(ctx: ModeContext):
+    async def test_mode(agent_param: Agent):
         """Test mode with description."""
         pass
 
@@ -272,9 +275,10 @@ async def test_mode_handler_execution():
     handler_runs: list[tuple[str, tuple[str, ...]]] = []
 
     @agent.modes("research")
-    async def research_mode(ctx: ModeContext):
-        handler_runs.append((ctx.mode_name, tuple(ctx.mode_stack)))
-        ctx.state["ran"] = ctx.state.get("ran", 0) + 1
+    async def research_mode(agent_param: Agent):
+        assert agent_param.mode.name is not None
+        handler_runs.append((agent_param.mode.name, tuple(agent_param.mode.stack)))
+        agent_param.mode.state["ran"] = agent_param.mode.state.get("ran", 0) + 1
 
     async with agent:
         with agent.mock("Mock response"):
@@ -294,14 +298,16 @@ async def test_mode_transition_switch():
     sequence: list[tuple[str, tuple[str, ...]]] = []
 
     @agent.modes("analysis")
-    async def analysis_mode(ctx: ModeContext):
-        sequence.append((ctx.mode_name, tuple(ctx.mode_stack)))
-        return ctx.switch_mode("execution")
+    async def analysis_mode(agent_param: Agent):
+        assert agent_param.mode.name is not None
+        sequence.append((agent_param.mode.name, tuple(agent_param.mode.stack)))
+        return agent_param.mode.switch("execution")
 
     @agent.modes("execution")
-    async def execution_mode(ctx: ModeContext):
-        sequence.append((ctx.mode_name, tuple(ctx.mode_stack)))
-        ctx.state["done"] = True
+    async def execution_mode(agent_param: Agent):
+        assert agent_param.mode.name is not None
+        sequence.append((agent_param.mode.name, tuple(agent_param.mode.stack)))
+        agent_param.mode.state["done"] = True
 
     async with agent:
         with agent.mock("ok"):
@@ -325,14 +331,16 @@ async def test_mode_transition_exit():
     outer_runs: list[tuple[str, ...]] = []
 
     @agent.modes("outer")
-    async def outer_mode(ctx: ModeContext):
-        outer_runs.append(tuple(ctx.mode_stack))
-        ctx.state["outer_counter"] = ctx.state.get("outer_counter", 0) + 1
+    async def outer_mode(agent_param: Agent):
+        outer_runs.append(tuple(agent_param.mode.stack))
+        agent_param.mode.state["outer_counter"] = (
+            agent_param.mode.state.get("outer_counter", 0) + 1
+        )
 
     @agent.modes("inner")
-    async def inner_mode(ctx: ModeContext):
-        inner_runs.append(tuple(ctx.mode_stack))
-        return ctx.exit_mode()
+    async def inner_mode(agent_param: Agent):
+        inner_runs.append(tuple(agent_param.mode.stack))
+        return agent_param.mode.exit()
 
     async with agent:
         with agent.mock("ok"):
@@ -354,9 +362,10 @@ async def test_scheduled_mode_switch():
     entries: list[str] = []
 
     @agent.modes("research")
-    async def research_mode(ctx: ModeContext):
-        entries.append(ctx.mode_name)
-        ctx.state["entered"] = True
+    async def research_mode(agent_param: Agent):
+        assert agent_param.mode.name is not None
+        entries.append(agent_param.mode.name)
+        agent_param.mode.state["entered"] = True
 
     async with agent:
         with agent.mock("ok"):
@@ -375,8 +384,8 @@ async def test_scheduled_mode_exit():
     agent = Agent("Test agent")
 
     @agent.modes("focus")
-    async def focus_mode(ctx: ModeContext):
-        ctx.state["hits"] = ctx.state.get("hits", 0) + 1
+    async def focus_mode(agent_param: Agent):
+        agent_param.mode.state["hits"] = agent_param.mode.state.get("hits", 0) + 1
 
     async with agent:
         with agent.mock("ok"):
@@ -393,11 +402,11 @@ async def test_mode_switch_before_call():
     events: list[str] = []
 
     @agent.modes("first")
-    async def first_mode(ctx: ModeContext):
+    async def first_mode(agent_param: Agent):
         events.append("first")
 
     @agent.modes("second")
-    async def second_mode(ctx: ModeContext):
+    async def second_mode(agent_param: Agent):
         events.append("second")
 
     async with agent:
@@ -541,34 +550,34 @@ async def test_legacy_handler_deprecation_warning():
 
 @pytest.mark.asyncio
 async def test_mixed_handler_styles():
-    """Test mixing legacy and agent-centric handlers in stack."""
+    """Test mixing multiple agent-centric handlers in stack."""
     agent = Agent("Test agent")
     calls: list[str] = []
 
-    @agent.modes("outer_legacy")
-    async def outer_legacy(ctx: ModeContext):
-        calls.append(f"legacy:{ctx.mode_name}")
-        ctx.state["legacy_ran"] = True
+    @agent.modes("outer")
+    async def outer_mode(agent_param: Agent):
+        calls.append(f"outer:{agent_param.mode.name}")
+        agent_param.mode.state["outer_ran"] = True
 
-    @agent.modes("inner_modern")
-    async def inner_modern(agent_param: Agent):
-        calls.append(f"modern:{agent_param.mode.name}")
-        agent_param.mode.state["modern_ran"] = True
+    @agent.modes("inner")
+    async def inner_mode(agent_param: Agent):
+        calls.append(f"inner:{agent_param.mode.name}")
+        agent_param.mode.state["inner_ran"] = True
 
     async with agent:
         with agent.mock("ok", "ok"):
-            async with agent.modes["outer_legacy"]:
+            async with agent.modes["outer"]:
                 await agent.call("first")
-                assert agent.modes.get_state("legacy_ran") is True
+                assert agent.modes.get_state("outer_ran") is True
 
-                async with agent.modes["inner_modern"]:
+                async with agent.modes["inner"]:
                     await agent.call("second")
-                    assert agent.modes.get_state("modern_ran") is True
+                    assert agent.modes.get_state("inner_ran") is True
                     # Can still see outer state
-                    assert agent.modes.get_state("legacy_ran") is True
+                    assert agent.modes.get_state("outer_ran") is True
 
-    assert "legacy:outer_legacy" in calls
-    assert "modern:inner_modern" in calls
+    assert "outer:outer" in calls
+    assert "inner:inner" in calls
 
 
 # =============================================================================

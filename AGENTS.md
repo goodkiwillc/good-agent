@@ -101,22 +101,27 @@ print(f"{profile.name} is {profile.age}")
 Switch behaviors and toolsets dynamically using Modes.
 
 ```python
-from good_agent import AgentContext
+from good_agent import Agent
 
 @agent.modes('research')
-async def research_mode(ctx: AgentContext):
+async def research_mode(agent: Agent):
     """Specialized mode for research tasks."""
-    # Add temporary system prompt
-    ctx.add_system_message("You are a research expert. Be thorough.")
+    # Add temporary system prompt (auto-restored on mode exit)
+    agent.prompt.append("You are a research expert. Be thorough.")
     
-    # Use mode-specific tools
-    async with ctx.temporary_tools([web_search, scrape_page]):
-        # Execution within this block uses the mode configuration
-        return await ctx.call()
+    # Access mode state
+    agent.mode.state["topic"] = "quantum computing"
 
 # Enter mode
 async with agent.modes['research']:
     await agent.call("Research quantum computing")
+    print(agent.mode.name)   # "research"
+    print(agent.mode.stack)  # ["research"]
+
+# Mode features:
+# - isolation: 'none', 'config', 'thread', 'fork'
+# - invokable: generate tools for agent self-switching
+# - standalone: @mode() decorator for reusable modes
 ```
 
 ## 6. Event System

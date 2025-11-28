@@ -23,12 +23,12 @@ async def research_mode(agent: Agent):
     # Runs when mode is entered
     agent.system.append("Research mode active.")
     agent.mode.state['started'] = datetime.now()
-    
+
     # === YIELD CONTROL ===
     # Pauses generator, returns control to caller
     # Mode remains "active" - config/state persists
     yield agent
-    
+
     # === CLEANUP PHASE ===
     # Runs when mode exits (always, even on exception)
     duration = datetime.now() - agent.mode.state['started']
@@ -77,14 +77,14 @@ async def research_mode(agent: Agent):
 async with agent.modes['outer']:
     # outer setup runs, yields control
     print(agent.mode.stack)  # ['outer']
-    
+
     async with agent.modes['inner']:
         # inner setup runs, yields control
         print(agent.mode.stack)  # ['outer', 'inner']
         print(agent.mode.name)   # 'inner' (current/top)
-        
+
         await agent.call("Do work")  # Both modes active
-    
+
     # inner cleanup runs (LIFO)
     print(agent.mode.stack)  # ['outer']
 
@@ -122,21 +122,21 @@ async def outer_mode(agent: Agent):
 async def inner_mode(agent: Agent):
     # READ: inherits from outer
     print(agent.mode.state['project'])  # 'quantum'
-    
+
     # WRITE: shadows (doesn't modify outer)
     agent.mode.state['depth'] = 'deep'
     agent.mode.state['inner_only'] = 'data'
-    
+
     yield agent
 
 # Usage
 async with agent.modes['outer']:
     print(agent.mode.state['depth'])  # 'shallow'
-    
+
     async with agent.modes['inner']:
         print(agent.mode.state['depth'])  # 'deep' (shadowed)
         print(agent.mode.state['inner_only'])  # 'data'
-    
+
     # After inner exits:
     print(agent.mode.state['depth'])  # 'shallow' (restored)
     print(agent.mode.state.get('inner_only'))  # None (removed)
@@ -164,7 +164,7 @@ When agent calls mode-switching tools, modes stack the same way:
 ```python
 @agent.modes('name', isolation='none')      # Default
 @agent.modes('name', isolation='thread')    # ThreadContext semantics
-@agent.modes('name', isolation='fork')      # ForkContext semantics  
+@agent.modes('name', isolation='fork')      # ForkContext semantics
 @agent.modes('name', isolation='config')    # Config only, shared messages
 ```
 
@@ -185,12 +185,12 @@ When agent calls mode-switching tools, modes stack the same way:
 async def summarizer_mode(agent: Agent):
     # Messages are a temporary view
     # Can truncate/modify freely - original preserved
-    
+
     # Truncate to last 5 messages for summarization
     agent.messages.truncate(5)
-    
+
     yield agent
-    
+
     # After yield, new messages added during mode are KEPT
     # Original messages before truncation are RESTORED
     # Result: original messages + new messages from this mode
@@ -203,15 +203,15 @@ async def summarizer_mode(agent: Agent):
 async def exploration_mode(agent: Agent):
     # Complete isolation - working on a copy
     # Nothing persists back to parent
-    
+
     await agent.call("Try risky approach")
     await agent.call("This might fail")
-    
+
     # Can store results in mode.state to pass back
     agent.mode.state['findings'] = extract_findings(agent.messages)
-    
+
     yield agent
-    
+
     # Cleanup can read findings, but messages don't persist
 ```
 
@@ -297,7 +297,7 @@ async with agent.modes['outer']:
 # outer cleanup runs (regardless of inner's exception)
 # First exception propagates (inner's ValueError)
 # If cleanup raises, it's logged but doesn't suppress original
-```
+```ok
 
 ### 4.5 Exception Access in Cleanup
 
@@ -325,9 +325,9 @@ from good_agent.modes import ModeTransition
 @agent.modes('intake')
 async def intake_mode(agent: Agent):
     agent.system.append("Determine user needs.")
-    
+
     yield agent
-    
+
     # After yielded execution, decide next mode
     if agent.mode.state.get('needs_research'):
         return ModeTransition.switch('research')
@@ -344,15 +344,15 @@ class ModeTransition:
     @staticmethod
     def switch(mode_name: str, **params) -> ModeTransition:
         """Exit current mode, enter new mode."""
-        
+
     @staticmethod
     def push(mode_name: str, **params) -> ModeTransition:
         """Keep current mode, push new mode on top."""
-        
+
     @staticmethod
     def exit() -> ModeTransition:
         """Exit current mode, return to parent or none."""
-        
+
     @staticmethod
     def stay() -> ModeTransition:
         """Explicitly stay in current mode (default if no return)."""
@@ -368,7 +368,7 @@ async def switch_to_research(agent: Agent) -> str:
     agent.modes.schedule_switch('research', topic='AI')
     return "Will enter research mode."
 
-@tool  
+@tool
 async def exit_mode(agent: Agent) -> str:
     agent.modes.schedule_exit()
     return f"Will exit {agent.mode.name} mode."
@@ -562,28 +562,32 @@ class TestModesIntegration:
 
 ### 10.1 Files to Update
 
-| File | Changes |
-|------|---------|
-| `docs/features/modes.md` | Complete rewrite for v2 API |
-| `docs/core/agent.md` | Add `agent.mode` and `agent.system` sections |
-| `AGENTS.md` | Update mode examples in quick reference |
-| `CHANGELOG.md` | Document breaking changes and migration |
+| File | Changes | Status |
+|------|---------|--------|
+| `docs/features/modes.md` | Complete rewrite for v2 API with real-world use cases | ✅ DONE |
+| `docs/core/agents.md` | Add `agent.mode` and `agent.prompt` sections | ✅ DONE |
+| `AGENTS.md` | Update mode examples in quick reference | ✅ DONE |
+| `CHANGELOG.md` | Document breaking changes and migration | ✅ DONE |
 
 ### 10.2 New Documentation
 
-| File | Content |
-|------|---------|
-| `docs/guides/mode-migration.md` | ModeContext → Agent migration guide |
-| `docs/guides/mode-patterns.md` | Common patterns and best practices |
-| `examples/modes/v2_*.py` | Updated examples for v2 API |
+| File | Content | Status |
+|------|---------|--------|
+| `docs/guides/mode-patterns.md` | Common patterns and best practices | ✅ DONE |
 
-### 10.3 Example Updates Required
+### 10.3 Example Updates Required ✅ COMPLETE (2024-11-28)
 
-All files in `examples/modes/` and `examples/docs/modes_*.py` must be updated to:
-- Remove ModeContext imports
-- Use `agent: Agent` parameter
-- Use `agent.mode.state` instead of `ctx.state`
-- Use `agent.system.append()` instead of `ctx.add_system_message()`
+All files in `examples/modes/` and `examples/docs/modes_*.py` have been updated to:
+- [x] Remove ModeContext imports
+- [x] Use `agent: Agent` parameter
+- [x] Use `agent.mode.state` instead of `ctx.state`
+- [x] Use `agent.prompt.append()` instead of `ctx.add_system_message()`
+
+**Files Updated (24 total):**
+- `examples/modes/basic_modes.py`
+- `examples/modes/self_switching.py`
+- `examples/modes/mode_switching_tools.py`
+- All 18 `examples/docs/modes_*.py` files
 
 ---
 
@@ -602,7 +606,7 @@ All files in `examples/modes/` and `examples/docs/modes_*.py` must be updated to
 # During deprecation period, ModeContext acts as wrapper
 class ModeContext:
     """Deprecated. Use agent: Agent parameter instead."""
-    
+
     def __init__(self, agent: Agent):
         self.agent = agent
         warnings.warn(
@@ -610,15 +614,15 @@ class ModeContext:
             DeprecationWarning,
             stacklevel=2
         )
-    
+
     @property
     def state(self):
         return self.agent.mode.state
-    
+
     def add_system_message(self, content: str):
         warnings.warn("Use agent.system.append() instead", DeprecationWarning)
         self.agent.system.append(content)
-    
+
     async def call(self, *args, **kwargs):
         warnings.warn("Use agent.call() instead", DeprecationWarning)
         return await self.agent.call(*args, **kwargs)
