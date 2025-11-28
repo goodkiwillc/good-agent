@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2025-11-28
+
+- TODO: Document release notes.
+
+
 ## [0.6.0] - 2025-11-27
 
 - TODO: Document release notes.
