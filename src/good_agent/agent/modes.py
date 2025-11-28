@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import inspect
 import warnings
-from collections.abc import AsyncGenerator, Awaitable, Callable, MutableMapping
-from dataclasses import dataclass, field
+from collections.abc import Awaitable, Callable, MutableMapping
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum, IntEnum, auto
 from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypeVar
@@ -92,6 +92,36 @@ def _detect_handler_style(handler: Callable[..., Any]) -> HandlerStyle:
         return HandlerStyle.AGENT_CENTRIC
 
     return HandlerStyle.LEGACY
+
+
+class HandlerType(Enum):
+    """Type of mode handler function."""
+
+    SIMPLE = "simple"  # Regular async function (no cleanup)
+    GENERATOR = "generator"  # Async generator with yield (setup/cleanup)
+
+
+def _detect_handler_type(handler: Callable[..., Any]) -> HandlerType:
+    """Detect if handler is a simple async function or async generator.
+
+    Args:
+        handler: The mode handler function
+
+    Returns:
+        HandlerType indicating the handler's type
+
+    Raises:
+        TypeError: If handler is not an async function or async generator
+    """
+    if inspect.isasyncgenfunction(handler):
+        return HandlerType.GENERATOR
+    elif inspect.iscoroutinefunction(handler):
+        return HandlerType.SIMPLE
+    else:
+        raise TypeError(
+            f"Mode handler must be async function or async generator, "
+            f"got {type(handler).__name__}"
+        )
 
 
 @dataclass(slots=True)
@@ -341,6 +371,16 @@ class ModeContext:
 
 
 @dataclass
+@dataclass
+class ActiveModeGenerator:
+    """Tracks a paused mode generator awaiting cleanup."""
+
+    mode_name: str
+    generator: Any  # AsyncGenerator[Agent, None] - using Any to avoid import issues
+    started_at: datetime
+
+
+@dataclass
 class ModeStackEntry:
     """Entry in the mode stack with all mode-specific data."""
 
@@ -348,6 +388,8 @@ class ModeStackEntry:
     state: dict[str, Any]
     isolation: IsolationLevel
     isolation_snapshot: IsolationSnapshot | None = None
+    active_generator: ActiveModeGenerator | None = None
+    entered_at: datetime | None = None
 
 
 class ModeStack:
@@ -363,6 +405,8 @@ class ModeStack:
         state: dict[str, Any] | None = None,
         isolation: IsolationLevel = IsolationLevel.NONE,
         isolation_snapshot: IsolationSnapshot | None = None,
+        active_generator: ActiveModeGenerator | None = None,
+        entered_at: datetime | None = None,
     ) -> None:
         """Push new mode onto stack.
 
@@ -371,12 +415,16 @@ class ModeStack:
             state: Initial state for mode (defaults to empty dict)
             isolation: Isolation level for this mode
             isolation_snapshot: Snapshot for restore on exit
+            active_generator: Generator tracking for cleanup
+            entered_at: Timestamp when mode was entered
         """
         entry = ModeStackEntry(
             name=mode_name,
             state=state or {},
             isolation=isolation,
             isolation_snapshot=isolation_snapshot,
+            active_generator=active_generator,
+            entered_at=entered_at or datetime.now(),
         )
         self._stack.append(entry)
 
@@ -795,6 +843,87 @@ class ModeManager:
             # ensures it actually accepts ModeContext for LEGACY style
             return await handler(ctx)  # type: ignore[arg-type]
 
+    async def _run_handler_setup(
+        self, mode_name: str, info: ModeInfo, entry: ModeStackEntry
+    ) -> None:
+        """Run handler setup phase (until yield for generators).
+
+        For simple handlers, does nothing (they run via execute_handler during execute()).
+        For generator handlers, runs until the first yield and stores
+        the generator for later cleanup.
+
+        Args:
+            mode_name: Name of the mode
+            info: Mode metadata
+            entry: Stack entry to store generator in
+        """
+        handler = info.handler
+        handler_type = _detect_handler_type(handler)
+
+        if handler_type == HandlerType.SIMPLE:
+            # Simple handlers are NOT run at entry - they run via execute_handler()
+            # during the execute() loop for backward compatibility
+            entry.active_generator = None
+            return
+
+        if handler_type == HandlerType.GENERATOR:
+            # Generator - run until first yield
+            if info.style == HandlerStyle.AGENT_CENTRIC:
+                gen = handler(self._agent)  # type: ignore[arg-type]
+            else:
+                warnings.warn(
+                    f"Mode handler '{mode_name}' uses deprecated ModeContext signature. "
+                    "Update to use 'agent: Agent' parameter instead.",
+                    DeprecationWarning,
+                    stacklevel=4,
+                )
+                ctx = self.create_context()
+                gen = handler(ctx)  # type: ignore[arg-type]
+
+            # Run setup phase (until yield)
+            # gen is actually AsyncGenerator at this point due to handler_type check
+            try:
+                await gen.__anext__()  # type: ignore[attr-defined]
+            except StopAsyncIteration:
+                # Generator returned without yielding - treat as simple
+                entry.active_generator = None
+                return
+
+            # Generator yielded - store it for later cleanup
+            entry.active_generator = ActiveModeGenerator(
+                mode_name=mode_name,
+                generator=gen,
+                started_at=datetime.now(),
+            )
+
+    async def _run_handler_cleanup(self, entry: ModeStackEntry) -> None:
+        """Run handler cleanup phase (after yield).
+
+        Resumes the generator from yield and handles completion.
+
+        Args:
+            entry: Stack entry with active generator
+        """
+        if entry.active_generator is None:
+            return
+
+        gen = entry.active_generator.generator
+
+        try:
+            # Resume generator for cleanup
+            try:
+                await gen.__anext__()
+                # If generator yields again, that's an error
+                raise RuntimeError(
+                    f"Mode handler '{entry.name}' yielded more than once"
+                )
+            except StopAsyncIteration:
+                # Generator completed normally
+                pass
+        finally:
+            # Ensure generator is closed
+            await gen.aclose()
+
     def _create_isolation_snapshot(
         self, mode_name: str, isolation: IsolationLevel
     ) -> IsolationSnapshot | None:
@@ -919,7 +1048,20 @@ class ModeManager:
             dict(params),
             isolation=new_isolation,
             isolation_snapshot=isolation_snapshot,
+            entered_at=datetime.now(),
         )
+
+        # Run handler setup phase (runs until yield for generators)
+        entry = self._mode_stack.current_entry
+        assert entry is not None  # Just pushed, so entry exists
+        try:
+            await self._run_handler_setup(mode_name, mode_info, entry)
+        except Exception:
+            # Setup failed - pop the mode and restore state
+            self._mode_stack.pop()
+            self._agent._system_prompt_manager.restore_snapshot()
+            self._restore_from_isolation_snapshot(isolation_snapshot)
+            raise
 
         # Emit mode:entered event
         from good_agent.events.agent import AgentEvents
@@ -940,18 +1082,26 @@ class ModeManager:
 
         # Get current mode entry before popping
         entry = self._mode_stack.current_entry
-        mode_name = entry.name if entry else "unknown"
-        isolation_snapshot = entry.isolation_snapshot if entry else None
-        entered_at = datetime.now()  # TODO: Track this properly
+        if entry is None:
+            return
 
-        # Pop mode from stack
-        self._mode_stack.pop()
+        mode_name = entry.name
+        isolation_snapshot = entry.isolation_snapshot
+        entered_at = entry.entered_at or datetime.now()
 
-        # Restore system prompt state to pre-mode snapshot
-        self._agent._system_prompt_manager.restore_snapshot()
+        # Run cleanup for generator handlers
+        try:
+            await self._run_handler_cleanup(entry)
+        finally:
+            # Always restore state even if cleanup fails
+            # Pop mode from stack
+            self._mode_stack.pop()
 
-        # Restore from isolation snapshot
-        self._restore_from_isolation_snapshot(isolation_snapshot)
+            # Restore system prompt state to pre-mode snapshot
+            self._agent._system_prompt_manager.restore_snapshot()
+
+            # Restore from isolation snapshot
+            self._restore_from_isolation_snapshot(isolation_snapshot)
 
         # Emit mode:exited event
         from good_agent.events.agent import AgentEvents
