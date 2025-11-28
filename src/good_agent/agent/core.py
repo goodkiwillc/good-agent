@@ -1621,6 +1621,32 @@ class Agent(EventRouter):
 
             return await self._llm_call(response_model=response_model, **kwargs)
 
+    def _is_conversation_pending(self) -> bool:
+        """Check if the conversation needs another LLM response.
+
+        Used by ModeExitBehavior.AUTO to determine whether to call the LLM
+        after a mode exits.
+
+        Returns:
+            True if conversation needs LLM response, False otherwise
+        """
+        if not self.messages:
+            return False
+
+        last_msg = self.messages[-1]
+
+        # Pending if last message is from user or tool (needs LLM to respond)
+        if last_msg.role in ("user", "tool"):
+            return True
+
+        # Pending if assistant message has tool calls (waiting for tool results)
+        if last_msg.role == "assistant":
+            assistant_msg = cast(AssistantMessage, last_msg)
+            if assistant_msg.tool_calls:
+                return True
+
+        return False
+
     async def _run_active_mode_handlers(
         self,
     ) -> AssistantMessage | AssistantMessageStructuredOutput | None:
@@ -1770,6 +1796,26 @@ class Agent(EventRouter):
                     message_index += 1
                     # Yield each tool response message
                     yield tool_message
+
+                # Check for mode transitions triggered by tool calls
+                if self._mode_manager.has_pending_transition():
+                    from good_agent.agent.modes import ModeExitBehavior
+
+                    exit_behavior = (
+                        await self._mode_manager.apply_scheduled_mode_changes()
+                    )
+
+                    # Handle exit behavior if a mode exited
+                    if exit_behavior is not None:
+                        if exit_behavior == ModeExitBehavior.STOP:
+                            # Don't call LLM again, end execution
+                            break
+                        elif exit_behavior == ModeExitBehavior.AUTO:
+                            # Only continue if conversation is pending
+                            if not self._is_conversation_pending():
+                                break
+                        # CONTINUE: fall through to next iteration
+
                 # Continue to next iteration for another LLM call
             else:
                 # No tool calls in response, execution complete

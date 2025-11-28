@@ -847,6 +847,10 @@ class ModeManager:
         This method detects whether the handler uses the legacy ModeContext
         signature or the new agent-centric signature and calls it appropriately.
 
+        Note: Generator handlers are NOT executed here - they run their setup
+        at mode entry and cleanup at mode exit. This method only executes
+        simple (non-generator) handlers during the execute() loop.
+
         Args:
             mode_name: Name of the mode whose handler to execute
 
@@ -861,6 +865,11 @@ class ModeManager:
             raise KeyError(f"Mode '{mode_name}' is not registered")
 
         handler = info.handler
+
+        # Skip generator handlers - they run at mode entry/exit, not during execute()
+        handler_type = _detect_handler_type(handler)
+        if handler_type == HandlerType.GENERATOR:
+            return None
 
         if info.style == HandlerStyle.AGENT_CENTRIC:
             # New-style handler: inject Agent directly
@@ -1263,19 +1272,37 @@ class ModeManager:
         self._ensure_no_pending_mode_change()
         self._pending_mode_exit = True
 
-    async def apply_scheduled_mode_changes(self) -> None:
-        """Apply any pending scheduled mode exits or switches."""
+    def has_pending_transition(self) -> bool:
+        """Check if there's a pending mode switch or exit scheduled.
+
+        Returns:
+            True if a mode change is pending
+        """
+        return self._pending_mode_switch is not None or self._pending_mode_exit
+
+    async def apply_scheduled_mode_changes(self) -> ModeExitBehavior | None:
+        """Apply any pending scheduled mode exits or switches.
+
+        Returns:
+            ModeExitBehavior if a mode exit occurred, None otherwise
+        """
+        exit_behavior: ModeExitBehavior | None = None
 
         if self._pending_mode_exit:
             self._pending_mode_exit = False
-            await self._exit_mode()
+            exit_behavior = await self._exit_mode()
 
         if self._pending_mode_switch:
             mode_name, params = self._pending_mode_switch
             self._pending_mode_switch = None
             if self.current_mode:
-                await self._exit_mode()
+                exit_behavior = await self._exit_mode()
             await self._enter_mode(mode_name, **params)
+            # After entering new mode, exit_behavior is reset
+            # (new mode is now active, no exit occurred)
+            exit_behavior = None
+
+        return exit_behavior
 
     def create_context(self) -> ModeContext:
         """Create a ModeContext for the current active mode."""

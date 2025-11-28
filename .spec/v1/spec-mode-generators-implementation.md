@@ -16,7 +16,7 @@ Implement async generator support for mode handlers, enabling setup/cleanup life
 | Phase 1 | ✅ COMPLETE | Core generator support (handler detection, setup/cleanup lifecycle) |
 | Phase 2 | ✅ COMPLETE | Exception handling (athrow, cleanup guarantees) |
 | Phase 3 | ✅ COMPLETE | Exit behavior (ModeExitBehavior enum, set_exit_behavior) |
-| Phase 4 | 🔲 PENDING | Execute loop integration |
+| Phase 4 | ✅ COMPLETE | Execute loop integration |
 | Phase 5 | 🔲 PENDING | Documentation & examples update |
 
 ### Phase 1 Completion Notes (2024-11-27)
@@ -45,8 +45,25 @@ Implement async generator support for mode handlers, enabling setup/cleanup life
 - 4 new exit behavior tests
 - **Note**: Async generators don't support return values, so handlers set behavior via `agent.mode.set_exit_behavior()` or `agent.mode.state["_exit_behavior"]`
 
+### Phase 4 Completion Notes (2024-11-28)
+- Added `has_pending_transition()` method to ModeManager to check for scheduled mode changes
+- Updated `apply_scheduled_mode_changes()` to return `ModeExitBehavior | None`
+- Added `_is_conversation_pending()` method to Agent for AUTO behavior determination
+- Updated `execute_handler()` to skip generator handlers (they run at entry/exit, not during execute)
+- **Full execute() loop integration:**
+  - After tool calls, check `has_pending_transition()` and apply transitions immediately
+  - Handle `ModeExitBehavior` to control whether loop continues after mode exit:
+    - STOP: Break out of execute loop (don't call LLM again)
+    - CONTINUE: Continue to next iteration (call LLM again)
+    - AUTO: Continue only if `_is_conversation_pending()` returns True
+- 18 new integration tests:
+  - 4 tests for `has_pending_transition()`
+  - 3 tests for `apply_scheduled_mode_changes()` return value
+  - 5 tests for `_is_conversation_pending()`
+  - 6 tests for execute loop integration (including STOP/CONTINUE behaviors)
+
 ### Test Coverage
-- Total tests: 76 (52 original mode tests + 24 generator tests)
+- Total tests: 94 (52 original mode tests + 42 generator tests)
 - All tests passing
 
 ---

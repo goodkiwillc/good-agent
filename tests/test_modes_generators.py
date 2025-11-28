@@ -494,3 +494,393 @@ class TestModeExitBehavior:
 
         # After mode exit, state is cleaned up
         assert True
+
+
+class TestHasPendingTransition:
+    """Test ModeManager.has_pending_transition() method."""
+
+    @pytest.mark.asyncio
+    async def test_no_pending_transition_by_default(self):
+        """No pending transition when nothing scheduled."""
+        agent = Agent("Test")
+
+        @agent.modes("test")
+        async def test_mode(agent: Agent):
+            yield agent
+
+        async with agent:
+            assert agent.modes.has_pending_transition() is False
+
+    @pytest.mark.asyncio
+    async def test_pending_transition_after_schedule_switch(self):
+        """has_pending_transition returns True after schedule_mode_switch."""
+        agent = Agent("Test")
+
+        @agent.modes("test")
+        async def test_mode(agent: Agent):
+            yield agent
+
+        async with agent:
+            agent.schedule_mode_switch("test")
+            assert agent.modes.has_pending_transition() is True
+
+    @pytest.mark.asyncio
+    async def test_pending_transition_after_schedule_exit(self):
+        """has_pending_transition returns True after schedule_mode_exit."""
+        agent = Agent("Test")
+
+        @agent.modes("test")
+        async def test_mode(agent: Agent):
+            yield agent
+
+        async with agent:
+            async with agent.modes["test"]:
+                agent.schedule_mode_exit()
+                assert agent.modes.has_pending_transition() is True
+
+    @pytest.mark.asyncio
+    async def test_no_pending_after_apply(self):
+        """has_pending_transition returns False after changes are applied."""
+        agent = Agent("Test")
+
+        @agent.modes("test")
+        async def test_mode(agent: Agent):
+            yield agent
+
+        async with agent:
+            agent.schedule_mode_switch("test")
+            assert agent.modes.has_pending_transition() is True
+
+            await agent.modes.apply_scheduled_mode_changes()
+            assert agent.modes.has_pending_transition() is False
+            assert agent.mode.name == "test"
+
+
+class TestApplyScheduledModeChangesReturnValue:
+    """Test that apply_scheduled_mode_changes returns ModeExitBehavior."""
+
+    @pytest.mark.asyncio
+    async def test_returns_none_when_no_changes(self):
+        """Returns None when no changes are scheduled."""
+        agent = Agent("Test")
+
+        @agent.modes("test")
+        async def test_mode(agent: Agent):
+            yield agent
+
+        async with agent:
+            result = await agent.modes.apply_scheduled_mode_changes()
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_returns_exit_behavior_on_exit(self):
+        """Returns ModeExitBehavior when mode exits."""
+        from good_agent.agent.modes import ModeExitBehavior
+
+        agent = Agent("Test")
+
+        @agent.modes("test")
+        async def test_mode(agent: Agent):
+            yield agent
+            agent.mode.set_exit_behavior(ModeExitBehavior.STOP)
+
+        async with agent:
+            async with agent.modes["test"]:
+                agent.schedule_mode_exit()
+
+                result = await agent.modes.apply_scheduled_mode_changes()
+                assert result == ModeExitBehavior.STOP
+
+    @pytest.mark.asyncio
+    async def test_returns_none_on_switch(self):
+        """Returns None when switching modes (new mode is active)."""
+        agent = Agent("Test")
+
+        @agent.modes("mode1")
+        async def mode1(agent: Agent):
+            yield agent
+
+        @agent.modes("mode2")
+        async def mode2(agent: Agent):
+            yield agent
+
+        async with agent:
+            async with agent.modes["mode1"]:
+                agent.schedule_mode_switch("mode2")
+
+                result = await agent.modes.apply_scheduled_mode_changes()
+                # Returns None because we're now in a new mode
+                assert result is None
+                assert agent.mode.name == "mode2"
+
+
+class TestIsConversationPending:
+    """Test Agent._is_conversation_pending() method."""
+
+    @pytest.mark.asyncio
+    async def test_pending_when_last_message_is_user(self):
+        """Conversation is pending when last message is from user."""
+        agent = Agent("Test")
+
+        async with agent:
+            agent.append("Hello", role="user")
+            assert agent._is_conversation_pending() is True
+
+    @pytest.mark.asyncio
+    async def test_pending_when_last_message_is_tool(self):
+        """Conversation is pending when last message is tool response."""
+        agent = Agent("Test")
+
+        async with agent:
+            # Create a tool response message
+            agent.append(
+                "tool result",
+                role="tool",
+                tool_call_id="test-123",
+                tool_name="test_tool",
+            )
+            assert agent._is_conversation_pending() is True
+
+    @pytest.mark.asyncio
+    async def test_not_pending_when_last_message_is_assistant(self):
+        """Conversation is not pending when last message is assistant without tool calls."""
+        agent = Agent("Test")
+
+        async with agent:
+            agent.append("Hello", role="user")
+            with agent.mock("I'm here to help"):
+                await agent.call()
+
+            assert agent._is_conversation_pending() is False
+
+    @pytest.mark.asyncio
+    async def test_not_pending_when_no_messages(self):
+        """Conversation is not pending when there are no messages."""
+        agent = Agent("Test")
+
+        async with agent:
+            # Only system message exists
+            assert agent._is_conversation_pending() is False
+
+    @pytest.mark.asyncio
+    async def test_pending_when_assistant_has_tool_calls(self):
+        """Conversation is pending when assistant message has unresolved tool calls."""
+        from good_agent.tools import ToolCall, ToolCallFunction
+
+        agent = Agent("Test")
+
+        async with agent:
+            # Create assistant message with tool calls
+            agent.append(
+                "",
+                role="assistant",
+                tool_calls=[
+                    ToolCall(
+                        id="call-123",
+                        type="function",
+                        function=ToolCallFunction(
+                            name="test_tool", arguments='{"arg": "value"}'
+                        ),
+                    )
+                ],
+            )
+            assert agent._is_conversation_pending() is True
+
+
+class TestExecuteLoopIntegration:
+    """Test mode generators with execute() loop integration."""
+
+    @pytest.mark.asyncio
+    async def test_scheduled_exit_cleanup_runs(self):
+        """Cleanup runs when mode exit is scheduled and applied."""
+        agent = Agent("Test")
+        events: list[str] = []
+
+        @agent.modes("gen")
+        async def gen_mode(agent: Agent):
+            events.append("setup")
+            yield agent
+            events.append("cleanup")
+
+        async with agent:
+            async with agent.modes["gen"]:
+                events.append("active")
+                agent.schedule_mode_exit()
+                events.append("scheduled")
+
+                # Apply the scheduled exit
+                await agent.modes.apply_scheduled_mode_changes()
+                events.append("after_apply")
+
+        assert events == ["setup", "active", "scheduled", "cleanup", "after_apply"]
+
+    @pytest.mark.asyncio
+    async def test_mode_persists_across_calls(self):
+        """Mode remains active across multiple agent.call() invocations."""
+        agent = Agent("Test")
+        mode_active_during_calls: list[str | None] = []
+
+        @agent.modes("research")
+        async def research_mode(agent: Agent):
+            agent.prompt.append("Research mode active")
+            yield agent
+
+        async with agent:
+            async with agent.modes["research"]:
+                mode_active_during_calls.append(agent.mode.name)
+
+                with agent.mock("response 1"):
+                    await agent.call("first call")
+                mode_active_during_calls.append(agent.mode.name)
+
+                with agent.mock("response 2"):
+                    await agent.call("second call")
+                mode_active_during_calls.append(agent.mode.name)
+
+        assert mode_active_during_calls == ["research", "research", "research"]
+
+    @pytest.mark.asyncio
+    async def test_invokable_mode_tool_schedules_switch(self):
+        """Invokable mode tool schedules switch correctly."""
+        agent = Agent("Test")
+        events: list[str] = []
+
+        @agent.modes("research", invokable=True)
+        async def research_mode(agent: Agent):
+            events.append("research:setup")
+            yield agent
+            events.append("research:cleanup")
+
+        async with agent:
+            # Tool should schedule the switch
+            tool = agent.tools["enter_research_mode"]
+            await tool()  # Schedules the switch (Tool.__call__ is async)
+            events.append("tool_called")
+
+            assert agent.modes.has_pending_transition() is True
+
+            # Apply the switch
+            await agent.modes.apply_scheduled_mode_changes()
+            events.append("switch_applied")
+
+            assert agent.mode.name == "research"
+
+            # Exit the mode to trigger cleanup
+            await agent.exit_mode()
+            events.append("after_exit")
+
+        assert events == [
+            "tool_called",
+            "research:setup",
+            "switch_applied",
+            "research:cleanup",
+            "after_exit",
+        ]
+
+    @pytest.mark.asyncio
+    async def test_exit_behavior_stop_ends_execute(self):
+        """ModeExitBehavior.STOP should end execute() without another LLM call."""
+        from good_agent.agent.modes import ModeExitBehavior
+        from good_agent.mock import mock_message
+        from good_agent.tools import tool
+
+        agent = Agent("Test")
+        llm_calls: list[str] = []
+
+        @tool
+        def exit_mode_tool() -> str:
+            """Exit the current mode."""
+            agent.schedule_mode_exit()
+            return "Exiting mode"
+
+        agent.tools["exit_mode_tool"] = exit_mode_tool
+
+        @agent.modes("research")
+        async def research_mode(agent: Agent):
+            yield agent
+            agent.mode.set_exit_behavior(ModeExitBehavior.STOP)
+
+        async with agent:
+            async with agent.modes["research"]:
+                # Mock: first call returns tool call, second would be after mode exit
+                with agent.mock(
+                    mock_message("", tool_calls=[("exit_mode_tool", {})]),
+                    "This should not appear",  # STOP should prevent this
+                ):
+                    messages = []
+                    async for msg in agent.execute("Exit the mode"):
+                        messages.append(msg)
+                        if msg.role == "assistant":
+                            llm_calls.append(msg.content or "")
+
+        # Should only have 1 LLM call (the one with tool call), not 2
+        # STOP behavior prevents the second call
+        assert len(llm_calls) == 1
+
+    @pytest.mark.asyncio
+    async def test_exit_behavior_continue_calls_llm(self):
+        """ModeExitBehavior.CONTINUE should call LLM after mode exit."""
+        from good_agent.agent.modes import ModeExitBehavior
+        from good_agent.mock import mock_message
+        from good_agent.tools import tool
+
+        agent = Agent("Test")
+        llm_calls: list[str] = []
+
+        @tool
+        def exit_mode_tool() -> str:
+            """Exit the current mode."""
+            agent.schedule_mode_exit()
+            return "Exiting mode"
+
+        agent.tools["exit_mode_tool"] = exit_mode_tool
+
+        @agent.modes("research")
+        async def research_mode(agent: Agent):
+            yield agent
+            agent.mode.set_exit_behavior(ModeExitBehavior.CONTINUE)
+
+        async with agent:
+            async with agent.modes["research"]:
+                with agent.mock(
+                    mock_message("", tool_calls=[("exit_mode_tool", {})]),
+                    "After mode exit",  # CONTINUE should allow this
+                ):
+                    messages = []
+                    async for msg in agent.execute("Exit the mode"):
+                        messages.append(msg)
+                        if msg.role == "assistant":
+                            llm_calls.append(msg.content or "")
+
+        # Should have 2 LLM calls - CONTINUE allows second call after mode exit
+        assert len(llm_calls) == 2
+        assert llm_calls[1] == "After mode exit"
+
+    @pytest.mark.asyncio
+    async def test_mode_switch_via_tool_applies_immediately(self):
+        """Mode switch via tool should apply within the same execute() call."""
+        from good_agent.mock import mock_message
+
+        agent = Agent("Test")
+        mode_during_calls: list[str | None] = []
+
+        @agent.modes("mode_a", invokable=True)
+        async def mode_a(agent: Agent):
+            yield agent
+
+        @agent.modes("mode_b", invokable=True)
+        async def mode_b(agent: Agent):
+            yield agent
+
+        async with agent:
+            # First mock response calls enter_mode_a, second is after mode is active
+            with agent.mock(
+                mock_message("", tool_calls=[("enter_mode_a_mode", {})]),
+                "Now in mode A",
+            ):
+                async for msg in agent.execute("Enter mode A"):
+                    mode_during_calls.append(agent.mode.name)
+
+        # After tool call is processed, mode should be active
+        # The last entry should show mode_a is active
+        assert "mode_a" in mode_during_calls
