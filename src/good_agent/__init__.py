@@ -130,6 +130,7 @@ if TYPE_CHECKING:
         register_tool,
         tool,
     )
+    from good_agent.utilities.console import AgentConsole, create_console
 
 
 # Lazy loading implementation
@@ -252,6 +253,9 @@ _LAZY_IMPORTS = {
     # Tools - Bound tools
     "BoundTool": "tools",
     "create_component_tool_decorator": "tools",
+    # Console utilities
+    "AgentConsole": "utilities.console",
+    "create_console": "utilities.console",
     # External
     "EventContext": "good_agent.core.event_router",
     "Depends": "fast_depends",
@@ -428,6 +432,9 @@ __all__ = [
     "clear_tool_registry",
     "BoundTool",
     "create_component_tool_decorator",
+    # Console utilities
+    "AgentConsole",
+    "create_console",
     # External
     "EventContext",
     "Depends",

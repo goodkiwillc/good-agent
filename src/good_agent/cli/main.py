@@ -103,14 +103,39 @@ def run(
     temperature: float = typer.Option(
         None, "--temperature", "-t", help="Override agent temperature"
     ),
+    plain: bool = typer.Option(
+        False, "--plain", help="Plain text output without styling (for scripts/agents)"
+    ),
+    json_output: bool = typer.Option(
+        False, "--json", help="Machine-readable JSON output (JSONL format)"
+    ),
 ):
     """
     Run an agent interactively in the terminal.
     Pass extra arguments to the agent factory by appending them to the command.
+
+    Output format options:
+      --plain  Minimal text output, ideal for piping or agent consumption
+      --json   Structured JSON lines, ideal for log aggregation
     """
+    # Determine output format
+    from typing import Literal
+
+    output_format: Literal["rich", "plain", "json"] = "rich"
+    if json_output:
+        output_format = "json"
+    elif plain:
+        output_format = "plain"
+
     # Parse extra args
     extra_args = ctx.args
-    run_agent(agent_path, model=model, temperature=temperature, extra_args=extra_args)
+    run_agent(
+        agent_path,
+        model=model,
+        temperature=temperature,
+        extra_args=extra_args,
+        output_format=output_format,
+    )
 
 
 @app.command(

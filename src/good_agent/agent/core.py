@@ -110,6 +110,7 @@ from good_agent.tools import (
 )
 from good_agent.tools.tools import ToolLike
 from good_agent.utilities import print_message
+from good_agent.utilities.console import AgentConsole
 
 if TYPE_CHECKING:
     from good_agent.agent.conversation import Conversation
@@ -503,6 +504,9 @@ class Agent(EventRouter):
         self._mode_manager = ModeManager(self)
         self._mode_accessor = ModeAccessor(self._mode_manager)
 
+        # Initialize console for rich CLI output
+        self._console = AgentConsole(agent=self)
+
         # Store modes for registration after extensions are ready
         self._pending_modes = modes
 
@@ -730,6 +734,27 @@ class Agent(EventRouter):
             ModeAccessor providing access to current mode state
         """
         return self._mode_accessor
+
+    @property
+    def console(self) -> AgentConsole:
+        """Rich console output for CLI and telemetry (``agent.console``).
+
+        Provides a unified interface for outputting structured information
+        during agent execution, supporting multiple backends.
+
+        Example:
+            agent.console.info("Processing request")
+            agent.console.tool_call("search", {"query": "test"})
+            agent.console.success("Task complete!")
+
+            with agent.console.spinner("Working..."):
+                # long operation
+                pass
+
+        Returns:
+            AgentConsole for structured output
+        """
+        return self._console
 
     @property
     def prompt(self) -> SystemPromptManager:

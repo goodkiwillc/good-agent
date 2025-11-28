@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Literal
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.formatted_text import HTML
@@ -13,99 +14,197 @@ from rich.text import Text
 
 from good_agent.agent.core import Agent
 from good_agent.cli.utils import load_agent_from_path
-from good_agent.messages import AssistantMessage, ToolMessage
+from good_agent.messages import AssistantMessage, Message, ToolMessage
+
+OutputFormatType = Literal["rich", "plain", "json"]
 
 
-async def run_interactive_loop(agent: Agent):
+def _print_rich(console: Console, message: Message) -> None:
+    """Print message using Rich formatting."""
+    if isinstance(message, ToolMessage):
+        tool_name = message.name or "Tool"
+        content = str(message.content)
+        if len(content) > 500:
+            content = f"{content[:500]}... [truncated]"
+        console.print(
+            Panel(
+                Text(content, style="dim"),
+                title=f"[bold blue]Tool Output: {tool_name}[/bold blue]",
+                border_style="blue",
+                expand=False,
+            )
+        )
+    elif isinstance(message, AssistantMessage):
+        if message.tool_calls:
+            for tool_call in message.tool_calls:
+                args = tool_call.function.arguments
+                console.print(
+                    Panel(
+                        Text(f"{args}", style="cyan"),
+                        title=f"[bold cyan]Calling: {tool_call.function.name}[/bold cyan]",
+                        border_style="cyan",
+                        expand=False,
+                    )
+                )
+        if message.content:
+            console.print(Markdown(str(message.content)))
+            console.print()
+
+
+def _print_plain(message: Message) -> None:
+    """Print message using plain text format."""
+    import sys
+    from datetime import datetime
+
+    ts = datetime.now().strftime("%H:%M:%S")
+
+    if isinstance(message, ToolMessage):
+        tool_name = message.name or "Tool"
+        content = str(message.content)[:200]
+        print(f"[{ts}] TOOL_RESULT: {tool_name} | {content}", file=sys.stdout)
+    elif isinstance(message, AssistantMessage):
+        if message.tool_calls:
+            for tool_call in message.tool_calls:
+                print(
+                    f"[{ts}] TOOL_CALL: {tool_call.function.name} | {tool_call.function.arguments}",
+                    file=sys.stdout,
+                )
+        if message.content:
+            print(f"[{ts}] ASSISTANT: {message.content}", file=sys.stdout)
+
+
+def _print_json(message: Message) -> None:
+    """Print message as JSON line."""
+    import json
+    import sys
+    from datetime import datetime
+
+    ts = datetime.now().isoformat()
+
+    if isinstance(message, ToolMessage):
+        output = {
+            "timestamp": ts,
+            "type": "tool_result",
+            "tool_name": message.name or "unknown",
+            "content": str(message.content),
+        }
+        print(json.dumps(output), file=sys.stdout)
+    elif isinstance(message, AssistantMessage):
+        if message.tool_calls:
+            for tool_call in message.tool_calls:
+                output = {
+                    "timestamp": ts,
+                    "type": "tool_call",
+                    "tool_name": tool_call.function.name,
+                    "arguments": tool_call.function.arguments,
+                }
+                print(json.dumps(output), file=sys.stdout)
+        if message.content:
+            output = {
+                "timestamp": ts,
+                "type": "assistant",
+                "content": str(message.content),
+            }
+            print(json.dumps(output), file=sys.stdout)
+
+
+async def run_interactive_loop(
+    agent: Agent,
+    output_format: OutputFormatType = "rich",
+):
     """Run the interactive CLI loop for a given agent."""
-
     console = Console()
     history = InMemoryHistory()
     session: PromptSession[str] = PromptSession(history=history)
-
-    # Style for the prompt
     style = Style.from_dict({"prompt": "#ansigreen bold"})
 
     agent_display_name = agent.name or "Unnamed"
-    console.print(
-        Panel(
-            (
-                "Started interactive session with agent: "
-                f"[bold cyan]{agent_display_name}[/bold cyan] ({agent.id})"
-            ),
-            title="Good Agent CLI",
-            border_style="green",
+
+    # Welcome message based on format
+    if output_format == "rich":
+        console.print(
+            Panel(
+                (
+                    "Started interactive session with agent: "
+                    f"[bold cyan]{agent_display_name}[/bold cyan] ({agent.id})"
+                ),
+                title="Good Agent CLI",
+                border_style="green",
+            )
         )
-    )
-    console.print("[dim]Type 'exit' or 'quit' to end session.[/dim]\n")
+        console.print("[dim]Type 'exit' or 'quit' to end session.[/dim]\n")
+    elif output_format == "plain":
+        print(f"[SESSION] Agent: {agent_display_name} ({agent.id})")
+        print("[SESSION] Type 'exit' or 'quit' to end session.")
+    else:  # json
+        import json
+
+        print(
+            json.dumps(
+                {
+                    "type": "session_start",
+                    "agent_name": agent_display_name,
+                    "agent_id": agent.id,
+                }
+            )
+        )
 
     while True:
         try:
-            user_input = await session.prompt_async(
-                HTML("<prompt>➜ </prompt>"),
-                style=style,
-            )
+            # Prompt handling
+            if output_format == "rich":
+                user_input = await session.prompt_async(
+                    HTML("<prompt>➜ </prompt>"),
+                    style=style,
+                )
+            else:
+                # Plain/JSON: simple input
+                user_input = await session.prompt_async("> ")
 
             user_input = user_input.strip()
             if not user_input:
                 continue
 
             if user_input.lower() in {"exit", "quit"}:
-                console.print("[yellow]Goodbye![/yellow]")
+                if output_format == "rich":
+                    console.print("[yellow]Goodbye![/yellow]")
+                elif output_format == "plain":
+                    print("[SESSION] Goodbye!")
+                else:
+                    import json
+
+                    print(json.dumps({"type": "session_end"}))
                 break
 
             if user_input.lower() == "clear":
-                console.clear()
+                if output_format == "rich":
+                    console.clear()
                 continue
 
-            # Run the agent
-            console.print()  # Add spacing
+            if output_format == "rich":
+                console.print()
 
             try:
-                # We use execute() to get messages as they are generated (e.g. tool calls)
-                # execute() yields AssistantMessage (content) and ToolMessage (results)
                 async for message in agent.execute(user_input):
-                    if isinstance(message, ToolMessage):
-                        # Print tool outputs
-                        tool_name = message.name or "Tool"
-                        content = str(message.content)
-                        # Truncate long tool outputs for display
-                        if len(content) > 500:
-                            content = f"{content[:500]}... [truncated]"
-
-                        console.print(
-                            Panel(
-                                Text(content, style="dim"),
-                                title=f"🔧 Tool Output: {tool_name}",
-                                border_style="blue",
-                                expand=False,
-                            )
-                        )
-
-                    elif isinstance(message, AssistantMessage):
-                        # If the message has tool calls, print them
-                        if message.tool_calls:
-                            for tool_call in message.tool_calls:
-                                args = tool_call.function.arguments
-                                console.print(
-                                    Panel(
-                                        Text(f"{args}", style="cyan"),
-                                        title=f"🛠️  Calling: {tool_call.function.name}",
-                                        border_style="cyan",
-                                        expand=False,
-                                    )
-                                )
-
-                        # If the message has content, print it as Markdown
-                        if message.content:
-                            console.print(Markdown(str(message.content)))
-                            console.print()
+                    if output_format == "rich":
+                        _print_rich(console, message)
+                    elif output_format == "plain":
+                        _print_plain(message)
+                    else:
+                        _print_json(message)
 
             except Exception as e:
-                console.print(f"[bold red]Error during execution:[/bold red] {e}")
-                import traceback
+                if output_format == "rich":
+                    console.print(f"[bold red]Error during execution:[/bold red] {e}")
+                    import traceback
 
-                console.print(traceback.format_exc())
+                    console.print(traceback.format_exc())
+                elif output_format == "plain":
+                    print(f"[ERROR] {e}")
+                else:
+                    import json
+
+                    print(json.dumps({"type": "error", "message": str(e)}))
 
         except KeyboardInterrupt:
             continue
@@ -118,6 +217,7 @@ def run_agent(
     model: str | None = None,
     temperature: float | None = None,
     extra_args: list[str] | None = None,
+    output_format: OutputFormatType = "rich",
 ) -> None:
     """Load and run an agent interactively."""
     try:
@@ -163,6 +263,6 @@ def run_agent(
 
     # Run the async loop
     try:
-        asyncio.run(run_interactive_loop(agent_obj))
+        asyncio.run(run_interactive_loop(agent_obj, output_format=output_format))
     except KeyboardInterrupt:
         print("\nGoodbye!")
