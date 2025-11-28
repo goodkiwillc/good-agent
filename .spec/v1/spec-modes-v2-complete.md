@@ -679,11 +679,25 @@ def _wrap_legacy_handler(handler):
 - Persistent items (persist=True) survive mode exit
 - Exported from `good_agent` and `good_agent.agent`
 
-### Phase 3: Isolation Modes
-- [ ] `isolation` parameter on decorator
-- [ ] `none`, `thread`, `fork`, `config` all work
-- [ ] Isolation inheritance rules enforced
-- [ ] State isolation correct for each level
+### Phase 3: Isolation Modes ✅ COMPLETE (2024-11-27)
+- [x] `isolation` parameter on decorator
+- [x] `none`, `thread`, `fork`, `config` all work
+- [x] Isolation inheritance rules enforced
+- [x] State isolation correct for each level
+- [x] All 38 mode tests pass (9 new isolation tests)
+
+**Implementation Notes:**
+- Added `IsolationLevel` IntEnum with values: NONE (0), CONFIG (1), THREAD (2), FORK (3)
+- Added `isolation` parameter to `@agent.modes()` decorator (accepts enum or string)
+- Added `ModeStackEntry` dataclass and `IsolationSnapshot` dataclass
+- Updated `ModeStack` to track isolation level per mode entry
+- `_create_isolation_snapshot()` creates snapshot based on isolation level
+- `_restore_from_isolation_snapshot()` restores on mode exit
+- Validation: child mode cannot have lower isolation than parent (raises ValueError)
+- Thread isolation: keeps new messages, restores original
+- Fork isolation: complete restore (discards all changes)
+- Config isolation: restores tool state, shares messages
+- Exported `IsolationLevel` from `good_agent` and `good_agent.agent`
 
 ### Phase 4: Agent-Invoked Modes
 - [ ] `invokable=True` generates tool

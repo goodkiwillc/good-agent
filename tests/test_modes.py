@@ -745,3 +745,227 @@ async def test_system_prompt_manager_sections_view():
     agent.prompt.sections["b"] = "B"
     assert list(agent.prompt.sections) == ["a", "b"]
     assert len(agent.prompt.sections) == 2
+
+
+# =============================================================================
+# Phase 3: Isolation Modes Tests
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_isolation_none_default():
+    """Test isolation='none' (default) shares all state."""
+
+    agent = Agent("Test agent")
+
+    @agent.modes("shared")
+    async def shared_mode(agent: Agent):
+        # Mode has isolation=none by default
+        pass
+
+    info = agent.modes.get_info("shared")
+    assert info["isolation"] == "NONE"
+
+    async with agent:
+        # Add a message before mode
+        agent.append("Before mode")
+        initial_count = len(agent.messages)
+
+        async with agent.modes["shared"]:
+            # Add message in mode
+            agent.append("During mode")
+            assert len(agent.messages) == initial_count + 1
+
+        # Message persists after mode exit (isolation=none)
+        assert len(agent.messages) == initial_count + 1
+        assert any("During mode" in str(m.content) for m in agent.messages)
+
+
+@pytest.mark.asyncio
+async def test_isolation_string_parameter():
+    """Test isolation level can be specified as string."""
+    agent = Agent("Test agent")
+
+    @agent.modes("fork_mode", isolation="fork")
+    async def fork_mode_handler(agent: Agent):
+        pass
+
+    @agent.modes("thread_mode", isolation="thread")
+    async def thread_mode_handler(agent: Agent):
+        pass
+
+    @agent.modes("config_mode", isolation="config")
+    async def config_mode_handler(agent: Agent):
+        pass
+
+    assert agent.modes.get_info("fork_mode")["isolation"] == "FORK"
+    assert agent.modes.get_info("thread_mode")["isolation"] == "THREAD"
+    assert agent.modes.get_info("config_mode")["isolation"] == "CONFIG"
+
+
+@pytest.mark.asyncio
+async def test_isolation_invalid_string():
+    """Test invalid isolation string raises ValueError."""
+    agent = Agent("Test agent")
+
+    with pytest.raises(ValueError, match="Invalid isolation level"):
+
+        @agent.modes("bad_mode", isolation="invalid")
+        async def bad_mode(agent: Agent):
+            pass
+
+
+@pytest.mark.asyncio
+async def test_isolation_hierarchy_validation():
+    """Test child mode cannot be less isolated than parent."""
+    from good_agent.agent.modes import IsolationLevel
+
+    agent = Agent("Test agent")
+
+    @agent.modes("outer_fork", isolation=IsolationLevel.FORK)
+    async def outer_fork(agent: Agent):
+        pass
+
+    @agent.modes("inner_none", isolation=IsolationLevel.NONE)
+    async def inner_none(agent: Agent):
+        pass
+
+    async with agent:
+        async with agent.modes["outer_fork"]:
+            # Attempting to enter a less isolated mode should fail
+            with pytest.raises(ValueError, match="less restrictive"):
+                async with agent.modes["inner_none"]:
+                    pass
+
+
+@pytest.mark.asyncio
+async def test_isolation_hierarchy_valid_increase():
+    """Test child mode can be more isolated than parent."""
+    from good_agent.agent.modes import IsolationLevel
+
+    agent = Agent("Test agent")
+
+    @agent.modes("outer_none", isolation=IsolationLevel.NONE)
+    async def outer_none(agent: Agent):
+        pass
+
+    @agent.modes("inner_fork", isolation=IsolationLevel.FORK)
+    async def inner_fork(agent: Agent):
+        pass
+
+    async with agent:
+        async with agent.modes["outer_none"]:
+            # More isolated mode is allowed
+            async with agent.modes["inner_fork"]:
+                assert agent.mode.stack == ["outer_none", "inner_fork"]
+
+
+@pytest.mark.asyncio
+async def test_isolation_fork_messages_restored():
+    """Test fork isolation restores messages on exit."""
+    from good_agent.agent.modes import IsolationLevel
+
+    agent = Agent("Test agent")
+
+    @agent.modes("sandbox", isolation=IsolationLevel.FORK)
+    async def sandbox_mode(agent: Agent):
+        pass
+
+    async with agent:
+        # Add message before mode
+        agent.append("Original message")
+        original_count = len(agent.messages)
+
+        async with agent.modes["sandbox"]:
+            # Add messages in sandbox
+            agent.append("Sandbox message 1")
+            agent.append("Sandbox message 2")
+            assert len(agent.messages) == original_count + 2
+
+        # Fork isolation: all changes discarded
+        assert len(agent.messages) == original_count
+        assert not any("Sandbox" in str(m.content) for m in agent.messages)
+
+
+@pytest.mark.asyncio
+async def test_isolation_thread_keeps_new_messages():
+    """Test thread isolation keeps new messages but restores original."""
+    from good_agent.agent.modes import IsolationLevel
+
+    agent = Agent("Test agent")
+
+    @agent.modes("thread_mode", isolation=IsolationLevel.THREAD)
+    async def thread_mode(agent: Agent):
+        pass
+
+    async with agent:
+        # Add messages before mode
+        agent.append("Original 1")
+        agent.append("Original 2")
+        original_count = len(agent.messages)
+
+        async with agent.modes["thread_mode"]:
+            # Add new message
+            agent.append("New message in thread")
+            # Thread mode should have original + new
+            assert len(agent.messages) == original_count + 1
+
+        # After exit: original messages preserved + new messages kept
+        assert len(agent.messages) == original_count + 1
+        assert any("New message in thread" in str(m.content) for m in agent.messages)
+
+
+@pytest.mark.asyncio
+async def test_isolation_level_enum_values():
+    """Test IsolationLevel enum has correct ordering."""
+    from good_agent.agent.modes import IsolationLevel
+
+    # Verify ordering: NONE < CONFIG < THREAD < FORK
+    assert IsolationLevel.NONE < IsolationLevel.CONFIG
+    assert IsolationLevel.CONFIG < IsolationLevel.THREAD
+    assert IsolationLevel.THREAD < IsolationLevel.FORK
+
+    # Verify values
+    assert IsolationLevel.NONE == 0
+    assert IsolationLevel.CONFIG == 1
+    assert IsolationLevel.THREAD == 2
+    assert IsolationLevel.FORK == 3
+
+
+@pytest.mark.asyncio
+async def test_isolation_config_restores_tools():
+    """Test config isolation restores tool state on exit."""
+    from good_agent.agent.modes import IsolationLevel
+    from good_agent.tools import ToolManager, tool
+
+    @tool
+    def original_tool() -> str:
+        """Original tool."""
+        return "original"
+
+    @tool
+    def mode_tool() -> str:
+        """Tool added in mode."""
+        return "mode"
+
+    agent = Agent("Test agent", tools=[original_tool])
+
+    @agent.modes("config_isolated", isolation=IsolationLevel.CONFIG)
+    async def config_mode(agent: Agent):
+        pass
+
+    async with agent:
+        tool_manager = agent[ToolManager]
+        original_tools = set(tool_manager._tools.keys())
+        assert "original_tool" in original_tools
+
+        async with agent.modes["config_isolated"]:
+            # Register a new tool in mode
+            await tool_manager.register_tool(mode_tool)
+            assert "mode_tool" in tool_manager._tools
+
+        # After exit, tool state should be restored
+        # Note: CONFIG isolation restores tool state
+        restored_tools = set(tool_manager._tools.keys())
+        assert "mode_tool" not in restored_tools
+        assert "original_tool" in restored_tools

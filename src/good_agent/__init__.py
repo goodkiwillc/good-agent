@@ -22,6 +22,7 @@ if TYPE_CHECKING:
         Agent,
         AgentConfigParameters,
         AgentState,
+        IsolationLevel,
         ModeAccessor,
         ModeContext,
         ModeManager,
@@ -136,6 +137,7 @@ _LAZY_IMPORTS = {
     "AgentState": "agent",
     "AgentConfigManager": "agent.config",
     # Mode system
+    "IsolationLevel": "agent",
     "ModeAccessor": "agent",
     "ModeManager": "agent",
     "ModeContext": "agent",
@@ -309,6 +311,7 @@ __all__ = [
     "AgentConfigManager",
     "AgentState",
     # Mode system
+    "IsolationLevel",
     "ModeAccessor",
     "ModeManager",
     "ModeContext",

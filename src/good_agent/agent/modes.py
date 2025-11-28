@@ -11,7 +11,7 @@ import warnings
 from collections.abc import Awaitable, Callable, MutableMapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from enum import Enum, auto
+from enum import Enum, IntEnum, auto
 from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypeVar
 
 
@@ -26,6 +26,25 @@ MODE_HANDLER_SKIP_KWARG = "__good_agent_internal_skip_mode_handler__"
 
 # Type for new-style agent-centric handler functions
 AgentModeHandler = Callable[["Agent"], Awaitable[Any]]
+
+
+class IsolationLevel(IntEnum):
+    """Isolation level for mode execution.
+
+    Levels are ordered from least to most restrictive. Child modes cannot
+    have a lower isolation level than their parent.
+
+    Values:
+        NONE (0): Default. Shared state, messages, and config.
+        CONFIG (1): Config/tools isolated, messages shared.
+        THREAD (2): Messages are a temp view (original + new kept), config shared.
+        FORK (3): Complete isolation - nothing persists back to parent.
+    """
+
+    NONE = 0
+    CONFIG = 1
+    THREAD = 2
+    FORK = 3
 
 
 class HandlerStyle(Enum):
@@ -82,6 +101,23 @@ class ModeTransition:
     transition_type: Literal["switch", "exit", "push"]
     target_mode: str | None = None
     parameters: dict[str, Any] | None = None
+
+
+@dataclass
+class IsolationSnapshot:
+    """Snapshot of agent state for isolation restore.
+
+    Captures the state needed to restore an agent to pre-mode entry state
+    based on the isolation level.
+    """
+
+    isolation_level: IsolationLevel
+    mode_name: str
+    # Message isolation (for THREAD and FORK)
+    message_version_ids: list[Any] | None = None
+    message_count: int = 0
+    # Config isolation (for CONFIG and FORK)
+    tool_state: dict[str, Any] | None = None
 
 
 class ModeStateView(MutableMapping[str, Any]):
@@ -304,27 +340,51 @@ class ModeContext:
         return datetime.now() - self._entered_at
 
 
+@dataclass
+class ModeStackEntry:
+    """Entry in the mode stack with all mode-specific data."""
+
+    name: str
+    state: dict[str, Any]
+    isolation: IsolationLevel
+    isolation_snapshot: IsolationSnapshot | None = None
+
+
 class ModeStack:
-    """Manages mode stack with scoped state inheritance."""
+    """Manages mode stack with scoped state inheritance and isolation tracking."""
 
     def __init__(self):
         """Initialize empty mode stack."""
-        self._stack: list[tuple[str, dict[str, Any]]] = []
+        self._stack: list[ModeStackEntry] = []
 
-    def push(self, mode_name: str, state: dict[str, Any] | None = None) -> None:
+    def push(
+        self,
+        mode_name: str,
+        state: dict[str, Any] | None = None,
+        isolation: IsolationLevel = IsolationLevel.NONE,
+        isolation_snapshot: IsolationSnapshot | None = None,
+    ) -> None:
         """Push new mode onto stack.
 
         Args:
             mode_name: Name of mode to push
             state: Initial state for mode (defaults to empty dict)
+            isolation: Isolation level for this mode
+            isolation_snapshot: Snapshot for restore on exit
         """
-        self._stack.append((mode_name, state or {}))
+        entry = ModeStackEntry(
+            name=mode_name,
+            state=state or {},
+            isolation=isolation,
+            isolation_snapshot=isolation_snapshot,
+        )
+        self._stack.append(entry)
 
-    def pop(self) -> tuple[str, dict[str, Any]] | None:
+    def pop(self) -> ModeStackEntry | None:
         """Pop mode from stack.
 
         Returns:
-            Tuple of (mode_name, state) or None if stack is empty
+            ModeStackEntry or None if stack is empty
         """
         if self._stack:
             return self._stack.pop()
@@ -334,13 +394,27 @@ class ModeStack:
     def current(self) -> str | None:
         """Get current mode name (top of stack)."""
         if self._stack:
-            return self._stack[-1][0]
+            return self._stack[-1].name
         return None
+
+    @property
+    def current_entry(self) -> ModeStackEntry | None:
+        """Get current mode entry (top of stack)."""
+        if self._stack:
+            return self._stack[-1]
+        return None
+
+    @property
+    def current_isolation(self) -> IsolationLevel:
+        """Get current isolation level (from top of stack, or NONE if empty)."""
+        if self._stack:
+            return self._stack[-1].isolation
+        return IsolationLevel.NONE
 
     @property
     def stack(self) -> list[str]:
         """Get list of mode names in stack (bottom to top)."""
-        return [name for name, _ in self._stack]
+        return [entry.name for entry in self._stack]
 
     def in_mode(self, mode_name: str) -> bool:
         """Check if mode is anywhere in stack.
@@ -351,7 +425,7 @@ class ModeStack:
         Returns:
             True if mode is in stack
         """
-        return any(name == mode_name for name, _ in self._stack)
+        return any(entry.name == mode_name for entry in self._stack)
 
     def get_state(self, key: str, default: Any = None) -> Any:
         """Get state with scoped lookup (inner to outer).
@@ -364,9 +438,9 @@ class ModeStack:
             State value or default
         """
         # Search from innermost to outermost (right to left)
-        for _, state in reversed(self._stack):
-            if key in state:
-                return state[key]
+        for entry in reversed(self._stack):
+            if key in entry.state:
+                return entry.state[key]
         return default
 
     def set_state(self, key: str, value: Any) -> None:
@@ -377,8 +451,7 @@ class ModeStack:
             value: State value
         """
         if self._stack:
-            _, state = self._stack[-1]
-            state[key] = value
+            self._stack[-1].state[key] = value
 
     def get_all_state(self) -> dict[str, Any]:
         """Get merged state with inner values shadowing outer.
@@ -388,16 +461,16 @@ class ModeStack:
         """
         result: dict[str, Any] = {}
         # Start from outermost, let inner values overwrite
-        for _, state in self._stack:
-            result.update(state)
+        for entry in self._stack:
+            result.update(entry.state)
         return result
 
     def delete_state(self, key: str) -> bool:
         """Delete state value from the first (inner-most) scope containing it."""
 
-        for _, state in reversed(self._stack):
-            if key in state:
-                del state[key]
+        for entry in reversed(self._stack):
+            if key in entry.state:
+                del entry.state[key]
                 return True
         return False
 
@@ -437,18 +510,26 @@ class ModeContextManager:
 class ModeInfo:
     """Metadata about a registered mode."""
 
-    def __init__(self, name: str, handler: ModeHandler, description: str | None = None):
+    def __init__(
+        self,
+        name: str,
+        handler: ModeHandler,
+        description: str | None = None,
+        isolation: IsolationLevel = IsolationLevel.NONE,
+    ):
         """Initialize mode info.
 
         Args:
             name: Mode name
             handler: Mode handler function
             description: Mode description (from docstring)
+            isolation: Isolation level for this mode
         """
         self.name = name
         self.handler = handler
         self.description = description or handler.__doc__
         self.style = _detect_handler_style(handler)
+        self.isolation = isolation
 
     def info(self) -> dict[str, Any]:
         """Get mode metadata as dictionary.
@@ -461,6 +542,7 @@ class ModeInfo:
             "description": self.description,
             "handler": self.handler,
             "style": self.style.name,
+            "isolation": self.isolation.name,
         }
 
 
@@ -482,28 +564,53 @@ class ModeManager:
         self._pending_mode_switch: tuple[str, dict[str, Any]] | None = None
         self._pending_mode_exit = False
 
-    def __call__(self, name: str) -> Callable[[ModeHandler], ModeHandler]:
+    def __call__(
+        self,
+        name: str,
+        *,
+        isolation: IsolationLevel | str = IsolationLevel.NONE,
+    ) -> Callable[[ModeHandler], ModeHandler]:
         """Decorator for registering a mode handler.
 
         Args:
             name: Name of the mode
+            isolation: Isolation level for this mode. Can be IsolationLevel enum
+                or string ('none', 'config', 'thread', 'fork'). Default is 'none'.
 
         Returns:
             Decorator function
 
         Example:
             @agent.modes('research')
-            async def research_mode(ctx: ModeContext):
-                ctx.add_system_message("You are in research mode")
-                return await ctx.call()
+            async def research_mode(agent: Agent):
+                agent.prompt.append("You are in research mode")
+                return await agent.call()
+
+            @agent.modes('sandbox', isolation='fork')
+            async def sandbox_mode(agent: Agent):
+                # Complete isolation - changes don't persist
+                return await agent.call()
         """
+        # Convert string to IsolationLevel if needed
+        if isinstance(isolation, str):
+            try:
+                isolation_level = IsolationLevel[isolation.upper()]
+            except KeyError:
+                valid = ", ".join(level.name.lower() for level in IsolationLevel)
+                raise ValueError(
+                    f"Invalid isolation level '{isolation}'. Must be one of: {valid}"
+                ) from None
+        else:
+            isolation_level = isolation
 
         def decorator(func: ModeHandler) -> ModeHandler:
             # Extract description from docstring
             description = func.__doc__
 
-            # Register mode
-            self._registry[name] = ModeInfo(name, func, description)
+            # Register mode with isolation level
+            self._registry[name] = ModeInfo(
+                name, func, description, isolation=isolation_level
+            )
 
             return func
 
@@ -622,12 +729,98 @@ class ModeManager:
             ctx = self.create_context()
             return await handler(ctx)
 
+    def _create_isolation_snapshot(
+        self, mode_name: str, isolation: IsolationLevel
+    ) -> IsolationSnapshot | None:
+        """Create isolation snapshot based on isolation level.
+
+        Args:
+            mode_name: Name of mode being entered
+            isolation: Isolation level for the mode
+
+        Returns:
+            IsolationSnapshot if isolation requires it, None otherwise
+        """
+        if isolation == IsolationLevel.NONE:
+            return None
+
+        snapshot = IsolationSnapshot(
+            isolation_level=isolation,
+            mode_name=mode_name,
+        )
+
+        # Snapshot messages for THREAD and FORK isolation
+        if isolation in (IsolationLevel.THREAD, IsolationLevel.FORK):
+            if hasattr(self._agent, "_version_manager"):
+                snapshot.message_version_ids = (
+                    self._agent._version_manager.current_version.copy()
+                )
+            snapshot.message_count = len(self._agent.messages)
+
+        # Snapshot tool state for CONFIG and FORK isolation
+        if isolation in (IsolationLevel.CONFIG, IsolationLevel.FORK):
+            from good_agent.tools import ToolManager
+
+            tool_manager = self._agent[ToolManager]
+            snapshot.tool_state = tool_manager._export_state()
+
+        return snapshot
+
+    def _restore_from_isolation_snapshot(
+        self, snapshot: IsolationSnapshot | None
+    ) -> None:
+        """Restore agent state from isolation snapshot.
+
+        Args:
+            snapshot: The isolation snapshot to restore from
+        """
+        if snapshot is None:
+            return
+
+        isolation = snapshot.isolation_level
+
+        # Restore messages based on isolation level
+        if isolation == IsolationLevel.THREAD:
+            # Thread: restore original messages but keep new ones added during mode
+            if (
+                hasattr(self._agent, "_version_manager")
+                and snapshot.message_version_ids
+            ):
+                current_version = self._agent._version_manager.current_version
+                # New messages are those beyond original count
+                new_message_ids = current_version[snapshot.message_count :]
+                # Restore: original + new
+                restored_ids = snapshot.message_version_ids + new_message_ids
+                self._agent._version_manager.add_version(restored_ids)
+                self._agent._messages._sync_from_version()
+
+        elif isolation == IsolationLevel.FORK:
+            # Fork: complete restore - discard all changes
+            if (
+                hasattr(self._agent, "_version_manager")
+                and snapshot.message_version_ids
+            ):
+                self._agent._version_manager.add_version(snapshot.message_version_ids)
+                self._agent._messages._sync_from_version()
+
+        # Restore tool state for CONFIG and FORK
+        if isolation in (IsolationLevel.CONFIG, IsolationLevel.FORK):
+            if snapshot.tool_state:
+                from good_agent.tools import ToolManager
+
+                tool_manager = self._agent[ToolManager]
+                tool_manager._import_state(snapshot.tool_state)
+
     async def _enter_mode(self, mode_name: str, **params: Any) -> None:
         """Enter a mode (internal).
 
         Args:
             mode_name: Mode to enter
             **params: Parameters to pass to mode handler
+
+        Raises:
+            KeyError: If mode is not registered
+            ValueError: If isolation level is less restrictive than parent
         """
         if mode_name not in self._registry:
             raise KeyError(f"Mode '{mode_name}' is not registered")
@@ -636,11 +829,31 @@ class ModeManager:
         if self._mode_stack.current == mode_name:
             return
 
+        mode_info = self._registry[mode_name]
+        new_isolation = mode_info.isolation
+        current_isolation = self._mode_stack.current_isolation
+
+        # Validate isolation hierarchy: child cannot be less isolated than parent
+        if new_isolation < current_isolation:
+            raise ValueError(
+                f"Mode '{mode_name}' has isolation level '{new_isolation.name}' "
+                f"which is less restrictive than parent isolation '{current_isolation.name}'. "
+                f"Child modes cannot reduce isolation level."
+            )
+
         # Take snapshot of system prompt state for restore on exit
         self._agent._system_prompt_manager.take_snapshot()
 
-        # Push mode onto stack
-        self._mode_stack.push(mode_name, dict(params))
+        # Create isolation snapshot if needed
+        isolation_snapshot = self._create_isolation_snapshot(mode_name, new_isolation)
+
+        # Push mode onto stack with isolation info
+        self._mode_stack.push(
+            mode_name,
+            dict(params),
+            isolation=new_isolation,
+            isolation_snapshot=isolation_snapshot,
+        )
 
         # Emit mode:entered event
         from good_agent.events.agent import AgentEvents
@@ -659,8 +872,10 @@ class ModeManager:
         if not self._mode_stack.current:
             return
 
-        # Get current mode info before popping
-        mode_name = self._mode_stack.current
+        # Get current mode entry before popping
+        entry = self._mode_stack.current_entry
+        mode_name = entry.name if entry else "unknown"
+        isolation_snapshot = entry.isolation_snapshot if entry else None
         entered_at = datetime.now()  # TODO: Track this properly
 
         # Pop mode from stack
@@ -668,6 +883,9 @@ class ModeManager:
 
         # Restore system prompt state to pre-mode snapshot
         self._agent._system_prompt_manager.restore_snapshot()
+
+        # Restore from isolation snapshot
+        self._restore_from_isolation_snapshot(isolation_snapshot)
 
         # Emit mode:exited event
         from good_agent.events.agent import AgentEvents
