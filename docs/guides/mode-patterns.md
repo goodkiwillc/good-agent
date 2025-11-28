@@ -473,6 +473,163 @@ async def temporary_context_mode(agent: Agent):
 
 ---
 
+## Generator Patterns
+
+Generator handlers provide setup/cleanup lifecycle semantics for modes.
+
+### Resource Management Pattern
+
+Acquire and release resources safely:
+
+```python
+@agent.modes("database")
+async def database_mode(agent: Agent):
+    # SETUP: Acquire resources
+    pool = await create_connection_pool()
+    agent.mode.state["db_pool"] = pool
+    agent.prompt.append("You have database access.")
+    
+    yield agent  # Mode active
+    
+    # CLEANUP: Release resources (guaranteed)
+    await pool.close()
+
+# Usage - pool is always closed, even on exception
+async with agent.modes["database"]:
+    await agent.call("Query the users table")
+```
+
+### Session Tracking Pattern
+
+Track activity and generate summaries:
+
+```python
+@agent.modes("session")
+async def session_mode(agent: Agent):
+    # SETUP: Initialize tracking
+    agent.mode.state["start_time"] = datetime.now()
+    agent.mode.state["queries"] = []
+    
+    yield agent
+    
+    # CLEANUP: Generate summary
+    duration = datetime.now() - agent.mode.state["start_time"]
+    queries = agent.mode.state["queries"]
+    
+    # Store for later access
+    agent.mode.state["summary"] = {
+        "duration": duration.total_seconds(),
+        "query_count": len(queries),
+        "queries": queries,
+    }
+```
+
+### Error Recovery Pattern
+
+Handle and recover from exceptions:
+
+```python
+@agent.modes("resilient")
+async def resilient_mode(agent: Agent):
+    agent.mode.state["attempts"] = 0
+    agent.mode.state["errors"] = []
+    
+    try:
+        yield agent
+    except RateLimitError as e:
+        agent.mode.state["errors"].append(str(e))
+        # Suppress and let caller retry
+        agent.mode.state["should_retry"] = True
+    except CriticalError as e:
+        # Log but re-raise
+        await log_critical_error(e)
+        raise
+    finally:
+        # Always log completion
+        await log_session_end(agent.mode.state)
+```
+
+### Context Isolation Pattern
+
+Safely experiment with isolated state:
+
+```python
+@agent.modes("sandbox", isolation="fork")
+async def sandbox_mode(agent: Agent):
+    # SETUP: Note original state
+    original_model = agent.config.model
+    
+    # Change configuration (isolated from parent)
+    agent.config.model = "gpt-4o"
+    agent.prompt.append("Experimental mode.")
+    
+    yield agent
+    
+    # CLEANUP: Export results before isolation restores
+    agent.mode.state["experiment_results"] = {
+        "model_used": agent.config.model,
+        "messages_count": len(agent.messages),
+    }
+```
+
+### Exit Behavior Pattern
+
+Control post-exit LLM behavior:
+
+```python
+from good_agent import ModeExitBehavior
+
+@agent.modes("research")
+async def research_mode(agent: Agent):
+    agent.mode.state["findings"] = []
+    agent.prompt.append("Research mode active.")
+    
+    yield agent
+    
+    # Decide based on what happened
+    if agent.mode.state.get("needs_followup"):
+        # Continue conversation
+        agent.mode.set_exit_behavior(ModeExitBehavior.CONTINUE)
+    else:
+        # Return control to caller
+        agent.mode.set_exit_behavior(ModeExitBehavior.STOP)
+```
+
+### Nested Generator Pattern
+
+Combine generators for layered behavior:
+
+```python
+@agent.modes("outer")
+async def outer_mode(agent: Agent):
+    events = []
+    events.append("outer:setup")
+    agent.mode.state["events"] = events
+    
+    try:
+        yield agent
+    finally:
+        events.append("outer:cleanup")
+
+@agent.modes("inner")
+async def inner_mode(agent: Agent):
+    events = agent.mode.state.get("events", [])
+    events.append("inner:setup")
+    
+    try:
+        yield agent
+    finally:
+        events.append("inner:cleanup")
+
+# Usage
+async with agent.modes["outer"]:
+    async with agent.modes["inner"]:
+        pass
+# events = ["outer:setup", "inner:setup", "inner:cleanup", "outer:cleanup"]
+```
+
+---
+
 ## Anti-Patterns to Avoid
 
 ### Mode Explosion
@@ -560,6 +717,81 @@ async def explicit_mode(agent: Agent):
     
     if next_mode:
         return agent.mode.switch(next_mode)
+```
+
+### Multiple Yields (Generator Anti-Pattern)
+
+❌ **Bad**: Yielding more than once
+
+```python
+@agent.modes("bad_generator")
+async def bad_mode(agent: Agent):
+    yield agent  # First yield - OK
+    # ... do something ...
+    yield agent  # Second yield - ERROR!
+```
+
+This will raise `RuntimeError: Mode handler 'bad_generator' yielded more than once`.
+
+✅ **Good**: Single yield with conditional cleanup
+
+```python
+@agent.modes("good_generator")
+async def good_mode(agent: Agent):
+    yield agent  # Only yield once
+    
+    # All cleanup logic goes after the single yield
+    if agent.mode.state.get("needs_extra_cleanup"):
+        await extra_cleanup()
+    await normal_cleanup()
+```
+
+### Cleanup Without Try/Finally (Generator Anti-Pattern)
+
+❌ **Bad**: Cleanup not guaranteed
+
+```python
+@agent.modes("fragile")
+async def fragile_mode(agent: Agent):
+    resource = acquire_resource()
+    yield agent
+    # If exception occurs, this never runs!
+    release_resource(resource)
+```
+
+✅ **Good**: Use try/finally for guaranteed cleanup
+
+```python
+@agent.modes("robust")
+async def robust_mode(agent: Agent):
+    resource = acquire_resource()
+    try:
+        yield agent
+    finally:
+        # Always runs, even on exception
+        release_resource(resource)
+```
+
+### Blocking Operations in Generator Setup (Anti-Pattern)
+
+❌ **Bad**: Long synchronous operations block mode entry
+
+```python
+@agent.modes("slow_entry")
+async def slow_mode(agent: Agent):
+    # Blocks entire event loop!
+    data = slow_sync_load_from_disk()  
+    yield agent
+```
+
+✅ **Good**: Use async operations or run in executor
+
+```python
+@agent.modes("fast_entry")
+async def fast_mode(agent: Agent):
+    # Non-blocking
+    data = await asyncio.to_thread(slow_sync_load_from_disk)
+    yield agent
 ```
 
 ---

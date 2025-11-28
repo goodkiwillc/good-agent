@@ -5,7 +5,7 @@ Demonstrates how to:
 - Enter/exit modes via context managers
 - Stack modes for nested behavior
 - Access and mutate mode state via agent.mode.state
-- Execute handlers before `agent.call()` invocations
+- Use generator handlers for setup/cleanup lifecycle
 - Transition between modes programmatically
 """
 
@@ -54,6 +54,31 @@ async def main():
         topic = agent.mode.state.get("topic", "the user's request")
         agent.prompt.append(f"Drafting mode: write a polished summary about {topic}.")
         return agent.mode.exit()
+
+    # Register a generator mode - uses yield for setup/cleanup lifecycle
+    @agent.modes("session")
+    async def session_mode(agent: Agent):
+        """Session tracking mode with guaranteed cleanup.
+
+        Generator handlers use yield to separate:
+        - SETUP (before yield): runs when mode is entered
+        - CLEANUP (after yield): runs when mode exits, even on exception
+        """
+        # SETUP PHASE
+        from datetime import datetime
+
+        agent.mode.state["session_start"] = datetime.now()
+        agent.mode.state["queries"] = []
+        agent.prompt.append("Session mode: tracking all queries.")
+        print("  [session] Setup complete - tracking started")
+
+        yield agent  # Mode is now active
+
+        # CLEANUP PHASE (guaranteed to run)
+        duration = datetime.now() - agent.mode.state["session_start"]
+        query_count = len(agent.mode.state["queries"])
+        print(f"  [session] Cleanup - Session lasted {duration.total_seconds():.2f}s")
+        print(f"  [session] Total queries tracked: {query_count}")
 
     async with agent:
         print("=== Normal Mode ===")
@@ -110,6 +135,19 @@ async def main():
             print(f"Current mode after transitions: {agent.mode.name}")
             if agent.mode.name:
                 await agent.exit_mode()
+
+        # Demonstrate generator mode with setup/cleanup lifecycle
+        print("\n=== Generator Mode Demo (Setup/Cleanup) ===")
+        with agent.mock("[mock] query 1 response", "[mock] query 2 response"):
+            async with agent.modes["session"]:
+                print(f"Current mode: {agent.mode.name}")
+                # Simulate some queries
+                agent.mode.state["queries"].append("query 1")
+                await agent.call("First query")
+                agent.mode.state["queries"].append("query 2")
+                await agent.call("Second query")
+            # Cleanup runs automatically when exiting the context manager
+        print("Session mode exited - cleanup has run")
 
 
 if __name__ == "__main__":

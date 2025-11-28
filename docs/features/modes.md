@@ -60,7 +60,11 @@ async with Agent("You are a helpful assistant.") as agent:
 
 ### Mode Handler Signature (v2 API)
 
-Mode handlers receive the agent instance directly:
+Mode handlers receive the agent instance directly. There are two styles:
+
+#### Simple Handlers
+
+Simple handlers run once at mode entry:
 
 ```python
 @agent.modes("mode_name")
@@ -78,6 +82,29 @@ async def my_mode(agent: Agent):
     # Optionally transition to another mode
     return agent.mode.switch("other_mode")
 ```
+
+#### Generator Handlers (Setup/Cleanup Pattern)
+
+Generator handlers use `yield` to define setup and cleanup phases:
+
+```python
+@agent.modes("research")
+async def research_mode(agent: Agent):
+    # SETUP PHASE - runs when mode is entered
+    agent.prompt.append("Research mode active.")
+    agent.mode.state["sources"] = []
+    
+    yield agent  # PAUSE - mode is now active, control returns to caller
+    
+    # CLEANUP PHASE - runs when mode exits (guaranteed, even on exception)
+    await save_sources(agent.mode.state["sources"])
+```
+
+Generator handlers provide:
+
+- **Guaranteed cleanup** - cleanup runs even if exceptions occur
+- **Resource management** - open connections, files, or contexts
+- **State finalization** - summarize, save, or report on mode activity
 
 ---
 
@@ -493,6 +520,122 @@ async with agent.modes["outer"]:
 # outer cleanup runs SECOND
 # Exception propagates after all cleanup completes
 ```
+
+---
+
+## Generator Mode Handlers
+
+Generator handlers enable the setup/cleanup pattern for mode lifecycle management.
+
+### Basic Setup/Cleanup
+
+```python
+@agent.modes("database_mode")
+async def database_mode(agent: Agent):
+    # SETUP: Acquire resources
+    connection = await get_db_connection()
+    agent.mode.state["db"] = connection
+    agent.prompt.append("You have database access. Use it wisely.")
+    
+    yield agent  # Mode is now active
+    
+    # CLEANUP: Release resources (always runs)
+    await connection.close()
+```
+
+### Exception Handling
+
+Generator handlers can catch and handle exceptions from the active phase:
+
+```python
+@agent.modes("careful_mode")
+async def careful_mode(agent: Agent):
+    agent.prompt.append("Careful mode.")
+    
+    try:
+        yield agent
+    except Exception as e:
+        # Log or transform the exception
+        agent.mode.state["error"] = str(e)
+        await notify_admin(f"Error in careful mode: {e}")
+        raise  # Re-raise to propagate
+    finally:
+        # Always runs, even if exception occurs
+        await cleanup_resources()
+
+# Usage:
+async with agent.modes["careful_mode"]:
+    raise ValueError("Something went wrong")
+    # Exception is caught in handler, logged, then re-raised
+```
+
+### Suppressing Exceptions
+
+Handlers can suppress exceptions by not re-raising them:
+
+```python
+@agent.modes("resilient")
+async def resilient_mode(agent: Agent):
+    try:
+        yield agent
+    except ValueError:
+        # Suppress ValueError - don't re-raise
+        agent.mode.state["recovered"] = True
+    # Other exceptions propagate normally
+```
+
+### Exit Behavior Control
+
+Control what happens after mode cleanup completes using `ModeExitBehavior`:
+
+```python
+from good_agent import ModeExitBehavior
+
+@agent.modes("research")
+async def research_mode(agent: Agent):
+    agent.prompt.append("Research mode.")
+    
+    yield agent
+    
+    # Control post-exit behavior
+    agent.mode.set_exit_behavior(ModeExitBehavior.STOP)  # Don't call LLM after exit
+```
+
+| Behavior | Description |
+|----------|-------------|
+| `CONTINUE` | Always call LLM after mode exit |
+| `STOP` | Don't call LLM, return control to caller |
+| `AUTO` | Call LLM only if conversation is "pending" (default) |
+
+**AUTO behavior**: Conversation is "pending" if the last message is from the user or is a tool result that needs processing.
+
+### Inner Calls During Setup/Cleanup
+
+Mode handlers can make agent calls during setup and cleanup:
+
+```python
+@agent.modes("research")
+async def research_mode(agent: Agent):
+    # Setup: initialize research
+    await agent.call("Begin research preparation")
+    
+    yield agent  # Main research happens here
+    
+    # Cleanup: summarize findings
+    summary = await agent.call("Summarize all findings")
+    agent.mode.state["summary"] = summary.content
+```
+
+### When to Use Generator Handlers
+
+| Use Case | Handler Type |
+|----------|--------------|
+| Simple prompt modification | Simple handler |
+| One-time state initialization | Simple handler |
+| Resource cleanup (files, connections) | Generator handler |
+| Exception monitoring/handling | Generator handler |
+| Activity summarization on exit | Generator handler |
+| Control post-exit LLM behavior | Generator handler |
 
 ---
 

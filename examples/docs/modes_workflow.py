@@ -1,3 +1,11 @@
+"""Workflow modes example demonstrating generator handlers.
+
+This example shows:
+- Simple mode handlers for workflow phases
+- Generator handlers with setup/cleanup for workflow tracking
+- Mode transitions between workflow steps
+"""
+
 import asyncio
 from datetime import datetime
 
@@ -6,10 +14,16 @@ from good_agent import Agent
 
 async def main():
     async with Agent("Workflow assistant") as agent:
-
+        # Generator mode for workflow tracking with guaranteed cleanup
         @agent.modes("workflow_start")
         async def workflow_start_mode(agent: Agent):
-            """Initialize a multi-step workflow."""
+            """Initialize a multi-step workflow with tracking.
+
+            Uses generator pattern for setup/cleanup lifecycle:
+            - SETUP: Initialize workflow state and start tracking
+            - CLEANUP: Log workflow completion stats (guaranteed to run)
+            """
+            # SETUP PHASE
             workflow_id = agent.mode.state.get(
                 "workflow_id", f"wf_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             )
@@ -21,13 +35,22 @@ async def main():
                 "test",
             ]
             agent.mode.state["current_step"] = 0
+            agent.mode.state["start_time"] = datetime.now()
 
             agent.prompt.append(
                 f"Starting workflow {workflow_id}. Step 1: Analysis phase."
             )
 
-            # Automatically transition to first step
-            return agent.mode.switch("workflow_analyze")
+            print(f"[workflow] Started: {workflow_id}")
+
+            yield agent  # Workflow is now active
+
+            # CLEANUP PHASE (guaranteed to run, even on exception)
+            duration = datetime.now() - agent.mode.state["start_time"]
+            final_step = agent.mode.state.get("current_step", 0)
+            print(f"[workflow] Completed: {workflow_id}")
+            print(f"[workflow] Duration: {duration.total_seconds():.2f}s")
+            print(f"[workflow] Final step: {final_step}")
 
         @agent.modes("workflow_analyze")
         async def workflow_analyze_mode(agent: Agent):

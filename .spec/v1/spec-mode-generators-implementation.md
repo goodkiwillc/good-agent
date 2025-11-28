@@ -17,7 +17,7 @@ Implement async generator support for mode handlers, enabling setup/cleanup life
 | Phase 2 | ✅ COMPLETE | Exception handling (athrow, cleanup guarantees) |
 | Phase 3 | ✅ COMPLETE | Exit behavior (ModeExitBehavior enum, set_exit_behavior) |
 | Phase 4 | ✅ COMPLETE | Execute loop integration |
-| Phase 5 | 🔲 PENDING | Documentation & examples update |
+| Phase 5 | ✅ COMPLETE | Documentation & examples update |
 
 ### Phase 1 Completion Notes (2024-11-27)
 - Added `HandlerType` enum (`SIMPLE`, `GENERATOR`) and `_detect_handler_type()` function
@@ -61,6 +61,23 @@ Implement async generator support for mode handlers, enabling setup/cleanup life
   - 3 tests for `apply_scheduled_mode_changes()` return value
   - 5 tests for `_is_conversation_pending()`
   - 6 tests for execute loop integration (including STOP/CONTINUE behaviors)
+
+### Phase 5 Completion Notes (2024-11-28)
+- Updated `docs/features/modes.md`:
+  - Added Generator Mode Handlers section with setup/cleanup examples
+  - Documented exception handling in generators
+  - Documented ModeExitBehavior usage
+  - Added when-to-use comparison table
+- Updated `docs/guides/mode-patterns.md`:
+  - Added Generator Patterns section with 6 patterns (Resource Management, Session Tracking, Error Recovery, Context Isolation, Exit Behavior, Nested Generator)
+  - Added generator-specific anti-patterns (Multiple Yields, Cleanup Without Try/Finally, Blocking Operations)
+- Updated `CHANGELOG.md`:
+  - Added Generator Mode Handlers feature
+  - Added ModeExitBehavior enum
+  - Added Mode Transition Handling feature
+- Updated example files:
+  - `examples/modes/basic_modes.py` - Added session tracking generator mode example
+  - `examples/docs/modes_workflow.py` - Converted workflow_start to generator with cleanup
 
 ### Test Coverage
 - Total tests: 94 (52 original mode tests + 42 generator tests)

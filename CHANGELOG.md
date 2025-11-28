@@ -23,6 +23,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Isolation Levels**: `none`, `config`, `thread`, `fork` for mode isolation
 - **Invokable Modes**: Generate tools for agent self-switching with `invokable=True`
 - **Standalone Modes**: `@mode()` decorator for reusable mode definitions
+- **Generator Mode Handlers**: Async generator support for setup/cleanup lifecycle
+  - Use `yield` to separate setup (before) and cleanup (after) phases
+  - Cleanup guaranteed via try/finally, even on exceptions
+  - Exception handling via `try/except` around yield
+  - `agent.mode.set_exit_behavior()` to control post-exit LLM behavior
+- **ModeExitBehavior**: Enum to control execute loop behavior after mode exit
+  - `CONTINUE` - Always call LLM after mode exit
+  - `STOP` - Don't call LLM, return control immediately
+  - `AUTO` - Call LLM only if conversation is pending (default)
+- **Mode Transition Handling**: Mode changes triggered by tools apply immediately within same execute() call
 
 ### Deprecated
 - `ModeContext` signature - Use `agent: Agent` parameter instead
