@@ -25,7 +25,7 @@ def test_run_agent_executes_interactive_loop(mock_load, mock_loop, mock_asyncio_
     run_agent("module:agent")
 
     mock_load.assert_called_once_with("module:agent")
-    mock_loop.assert_awaited_once_with(agent)
+    mock_loop.assert_awaited_once_with(agent, output_format="rich")
     mock_asyncio_run.assert_called_once()
 
 
@@ -41,7 +41,7 @@ def test_run_agent_factory_receives_extra_args(mock_load, mock_loop, mock_asynci
     run_agent("module:factory", extra_args=["--verbose", "true"])
 
     factory.assert_called_once_with("--verbose", "true")
-    mock_loop.assert_awaited_once_with(agent)
+    mock_loop.assert_awaited_once_with(agent, output_format="rich")
 
 
 @patch("builtins.print")
