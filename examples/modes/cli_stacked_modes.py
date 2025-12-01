@@ -168,6 +168,7 @@ async def project_mode(agent: Agent):
     agent.mode.state["context_type"] = "project"
     agent.mode.state["language"] = agent.mode.state.get("language", "python")
     agent.mode.state["framework"] = agent.mode.state.get("framework", "none")
+    yield agent
 
 
 # Feature mode - can stack on project
@@ -187,6 +188,7 @@ async def feature_mode(agent: Agent):
     )
     agent.mode.state["context_type"] = "feature"
     agent.mode.state["feature_name"] = agent.mode.state.get("feature_name", "unnamed")
+    yield agent
 
 
 # Debug mode - overlay that can stack on anything
@@ -211,6 +213,7 @@ async def debug_mode(agent: Agent):
     )
     agent.mode.state["debug_active"] = True
     agent.mode.state["issues_found"] = []
+    yield agent
 
 
 # Review mode - another overlay
@@ -228,6 +231,7 @@ async def review_mode(agent: Agent):
     )
     agent.mode.state["review_active"] = True
     agent.mode.state["review_notes"] = []
+    yield agent
 
 
 # Demo prompts for end-to-end testing

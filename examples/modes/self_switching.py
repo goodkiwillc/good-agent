@@ -42,12 +42,12 @@ async def main() -> None:
     async def research_mode(agent: Agent):
         topic = agent.mode.state.get("topic", "the user's request")
         agent.prompt.append(f"Research mode: dig deep into {topic} with citations.")
-
-        # After one research call, automatically transition to writing
-        if agent.mode.state.get("handoff_to_writing"):
-            return agent.mode.switch("writing", report_topic=topic)
-
         agent.mode.state["handoff_to_writing"] = True
+        yield agent
+
+        # After research, automatically transition to writing
+        agent.modes.schedule_mode_switch("writing")
+        agent.mode.state["report_topic"] = topic
 
     @agent.modes("writing")
     async def writing_mode(agent: Agent):
@@ -55,7 +55,8 @@ async def main() -> None:
         agent.prompt.append(
             f"Writing mode: produce a structured report about {report_topic}."
         )
-        return agent.mode.exit()
+        yield agent
+        agent.modes.schedule_mode_exit()
 
     async with agent:
         with agent.mock(

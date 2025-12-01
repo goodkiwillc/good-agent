@@ -28,7 +28,7 @@ async def main():
         @agent.modes("monitored")
         async def monitored_mode(agent: Agent):
             agent.prompt.append("This mode is being monitored by events.")
-            return await agent.call()
+            yield agent
 
         # Use mode - events will fire
         async with agent.modes["monitored"]:

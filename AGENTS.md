@@ -98,7 +98,7 @@ print(f"{profile.name} is {profile.age}")
 
 ## 5. Agent Modes
 
-Switch behaviors and toolsets dynamically using Modes.
+Switch behaviors and toolsets dynamically using Modes. **All mode handlers must use the generator pattern with `yield`.**
 
 ```python
 from good_agent import Agent
@@ -106,11 +106,13 @@ from good_agent import Agent
 @agent.modes('research')
 async def research_mode(agent: Agent):
     """Specialized mode for research tasks."""
-    # Add temporary system prompt (auto-restored on mode exit)
+    # SETUP: runs when entering mode
     agent.prompt.append("You are a research expert. Be thorough.")
-    
-    # Access mode state
     agent.mode.state["topic"] = "quantum computing"
+    
+    yield agent  # Mode is now active
+    
+    # CLEANUP (optional): runs when exiting mode
 
 # Enter mode
 async with agent.modes['research']:
@@ -118,9 +120,18 @@ async with agent.modes['research']:
     print(agent.mode.name)   # "research"
     print(agent.mode.stack)  # ["research"]
 
+# Parameterized mode entry
+async with agent.modes['research'](depth="deep", topic="AI"):
+    print(agent.mode.state)  # {"depth": "deep", "topic": "AI", ...}
+
+# Mode history tracking
+print(agent.mode.history)     # ["research", "summary", ...]
+print(agent.mode.previous)    # Last mode name or None
+await agent.mode.return_to_previous()  # Return to previous mode
+
 # Mode features:
 # - isolation: 'none', 'config', 'thread', 'fork'
-# - invokable: generate tools for agent self-switching
+# - invokable: generate tools for agent self-switching (tool: enter_{name})
 # - standalone: @mode() decorator for reusable modes
 ```
 

@@ -41,6 +41,7 @@ async def main() -> None:
     async def research_mode(agent: Agent):
         agent.prompt.append("Research mode: cite authoritative sources.")
         agent.mode.state["tool_triggered"] = True
+        yield agent
 
     async with agent:
         with agent.mock(

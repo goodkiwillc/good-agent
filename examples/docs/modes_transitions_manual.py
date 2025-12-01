@@ -10,18 +10,19 @@ async def main():
         async def intake_mode(agent: Agent):
             """Initial intake mode that routes to specialized modes."""
             agent.prompt.append("Determine the user's needs and route appropriately.")
+            yield agent
 
-            # Analyze the user's request and decide next mode
+            # Analyze the user's request and decide next mode (in cleanup phase)
             user_intent = agent.mode.state.get("user_intent", "unknown")
 
             if "research" in user_intent.lower():
-                return agent.mode.switch("research")
+                agent.modes.schedule_mode_switch("research")
             elif "creative" in user_intent.lower():
-                return agent.mode.switch("creative")
+                agent.modes.schedule_mode_switch("creative")
             elif "technical" in user_intent.lower():
-                return agent.mode.switch("technical")
+                agent.modes.schedule_mode_switch("technical")
             else:
-                return agent.mode.exit()  # Go back to normal mode
+                agent.modes.schedule_mode_exit()
 
         @agent.modes("technical")
         async def technical_mode(agent: Agent):
@@ -29,23 +30,22 @@ async def main():
             agent.prompt.append(
                 "Provide detailed technical analysis with code examples."
             )
-
-            # After one technical response, switch to review mode
-            if agent.mode.state.get("analysis_complete"):
-                return agent.mode.switch(
-                    "review", analysis_topic=agent.mode.state.get("topic")
-                )
-
             agent.mode.state["analysis_complete"] = True
+            yield agent
+
+            # After technical response, switch to review mode
+            agent.mode.state["analysis_topic"] = agent.mode.state.get("topic")
+            agent.modes.schedule_mode_switch("review")
 
         @agent.modes("review")
         async def review_mode(agent: Agent):
             """Review and summarization mode."""
             topic = agent.mode.state.get("analysis_topic", "the analysis")
             agent.prompt.append(f"Provide a concise review and summary of {topic}.")
+            yield agent
 
             # After review, exit back to normal mode
-            return agent.mode.exit()
+            agent.modes.schedule_mode_exit()
 
         # Usage - modes will automatically transition
         async with agent.modes["intake"]:

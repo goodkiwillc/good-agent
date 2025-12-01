@@ -41,6 +41,8 @@ Modes are **behavioral configurations** that change how your agent responds. Thi
 
 ### Basic Mode Definition
 
+**All mode handlers must use the generator pattern with `yield`.**
+
 ```python
 from good_agent import Agent
 
@@ -49,8 +51,13 @@ async with Agent("You are a helpful assistant.") as agent:
     @agent.modes("research")
     async def research_mode(agent: Agent):
         """Deep research mode with citations."""
+        # SETUP - runs when mode is entered
         agent.prompt.append("Focus on accuracy and cite your sources.")
         agent.mode.state["depth"] = "comprehensive"
+        
+        yield agent  # Required - mode is now active
+        
+        # CLEANUP (optional) - runs when mode exits
     
     # Use the mode
     async with agent.modes["research"]:
@@ -58,53 +65,53 @@ async with Agent("You are a helpful assistant.") as agent:
         print(agent.mode.name)  # "research"
 ```
 
-### Mode Handler Signature (v2 API)
+### Mode Handler Signature
 
-Mode handlers receive the agent instance directly. There are two styles:
-
-#### Simple Handlers
-
-Simple handlers run once at mode entry:
+Mode handlers are async generators that receive the agent instance and must yield:
 
 ```python
 @agent.modes("mode_name")
 async def my_mode(agent: Agent):
-    # Access mode state
+    # SETUP PHASE - runs when mode is entered
     agent.mode.state["key"] = "value"
-    
-    # Modify system prompt (auto-restored on exit)
     agent.prompt.append("Mode-specific instructions...")
     
     # Check mode info
     print(agent.mode.name)   # Current mode name
     print(agent.mode.stack)  # Full mode stack
     
-    # Optionally transition to another mode
-    return agent.mode.switch("other_mode")
+    yield agent  # Required - mode is now active, control returns to caller
+    
+    # CLEANUP PHASE - runs when mode exits (guaranteed, even on exception)
+    await cleanup_resources()
 ```
 
-#### Generator Handlers (Setup/Cleanup Pattern)
+Mode handlers provide:
 
-Generator handlers use `yield` to define setup and cleanup phases:
+- **Setup phase** - configure agent before yield (prompts, state, tools)
+- **Guaranteed cleanup** - code after yield runs even if exceptions occur
+- **Resource management** - open connections, files, or contexts
+- **State finalization** - summarize, save, or report on mode activity
+
+### Parameterized Mode Entry
+
+Pass parameters when entering a mode - they're injected into `agent.mode.state`:
 
 ```python
 @agent.modes("research")
 async def research_mode(agent: Agent):
-    # SETUP PHASE - runs when mode is entered
-    agent.prompt.append("Research mode active.")
-    agent.mode.state["sources"] = []
+    # Parameters from entry are already in state
+    topic = agent.mode.state.get("topic", "general")
+    depth = agent.mode.state.get("depth", 1)
     
-    yield agent  # PAUSE - mode is now active, control returns to caller
-    
-    # CLEANUP PHASE - runs when mode exits (guaranteed, even on exception)
-    await save_sources(agent.mode.state["sources"])
+    agent.prompt.append(f"Research {topic} at depth {depth}.")
+    yield agent
+
+# Enter with parameters
+async with agent.modes["research"](topic="quantum physics", depth=3):
+    print(agent.mode.state["topic"])  # "quantum physics"
+    print(agent.mode.state["depth"])  # 3
 ```
-
-Generator handlers provide:
-
-- **Guaranteed cleanup** - cleanup runs even if exceptions occur
-- **Resource management** - open connections, files, or contexts
-- **State finalization** - summarize, save, or report on mode activity
 
 ---
 
@@ -119,9 +126,12 @@ The `agent.mode` property provides access to the current mode context:
 | `agent.mode.name` | `str \| None` | Current mode name (top of stack) |
 | `agent.mode.stack` | `list[str]` | All active modes (LIFO order) |
 | `agent.mode.state` | `dict` | Current mode's state dictionary |
+| `agent.mode.history` | `list[str]` | All modes entered this session (chronological) |
+| `agent.mode.previous` | `str \| None` | The mode that was active before current |
 | `agent.mode.in_mode(name)` | `bool` | Check if mode is anywhere in stack |
 | `agent.mode.switch(name)` | `ModeTransition` | Request transition to another mode |
 | `agent.mode.exit()` | `ModeTransition` | Request exit from current mode |
+| `agent.mode.return_to_previous()` | `ModeTransition` | Return to the previously active mode |
 
 ### System Prompt Manager (`agent.prompt`)
 
@@ -170,6 +180,7 @@ async with Agent("You are a customer support agent.") as agent:
             "Greet the customer warmly. Ask clarifying questions "
             "to understand their issue. Be empathetic and patient."
         )
+        yield agent
     
     @agent.modes("diagnosis")
     async def diagnosis_mode(agent: Agent):
@@ -179,6 +190,7 @@ async with Agent("You are a customer support agent.") as agent:
             "to narrow down the problem. Reference the knowledge base."
         )
         agent.mode.state["possible_solutions"] = []
+        yield agent
     
     @agent.modes("resolution")
     async def resolution_mode(agent: Agent):
@@ -188,6 +200,7 @@ async with Agent("You are a customer support agent.") as agent:
             f"Provide clear, numbered steps to resolve the issue. "
             f"Known solutions: {solutions}"
         )
+        yield agent
     
     @agent.modes("escalation")
     async def escalation_mode(agent: Agent):
@@ -197,6 +210,7 @@ async with Agent("You are a customer support agent.") as agent:
             "details and prepare a summary for the support team."
         )
         agent.mode.state["escalation_reason"] = "Complex issue"
+        yield agent
     
     # Usage flow
     async with agent.modes["greeting"]:
@@ -231,6 +245,7 @@ async with Agent("You are a senior software engineer.") as agent:
             "Rate severity: Critical, High, Medium, Low"
         )
         agent.mode.state["findings"] = {"security": []}
+        yield agent
     
     @agent.modes("performance_review")
     async def performance_review(agent: Agent):
@@ -244,6 +259,7 @@ async with Agent("You are a senior software engineer.") as agent:
             "Estimate impact: High, Medium, Low"
         )
         agent.mode.state["findings"] = {"performance": []}
+        yield agent
     
     @agent.modes("style_review")
     async def style_review(agent: Agent):
@@ -256,6 +272,7 @@ async with Agent("You are a senior software engineer.") as agent:
             "- Documentation and comments\n"
             "- Test coverage suggestions"
         )
+        yield agent
     
     @agent.modes("comprehensive_review")
     async def comprehensive_review(agent: Agent):
@@ -268,6 +285,7 @@ async with Agent("You are a senior software engineer.") as agent:
             "4. Architecture and design patterns\n"
             "Prioritize findings by business impact."
         )
+        yield agent
     
     # Run focused reviews
     code = "def get_user(id): return db.execute(f'SELECT * FROM users WHERE id={id}')"
@@ -295,6 +313,7 @@ async with Agent("You are a professional writing coach.") as agent:
             "Use 'yes, and...' thinking to build on ideas."
         )
         agent.mode.state["ideas"] = []
+        yield agent
     
     @agent.modes("outline")
     async def outline_mode(agent: Agent):
@@ -305,6 +324,7 @@ async with Agent("You are a professional writing coach.") as agent:
             "Organize into: Introduction, Main Points, Conclusion. "
             "Ensure logical flow and smooth transitions."
         )
+        yield agent
     
     @agent.modes("draft")
     async def draft_mode(agent: Agent):
@@ -314,6 +334,7 @@ async with Agent("You are a professional writing coach.") as agent:
             "not perfection. Maintain consistent voice and tone. "
             "Don't self-edit - that comes later."
         )
+        yield agent
     
     @agent.modes("edit")
     async def edit_mode(agent: Agent):
@@ -326,6 +347,7 @@ async with Agent("You are a professional writing coach.") as agent:
             "- Check logical flow\n"
             "- Ensure consistent tone"
         )
+        yield agent
     
     @agent.modes("proofread")
     async def proofread_mode(agent: Agent):
@@ -338,6 +360,7 @@ async with Agent("You are a professional writing coach.") as agent:
             "- Fact accuracy\n"
             "Flag any remaining concerns."
         )
+        yield agent
     
     # Full writing pipeline
     topic = "The future of remote work"
@@ -379,6 +402,7 @@ async with Agent("You are a data scientist.") as agent:
             "- Suggest potential analyses"
         )
         agent.mode.state["observations"] = []
+        yield agent
     
     @agent.modes("cleaning")
     async def cleaning_mode(agent: Agent):
@@ -391,6 +415,7 @@ async with Agent("You are a data scientist.") as agent:
             "- Remove or fix outliers\n"
             "- Standardize/normalize as needed"
         )
+        yield agent
     
     @agent.modes("analysis")
     async def analysis_mode(agent: Agent):
@@ -402,6 +427,7 @@ async with Agent("You are a data scientist.") as agent:
             "- Validate results and check assumptions\n"
             "- Quantify uncertainty and confidence"
         )
+        yield agent
     
     @agent.modes("visualization")
     async def visualization_mode(agent: Agent):
@@ -413,6 +439,7 @@ async with Agent("You are a data scientist.") as agent:
             "- Include appropriate labels and legends\n"
             "- Consider accessibility (color blindness, etc.)"
         )
+        yield agent
     
     @agent.modes("reporting")
     async def reporting_mode(agent: Agent):
@@ -424,6 +451,7 @@ async with Agent("You are a data scientist.") as agent:
             "- Include actionable insights\n"
             "- Note limitations and next steps"
         )
+        yield agent
 ```
 
 ---
@@ -440,6 +468,7 @@ async def research_mode(agent: Agent):
     # Initialize state
     agent.mode.state["sources"] = []
     agent.mode.state["confidence"] = 0.0
+    yield agent
 
 async with agent.modes["research"]:
     # State persists across multiple calls
@@ -459,6 +488,7 @@ Inner modes inherit state from outer modes (read access), but writes are scoped:
 async def outer_mode(agent: Agent):
     agent.mode.state["shared"] = "from outer"
     agent.mode.state["outer_only"] = "exists"
+    yield agent
 
 @agent.modes("inner")
 async def inner_mode(agent: Agent):
@@ -468,6 +498,7 @@ async def inner_mode(agent: Agent):
     # Write: shadows (doesn't modify outer)
     agent.mode.state["shared"] = "overridden in inner"
     agent.mode.state["inner_only"] = "new value"
+    yield agent
 
 async with agent.modes["outer"]:
     print(agent.mode.state["shared"])  # "from outer"
@@ -626,16 +657,16 @@ async def research_mode(agent: Agent):
     agent.mode.state["summary"] = summary.content
 ```
 
-### When to Use Generator Handlers
+### Cleanup Phase Use Cases
 
-| Use Case | Handler Type |
-|----------|--------------|
-| Simple prompt modification | Simple handler |
-| One-time state initialization | Simple handler |
-| Resource cleanup (files, connections) | Generator handler |
-| Exception monitoring/handling | Generator handler |
-| Activity summarization on exit | Generator handler |
-| Control post-exit LLM behavior | Generator handler |
+The code after `yield` in mode handlers is useful for:
+
+- **Resource cleanup** - Close files, connections, or contexts
+- **Exception monitoring/handling** - Log or transform errors
+- **Activity summarization** - Summarize or save mode activity on exit
+- **Post-exit LLM behavior** - Control whether LLM is called after mode exit
+
+If no cleanup is needed, simply `yield agent` at the end of the handler.
 
 ---
 
@@ -650,20 +681,27 @@ Mode handlers can request transitions to other modes:
 async def intake_mode(agent: Agent):
     """Determine where to route the user."""
     agent.prompt.append("Understand the user's needs.")
+    yield agent
 
 @agent.modes("research")
 async def research_mode(agent: Agent):
     """Deep research mode."""
-    # Check if we should transition
+    agent.prompt.append("Focus on research.")
+    yield agent
+    
+    # After yield, can schedule transitions for cleanup
     if agent.mode.state.get("needs_summary"):
-        return agent.mode.switch("summary")
+        agent.modes.schedule_mode_switch("summary")
 
 @agent.modes("summary")
 async def summary_mode(agent: Agent):
     """Summarize findings."""
-    # Exit back to no mode when done
+    agent.prompt.append("Summarize findings.")
+    yield agent
+    
+    # Schedule exit when done
     if agent.mode.state.get("complete"):
-        return agent.mode.exit()
+        agent.modes.schedule_mode_exit()
 ```
 
 ### Scheduled Transitions
@@ -708,12 +746,14 @@ async def sandbox_mode(agent: Agent):
     
     # Store results to pass back via mode state
     agent.mode.state["result"] = "findings"
+    yield agent
 
 @agent.modes("focus", isolation="thread")
 async def focus_mode(agent: Agent):
     """Messages are a temp view, but new ones are kept."""
     # Can truncate safely - original preserved
     agent.messages.truncate(5)
+    yield agent
 ```
 
 ### Isolation Rules
@@ -745,8 +785,9 @@ async def research_mode(agent: Agent):
     and provide detailed citations.
     """
     agent.prompt.append("Focus on research and citations.")
+    yield agent
 
-# This creates a tool called "enter_research_mode"
+# This creates a tool called "enter_research"
 # The agent can call it to switch modes on its own
 
 # Custom tool name
@@ -754,6 +795,7 @@ async def research_mode(agent: Agent):
 async def writing_mode(agent: Agent):
     """Start writing mode for drafting content."""
     agent.prompt.append("Focus on clear writing.")
+    yield agent
 ```
 
 ---
@@ -770,11 +812,13 @@ from good_agent import Agent, mode
 async def research_mode(agent: Agent):
     """Reusable research mode."""
     agent.prompt.append("Research mode active.")
+    yield agent
 
 @mode("writing", isolation="thread")
 async def writing_mode(agent: Agent):
     """Reusable writing mode."""
     agent.prompt.append("Writing mode active.")
+    yield agent
 
 # Use via constructor
 agent = Agent("Assistant", modes=[research_mode, writing_mode])
@@ -792,14 +836,30 @@ Monitor mode changes with the event system:
 ```python
 from good_agent.events import AgentEvents
 
+@agent.on(AgentEvents.MODE_ENTERING)
+async def on_mode_entering(ctx):
+    print(f"About to enter: {ctx.parameters['mode_name']}")
+
 @agent.on(AgentEvents.MODE_ENTERED)
 async def on_mode_entered(ctx):
     print(f"Entered mode: {ctx.parameters['mode_name']}")
     print(f"Stack: {ctx.parameters['mode_stack']}")
 
+@agent.on(AgentEvents.MODE_EXITING)
+async def on_mode_exiting(ctx):
+    print(f"About to exit: {ctx.parameters['mode_name']}")
+
 @agent.on(AgentEvents.MODE_EXITED)
 async def on_mode_exited(ctx):
     print(f"Exited mode: {ctx.parameters['mode_name']}")
+
+@agent.on(AgentEvents.MODE_ERROR)
+async def on_mode_error(ctx):
+    print(f"Error in mode {ctx.parameters['mode_name']}: {ctx.parameters['error']}")
+
+@agent.on(AgentEvents.MODE_TRANSITION)
+async def on_mode_transition(ctx):
+    print(f"Transition: {ctx.parameters['from_mode']} -> {ctx.parameters['to_mode']}")
 ```
 
 ---
@@ -839,9 +899,14 @@ async with agent.modes["project"]:
 @agent.modes("router", invokable=True)
 async def router(agent: Agent):
     """Route to appropriate mode based on context."""
+    agent.prompt.append("Analyze the request and route appropriately.")
+    yield agent
+    
+    # After yield, schedule transition based on results
     if "code" in agent.mode.state.get("topic", ""):
-        return agent.mode.switch("code_review")
-    return agent.mode.switch("general")
+        agent.modes.schedule_mode_switch("code_review")
+    else:
+        agent.modes.schedule_mode_switch("general")
 ```
 
 ### Anti-Patterns to Avoid

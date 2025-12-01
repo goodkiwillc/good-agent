@@ -33,15 +33,16 @@ async def main():
                 )
                 agent.mode.state["conversation_phase"] = "concluding"
 
-                # Consider transitioning to summary mode
-                if agent.mode.state.get("should_summarize", False):
-                    return agent.mode.switch("summary")
-
             # Store conversation metrics
             agent.mode.state["message_count"] = message_count
             agent.mode.state["engagement_level"] = (
                 "high" if user_messages > 5 else "normal"
             )
+            yield agent
+
+            # Consider transitioning to summary mode (in cleanup phase)
+            if agent.mode.state.get("should_summarize", False):
+                agent.modes.schedule_mode_switch("summary")
 
         @agent.modes("summary")
         async def summary_mode(agent: Agent):
@@ -49,7 +50,8 @@ async def main():
             agent.prompt.append(
                 "Provide a helpful summary of our conversation and key takeaways."
             )
-            return agent.mode.exit()  # Return to normal after summary
+            yield agent
+            agent.modes.schedule_mode_exit()  # Return to normal after summary
 
         # Usage
         async with agent.modes["adaptive"]:

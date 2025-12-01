@@ -37,6 +37,7 @@ async def main():
             agent.mode.state["conversation_length"] = total_messages
             agent.mode.state["recent_topics"] = recent_topics
             agent.mode.state["analysis_timestamp"] = datetime.now().isoformat()
+            yield agent
 
         # Usage
         async with agent.modes["context_aware"]:

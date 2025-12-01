@@ -516,11 +516,14 @@ def return_to_previous(self) -> ModeTransition:
 - [x] Add `agent.mode.previous`
 - [x] Add `agent.mode.return_to_previous()`
 
-### Phase 8: Documentation
-- [ ] Write migration guide for simple → generator handlers
-- [ ] Update all doc files
-- [ ] Create CLI visual guide
-- [x] Add CHANGELOG entry (pending)
+### Phase 8: Documentation ✅ MOSTLY COMPLETED
+- [ ] Write migration guide for simple → generator handlers (deferred)
+- [x] Update AGENTS.md with new API patterns
+- [x] Update docs/features/modes.md (comprehensive update)
+- [x] Update all 24 example files to use generator pattern
+- [ ] Update docs/guides/mode-patterns.md (large file, low priority)
+- [ ] Create CLI visual guide (deferred with Phase 6)
+- [x] Add CHANGELOG entry
 
 ---
 

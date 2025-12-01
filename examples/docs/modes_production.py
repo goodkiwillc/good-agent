@@ -19,31 +19,20 @@ async def main():
                 agent.mode.state["error_count"] = 0
                 agent.mode.state["initialized"] = True
 
-            try:
-                # Update metrics
-                agent.mode.state["call_count"] += 1
-                agent.mode.state["last_call"] = datetime.now()
+            # Update metrics
+            agent.mode.state["call_count"] += 1
+            agent.mode.state["last_call"] = datetime.now()
 
-                # Add contextual system message via agent.prompt.append()
-                call_num = agent.mode.state["call_count"]
-                agent.prompt.append(f"Production mode - Call #{call_num}")
+            # Add contextual system message via agent.prompt.append()
+            call_num = agent.mode.state["call_count"]
+            agent.prompt.append(f"Production mode - Call #{call_num}")
 
-                # Automatic cleanup after extended use
-                if call_num > 100:
-                    agent.mode.state.clear()
-                    agent.mode.state["initialized"] = True
+            # Automatic cleanup after extended use
+            if call_num > 100:
+                agent.mode.state.clear()
+                agent.mode.state["initialized"] = True
 
-                return await agent.call()
-
-            except Exception as e:
-                agent.mode.state["error_count"] += 1
-                agent.mode.state["last_error"] = str(e)
-
-                # Consider exiting mode after too many errors
-                if agent.mode.state["error_count"] > 5:
-                    return agent.mode.exit()
-
-                raise
+            yield agent
 
         # Use it
         async with agent.modes["production_ready"]:

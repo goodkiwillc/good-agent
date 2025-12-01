@@ -8,7 +8,7 @@ async def main():
 
         @agent.modes("research")
         async def research_mode(agent: Agent):
-            pass
+            yield agent
 
         async with agent.modes["research"]:
             # Check what modes are active

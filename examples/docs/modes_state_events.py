@@ -24,6 +24,7 @@ async def main():
             agent.mode.state["last_access"] = datetime.now().isoformat()
 
             agent.prompt.append(f"Stateful mode - Call #{agent.mode.state['counter']}")
+            yield agent
 
         # Usage - state changes will emit events
         async with agent.modes["stateful"]:

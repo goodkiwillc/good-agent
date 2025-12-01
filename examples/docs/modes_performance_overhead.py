@@ -25,6 +25,7 @@ async def main():
             agent.prompt.append(
                 f"Heavy mode with {len(large_data)} items; analysis={complex_analysis}"
             )
+            yield agent
 
         # Optimized mode handler (recommended)
         @agent.modes("optimized")
@@ -40,6 +41,7 @@ async def main():
             # Cleanup state when appropriate
             if agent.mode.state.get("cleanup_needed"):
                 del agent.mode.state["analysis_cache"]
+            yield agent
 
         # Demonstrate usage
         async with agent.modes["optimized"]:

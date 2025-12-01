@@ -147,6 +147,7 @@ async def sandbox_mode(agent: Agent):
     )
     agent.mode.state["isolation_type"] = "fork"
     agent.mode.state["sandbox_active"] = True
+    yield agent
 
 
 # Draft mode - thread isolation
@@ -162,6 +163,7 @@ async def draft_mode(agent: Agent):
     )
     agent.mode.state["isolation_type"] = "thread"
     agent.mode.state["draft_mode_active"] = True
+    yield agent
 
 
 # Experiment mode - config isolation
@@ -177,6 +179,7 @@ async def experiment_mode(agent: Agent):
     )
     agent.mode.state["isolation_type"] = "config"
     agent.mode.state["experiment_active"] = True
+    yield agent
 
 
 # Normal mode - no isolation
@@ -189,6 +192,7 @@ async def normal_mode(agent: Agent):
         "\n[NORMAL MODE - No Isolation]\nAll messages and config persist."
     )
     agent.mode.state["isolation_type"] = "none"
+    yield agent
 
 
 # Demo prompts

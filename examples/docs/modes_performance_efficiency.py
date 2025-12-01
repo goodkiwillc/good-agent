@@ -24,6 +24,7 @@ async def main():
                 agent.mode.state.pop("old_data", None)
 
             agent.mode.state["call_count"] = agent.mode.state.get("call_count", 0) + 1
+            yield agent
 
         async with agent.modes["efficient"]:
             await agent.call("Call 1")

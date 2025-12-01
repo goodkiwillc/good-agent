@@ -29,6 +29,7 @@ async def main():
         @agent.modes("research")
         async def research_mode(agent: Agent):
             agent.prompt.append("Research mode active.")
+            yield agent
 
         # Normal call
         await agent.call("Hello")

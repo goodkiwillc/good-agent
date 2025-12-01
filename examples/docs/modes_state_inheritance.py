@@ -12,6 +12,7 @@ async def main():
             agent.mode.state["project_name"] = "Website Redesign"
             agent.mode.state["team_size"] = 5
             agent.mode.state["deadline"] = "2024-12-01"
+            yield agent
 
         @agent.modes("planning")
         async def planning_mode(agent: Agent):
@@ -27,6 +28,7 @@ async def main():
             # Set planning-specific state
             agent.mode.state["planning_phase"] = "initial"
             agent.mode.state["tasks"] = []
+            yield agent
 
         async with agent.modes["project"]:
             async with agent.modes["planning"]:

@@ -26,6 +26,7 @@ async def main():
             f"Session info: {interactions} interactions over {duration}. "
             f"Previous topics: {agent.mode.state['topics_discussed']}"
         )
+        yield agent
 
     async with agent:  # Initialize agent
         async with agent.modes["session"]:

@@ -15,17 +15,20 @@ async def test_mode_workflow_with_mocks():
     @agent.modes("step1")
     async def step1_mode(agent: Agent):
         workflow_steps.append("step1")
-        return agent.mode.switch("step2")
+        yield agent
+        agent.modes.schedule_mode_switch("step2")
 
     @agent.modes("step2")
     async def step2_mode(agent: Agent):
         workflow_steps.append("step2")
-        return agent.mode.switch("step3")
+        yield agent
+        agent.modes.schedule_mode_switch("step3")
 
     @agent.modes("step3")
     async def step3_mode(agent: Agent):
         workflow_steps.append("step3")
-        return agent.mode.exit()
+        yield agent
+        agent.modes.schedule_mode_exit()
 
     await agent.initialize()
 

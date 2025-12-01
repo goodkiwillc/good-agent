@@ -139,6 +139,7 @@ async def intake_mode(agent: Agent):
     agent.mode.state["phase"] = "intake"
     agent.mode.state["start_time"] = datetime.now().isoformat()
     agent.mode.state["requirements"] = []
+    yield agent
 
 
 # Planning mode - second phase
@@ -157,6 +158,7 @@ async def planning_mode(agent: Agent):
     )
     agent.mode.state["phase"] = "planning"
     agent.mode.state["plan_items"] = []
+    yield agent
 
 
 # Review mode - final phase
@@ -170,6 +172,7 @@ async def review_mode(agent: Agent):
         "Use 'advance_workflow' to complete the workflow."
     )
     agent.mode.state["phase"] = "review"
+    yield agent
 
 
 # Demo prompts

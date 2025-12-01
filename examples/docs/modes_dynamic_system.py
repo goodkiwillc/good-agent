@@ -45,6 +45,7 @@ async def main():
 
             # Update session state
             agent.mode.state["last_update"] = datetime.now().isoformat()
+            yield agent
 
         # Configure and use dynamic mode
         async with agent.modes["dynamic"]:

@@ -89,6 +89,7 @@ async def research_mode(agent: Agent):
     )
     agent.mode.state["mode_type"] = "research"
     agent.mode.state["queries"] = agent.mode.state.get("queries", [])
+    yield agent
 
 
 @agent.modes("creative", invokable=True)
@@ -104,6 +105,7 @@ async def creative_mode(agent: Agent):
     )
     agent.mode.state["mode_type"] = "creative"
     agent.mode.state["ideas_generated"] = 0
+    yield agent
 
 
 @agent.modes("analysis", invokable=True)
@@ -119,6 +121,7 @@ async def analysis_mode(agent: Agent):
     )
     agent.mode.state["mode_type"] = "analysis"
     agent.mode.state["analyses_performed"] = 0
+    yield agent
 
 
 # Demo prompts

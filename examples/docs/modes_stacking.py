@@ -11,18 +11,21 @@ async def main():
             """Expert knowledge mode."""
             agent.prompt.append("Provide expert-level, technical responses.")
             agent.mode.state["expertise_level"] = "advanced"
+            yield agent
 
         @agent.modes("teaching")
         async def teaching_mode(agent: Agent):
             """Educational mode."""
             agent.prompt.append("Explain concepts clearly with examples.")
             agent.mode.state["teaching_style"] = "socratic"
+            yield agent
 
         @agent.modes("patient")
         async def patient_mode(agent: Agent):
             """Patient, supportive interaction mode."""
             agent.prompt.append("Be patient and encouraging. Break down complex ideas.")
             agent.mode.state["interaction_style"] = "supportive"
+            yield agent
 
         async with agent.modes["expert"]:
             async with agent.modes["teaching"]:

@@ -14,7 +14,7 @@ async def test_research_mode():
     async def research_mode(agent: Agent):
         agent.prompt.append("Research mode active")
         agent.mode.state["research_active"] = True
-        return await agent.call()
+        yield agent
 
     await agent.initialize()
 
@@ -37,12 +37,14 @@ async def test_mode_transitions():
     @agent.modes("source")
     async def source_mode(agent: Agent):
         transition_log.append("source_entered")
-        return agent.mode.switch("target")
+        yield agent
+        agent.modes.schedule_mode_switch("target")
 
     @agent.modes("target")
     async def target_mode(agent: Agent):
         transition_log.append("target_entered")
-        return agent.mode.exit()
+        yield agent
+        agent.modes.schedule_mode_exit()
 
     await agent.initialize()
 
@@ -66,6 +68,7 @@ async def test_mode_state_scoping():
     async def outer_mode(agent: Agent):
         agent.mode.state["shared"] = "outer_value"
         agent.mode.state["outer_only"] = "outer"
+        yield agent
 
     @agent.modes("inner")
     async def inner_mode(agent: Agent):
@@ -76,6 +79,7 @@ async def test_mode_state_scoping():
         # Shadow shared state
         agent.mode.state["shared"] = "inner_value"
         agent.mode.state["inner_only"] = "inner"
+        yield agent
 
     await agent.initialize()
 

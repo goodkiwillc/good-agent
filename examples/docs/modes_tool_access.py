@@ -42,13 +42,7 @@ async def main():
             # Register temporary tools
             await agent.tools.register_tool(search_academic_papers)
             await agent.tools.register_tool(cite_source)
-
-            try:
-                return await agent.call()
-            finally:
-                # Cleanup tools (manual context management simulation)
-                # In a real 'temporary_tools' context manager implementation, this would be automatic
-                pass
+            yield agent
 
         @agent.modes("creative")
         async def creative_mode(agent: Agent):
@@ -60,8 +54,7 @@ async def main():
             # Register temporary tools
             await agent.tools.register_tool(generate_character)
             await agent.tools.register_tool(story_prompt)
-
-            return await agent.call()
+            yield agent
 
         # Usage - tools are automatically available in each mode
         async with agent.modes["research"]:

@@ -17,6 +17,7 @@ async def main():
             # Store mode-specific state via agent.mode.state
             agent.mode.state["research_depth"] = "comprehensive"
             agent.mode.state["sources_required"] = True
+            yield agent
 
         @agent.modes("creative")
         async def creative_mode(agent: Agent):
@@ -28,6 +29,7 @@ async def main():
 
             agent.mode.state["creativity_level"] = "high"
             agent.mode.state["format_style"] = "narrative"
+            yield agent
 
         # Normal mode - default behavior
         response = await agent.call("Tell me about quantum physics")
