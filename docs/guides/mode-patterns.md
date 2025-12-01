@@ -32,6 +32,7 @@ async with Agent("Assistant") as agent:
             "a clear understanding of what they need."
         )
         agent.mode.state["requirements"] = []
+        yield agent
     
     @agent.modes("process")
     async def process_mode(agent: Agent):
@@ -41,6 +42,7 @@ async with Agent("Assistant") as agent:
             f"Process these requirements: {requirements}\n"
             "Work systematically through each item."
         )
+        yield agent
     
     @agent.modes("deliver")
     async def deliver_mode(agent: Agent):
@@ -49,6 +51,7 @@ async with Agent("Assistant") as agent:
             "Present the results clearly. Ask if the user needs "
             "any adjustments or has questions."
         )
+        yield agent
     
     # Usage
     async with agent.modes["intake"]:
@@ -77,14 +80,16 @@ async def validation_mode(agent: Agent):
         "3. Are there any potential issues?\n"
         "If validation fails, explain why and what's needed."
     )
+    yield agent
     
     if agent.mode.state.get("validation_passed"):
-        return agent.mode.switch("processing")
+        agent.modes.schedule_mode_switch("processing")
     
 @agent.modes("processing")
 async def processing_mode(agent: Agent):
     """Main processing after validation."""
     agent.prompt.append("Process the validated request.")
+    yield agent
 ```
 
 ### Retry Mode
@@ -102,6 +107,7 @@ async def attempt_mode(agent: Agent):
         f"Attempt {agent.mode.state['attempts']}/{max_attempts}. "
         "Try your best to complete the task."
     )
+    yield agent
 
 @agent.modes("recovery")
 async def recovery_mode(agent: Agent):
@@ -111,10 +117,12 @@ async def recovery_mode(agent: Agent):
         f"The previous attempt failed: {last_error}\n"
         "Analyze what went wrong and adjust approach."
     )
+    yield agent
     
     if agent.mode.state.get("can_retry"):
-        return agent.mode.switch("attempt")
-    return agent.mode.switch("escalate")
+        agent.modes.schedule_mode_switch("attempt")
+    else:
+        agent.modes.schedule_mode_switch("escalate")
 ```
 
 ---
@@ -136,18 +144,19 @@ async def router_mode(agent: Agent):
         "- 'technical': For code or technical tasks\n"
         "- 'support': For help or troubleshooting"
     )
+    yield agent
     
     # Handler can examine conversation and decide
     intent = agent.mode.state.get("detected_intent")
     
     if intent == "research":
-        return agent.mode.switch("research")
+        agent.modes.schedule_mode_switch("research")
     elif intent == "creative":
-        return agent.mode.switch("creative")
+        agent.modes.schedule_mode_switch("creative")
     elif intent == "technical":
-        return agent.mode.switch("technical")
+        agent.modes.schedule_mode_switch("technical")
     elif intent == "support":
-        return agent.mode.switch("support")
+        agent.modes.schedule_mode_switch("support")
 ```
 
 ### Fallback Router
@@ -159,9 +168,10 @@ Try primary mode, fall back if needed:
 async def primary_mode(agent: Agent):
     """Try the primary approach first."""
     agent.prompt.append("Attempt the primary approach.")
+    yield agent
     
     if agent.mode.state.get("needs_fallback"):
-        return agent.mode.switch("fallback")
+        agent.modes.schedule_mode_switch("fallback")
 
 @agent.modes("fallback")
 async def fallback_mode(agent: Agent):
@@ -171,6 +181,7 @@ async def fallback_mode(agent: Agent):
         f"Primary approach was insufficient: {primary_result}\n"
         "Try an alternative approach."
     )
+    yield agent
 ```
 
 ### Priority Router
@@ -188,15 +199,16 @@ async def triage_mode(agent: Agent):
         "- Medium: Important but not urgent\n"
         "- Low: Nice to have, no deadline"
     )
+    yield agent
     
     priority = agent.mode.state.get("priority", "medium")
     
     if priority == "critical":
-        return agent.mode.switch("emergency")
+        agent.modes.schedule_mode_switch("emergency")
     elif priority == "high":
-        return agent.mode.switch("urgent")
+        agent.modes.schedule_mode_switch("urgent")
     else:
-        return agent.mode.switch("standard")
+        agent.modes.schedule_mode_switch("standard")
 ```
 
 ---
@@ -219,6 +231,7 @@ async def legal_expert_mode(agent: Agent):
         "- Note jurisdiction-specific considerations"
     )
     agent.mode.state["domain"] = "legal"
+    yield agent
 
 @agent.modes("medical_expert")
 async def medical_expert_mode(agent: Agent):
@@ -231,6 +244,7 @@ async def medical_expert_mode(agent: Agent):
         "- Never provide diagnoses or treatment advice"
     )
     agent.mode.state["domain"] = "medical"
+    yield agent
 ```
 
 ### Persona Mode
@@ -248,6 +262,7 @@ async def formal_mode(agent: Agent):
         "- Maintain professional distance\n"
         "- Structure responses clearly"
     )
+    yield agent
 
 @agent.modes("friendly")
 async def friendly_mode(agent: Agent):
@@ -259,6 +274,7 @@ async def friendly_mode(agent: Agent):
         "- Use appropriate humor when suitable\n"
         "- Make the user feel comfortable"
     )
+    yield agent
 
 @agent.modes("technical")
 async def technical_mode(agent: Agent):
@@ -270,6 +286,7 @@ async def technical_mode(agent: Agent):
         "- Be concise and specific\n"
         "- Assume technical background"
     )
+    yield agent
 ```
 
 ### Task-Specific Mode
@@ -290,6 +307,7 @@ async def code_review_mode(agent: Agent):
         "Rate severity and provide specific line references."
     )
     agent.mode.state["review_type"] = "code"
+    yield agent
 
 @agent.modes("document_review")
 async def document_review_mode(agent: Agent):
@@ -304,6 +322,7 @@ async def document_review_mode(agent: Agent):
         "Provide specific suggestions with locations."
     )
     agent.mode.state["review_type"] = "document"
+    yield agent
 ```
 
 ---
@@ -320,17 +339,20 @@ Combine broad and narrow modes:
 async def analysis_mode(agent: Agent):
     """General analysis mode."""
     agent.prompt.append("Analyze carefully and thoroughly.")
+    yield agent
 
 # Narrow modes (nest inside analysis)
 @agent.modes("quantitative")
 async def quantitative_mode(agent: Agent):
     """Focus on numbers and data."""
     agent.prompt.append("Focus on quantitative metrics and data.")
+    yield agent
 
 @agent.modes("qualitative")
 async def qualitative_mode(agent: Agent):
     """Focus on patterns and meanings."""
     agent.prompt.append("Focus on qualitative patterns and insights.")
+    yield agent
 
 # Usage: nested for combined effect
 async with agent.modes["analysis"]:
@@ -348,6 +370,7 @@ Add capabilities to an existing mode:
 async def base_research_mode(agent: Agent):
     """Basic research capabilities."""
     agent.prompt.append("Research thoroughly and cite sources.")
+    yield agent
 
 @agent.modes("fact_check")
 async def fact_check_mode(agent: Agent):
@@ -358,6 +381,7 @@ async def fact_check_mode(agent: Agent):
         "- Flag unverified claims\n"
         "- Rate confidence levels"
     )
+    yield agent
 
 # Stack for enhanced research
 async with agent.modes["base_research"]:
@@ -377,6 +401,7 @@ async def gather_mode(agent: Agent):
     agent.prompt.append("Gather all relevant information.")
     # Store findings in state for next mode
     agent.mode.state["findings"] = []
+    yield agent
 
 @agent.modes("synthesize")
 async def synthesize_mode(agent: Agent):
@@ -386,6 +411,7 @@ async def synthesize_mode(agent: Agent):
         f"Synthesize these findings: {findings}\n"
         "Create a coherent narrative."
     )
+    yield agent
 
 # Sequential with state inheritance
 async with agent.modes["gather"]:
@@ -419,6 +445,7 @@ async def session_mode(agent: Agent):
         f"- Previous topics: {agent.mode.state['topics']}\n"
         f"- User preferences: {agent.mode.state['preferences']}"
     )
+    yield agent
 
 # Usage: accumulate across calls
 async with agent.modes["session"]:
@@ -447,6 +474,7 @@ async def exploration_mode(agent: Agent):
         }
     
     agent.prompt.append("Explore this option thoroughly.")
+    yield agent
 
 # Can restore to checkpoint if needed
 async with agent.modes["exploration"]:
@@ -467,6 +495,7 @@ async def temporary_context_mode(agent: Agent):
     agent.mode.state["working_draft"] = ""
     
     agent.prompt.append("Use working state for calculations.")
+    yield agent
 
 # After mode exit, temp_calculations and working_draft are gone
 ```
@@ -653,6 +682,7 @@ async with agent.modes["outer"]:
 async def greeting_mode(agent: Agent):
     style = agent.mode.state.get("style", "casual")
     agent.prompt.append(f"Greet in a {style} manner.")
+    yield agent
 
 # Use via state
 agent.mode.state["style"] = "formal"
@@ -689,6 +719,7 @@ async def combined_mode(agent: Agent):
     features = agent.mode.state.get("features", [])
     for feature in features:
         agent.prompt.append(f"Feature: {feature}")
+    yield agent
 ```
 
 ### Hidden Transitions
@@ -698,11 +729,12 @@ async def combined_mode(agent: Agent):
 ```python
 @agent.modes("mysterious")
 async def mysterious_mode(agent: Agent):
-    # Hidden transition logic
+    yield agent
+    # Hidden transition logic buried in cleanup
     if some_condition():
-        return agent.mode.switch("somewhere")
+        agent.modes.schedule_mode_switch("somewhere")
     elif other_condition():
-        return agent.mode.switch("elsewhere")
+        agent.modes.schedule_mode_switch("elsewhere")
     # Where will we end up?
 ```
 
@@ -711,12 +743,14 @@ async def mysterious_mode(agent: Agent):
 ```python
 @agent.modes("explicit")
 async def explicit_mode(agent: Agent):
-    # Clear transition logic
+    yield agent
+    
+    # Clear transition logic with logging
     next_mode = determine_next_mode(agent.mode.state)
     agent.mode.state["transition_reason"] = f"Moving to {next_mode}"
     
     if next_mode:
-        return agent.mode.switch(next_mode)
+        agent.modes.schedule_mode_switch(next_mode)
 ```
 
 ### Multiple Yields (Generator Anti-Pattern)
@@ -812,6 +846,7 @@ async def test_research_mode_sets_state():
     async def research_mode(agent: Agent):
         agent.mode.state["depth"] = "deep"
         agent.prompt.append("Research mode.")
+        yield agent
     
     async with agent:
         async with agent.modes["research"]:
@@ -830,11 +865,13 @@ async def test_mode_transitions():
     @agent.modes("start")
     async def start_mode(agent: Agent):
         transitions.append("start")
-        return agent.mode.switch("end")
+        yield agent
+        agent.modes.schedule_mode_switch("end")
     
     @agent.modes("end")
     async def end_mode(agent: Agent):
         transitions.append("end")
+        yield agent
     
     async with agent:
         with agent.mock("ok"):
@@ -854,6 +891,7 @@ async def test_fork_isolation():
     @agent.modes("isolated", isolation="fork")
     async def isolated_mode(agent: Agent):
         agent.append("This won't persist", role="user")
+        yield agent
     
     async with agent:
         initial_count = len(agent.messages)
