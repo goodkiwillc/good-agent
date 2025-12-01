@@ -471,58 +471,56 @@ def return_to_previous(self) -> ModeTransition:
 
 ## Implementation Phases
 
-### Phase 1: Core Handler Fix (Breaking)
-- [ ] Remove `HandlerType` enum and detection
-- [ ] Remove `execute_handler()` method
-- [ ] Remove simple handler execution from `_run_active_mode_handlers()`
-- [ ] Require all handlers to yield (error if not)
-- [ ] Update all tests
-- [ ] Update all examples to generator style
+### Phase 1: Core Handler Fix (Breaking) ✅ COMPLETED
+- [x] Remove `HandlerType` enum and detection
+- [x] Remove `execute_handler()` method
+- [x] Remove simple handler execution from `_run_active_mode_handlers()`
+- [x] Require all handlers to yield (error if not) - Added `ModeHandlerError`
+- [x] Update all tests
+- [x] Update all examples to generator style
 
-### Phase 2: Parameterized Mode Entry
-- [ ] Add `__call__` to `ModeContextManager`
-- [ ] Pass parameters to `_enter_mode()`
-- [ ] Inject parameters into `agent.mode.state`
-- [ ] Add tests for parameterized entry
+### Phase 2: Parameterized Mode Entry ✅ COMPLETED
+- [x] Add `__call__` to `ModeContextManager`
+- [x] Pass parameters to `_enter_mode()`
+- [x] Inject parameters into `agent.mode.state`
+- [x] Add tests for parameterized entry
 
-### Phase 3: Mode-Aware System Prompt
-- [ ] Add `_render_modes_section()` to `SystemPromptManager`
-- [ ] Auto-inject when modes are registered
-- [ ] Include current mode, stack, available modes
-- [ ] Make configurable (opt-out)
+### Phase 3: Mode-Aware System Prompt ✅ COMPLETED
+- [x] Add `_render_modes_section()` to `SystemPromptManager`
+- [x] Auto-inject when invokable modes are registered
+- [x] Include current mode, stack, available modes
+- [x] Make configurable (opt-out via `_modes_awareness` flag)
 
-### Phase 4: Improved Invokable Tools
-- [ ] Change default tool name to `enter_{name}`
-- [ ] Add "already active" check
-- [ ] Implement rich tool responses
-- [ ] Add optional `exit_current_mode` tool generation
-- [ ] Update tool descriptions dynamically
+### Phase 4: Improved Invokable Tools ✅ COMPLETED
+- [x] Change default tool name to `enter_{name}` (was `enter_{name}_mode`)
+- [x] Add "already active" check
+- [x] Implement rich tool responses with mode purpose
+- [ ] Add optional `exit_current_mode` tool generation (deferred)
 
-### Phase 5: Additional Events
-- [ ] Add `MODE_ENTERING`, `MODE_EXITING` events
-- [ ] Add `MODE_ERROR` event
-- [ ] Add `MODE_TRANSITION` event
-- [ ] Emit events at appropriate lifecycle points
-- [ ] Add event parameter typing
+### Phase 5: Additional Events ✅ COMPLETED
+- [x] Add `MODE_ENTERING`, `MODE_EXITING` events
+- [x] Add `MODE_ERROR` event
+- [x] Add `MODE_TRANSITION` event
+- [x] Emit events at appropriate lifecycle points
 
-### Phase 6: Rich CLI Display
+### Phase 6: Rich CLI Display ⏸️ DEFERRED
 - [ ] Implement mode context header
 - [ ] Add mode transition visual breaks
 - [ ] Implement nested indentation
 - [ ] Improve tool call display
 - [ ] Update color scheme
 
-### Phase 7: Mode History
-- [ ] Add `_mode_history` list to `ModeManager`
-- [ ] Expose via `agent.mode.history`
-- [ ] Add `agent.mode.previous`
-- [ ] Add `agent.mode.return_to_previous()`
+### Phase 7: Mode History ✅ COMPLETED
+- [x] Add `_mode_history` list to `ModeManager`
+- [x] Expose via `agent.mode.history`
+- [x] Add `agent.mode.previous`
+- [x] Add `agent.mode.return_to_previous()`
 
 ### Phase 8: Documentation
 - [ ] Write migration guide for simple → generator handlers
 - [ ] Update all doc files
 - [ ] Create CLI visual guide
-- [ ] Add CHANGELOG entry
+- [x] Add CHANGELOG entry (pending)
 
 ---
 

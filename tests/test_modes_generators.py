@@ -3,40 +3,55 @@
 import pytest
 
 from good_agent import Agent
-from good_agent.agent.modes import (
-    HandlerType,
-    _detect_handler_type,
-)
+from good_agent.agent.modes import ModeHandlerError
 
 
-class TestHandlerDetection:
-    """Test detection of handler types."""
+class TestHandlerValidation:
+    """Test validation of mode handlers."""
 
-    def test_simple_async_function_detected(self):
+    def test_simple_async_function_raises_error(self):
+        """Simple async functions (no yield) should raise ModeHandlerError."""
+
         async def simple(agent: Agent):
             pass
 
-        assert _detect_handler_type(simple) == HandlerType.SIMPLE
+        with pytest.raises(ModeHandlerError, match="must yield"):
+            from good_agent.agent.modes import _validate_handler
 
-    def test_async_generator_detected(self):
+            _validate_handler(simple)
+
+    def test_async_generator_is_valid(self):
+        """Async generators (with yield) should pass validation."""
+
         async def generator(agent: Agent):
             yield agent
 
-        assert _detect_handler_type(generator) == HandlerType.GENERATOR
+        from good_agent.agent.modes import _validate_handler
+
+        # Should not raise
+        _validate_handler(generator)
 
     def test_sync_function_raises(self):
+        """Sync functions should raise ModeHandlerError."""
+
         def sync(agent: Agent):
             pass
 
-        with pytest.raises(TypeError, match="async"):
-            _detect_handler_type(sync)
+        with pytest.raises(ModeHandlerError, match="async generator"):
+            from good_agent.agent.modes import _validate_handler
+
+            _validate_handler(sync)
 
     def test_sync_generator_raises(self):
+        """Sync generators should raise ModeHandlerError."""
+
         def sync_gen(agent: Agent):
             yield agent
 
-        with pytest.raises(TypeError, match="async"):
-            _detect_handler_type(sync_gen)
+        with pytest.raises(ModeHandlerError, match="async generator"):
+            from good_agent.agent.modes import _validate_handler
+
+            _validate_handler(sync_gen)
 
 
 class TestGeneratorHandlerLifecycle:
@@ -125,7 +140,7 @@ class TestGeneratorHandlerLifecycle:
 
     @pytest.mark.asyncio
     async def test_generator_that_returns_early(self):
-        """Generator that returns before yielding should not crash."""
+        """Generator that returns before yielding should raise ModeHandlerError."""
         agent = Agent("Test")
         setup_ran = False
 
@@ -138,8 +153,10 @@ class TestGeneratorHandlerLifecycle:
             yield agent  # Never reached, but makes it a generator
 
         async with agent:
-            async with agent.modes["gen"]:
-                pass
+            # Generator that doesn't yield should raise ModeHandlerError
+            with pytest.raises(ModeHandlerError, match="must yield"):
+                async with agent.modes["gen"]:
+                    pass
 
         # Setup code ran before the early return
         assert setup_ran is True
@@ -255,29 +272,34 @@ class TestNestedModeGenerators:
         assert inner_saw == 42
 
 
-class TestSimpleHandlerBackwardCompat:
-    """Test that simple handlers still work via execute() loop."""
+class TestGeneratorHandlerValidation:
+    """Test that generators are validated properly."""
 
     @pytest.mark.asyncio
-    async def test_simple_handler_runs_during_execute(self):
-        """Simple handlers run during execute(), not at mode entry."""
+    async def test_generator_handler_runs_at_mode_entry(self):
+        """Generator handlers run setup code at mode entry, not during execute()."""
         agent = Agent("Test")
         handler_runs: list[str] = []
 
-        @agent.modes("simple")
-        async def simple_mode(agent: Agent):
-            handler_runs.append("handler")
+        @agent.modes("gen")
+        async def gen_mode(agent: Agent):
+            handler_runs.append("setup")
+            yield agent
+            handler_runs.append("cleanup")
 
         async with agent:
-            async with agent.modes["simple"]:
-                # Handler hasn't run yet - it runs during execute()
-                assert handler_runs == []
+            async with agent.modes["gen"]:
+                # Setup runs at mode entry
+                assert handler_runs == ["setup"]
 
                 with agent.mock("response"):
                     await agent.call("test")
 
-                # Now handler should have run
-                assert handler_runs == ["handler"]
+                # Still just setup, no cleanup yet
+                assert handler_runs == ["setup"]
+
+            # Cleanup runs at mode exit
+            assert handler_runs == ["setup", "cleanup"]
 
 
 class TestExceptionHandling:
@@ -394,23 +416,27 @@ class TestExceptionHandling:
         assert prompt_after == prompt_before
 
     @pytest.mark.asyncio
-    async def test_simple_handler_no_exception_passing(self):
-        """Simple (non-generator) handlers don't receive exceptions."""
+    async def test_generator_cleanup_on_exception(self):
+        """Generator cleanup runs even when exception is raised."""
         agent = Agent("Test")
-        handler_ran = False
+        events: list[str] = []
 
-        @agent.modes("simple")
-        async def simple_mode(agent: Agent):
-            nonlocal handler_ran
-            handler_ran = True
+        @agent.modes("gen")
+        async def gen_mode(agent: Agent):
+            events.append("setup")
+            try:
+                yield agent
+            finally:
+                events.append("cleanup")
 
         async with agent:
             with pytest.raises(ValueError):
-                async with agent.modes["simple"]:
+                async with agent.modes["gen"]:
+                    events.append("active")
                     raise ValueError("oops")
 
-        # Handler never ran because exception happened before execute()
-        assert handler_ran is False
+        # Cleanup should have run despite exception
+        assert events == ["setup", "active", "cleanup"]
 
 
 class TestModeExitBehavior:
@@ -753,7 +779,7 @@ class TestExecuteLoopIntegration:
 
         async with agent:
             # Tool should schedule the switch
-            tool = agent.tools["enter_research_mode"]
+            tool = agent.tools["enter_research"]
             await tool()  # Schedules the switch (Tool.__call__ is async)
             events.append("tool_called")
 
@@ -875,7 +901,7 @@ class TestExecuteLoopIntegration:
         async with agent:
             # First mock response calls enter_mode_a, second is after mode is active
             with agent.mock(
-                mock_message("", tool_calls=[("enter_mode_a_mode", {})]),
+                mock_message("", tool_calls=[("enter_mode_a", {})]),
                 "Now in mode A",
             ):
                 async for msg in agent.execute("Enter mode A"):

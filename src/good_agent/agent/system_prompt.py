@@ -81,11 +81,13 @@ class SystemPromptManager:
             yield agent
     """
 
-    def __init__(self, agent: Agent):
+    def __init__(self, agent: Agent, *, modes_awareness: bool = True):
         """Initialize system prompt manager.
 
         Args:
             agent: The agent instance this manager belongs to
+            modes_awareness: If True (default), automatically inject mode awareness
+                into the system prompt when invokable modes are registered
         """
         self._agent = agent
         self._prepends: list[PromptSegment] = []
@@ -93,6 +95,7 @@ class SystemPromptManager:
         self._sections: dict[str, PromptSegment] = {}
         self._snapshot_stack: list[SystemPromptSnapshot] = []
         self._sections_view = SectionsView(self)
+        self._modes_awareness = modes_awareness
 
     @property
     def sections(self) -> SectionsView:
@@ -168,7 +171,7 @@ class SystemPromptManager:
     def render(self, base_prompt: str | None = None) -> str:
         """Render the complete system prompt.
 
-        Combines: prepends + base + sections + appends
+        Combines: prepends + base + sections + modes_awareness + appends
 
         Args:
             base_prompt: Override base prompt (defaults to agent's system message)
@@ -197,11 +200,61 @@ class SystemPromptManager:
             segment = self._sections[name]
             parts.append(segment.content)
 
+        # Mode awareness section (auto-injected when invokable modes exist)
+        if self._modes_awareness:
+            modes_section = self._render_modes_section()
+            if modes_section:
+                parts.append(modes_section)
+
         # Appends (in order added)
         for segment in self._appends:
             parts.append(segment.content)
 
         return "\n\n".join(filter(None, parts))
+
+    def _render_modes_section(self) -> str | None:
+        """Render the modes awareness section for the system prompt.
+
+        Only renders if there are invokable modes registered.
+
+        Returns:
+            Modes section string, or None if no invokable modes
+        """
+        mode_manager = self._agent._mode_manager
+        invokable_modes = [
+            (name, mode_manager.get_info(name))
+            for name in mode_manager.list_modes()
+            if mode_manager.get_info(name).get("invokable", False)
+        ]
+
+        if not invokable_modes:
+            return None
+
+        # Build mode list
+        mode_lines = []
+        for name, info in invokable_modes:
+            description = info.get("description", "").split("\n")[0].strip()
+            tool_name = info.get("tool_name", f"enter_{name}_mode")
+            is_active = mode_manager.in_mode(name)
+            status = " (ACTIVE)" if is_active else ""
+            mode_lines.append(f"- {name}{status}: {description} [tool: {tool_name}]")
+
+        current_mode = mode_manager.current_mode or "none"
+        mode_stack = mode_manager.mode_stack or []
+        stack_str = " > ".join(mode_stack) if mode_stack else "none"
+
+        return f"""## Operational Modes
+
+You have access to operational modes that change your capabilities and focus.
+Modes are persistent states - once entered, you remain in a mode until explicitly exiting.
+
+Current mode: {current_mode}
+Mode stack: {stack_str}
+
+Available modes:
+{chr(10).join(mode_lines)}
+
+To switch modes, use the appropriate mode entry tool."""
 
     def take_snapshot(self) -> None:
         """Take a snapshot of current state for later restore.

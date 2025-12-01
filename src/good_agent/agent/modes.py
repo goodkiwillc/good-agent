@@ -94,13 +94,6 @@ def _detect_handler_style(handler: Callable[..., Any]) -> HandlerStyle:
     return HandlerStyle.LEGACY
 
 
-class HandlerType(Enum):
-    """Type of mode handler function."""
-
-    SIMPLE = "simple"  # Regular async function (no cleanup)
-    GENERATOR = "generator"  # Async generator with yield (setup/cleanup)
-
-
 class ModeExitBehavior(Enum):
     """What to do after mode cleanup completes.
 
@@ -113,25 +106,38 @@ class ModeExitBehavior(Enum):
     AUTO = "auto"  # Call LLM only if conversation is "pending"
 
 
-def _detect_handler_type(handler: Callable[..., Any]) -> HandlerType:
-    """Detect if handler is a simple async function or async generator.
+class ModeHandlerError(Exception):
+    """Error raised when a mode handler is invalid."""
+
+    pass
+
+
+def _validate_handler(handler: Callable[..., Any]) -> None:
+    """Validate that handler is an async generator function.
+
+    All mode handlers must be async generators that yield exactly once.
 
     Args:
         handler: The mode handler function
 
-    Returns:
-        HandlerType indicating the handler's type
-
     Raises:
-        TypeError: If handler is not an async function or async generator
+        ModeHandlerError: If handler is not an async generator function
     """
     if inspect.isasyncgenfunction(handler):
-        return HandlerType.GENERATOR
+        return  # Valid
     elif inspect.iscoroutinefunction(handler):
-        return HandlerType.SIMPLE
+        raise ModeHandlerError(
+            f"Mode handler '{handler.__name__}' must yield. "
+            "All mode handlers are async generators that yield control after setup. "
+            "Example:\n"
+            "  async def my_mode(agent: Agent):\n"
+            "      # setup code here\n"
+            "      yield agent\n"
+            "      # cleanup code here (optional)"
+        )
     else:
-        raise TypeError(
-            f"Mode handler must be async function or async generator, "
+        raise ModeHandlerError(
+            f"Mode handler must be async generator function, "
             f"got {type(handler).__name__}"
         )
 
@@ -310,6 +316,42 @@ class ModeAccessor:
                 agent.mode.set_exit_behavior(ModeExitBehavior.STOP)
         """
         self.state["_exit_behavior"] = behavior
+
+    @property
+    def history(self) -> list[str]:
+        """Get list of all modes entered this session (chronological).
+
+        Returns:
+            List of mode names in order they were entered
+        """
+        return self._manager._mode_history.copy()
+
+    @property
+    def previous(self) -> str | None:
+        """Get the mode that was active before current (if any).
+
+        Returns:
+            Name of previous mode, or None if no previous mode
+        """
+        history = self._manager._mode_history
+        if len(history) < 2:
+            return None
+        return history[-2]
+
+    def return_to_previous(self) -> ModeTransition:
+        """Request returning to the previously active mode.
+
+        If there is no previous mode, this will exit the current mode.
+
+        Returns:
+            ModeTransition instruction to switch to previous mode or exit
+        """
+        if self.previous is None:
+            return ModeTransition(transition_type="exit")
+        return ModeTransition(
+            transition_type="switch",
+            target_mode=self.previous,
+        )
 
     def __repr__(self) -> str:  # pragma: no cover - trivial
         return f"ModeAccessor(name={self.name!r}, stack={self.stack!r})"
@@ -563,7 +605,18 @@ ModeHandler = (
 
 
 class ModeContextManager:
-    """Context manager for entering/exiting a mode."""
+    """Context manager for entering/exiting a mode.
+
+    Supports parameterized mode entry via callable syntax:
+
+        # Without parameters
+        async with agent.modes["research"]:
+            ...
+
+        # With parameters
+        async with agent.modes["research"](topic="quantum", depth=3):
+            print(agent.mode.state["topic"])  # "quantum"
+    """
 
     def __init__(self, manager: ModeManager, mode_name: str):
         """Initialize mode context manager.
@@ -574,6 +627,25 @@ class ModeContextManager:
         """
         self._manager = manager
         self._mode_name = mode_name
+        self._params: dict[str, Any] = {}
+
+    def __call__(self, **params: Any) -> ModeContextManager:
+        """Allow parameterized mode entry.
+
+        Parameters are injected into agent.mode.state before the handler runs.
+
+        Args:
+            **params: Parameters to pass to the mode
+
+        Returns:
+            Self for use as context manager
+
+        Example:
+            async with agent.modes["research"](topic="quantum", depth=3):
+                print(agent.mode.state["topic"])  # "quantum"
+        """
+        self._params = params
+        return self
 
     async def __aenter__(self) -> Agent:
         """Enter the mode.
@@ -581,7 +653,7 @@ class ModeContextManager:
         Returns:
             The agent instance (for convenience)
         """
-        await self._manager._enter_mode(self._mode_name)
+        await self._manager._enter_mode(self._mode_name, **self._params)
         return self._manager._agent
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -615,7 +687,7 @@ class ModeInfo:
             description: Mode description (from docstring)
             isolation: Isolation level for this mode
             invokable: If True, generate a tool for agent to enter this mode
-            tool_name: Custom tool name (default: 'enter_{name}_mode')
+            tool_name: Custom tool name (default: 'enter_{name}')
         """
         self.name = name
         self.handler = handler
@@ -623,7 +695,7 @@ class ModeInfo:
         self.style = _detect_handler_style(handler)
         self.isolation = isolation
         self.invokable = invokable
-        self.tool_name = tool_name or f"enter_{name}_mode"
+        self.tool_name = tool_name or f"enter_{name}"
 
     def info(self) -> dict[str, Any]:
         """Get mode metadata as dictionary.
@@ -659,6 +731,7 @@ class ModeManager:
         self._mode_stack = ModeStack()
         self._pending_mode_switch: tuple[str, dict[str, Any]] | None = None
         self._pending_mode_exit = False
+        self._mode_history: list[str] = []  # Chronological list of modes entered
 
     def __call__(
         self,
@@ -712,6 +785,9 @@ class ModeManager:
             isolation_level = isolation
 
         def decorator(func: ModeHandler) -> ModeHandler:
+            # Validate handler is async generator
+            _validate_handler(func)
+
             # Extract description from docstring
             description = func.__doc__
 
@@ -753,14 +829,28 @@ class ModeManager:
         else:
             tool_description = f"Enter {mode_name} mode."
 
-        # Capture mode_name and manager in closure
+        # Capture mode_name, mode_info, and manager in closure
         manager = self
+        info = mode_info
 
         @tool(name=generated_tool_name, description=tool_description)
         def mode_switch_tool() -> str:
             """Generated tool to schedule mode switch."""
+            # Check if already in this mode
+            if manager.in_mode(mode_name):
+                return f"Already in {mode_name} mode. No action needed."
+
             manager.schedule_mode_switch(mode_name)
-            return f"Will enter {mode_name} mode."
+
+            # Build rich response with mode details
+            description = info.description or ""
+            first_line = description.strip().split("\n")[0] if description else ""
+
+            return f"""Entering {mode_name} mode.
+
+PURPOSE: {first_line or "No description available."}
+
+You are now operating in {mode_name} mode. Your responses should align with this mode's purpose."""
 
         # Register tool with agent's ToolManager using __setitem__
         tool_manager = self._agent[ToolManager]
@@ -841,107 +931,54 @@ class ModeManager:
             return None
         return info.handler
 
-    async def execute_handler(self, mode_name: str) -> Any:
-        """Execute the handler for a mode with proper DI based on handler style.
-
-        This method detects whether the handler uses the legacy ModeContext
-        signature or the new agent-centric signature and calls it appropriately.
-
-        Note: Generator handlers are NOT executed here - they run their setup
-        at mode entry and cleanup at mode exit. This method only executes
-        simple (non-generator) handlers during the execute() loop.
-
-        Args:
-            mode_name: Name of the mode whose handler to execute
-
-        Returns:
-            The result from the handler (ModeTransition, AssistantMessage, or None)
-
-        Raises:
-            KeyError: If mode is not registered
-        """
-        info = self._registry.get(mode_name)
-        if info is None:
-            raise KeyError(f"Mode '{mode_name}' is not registered")
-
-        handler = info.handler
-
-        # Skip generator handlers - they run at mode entry/exit, not during execute()
-        handler_type = _detect_handler_type(handler)
-        if handler_type == HandlerType.GENERATOR:
-            return None
-
-        if info.style == HandlerStyle.AGENT_CENTRIC:
-            # New-style handler: inject Agent directly
-            # Type ignore: handler is typed as ModeHandler but runtime dispatch
-            # ensures it actually accepts Agent for AGENT_CENTRIC style
-            return await handler(self._agent)  # type: ignore[arg-type]
-        else:
-            # Legacy handler: create ModeContext (with deprecation warning)
-            warnings.warn(
-                f"Mode handler '{mode_name}' uses deprecated ModeContext signature. "
-                "Update to use 'agent: Agent' parameter instead. "
-                "Access mode state via agent.mode.state instead of ctx.state.",
-                DeprecationWarning,
-                stacklevel=3,
-            )
-            ctx = self.create_context()
-            # Type ignore: handler is typed as ModeHandler union but runtime dispatch
-            # ensures it actually accepts ModeContext for LEGACY style
-            return await handler(ctx)  # type: ignore[arg-type]
-
     async def _run_handler_setup(
         self, mode_name: str, info: ModeInfo, entry: ModeStackEntry
     ) -> None:
-        """Run handler setup phase (until yield for generators).
+        """Run handler setup phase (until yield).
 
-        For simple handlers, does nothing (they run via execute_handler during execute()).
-        For generator handlers, runs until the first yield and stores
-        the generator for later cleanup.
+        All mode handlers must be async generators that yield exactly once.
+        This method runs until the first yield and stores the generator
+        for later cleanup.
 
         Args:
             mode_name: Name of the mode
             info: Mode metadata
             entry: Stack entry to store generator in
+
+        Raises:
+            ModeHandlerError: If handler doesn't yield
         """
         handler = info.handler
-        handler_type = _detect_handler_type(handler)
 
-        if handler_type == HandlerType.SIMPLE:
-            # Simple handlers are NOT run at entry - they run via execute_handler()
-            # during the execute() loop for backward compatibility
-            entry.active_generator = None
-            return
-
-        if handler_type == HandlerType.GENERATOR:
-            # Generator - run until first yield
-            if info.style == HandlerStyle.AGENT_CENTRIC:
-                gen = handler(self._agent)  # type: ignore[arg-type]
-            else:
-                warnings.warn(
-                    f"Mode handler '{mode_name}' uses deprecated ModeContext signature. "
-                    "Update to use 'agent: Agent' parameter instead.",
-                    DeprecationWarning,
-                    stacklevel=4,
-                )
-                ctx = self.create_context()
-                gen = handler(ctx)  # type: ignore[arg-type]
-
-            # Run setup phase (until yield)
-            # gen is actually AsyncGenerator at this point due to handler_type check
-            try:
-                await gen.__anext__()  # type: ignore[attr-defined]
-            except StopAsyncIteration:
-                # Generator returned without yielding - treat as simple
-                entry.active_generator = None
-                return
-
-            # Generator yielded - store it for later cleanup
-            entry.active_generator = ActiveModeGenerator(
-                mode_name=mode_name,
-                generator=gen,
-                started_at=datetime.now(),
+        # Create generator based on handler style
+        if info.style == HandlerStyle.AGENT_CENTRIC:
+            gen = handler(self._agent)  # type: ignore[arg-type]
+        else:
+            warnings.warn(
+                f"Mode handler '{mode_name}' uses deprecated ModeContext signature. "
+                "Update to use 'agent: Agent' parameter instead.",
+                DeprecationWarning,
+                stacklevel=4,
             )
+            ctx = self.create_context()
+            gen = handler(ctx)  # type: ignore[arg-type]
+
+        # Run setup phase (until yield)
+        try:
+            await gen.__anext__()  # type: ignore[attr-defined]
+        except StopAsyncIteration:
+            # Generator returned without yielding - this is an error
+            raise ModeHandlerError(
+                f"Mode handler '{mode_name}' must yield. "
+                "All mode handlers are async generators that yield control after setup."
+            )
+
+        # Generator yielded - store it for later cleanup
+        entry.active_generator = ActiveModeGenerator(
+            mode_name=mode_name,
+            generator=gen,
+            started_at=datetime.now(),
+        )
 
     async def _run_handler_cleanup(self, entry: ModeStackEntry) -> ModeExitBehavior:
         """Run handler cleanup phase (after yield).
@@ -1092,6 +1129,18 @@ class ModeManager:
                 f"Child modes cannot reduce isolation level."
             )
 
+        # Emit mode:entering event (before setup)
+        from good_agent.events.agent import AgentEvents
+
+        self._agent.do(
+            AgentEvents.MODE_ENTERING,
+            agent=self._agent,
+            mode_name=mode_name,
+            mode_stack=self.mode_stack,
+            parameters=params,
+            timestamp=datetime.now(),
+        )
+
         # Take snapshot of system prompt state for restore on exit
         self._agent._system_prompt_manager.take_snapshot()
 
@@ -1112,16 +1161,22 @@ class ModeManager:
         assert entry is not None  # Just pushed, so entry exists
         try:
             await self._run_handler_setup(mode_name, mode_info, entry)
-        except Exception:
+        except Exception as e:
+            # Emit mode:error event
+            self._agent.do(
+                AgentEvents.MODE_ERROR,
+                agent=self._agent,
+                mode_name=mode_name,
+                error=e,
+                phase="setup",
+            )
             # Setup failed - pop the mode and restore state
             self._mode_stack.pop()
             self._agent._system_prompt_manager.restore_snapshot()
             self._restore_from_isolation_snapshot(isolation_snapshot)
             raise
 
-        # Emit mode:entered event
-        from good_agent.events.agent import AgentEvents
-
+        # Emit mode:entered event (after setup completes)
         self._agent.do(
             AgentEvents.MODE_ENTERED,
             agent=self._agent,
@@ -1130,6 +1185,9 @@ class ModeManager:
             parameters=params,
             timestamp=datetime.now(),
         )
+
+        # Track mode in history
+        self._mode_history.append(mode_name)
 
     async def _exit_mode(self) -> ModeExitBehavior:
         """Exit current mode (internal).
@@ -1150,9 +1208,30 @@ class ModeManager:
         entered_at = entry.entered_at or datetime.now()
         exit_behavior = ModeExitBehavior.AUTO
 
+        # Emit mode:exiting event (before cleanup)
+        from good_agent.events.agent import AgentEvents
+
+        self._agent.do(
+            AgentEvents.MODE_EXITING,
+            agent=self._agent,
+            mode_name=mode_name,
+            mode_stack=self.mode_stack,
+            timestamp=datetime.now(),
+        )
+
         # Run cleanup for generator handlers
         try:
             exit_behavior = await self._run_handler_cleanup(entry)
+        except Exception as e:
+            # Emit mode:error event
+            self._agent.do(
+                AgentEvents.MODE_ERROR,
+                agent=self._agent,
+                mode_name=mode_name,
+                error=e,
+                phase="cleanup",
+            )
+            raise
         finally:
             # Always restore state even if cleanup fails
             # Pop mode from stack
@@ -1164,15 +1243,14 @@ class ModeManager:
             # Restore from isolation snapshot
             self._restore_from_isolation_snapshot(isolation_snapshot)
 
-        # Emit mode:exited event
-        from good_agent.events.agent import AgentEvents
-
+        # Emit mode:exited event (after cleanup completes)
         self._agent.do(
             AgentEvents.MODE_EXITED,
             agent=self._agent,
             mode_name=mode_name,
             mode_stack=self.mode_stack,
             duration=datetime.now() - entered_at,
+            exit_behavior=exit_behavior,
             timestamp=datetime.now(),
         )
 
@@ -1286,15 +1364,39 @@ class ModeManager:
         Returns:
             ModeExitBehavior if a mode exit occurred, None otherwise
         """
+        from good_agent.events.agent import AgentEvents
+
         exit_behavior: ModeExitBehavior | None = None
 
         if self._pending_mode_exit:
+            from_mode = self.current_mode
             self._pending_mode_exit = False
+
+            # Emit mode:transition event
+            self._agent.do(
+                AgentEvents.MODE_TRANSITION,
+                agent=self._agent,
+                from_mode=from_mode,
+                to_mode=None,
+                transition_type="exit",
+            )
+
             exit_behavior = await self._exit_mode()
 
         if self._pending_mode_switch:
             mode_name, params = self._pending_mode_switch
+            from_mode = self.current_mode
             self._pending_mode_switch = None
+
+            # Emit mode:transition event
+            self._agent.do(
+                AgentEvents.MODE_TRANSITION,
+                agent=self._agent,
+                from_mode=from_mode,
+                to_mode=mode_name,
+                transition_type="switch" if from_mode else "push",
+            )
+
             if self.current_mode:
                 exit_behavior = await self._exit_mode()
             await self._enter_mode(mode_name, **params)
@@ -1405,6 +1507,8 @@ class ModeManager:
                     "name is required when registering a raw handler function. "
                     "Use @mode('name') decorator or pass name='...' parameter."
                 )
+            # Validate handler is async generator
+            _validate_handler(mode_or_handler)
             mode_name = name
             handler = mode_or_handler
             isolation = IsolationLevel.NONE
@@ -1499,6 +1603,9 @@ def mode(
         isolation_level = isolation
 
     def decorator(func: ModeHandler) -> StandaloneMode:
+        # Validate handler is async generator
+        _validate_handler(func)
+
         return StandaloneMode(
             name=name,
             handler=func,

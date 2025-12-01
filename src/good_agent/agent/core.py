@@ -1718,11 +1718,6 @@ class Agent(EventRouter):
             if content_parts:
                 self.append(*content_parts, role=role, context=context)
 
-            if not skip_mode_handler:
-                handler_response = await self._run_active_mode_handlers()
-                if handler_response is not None:
-                    return handler_response
-
             return await self._llm_call(response_model=response_model, **kwargs)
 
     def _is_conversation_pending(self) -> bool:
@@ -1750,49 +1745,6 @@ class Agent(EventRouter):
                 return True
 
         return False
-
-    async def _run_active_mode_handlers(
-        self,
-    ) -> AssistantMessage | AssistantMessageStructuredOutput | None:
-        """Execute mode handlers before making an LLM call.
-
-        Supports both legacy ModeContext handlers and new agent-centric handlers.
-        Legacy handlers will receive a deprecation warning.
-        """
-        transition_count = 0
-        while True:
-            current_mode = self.current_mode
-            if current_mode is None:
-                return None
-
-            handler = self._mode_manager.get_handler(current_mode)
-            if handler is None:
-                return None
-
-            # Use execute_handler which handles both legacy (ModeContext)
-            # and new agent-centric (Agent) handler signatures
-            result = await self._mode_manager.execute_handler(current_mode)
-
-            if isinstance(result, ModeTransition):
-                transition_count += 1
-                if transition_count > self._MAX_MODE_TRANSITIONS_PER_CALL:
-                    raise RuntimeError(
-                        "Mode handlers triggered too many transitions in a single call"
-                    )
-                await self._handle_mode_transition(result)
-                continue
-
-            if result is None:
-                return None
-
-            if isinstance(result, (AssistantMessage, AssistantMessageStructuredOutput)):
-                return result
-
-            raise TypeError(
-                "Mode handler returned unsupported type "
-                f"{type(result).__name__}; expected AssistantMessage, "
-                "AssistantMessageStructuredOutput, ModeTransition, or None."
-            )
 
     async def _handle_mode_transition(self, transition: ModeTransition) -> None:
         """Apply a transition instruction returned from a mode handler."""
@@ -1844,12 +1796,6 @@ class Agent(EventRouter):
         # Append input message if provided
         if content_parts:
             self.append(*content_parts, role=role, context=context)
-
-        if not skip_mode_handler:
-            handler_response = await self._run_active_mode_handlers()
-            if handler_response is not None:
-                yield handler_response
-                return
 
         # Emit execute:start event
         self.do(AgentEvents.EXECUTE_BEFORE, agent=self, max_iterations=max_iterations)

@@ -150,8 +150,12 @@ class AgentEvents(StrEnum):
 
     # ===== Mode Events (NEW) =====
     # Mode lifecycle
-    MODE_ENTERED = "mode:entered"
-    MODE_EXITED = "mode:exited"
+    MODE_ENTERING = "mode:entering"  # Before setup runs
+    MODE_ENTERED = "mode:entered"  # After setup completes
+    MODE_EXITING = "mode:exiting"  # Before cleanup runs
+    MODE_EXITED = "mode:exited"  # After cleanup completes
+    MODE_ERROR = "mode:error"  # Exception in handler
+    MODE_TRANSITION = "mode:transition"  # Handler requested transition
 
     # ===== Citation Events (NEW) =====
     # Citation extraction events
