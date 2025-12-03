@@ -98,9 +98,7 @@ class CircularDependencyError(ContextInjectionError):
 
     def __init__(self, chain: list[str]):
         self.chain = chain
-        message = (
-            f"Circular dependency detected in context providers: {' -> '.join(chain)}"
-        )
+        message = f"Circular dependency detected in context providers: {' -> '.join(chain)}"
         super().__init__(message)
 
 
@@ -122,9 +120,7 @@ class ContextProviderError(ContextInjectionError):
     def __init__(self, provider_name: str, original_error: Exception):
         self.provider_name = provider_name
         self.original_error = original_error
-        message = (
-            f"Failed to execute context provider '{provider_name}': {original_error}"
-        )
+        message = f"Failed to execute context provider '{provider_name}': {original_error}"
         super().__init__(message)
 
 
@@ -267,9 +263,7 @@ class ContextResolver:
 
             # Execute provider with error handling and context injection
             try:
-                value = await self.call_provider_with_injection(
-                    provider, current_context
-                )
+                value = await self.call_provider_with_injection(provider, current_context)
             except CircularDependencyError:
                 # Re-raise circular dependency errors without wrapping
                 raise

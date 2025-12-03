@@ -17,9 +17,7 @@ async def test_mock_agent_intercepts_call():
 
     # Create mock responses
     mock_response1 = mock_message("This is the first mocked response", role="assistant")
-    mock_response2 = mock_message(
-        "This is the second mocked response", role="assistant"
-    )
+    mock_response2 = mock_message("This is the second mocked response", role="assistant")
 
     # Use MockAgent as context manager
     with MockAgent(agent, mock_response1, mock_response2):
@@ -156,9 +154,7 @@ async def test_mock_agent_appending_to_original():
         # The message should be in the original agent's history
         # Note: Agent() adds a system message, so we have 1 system + 1 user + 1 assistant
         assert len(agent.messages) == 3
-        assert (
-            agent.messages[1].content.strip() == "User message"
-        )  # Index 0 is system message
+        assert agent.messages[1].content.strip() == "User message"  # Index 0 is system message
         assert agent.messages[2].content.strip() == "Mock response"
 
 

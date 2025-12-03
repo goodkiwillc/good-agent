@@ -68,9 +68,7 @@ async def test_llm_citation_lookup():
             print(f"  [{i}]: {url}")
     else:
         print("  ❌ No citations in message.citations field!")
-        print(
-            "  This is the bug - citations [1], [2], [3] should lookup URLs from global index"
-        )
+        print("  This is the bug - citations [1], [2], [3] should lookup URLs from global index")
     print()
 
     print("Global index still has all citations:")

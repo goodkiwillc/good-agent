@@ -177,9 +177,7 @@ class RichConsoleBackend(ConsoleBackend):
         title = record.title or ""
 
         if title and content:
-            self.console.print(
-                f"{prefix}{icon} [{text_style}]{title}:[/{text_style}] {content}"
-            )
+            self.console.print(f"{prefix}{icon} [{text_style}]{title}:[/{text_style}] {content}")
         elif title:
             self.console.print(f"{prefix}{icon} [{text_style}]{title}[/{text_style}]")
         elif content:
@@ -444,11 +442,7 @@ class PlainConsoleBackend(ConsoleBackend):
     def write(self, record: OutputRecord) -> None:
         """Write an output record as plain text."""
         prefix = self.LEVEL_PREFIXES.get(record.level, "[INFO]")
-        timestamp = (
-            f"{self._format_timestamp(record.timestamp)} "
-            if self.show_timestamps
-            else ""
-        )
+        timestamp = f"{self._format_timestamp(record.timestamp)} " if self.show_timestamps else ""
 
         # Format based on output type
         if record.output_type == OutputType.TOOL_CALL:
@@ -467,9 +461,7 @@ class PlainConsoleBackend(ConsoleBackend):
             action = record.metadata.get("action", "change")
             mode_name = record.metadata.get("mode_name", "unknown")
             stack = record.metadata.get("stack", [])
-            print(
-                f"{timestamp}{prefix} MODE_{action.upper()}: {mode_name} stack={stack}"
-            )
+            print(f"{timestamp}{prefix} MODE_{action.upper()}: {mode_name} stack={stack}")
 
         elif record.output_type == OutputType.SECTION:
             title = record.title or ""
@@ -660,9 +652,7 @@ class AgentConsole:
 
     def critical(self, message: str, **metadata: Any) -> None:
         """Output a critical error message."""
-        self._emit(
-            OutputType.MESSAGE, OutputLevel.CRITICAL, content=message, **metadata
-        )
+        self._emit(OutputType.MESSAGE, OutputLevel.CRITICAL, content=message, **metadata)
 
     # ========================================================================
     # Structured Output Methods
@@ -676,9 +666,7 @@ class AgentConsole:
         """Output a section header/divider."""
         self._emit(OutputType.SECTION, OutputLevel.INFO, title=title, style=style)
 
-    def step(
-        self, message: str, step: int | None = None, total: int | None = None
-    ) -> None:
+    def step(self, message: str, step: int | None = None, total: int | None = None) -> None:
         """Output a numbered step.
 
         Args:
@@ -689,9 +677,7 @@ class AgentConsole:
         if step is None:
             self._step_counter += 1
             step = self._step_counter
-        self._emit(
-            OutputType.STEP, OutputLevel.INFO, content=message, step=step, total=total
-        )
+        self._emit(OutputType.STEP, OutputLevel.INFO, content=message, step=step, total=total)
 
     def reset_steps(self) -> None:
         """Reset the step counter."""
@@ -705,9 +691,7 @@ class AgentConsole:
     # Tool Output Methods
     # ========================================================================
 
-    def tool_call(
-        self, tool_name: str, arguments: dict[str, Any] | None = None
-    ) -> None:
+    def tool_call(self, tool_name: str, arguments: dict[str, Any] | None = None) -> None:
         """Output a tool call notification."""
         self._emit(
             OutputType.TOOL_CALL,
@@ -926,9 +910,7 @@ class AgentConsole:
                 color = role_colors.get(role, "white")
                 parts.append(f"[{color}]{role}:{count:,}[/{color}]")
 
-            bar_color = (
-                "green" if pct_used < 70 else "yellow" if pct_used < 90 else "red"
-            )
+            bar_color = "green" if pct_used < 70 else "yellow" if pct_used < 90 else "red"
             line = (
                 f"[dim]Context:[/dim] {' '.join(parts)} "
                 f"[{bar_color}]({total_tokens:,}/{max_input:,} = {pct_used:.1f}%)[/{bar_color}]"
@@ -936,9 +918,7 @@ class AgentConsole:
             self.backend.console.print(line)
         else:
             # Full panel format with table and bar
-            table = Table(
-                show_header=True, header_style="bold", box=None, padding=(0, 1)
-            )
+            table = Table(show_header=True, header_style="bold", box=None, padding=(0, 1))
             table.add_column("Role", style="dim")
             table.add_column("Tokens", justify="right")
             table.add_column("", justify="right", width=6)
@@ -964,9 +944,7 @@ class AgentConsole:
             table.add_row("[bold]Total[/bold]", f"[bold]{total_tokens:,}[/bold]", "")
 
             # Create progress bar
-            bar_color = (
-                "green" if pct_used < 70 else "yellow" if pct_used < 90 else "red"
-            )
+            bar_color = "green" if pct_used < 70 else "yellow" if pct_used < 90 else "red"
 
             elements: list[Any] = [table]
 

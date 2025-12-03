@@ -50,9 +50,7 @@ class _MockAgentEvents:
     def consume_from(self, _other: Any):  # pragma: no cover - no-op
         return None
 
-    def set_event_trace(
-        self, enabled: bool, *, verbosity: int = 1, use_rich: bool = True
-    ):
+    def set_event_trace(self, enabled: bool, *, verbosity: int = 1, use_rich: bool = True):
         self._event_trace_enabled = enabled
 
     @property
@@ -117,7 +115,7 @@ class MockAgent(Any):
         from good_agent.core.event_router import EventContext
 
         # Extract output if provided (matching real EventRouter behavior)
-        output = kwargs.get("output", None)
+        output = kwargs.get("output")
 
         # Return EventContext with parameters and preserved output
         return EventContext(parameters=kwargs, output=output)
@@ -125,7 +123,7 @@ class MockAgent(Any):
     def apply_sync(self, event: str, **kwargs: Any):
         from good_agent.core.event_router import EventContext
 
-        output = kwargs.get("output", None)
+        output = kwargs.get("output")
         return EventContext(parameters=kwargs, output=output)
 
 

@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 from good_agent import Agent, AgentState
+from good_agent.core.event_router import EventContext, on
 from good_agent.events import (
     AgentEvents,
     AgentInitializeParams,
@@ -19,7 +20,6 @@ from good_agent.events import (
 )
 from good_agent.messages import UserMessage
 from good_agent.tools import ToolResponse
-from good_agent.core.event_router import EventContext, on
 
 
 class TestTypedEventParameters:
@@ -300,9 +300,7 @@ class TestConvenienceDecorators:
             def only_even_iterations(ctx: EventContext) -> bool:
                 return ctx.parameters.get("iteration", 0) % 2 == 0
 
-            @agent.on(
-                AgentEvents.EXECUTE_ITERATION_BEFORE, predicate=only_even_iterations
-            )
+            @agent.on(AgentEvents.EXECUTE_ITERATION_BEFORE, predicate=only_even_iterations)
             def handle_even(ctx: EventContext[ExecuteIterationParams, None]):
                 handled_iterations.append(ctx.parameters["iteration"])
 
@@ -362,9 +360,7 @@ class TestTypedEventHandlersMixin:
         class TypedAgent(Agent, TypedEventHandlersMixin):
             # Init events must be registered at class level since they fire during __init__
             @on(AgentEvents.AGENT_INIT_AFTER)
-            async def init_handler(
-                self, ctx: EventContext[AgentInitializeParams, None]
-            ):
+            async def init_handler(self, ctx: EventContext[AgentInitializeParams, None]):
                 handlers_called.add("init")
 
         # Create agent with tools to ensure state change during initialize()
@@ -520,9 +516,7 @@ class TestEventParameterValidation:
                 from litellm.utils import Choices, Message, ModelResponse
 
                 # Create a proper Choices object with provider_specific_fields
-                choice = Choices(
-                    message=Message(content="Response"), finish_reason="stop", index=0
-                )
+                choice = Choices(message=Message(content="Response"), finish_reason="stop", index=0)
                 # Add the expected attribute that agent code uses
                 choice.provider_specific_fields = {}
 

@@ -3,7 +3,6 @@
 from typing import Any
 
 import pytest
-
 from good_agent.utilities.retries import (
     Retry,
     RetryAction,

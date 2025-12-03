@@ -150,9 +150,7 @@ class ToolAdapter(ABC, Generic[T]):
         """Retrieve the original signature."""
         return self._original_signatures.get(tool_name)
 
-    def analyze_transformation(
-        self, tool: ToolLike, signature: ToolSignature
-    ) -> AdapterMetadata:
+    def analyze_transformation(self, tool: ToolLike, signature: ToolSignature) -> AdapterMetadata:
         """
         Analyze what transformations this adapter will perform.
 
@@ -167,9 +165,7 @@ class ToolAdapter(ABC, Generic[T]):
             Metadata about the transformations
         """
         # Default implementation - subclasses should override
-        return AdapterMetadata(
-            modified_params=set(), added_params=set(), removed_params=set()
-        )
+        return AdapterMetadata(modified_params=set(), added_params=set(), removed_params=set())
 
 
 class ToolAdapterRegistry:
@@ -233,9 +229,7 @@ class ToolAdapterRegistry:
             return self._tool_adapter_map[tool_name]
 
         # Find applicable adapters
-        applicable = [
-            adapter for adapter in self._adapters if adapter.should_adapt(tool, agent)
-        ]
+        applicable = [adapter for adapter in self._adapters if adapter.should_adapt(tool, agent)]
 
         # Cache the result
         self._tool_adapter_map[tool_name] = applicable
@@ -272,9 +266,7 @@ class ToolAdapterRegistry:
             self._conflict_cache[tool_name] = conflicts
 
             # Resolve or raise based on strategy
-            strategy = (
-                adapters[0].conflict_strategy if adapters else self._default_strategy
-            )
+            strategy = adapters[0].conflict_strategy if adapters else self._default_strategy
             self.resolve_conflicts(conflicts, strategy)
 
         # Store original for all adapters so they can be used in reverse
@@ -319,9 +311,7 @@ class ToolAdapterRegistry:
 
         return adapted_params
 
-    def adapt_response(
-        self, tool_name: str, response: ToolResponse, agent: Agent
-    ) -> ToolResponse:
+    def adapt_response(self, tool_name: str, response: ToolResponse, agent: Agent) -> ToolResponse:
         """
         Apply adapters to transform a tool response.
 
@@ -373,11 +363,7 @@ class ToolAdapterRegistry:
 
             # Track which parameters each adapter touches
             # (modified, removed, or added - all can conflict)
-            all_params = (
-                metadata.modified_params
-                | metadata.removed_params
-                | metadata.added_params
-            )
+            all_params = metadata.modified_params | metadata.removed_params | metadata.added_params
             for param in all_params:
                 if param not in param_adapters:
                     param_adapters[param] = []

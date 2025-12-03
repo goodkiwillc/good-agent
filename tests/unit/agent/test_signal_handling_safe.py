@@ -35,11 +35,11 @@ def signal_handler_spy():
         )
         return original_handle(signum, frame)
 
-    setattr(_global_handler, "_handle_signal", spy_handle)
+    _global_handler._handle_signal = spy_handle
     try:
         yield calls
     finally:
-        setattr(_global_handler, "_handle_signal", original_handle)
+        _global_handler._handle_signal = original_handle
 
 
 class TestSignalHandlerInstallation:
@@ -65,9 +65,7 @@ class TestSignalHandlerInstallation:
         if sys.platform != "win32":
             assert callable(agent_sigint), "Handler should be callable"
             handler_self = getattr(agent_sigint, "__self__", None)
-            assert isinstance(handler_self, SignalHandler), (
-                "Should be SignalHandler instance"
-            )
+            assert isinstance(handler_self, SignalHandler), "Should be SignalHandler instance"
 
         await agent.events.close()
 
@@ -83,9 +81,7 @@ class TestSignalHandlerInstallation:
 
         # Verify handler was changed
         during_sigint = signal.getsignal(signal.SIGINT)
-        assert during_sigint != original_sigint, (
-            "Handler should change during agent lifetime"
-        )
+        assert during_sigint != original_sigint, "Handler should change during agent lifetime"
 
         # Clean up
         await agent.events.close()
@@ -98,8 +94,7 @@ class TestSignalHandlerInstallation:
 
         # Should be restored (or default if no other agents)
         assert (
-            restored_sigint == original_sigint
-            or restored_sigint == signal.default_int_handler
+            restored_sigint == original_sigint or restored_sigint == signal.default_int_handler
         ), "Handler should be restored after cleanup"
 
     @pytest.mark.asyncio
@@ -129,9 +124,7 @@ class TestSignalHandlerInstallation:
 
         # Check unregistration
         with _global_handler._lock:
-            after_count = sum(
-                1 for ref in _global_handler._registered_routers if ref() is not None
-            )
+            after_count = sum(1 for ref in _global_handler._registered_routers if ref() is not None)
 
         assert after_count <= initial_count, "Agent should be unregistered"
 
@@ -240,10 +233,7 @@ class TestMultiAgentCoordination:
 
         # Now handler might be restored
         final_handler = signal.getsignal(signal.SIGINT)
-        assert (
-            final_handler == signal.default_int_handler
-            or final_handler != sigint_handler
-        )
+        assert final_handler == signal.default_int_handler or final_handler != sigint_handler
 
     @pytest.mark.asyncio
     async def test_signal_affects_all_agents(self):
@@ -322,9 +312,7 @@ class TestWeakReferenceManagement:
 
         # Registry should be empty
         with _global_handler._lock:
-            registered = sum(
-                1 for ref in _global_handler._registered_routers if ref() is not None
-            )
+            registered = sum(1 for ref in _global_handler._registered_routers if ref() is not None)
             assert registered == 0, "No agents should be registered"
 
     @pytest.mark.asyncio
@@ -349,9 +337,7 @@ class TestWeakReferenceManagement:
 
         # Should be cleaned up
         with _global_handler._lock:
-            after_count = sum(
-                1 for ref in _global_handler._registered_routers if ref() is not None
-            )
+            after_count = sum(1 for ref in _global_handler._registered_routers if ref() is not None)
             # Should have one less registered
             assert after_count < before_count
 
@@ -373,9 +359,7 @@ class TestThreadSafety:
 
         # All should be registered
         with _global_handler._lock:
-            registered = sum(
-                1 for ref in _global_handler._registered_routers if ref() is not None
-            )
+            registered = sum(1 for ref in _global_handler._registered_routers if ref() is not None)
             assert registered >= len(agents)
 
         # Clean up concurrently
@@ -385,9 +369,7 @@ class TestThreadSafety:
 
         # All should be unregistered
         with _global_handler._lock:
-            remaining = sum(
-                1 for ref in _global_handler._registered_routers if ref() is not None
-            )
+            remaining = sum(1 for ref in _global_handler._registered_routers if ref() is not None)
             assert remaining == 0
 
     @pytest.mark.asyncio
@@ -481,7 +463,5 @@ class TestEdgeCases:
 
         # Should be clean
         with _global_handler._lock:
-            remaining = sum(
-                1 for ref in _global_handler._registered_routers if ref() is not None
-            )
+            remaining = sum(1 for ref in _global_handler._registered_routers if ref() is not None)
             assert remaining == 0

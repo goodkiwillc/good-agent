@@ -204,9 +204,7 @@ class TestComponentEventPatterns:
         decorator_msg_events = [
             e for e in component.decorator_events if "message_append:decorator" in e
         ]
-        manual_msg_events = [
-            e for e in component.manual_events if "message_append:manual" in e
-        ]
+        manual_msg_events = [e for e in component.manual_events if "message_append:manual" in e]
 
         assert len(decorator_msg_events) > 0
         assert len(manual_msg_events) > 0
@@ -235,9 +233,7 @@ class TestComponentEventPatterns:
             if "tool_before:manual" in e or "tool_after:manual" in e
         ]
 
-        assert len(decorator_tool_events) > 0, (
-            f"Decorator events: {component.decorator_events}"
-        )
+        assert len(decorator_tool_events) > 0, f"Decorator events: {component.decorator_events}"
         assert len(manual_tool_events) > 0, f"Manual events: {component.manual_events}"
 
     async def test_component_enabled_state_behavior(self):
@@ -268,9 +264,7 @@ class TestComponentEventPatterns:
         assert len(manual_disabled) == 0, "Manual handlers should respect enabled=False"
 
         # Decorator handlers still fire (they don't automatically check enabled)
-        decorator_disabled = [
-            e for e in component.decorator_events if "message_append" in e
-        ]
+        decorator_disabled = [e for e in component.decorator_events if "message_append" in e]
         assert len(decorator_disabled) > 0, (
             "Decorator handlers don't automatically check enabled state"
         )

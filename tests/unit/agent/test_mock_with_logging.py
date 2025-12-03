@@ -96,9 +96,7 @@ async def test_clear_mock_indicator_in_logs():
     agent = Agent("You are a helpful assistant")
     await agent.initialize()
 
-    mock_response = mock_message(
-        "I'm a mock response, not from a real LLM!", role="assistant"
-    )
+    mock_response = mock_message("I'm a mock response, not from a real LLM!", role="assistant")
 
     logger.info("=" * 50)
     logger.info("Starting test with mock LLM")

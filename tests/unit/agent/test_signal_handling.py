@@ -6,9 +6,9 @@ import sys
 import threading
 import time
 import weakref
+from collections.abc import Sequence
 from contextlib import contextmanager
 from typing import cast
-from collections.abc import Sequence
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -39,11 +39,11 @@ def signal_handler_spy():
         )
         return original_handle(signum, frame)
 
-    setattr(_global_handler, "_handle_signal", spy_handle)
+    _global_handler._handle_signal = spy_handle
     try:
         yield calls
     finally:
-        setattr(_global_handler, "_handle_signal", original_handle)
+        _global_handler._handle_signal = original_handle
 
 
 def capture_signal_handlers():
@@ -76,9 +76,7 @@ class TestSignalHandlerInstallation:
         # Verify handlers are callable (signal handlers are installed)
         # Note: functools.partial objects may have different task references but same function
         assert callable(agent_handlers["SIGINT"])
-        assert hasattr(agent_handlers["SIGINT"], "func") or callable(
-            agent_handlers["SIGINT"]
-        )
+        assert hasattr(agent_handlers["SIGINT"], "func") or callable(agent_handlers["SIGINT"])
 
         if sys.platform != "win32":
             # Verify SIGTERM handler exists (may still be default in some test environments)
@@ -143,9 +141,7 @@ class TestExternalSignalSimulation:
     """Test handling of real OS-level signals."""
 
     @pytest.mark.asyncio
-    @pytest.mark.skipif(
-        sys.platform == "win32", reason="Signal handling differs on Windows"
-    )
+    @pytest.mark.skipif(sys.platform == "win32", reason="Signal handling differs on Windows")
     async def test_external_sigint_handling(self):
         """Test that external SIGINT is properly handled."""
         handler_calls = []
@@ -280,9 +276,7 @@ class TestMultiAgentSignalSharing:
         # Start operations on each agent
         tasks = []
         for i, agent in enumerate(agents):
-            task = asyncio.create_task(
-                agent.call(f"Execute tracked_operation with agent_id {i}")
-            )
+            task = asyncio.create_task(agent.call(f"Execute tracked_operation with agent_id {i}"))
             tasks.append(task)
 
         # Let operations start
@@ -476,12 +470,8 @@ class TestRealWorldScenarios:
         with patch.object(agent.model, "stream", mock_stream):
 
             async def consume_stream():
-                formatted = await agent.model.format_message_list_for_llm(
-                    agent.messages
-                )
-                formatted_sequence = cast(
-                    Sequence[ChatCompletionMessageParam], formatted
-                )
+                formatted = await agent.model.format_message_list_for_llm(agent.messages)
+                formatted_sequence = cast(Sequence[ChatCompletionMessageParam], formatted)
                 async for _ in agent.model.stream(formatted_sequence):
                     pass
 

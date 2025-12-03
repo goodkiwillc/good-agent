@@ -1,5 +1,4 @@
 import pytest
-
 from good_agent import Agent
 from good_agent.messages import AssistantMessage, ToolMessage
 from good_agent.tools import ToolResponse, tool
@@ -23,9 +22,7 @@ class TestAddToolInvocations:
 
         async with Agent("Test agent", model="gpt-4", tools=[calculator]) as agent:
             # Mock the model to support parallel function calling
-            monkeypatch.setattr(
-                agent.model, "supports_parallel_function_calling", lambda: True
-            )
+            monkeypatch.setattr(agent.model, "supports_parallel_function_calling", lambda: True)
 
             initial_len = len(agent)
 
@@ -71,9 +68,7 @@ class TestAddToolInvocations:
 
         async with Agent("Test agent", tools=[simple_tool]) as agent:
             # Mock the model to NOT support parallel function calling
-            monkeypatch.setattr(
-                agent.model, "supports_parallel_function_calling", lambda: False
-            )
+            monkeypatch.setattr(agent.model, "supports_parallel_function_calling", lambda: False)
 
             initial_len = len(agent)
 
@@ -120,9 +115,7 @@ class TestAddToolInvocations:
 
         async with Agent("Test agent", tools=[echo]) as agent:
             # Mock to support parallel calls
-            monkeypatch.setattr(
-                agent.model, "supports_parallel_function_calling", lambda: True
-            )
+            monkeypatch.setattr(agent.model, "supports_parallel_function_calling", lambda: True)
 
             # First add a user message
             agent.append("Please echo some messages")
@@ -150,9 +143,7 @@ class TestAddToolInvocations:
                 ),
             ]
 
-            agent.append(
-                AssistantMessage(content="I'll echo those", tool_calls=tool_calls)
-            )
+            agent.append(AssistantMessage(content="I'll echo those", tool_calls=tool_calls))
 
             initial_len = len(agent)
 
@@ -182,9 +173,7 @@ class TestAddToolInvocations:
             return f"Processed: {data}"
 
         async with Agent("Test agent", tools=[process]) as agent:
-            monkeypatch.setattr(
-                agent.model, "supports_parallel_function_calling", lambda: True
-            )
+            monkeypatch.setattr(agent.model, "supports_parallel_function_calling", lambda: True)
 
             initial_len = len(agent)
 
@@ -259,9 +248,7 @@ class TestAddToolInvocations:
             return value + 1
 
         async with Agent("Test agent", tools=[named_tool]) as agent:
-            monkeypatch.setattr(
-                agent.model, "supports_parallel_function_calling", lambda: True
-            )
+            monkeypatch.setattr(agent.model, "supports_parallel_function_calling", lambda: True)
 
             initial_len = len(agent)
 

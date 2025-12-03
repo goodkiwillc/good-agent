@@ -9,11 +9,11 @@ from pydantic import (
     computed_field,
 )
 
-from good_agent.core.types import URL
 from good_agent.core.models.base import (
     GoodBase,
 )
 from good_agent.core.models.renderable import Renderable
+from good_agent.core.types import URL
 
 logger = logging.getLogger(__name__)
 

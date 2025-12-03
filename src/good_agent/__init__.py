@@ -16,7 +16,6 @@ __version__ = "0.6.1"
 # For static type checking only
 if TYPE_CHECKING:
     from fast_depends import Depends
-    from good_agent.core.event_router import EventContext
 
     from good_agent.agent import (
         Agent,
@@ -43,6 +42,7 @@ if TYPE_CHECKING:
         MessageInjectorComponent,
         SimpleMessageInjector,
     )
+    from good_agent.core.event_router import EventContext
     from good_agent.extensions.citations import (
         CitationExtractor,
         CitationFormat,

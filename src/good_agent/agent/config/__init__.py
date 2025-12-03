@@ -12,11 +12,11 @@ from good_agent.agent.config.manager import (
 )
 from good_agent.agent.config.types import (
     AGENT_CONFIG_KEYS,
+    PASS_THROUGH_KEYS,
     AgentOnlyConfig,
     LLMCommonConfig,
     ModelConfig,
     ModelName,
-    PASS_THROUGH_KEYS,
     ReasoningConfig,
 )
 

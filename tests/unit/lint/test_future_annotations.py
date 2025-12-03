@@ -3,7 +3,6 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SOURCE_DIR = PROJECT_ROOT / "src" / "good_agent"
 
@@ -45,6 +44,5 @@ def test_string_union_forward_refs_require_future_annotations() -> None:
 
     assert not violations, (
         "The following modules use PEP 604 unions with string literals but lack "
-        "'from __future__ import annotations':\n"
-        + "\n".join(str(path) for path in violations)
+        "'from __future__ import annotations':\n" + "\n".join(str(path) for path in violations)
     )

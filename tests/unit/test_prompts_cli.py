@@ -70,9 +70,7 @@ class TestPromptsCLI:
         runner.invoke(app, ["init"])
 
         # Create new template
-        result = runner.invoke(
-            app, ["new", "system/test", "--description", "Test template"]
-        )
+        result = runner.invoke(app, ["new", "system/test", "--description", "Test template"])
 
         assert result.exit_code == 0
         assert "Created template" in result.stdout
@@ -245,9 +243,7 @@ Hello {{ name }}! Welcome to {{ place }}.""")
         context_file.write_text('{"name": "Bob", "age": 30}')
 
         # Render with file context
-        result = runner.invoke(
-            app, ["render", "system/test", "--context-file", str(context_file)]
-        )
+        result = runner.invoke(app, ["render", "system/test", "--context-file", str(context_file)])
 
         assert result.exit_code == 0
         assert "Name: Bob" in result.stdout
@@ -259,9 +255,7 @@ Hello {{ name }}! Welcome to {{ place }}.""")
         runner.invoke(app, ["new", "system/test"])
 
         # Create snapshot
-        result = runner.invoke(
-            app, ["snapshot", "system/test", "--reason", "Initial version"]
-        )
+        result = runner.invoke(app, ["snapshot", "system/test", "--reason", "Initial version"])
 
         assert result.exit_code == 0
         assert "snapshot created" in result.stdout.lower()
@@ -340,10 +334,7 @@ Original content""")
                 # Commands should fail gracefully
                 result = runner.invoke(app, ["list"])
                 assert result.exit_code != 0
-                assert (
-                    "not found" in result.stdout.lower()
-                    or "error" in result.stdout.lower()
-                )
+                assert "not found" in result.stdout.lower() or "error" in result.stdout.lower()
             finally:
                 # Always restore the original working directory to avoid leaving
                 # the process in a deleted temp directory (which breaks later tests)

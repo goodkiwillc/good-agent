@@ -79,9 +79,7 @@ class AgentOnlyConfig(TypedDict, total=False):
     name: NotRequired[str]
     print_messages: NotRequired[bool]
     print_messages_mode: NotRequired[Literal["display", "llm", "raw"]]
-    print_messages_role: NotRequired[
-        list[Literal["system", "user", "assistant", "tool"]]
-    ]
+    print_messages_role: NotRequired[list[Literal["system", "user", "assistant", "tool"]]]
     print_messages_markdown: NotRequired[bool | None]
     litellm_debug: NotRequired[bool]
     message_validation_mode: NotRequired[Literal["strict", "warn", "silent"]]

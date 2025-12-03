@@ -1,3 +1,4 @@
+from typing import cast
 from unittest.mock import Mock
 
 import pytest
@@ -10,7 +11,6 @@ from good_agent.messages.versioning import (
     MessageRegistry,
     VersionManager,
 )
-from typing import cast
 from ulid import ULID
 
 
@@ -361,9 +361,7 @@ class TestInMemoryMessageStore:
 
         assert not store.exists(non_existent_id)
 
-        with pytest.raises(
-            MessageNotFoundError, match=f"Message {non_existent_id} not found"
-        ):
+        with pytest.raises(MessageNotFoundError, match=f"Message {non_existent_id} not found"):
             store.get(non_existent_id)
 
     def test_overwrite_message(self):

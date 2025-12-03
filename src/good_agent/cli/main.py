@@ -1,8 +1,8 @@
 import typer
+from good_agent.cli.config import GlobalConfig
 from good_agent.cli.prompts import register_commands as register_prompt_commands
 from good_agent.cli.run import run_agent
 from good_agent.cli.serve import serve_agent
-from good_agent.cli.config import GlobalConfig
 
 app = typer.Typer(help="Good Agent CLI")
 config_app = typer.Typer(help="Manage global configuration")
@@ -15,9 +15,7 @@ register_prompt_commands(app)
 @app.callback()
 def main(
     ctx: typer.Context,
-    profile: str = typer.Option(
-        "default", "--profile", help="Configuration profile to use"
-    ),
+    profile: str = typer.Option("default", "--profile", help="Configuration profile to use"),
 ):
     """
     Good Agent CLI - A framework for building reliable AI agents.
@@ -63,9 +61,7 @@ def config_get(
 @config_app.command("list")
 def config_list(
     ctx: typer.Context,
-    show_secrets: bool = typer.Option(
-        False, "--show-secrets", help="Show full values of secrets"
-    ),
+    show_secrets: bool = typer.Option(False, "--show-secrets", help="Show full values of secrets"),
 ):
     """List all configuration values for the current profile."""
     profile = ctx.obj.get("profile", "default")
@@ -91,14 +87,10 @@ def config_list(
         typer.echo(f"  {key} = {display_value}")
 
 
-@app.command(
-    context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
-)
+@app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def run(
     ctx: typer.Context,
-    agent_path: str = typer.Argument(
-        ..., help="Path to the agent (e.g. module:agent_instance)"
-    ),
+    agent_path: str = typer.Argument(..., help="Path to the agent (e.g. module:agent_instance)"),
     model: str = typer.Option(None, "--model", "-m", help="Override agent model"),
     temperature: float = typer.Option(
         None, "--temperature", "-t", help="Override agent temperature"
@@ -138,14 +130,10 @@ def run(
     )
 
 
-@app.command(
-    context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
-)
+@app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def serve(
     ctx: typer.Context,
-    agent_path: str = typer.Argument(
-        ..., help="Path to the agent (e.g. module:agent_instance)"
-    ),
+    agent_path: str = typer.Argument(..., help="Path to the agent (e.g. module:agent_instance)"),
     host: str = typer.Option("127.0.0.1", "--host", "-h", help="Host to bind to"),
     port: int = typer.Option(8000, "--port", "-p", help="Port to bind to"),
 ):

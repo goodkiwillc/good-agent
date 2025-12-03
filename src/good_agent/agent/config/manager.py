@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from typing import (
     Any,
     Literal,
+    TypeAlias,
     TypedDict,
     TypeVar,
     Union,
@@ -35,11 +36,12 @@ class ConfigField:
 
     def __set__(self, obj, value):
         # Simple type validation
-        if self.type_hint and value is not None:
-            if not self._validate_type(value, self.type_hint):
-                raise TypeError(
-                    f"Field '{self.name}' expected {self.type_hint}, got {type(value)}"
-                )
+        if (
+            self.type_hint
+            and value is not None
+            and not self._validate_type(value, self.type_hint)
+        ):
+            raise TypeError(f"Field '{self.name}' expected {self.type_hint}, got {type(value)}")
         obj._chainmap[self.name] = value
 
     def _validate_type(self, value: Any, expected_type: type) -> bool:
@@ -63,9 +65,12 @@ class ConfigField:
                 # For Union types, check if value matches any of the types
                 for arg in args:
                     try:
-                        if arg is type(None) and value is None:
-                            return True
-                        elif arg is not type(None) and isinstance(value, arg):
+                        if (
+                            arg is type(None)
+                            and value is None
+                            or arg is not type(None)
+                            and isinstance(value, arg)
+                        ):
                             return True
                     except TypeError:
                         # If isinstance fails, try recursive validation
@@ -88,7 +93,7 @@ class ConfigField:
 class ConfigStackMeta(type):
     """Metaclass to process field annotations and create descriptors"""
 
-    def __new__(mcs, name, bases, namespace, **kwargs):
+    def __new__(mcs, name, bases, namespace, **_kwargs):
         annotations = namespace.get("__annotations__", {})
 
         # Create descriptors for annotated fields
@@ -97,9 +102,7 @@ class ConfigStackMeta(type):
                 # Get default value if provided
                 default = namespace.get(field_name, None)
                 # Create descriptor
-                namespace[field_name] = ConfigField(
-                    default=default, type_hint=field_type
-                )
+                namespace[field_name] = ConfigField(default=default, type_hint=field_type)
 
         return super().__new__(mcs, name, bases, namespace)
 
@@ -116,9 +119,8 @@ class ConfigStack(metaclass=ConfigStackMeta):
 
         # Set defaults from class definition
         for key, value in inspect.getmembers(self.__class__):
-            if isinstance(value, ConfigField):
-                if value.default is not None:
-                    self._chainmap[key] = value.default
+            if isinstance(value, ConfigField) and value.default is not None:
+                self._chainmap[key] = value.default
 
         # Set provided values (will be validated by descriptors)
         for key, value in kwargs.items():
@@ -127,9 +129,7 @@ class ConfigStack(metaclass=ConfigStackMeta):
     def __getattr__(self, name: str) -> Any:
         """Get attribute from ChainMap for dynamic fields"""
         if name.startswith("_"):
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{name}'"
-            )
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
         try:
             return self._chainmap[name]
@@ -164,11 +164,14 @@ class ConfigStack(metaclass=ConfigStackMeta):
                 getattr(self.__class__, key), ConfigField
             ):
                 field = getattr(self.__class__, key)
-                if field.type_hint and value is not None:
-                    if not field._validate_type(value, field.type_hint):
-                        raise TypeError(
-                            f"Override for '{key}' expected {field.type_hint}, got {type(value)}"
-                        )
+                if (
+                    field.type_hint
+                    and value is not None
+                    and not field._validate_type(value, field.type_hint)
+                ):
+                    raise TypeError(
+                        f"Override for '{key}' expected {field.type_hint}, got {type(value)}"
+                    )
             validated_kwargs[key] = value
 
         self._chainmap = self._chainmap.new_child(validated_kwargs)
@@ -258,7 +261,7 @@ class ResponseFormat(TypedDict):
     json_schema: dict
 
 
-type FilterPattern = str
+FilterPattern: TypeAlias = str
 
 
 class AgentConfigManager(ConfigStack):
@@ -328,12 +331,8 @@ class AgentConfigManager(ConfigStack):
     debug: bool = False
     print_messages: bool = False
     print_messages_mode: Literal["display", "llm", "raw"] = "display"
-    print_messages_markdown: bool | None = (
-        None  # None = auto-detect, True = always, False = never
-    )
-    print_messages_role: list[Literal["system", "user", "assistant", "tool"]] | None = (
-        None
-    )
+    print_messages_markdown: bool | None = None  # None = auto-detect, True = always, False = never
+    print_messages_role: list[Literal["system", "user", "assistant", "tool"]] | None = None
     message_validation_mode: Literal["strict", "warn", "silent"] = "warn"
 
     def __init__(self, *args, **kwargs):
@@ -370,10 +369,7 @@ class AgentConfigManager(ConfigStack):
         if disable_extensions and self._agent:
             # Disable specified extensions
             for ext_type in disable_extensions:
-                if (
-                    hasattr(self._agent, "_extensions")
-                    and ext_type in self._agent._extensions
-                ):
+                if hasattr(self._agent, "_extensions") and ext_type in self._agent._extensions:
                     extension = self._agent._extensions[ext_type]
                     if hasattr(extension, "enabled"):
                         original_states[extension] = extension.enabled
@@ -386,11 +382,14 @@ class AgentConfigManager(ConfigStack):
                 getattr(self.__class__, key), ConfigField
             ):
                 field = getattr(self.__class__, key)
-                if field.type_hint and value is not None:
-                    if not field._validate_type(value, field.type_hint):
-                        raise TypeError(
-                            f"Override for '{key}' expected {field.type_hint}, got {type(value)}"
-                        )
+                if (
+                    field.type_hint
+                    and value is not None
+                    and not field._validate_type(value, field.type_hint)
+                ):
+                    raise TypeError(
+                        f"Override for '{key}' expected {field.type_hint}, got {type(value)}"
+                    )
             validated_kwargs[key] = value
 
         # Notify agent of config change before entering context

@@ -10,13 +10,16 @@ from __future__ import annotations
 
 # Core template functionality
 from good_agent.extensions.template_manager.core import (
+    _GLOBAL_CONTEXT_PROVIDERS,
     Template,
     TemplateManager,
-    _GLOBAL_CONTEXT_PROVIDERS,
     find_prompts_directory,
     find_user_prompts_directory,
     global_context_provider,
 )
+
+# Storage and metadata
+from good_agent.extensions.template_manager.index import TemplateMetadata
 
 # Context dependency injection
 from good_agent.extensions.template_manager.injection import (
@@ -27,9 +30,6 @@ from good_agent.extensions.template_manager.injection import (
     ContextValue,
     MissingContextValueError,
 )
-
-# Storage and metadata
-from good_agent.extensions.template_manager.index import TemplateMetadata
 from good_agent.extensions.template_manager.storage import (
     ChainedStorage,
     FileSystemStorage,

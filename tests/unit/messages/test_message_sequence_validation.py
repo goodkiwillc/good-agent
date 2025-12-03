@@ -1,7 +1,6 @@
-import pytest
 from typing import Literal
-from ulid import ULID
 
+import pytest
 from good_agent import Agent
 from good_agent.messages import (
     AssistantMessage,
@@ -15,6 +14,7 @@ from good_agent.messages.validation import (
     ValidationMode,
 )
 from good_agent.tools import ToolCall, ToolCallFunction
+from ulid import ULID
 
 
 class TestMessageSequenceValidator:
@@ -275,18 +275,14 @@ class TestMessageSequenceValidator:
         ]
 
         # Should report unresolved tool calls
-        issues = validator.validate_partial_sequence(
-            messages, allow_pending_tools=False
-        )
+        issues = validator.validate_partial_sequence(messages, allow_pending_tools=False)
         assert len(issues) > 0
         assert any("Unresolved tool calls" in issue for issue in issues)
 
         # Should not report unresolved tool calls when allowed
         issues = validator.validate_partial_sequence(messages, allow_pending_tools=True)
         # Filter out unresolved tool call issues
-        non_tool_issues = [
-            issue for issue in issues if "Unresolved tool calls" not in issue
-        ]
+        non_tool_issues = [issue for issue in issues if "Unresolved tool calls" not in issue]
         assert len(non_tool_issues) == 0
 
 

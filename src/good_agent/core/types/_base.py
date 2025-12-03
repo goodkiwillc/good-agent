@@ -1,8 +1,8 @@
-from typing import Self
+from typing import Self, TypeAlias
 
 from good_agent.core.types import URL
 
-type StringDict = dict[str, str]
+StringDict: TypeAlias = dict[str, str]
 
 
 class Identifier(URL):
@@ -50,11 +50,7 @@ class Identifier(URL):
         """Return a copy stripped of internal ``zz_*`` parameters."""
 
         return URL(self).update(
-            query={
-                k: v
-                for k, v in self.query_params("flat").items()
-                if not k.startswith("zz_")
-            }
+            query={k: v for k, v in self.query_params("flat").items() if not k.startswith("zz_")}
         )
 
     @property

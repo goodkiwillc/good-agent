@@ -1,7 +1,7 @@
 import importlib.metadata
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, Protocol, runtime_checkable
-import logging
 
 from good_agent.extensions.search.models import (
     DataDomain,
@@ -218,9 +218,7 @@ class SearchProviderRegistry:
 
         try:
             # Load entry points
-            entry_points = importlib.metadata.entry_points(
-                group=self._entry_point_group
-            )
+            entry_points = importlib.metadata.entry_points(group=self._entry_point_group)
 
             for entry_point in entry_points:
                 try:
@@ -287,9 +285,7 @@ class SearchProviderRegistry:
                 key = (capability.operation, capability.domain, capability.platform)
                 if key in self._capability_index:
                     self._capability_index[key] = [
-                        name
-                        for name in self._capability_index[key]
-                        if name != provider_name
+                        name for name in self._capability_index[key] if name != provider_name
                     ]
 
             del self._providers[provider_name]
@@ -382,9 +378,7 @@ class SearchProviderRegistry:
         # Score each provider
         scored = []
         for provider in candidates:
-            score = self._score_provider(
-                provider, operation, domain, platform, constraints
-            )
+            score = self._score_provider(provider, operation, domain, platform, constraints)
             if score > 0:  # Only include viable providers
                 scored.append((score, provider))
 
@@ -443,9 +437,7 @@ class SearchProviderRegistry:
             return -1
 
         if constraints.required_features:
-            if not all(
-                f in capability.unique_features for f in constraints.required_features
-            ):
+            if not all(f in capability.unique_features for f in constraints.required_features):
                 return -1
 
         # Calculate score based on optimization preference

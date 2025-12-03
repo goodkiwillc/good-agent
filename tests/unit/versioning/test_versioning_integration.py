@@ -33,9 +33,7 @@ class TestVersioningWithAgentOperations:
         # Create mock response
         response = Mock()
         response.choices = [choice]
-        response.usage = CompletionUsage(
-            prompt_tokens=10, completion_tokens=5, total_tokens=15
-        )
+        response.usage = CompletionUsage(prompt_tokens=10, completion_tokens=5, total_tokens=15)
         return response
 
     @pytest_asyncio.fixture
@@ -43,9 +41,7 @@ class TestVersioningWithAgentOperations:
         """Create an agent with mocked LLM."""
         async with Agent("You are a test assistant") as agent:
             # Mock the language model's complete method
-            with patch.object(
-                agent.model, "complete", new_callable=AsyncMock
-            ) as mock_complete:
+            with patch.object(agent.model, "complete", new_callable=AsyncMock) as mock_complete:
                 mock_complete.return_value = mock_llm_response
                 yield agent, mock_complete
 
@@ -97,9 +93,7 @@ class TestVersioningWithAgentOperations:
         assert agent._version_manager.version_count == 7
 
         # Verify we can revert to any point
-        agent.revert_to_version(
-            2
-        )  # After first Q&A (version 2 = system + user + assistant)
+        agent.revert_to_version(2)  # After first Q&A (version 2 = system + user + assistant)
         assert len(agent.messages) == 3  # system + first Q&A
 
         await agent.events.close()
@@ -200,9 +194,7 @@ class TestVersioningWithAgentOperations:
                 prompt_tokens=10, completion_tokens=5, total_tokens=15
             )
 
-            with patch.object(
-                agent.model, "complete", new_callable=AsyncMock
-            ) as mock_complete:
+            with patch.object(agent.model, "complete", new_callable=AsyncMock) as mock_complete:
                 # Final response after tool execution
                 final_message = Mock()
                 final_message.content = "Tool executed successfully"
@@ -477,9 +469,7 @@ class TestEdgeCases:
                 await asyncio.sleep(0)  # Yield control
 
         # Run concurrent additions
-        await asyncio.gather(
-            add_messages("A", 10), add_messages("B", 10), add_messages("C", 10)
-        )
+        await asyncio.gather(add_messages("A", 10), add_messages("B", 10), add_messages("C", 10))
 
         # Should have all messages
         assert len(agent.messages) == 30
@@ -530,9 +520,7 @@ class TestEdgeCases:
         agent.append("Original 2")
 
         # Replace a message
-        agent.messages[1] = UserMessage(
-            content_parts=[TextContentPart(text="Replaced")]
-        )
+        agent.messages[1] = UserMessage(content_parts=[TextContentPart(text="Replaced")])
 
         # Add more
         agent.append("New 1")
@@ -540,9 +528,7 @@ class TestEdgeCases:
         # Each version should have unique IDs within itself
         for i, version_ids in enumerate(agent._version_manager._versions):
             # Within a version, all IDs should be unique
-            assert len(version_ids) == len(set(version_ids)), (
-                f"Duplicate ID in version {i}"
-            )
+            assert len(version_ids) == len(set(version_ids)), f"Duplicate ID in version {i}"
 
         # All current messages should have unique IDs
         current_ids = [msg.id for msg in agent.messages]

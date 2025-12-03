@@ -12,7 +12,7 @@ ValueT = TypeVar("ValueT")
 RefT = TypeVar("RefT")
 
 
-class Index[KeyT, RefT, ValueT](Protocol):
+class Index(Protocol[KeyT, RefT, ValueT]):
     def __getitem__(self, ref: RefT) -> KeyT: ...
 
     def __contains__(self, KeyT) -> bool: ...

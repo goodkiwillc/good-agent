@@ -121,9 +121,7 @@ async def test_mock_message_with_usage():
         usage = create_usage(prompt_tokens=150, completion_tokens=75, total_tokens=225)
 
         # Create mock response with usage
-        mock_response = mock_message(
-            "This is a response", role="assistant", usage=usage
-        )
+        mock_response = mock_message("This is a response", role="assistant", usage=usage)
 
         # Note: Usage is typically tracked at the model level, not message level
         # This test ensures the parameter is accepted even if not directly used
@@ -147,9 +145,7 @@ async def test_mock_message_with_metadata():
         }
 
         # Create mock response with metadata
-        mock_response = mock_message(
-            "Response with metadata", role="assistant", metadata=metadata
-        )
+        mock_response = mock_message("Response with metadata", role="assistant", metadata=metadata)
 
         # Use mock agent with the response
         with MockAgent(agent, mock_response) as mock_agent:
@@ -185,10 +181,7 @@ async def test_mock_message_with_all_parameters():
         with MockAgent(agent, mock_response) as mock_agent:
             async for msg in mock_agent.execute():
                 if isinstance(msg, AssistantMessage):
-                    assert (
-                        msg.content.strip()
-                        == "This is a key term mentioned in the source"
-                    )
+                    assert msg.content.strip() == "This is a key term mentioned in the source"
                     assert msg.citations is not None and len(msg.citations) == 1
                     assert msg.annotations is not None and len(msg.annotations) == 1
                     assert msg.reasoning is not None

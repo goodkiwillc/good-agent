@@ -76,9 +76,7 @@ class EventRouter:
         self._broadcast_to: list[EventRouter] = []
 
         # Async/sync bridge for task tracking and event loop management
-        self._sync_bridge = SyncBridge(
-            debug=debug, default_timeout=default_event_timeout
-        )
+        self._sync_bridge = SyncBridge(debug=debug, default_timeout=default_event_timeout)
 
         # Call __post_init__ to complete initialization
         # This will handle auto-registration and allow subclasses to override
@@ -120,7 +118,9 @@ class EventRouter:
 
         # Register for signal handling if enabled
         if self._signal_handling_enabled:
-            from good_agent.core.event_router.signal_handler import register_for_signals  # type: ignore[import-not-found]
+            from good_agent.core.event_router.signal_handler import (
+                register_for_signals,  # type: ignore[import-not-found]
+            )
 
             register_for_signals(self)
 
@@ -149,9 +149,7 @@ class EventRouter:
         """Register to receive events from another router."""
         obs._link_broadcast_target(self, bidirectional=False)
 
-    def set_event_trace(
-        self, enabled: bool, verbosity: int = 1, use_rich: bool = True
-    ) -> None:
+    def set_event_trace(self, enabled: bool, verbosity: int = 1, use_rich: bool = True) -> None:
         """
         Enable or disable event tracing with configurable output.
 
@@ -350,9 +348,7 @@ class EventRouter:
                         param_items.append(f"{k}={v_str}")
                     param_summary.append(", ".join(param_items), style="dim")
                     if len(parameters) > 3:
-                        param_summary.append(
-                            f", +{len(parameters) - 3} more", style="dim italic"
-                        )
+                        param_summary.append(f", +{len(parameters) - 3} more", style="dim italic")
                     param_summary.append("]", style="dim")
                     if isinstance(text, Text):
                         text.append(param_summary)
@@ -401,9 +397,7 @@ class EventRouter:
             raise RuntimeError("No event context available")
         return ctx
 
-    def _wrap_handler_for_registration(
-        self, fn: Callable[..., Any]
-    ) -> Callable[..., Any]:
+    def _wrap_handler_for_registration(self, fn: Callable[..., Any]) -> Callable[..., Any]:
         """Wrap callables that do not expose a writable __dict__."""
 
         bound_self = getattr(fn, "__self__", None)
@@ -484,9 +478,7 @@ class EventRouter:
         """Return handlers ordered by priority (includes broadcast targets)."""
         return self._handler_registry.get_sorted_handlers(event)
 
-    def _should_run_handler(
-        self, registration: HandlerRegistration, ctx: EventContext
-    ) -> bool:
+    def _should_run_handler(self, registration: HandlerRegistration, ctx: EventContext) -> bool:
         """Check if handler should run based on predicate result."""
         return self._handler_registry.should_run_handler(registration, ctx)
 
@@ -516,9 +508,7 @@ class EventRouter:
         """Dispatch event handlers without waiting for completion."""
 
         # Create context with timestamp
-        ctx: EventContext = EventContext(
-            parameters=kwargs, invocation_timestamp=time.time()
-        )
+        ctx: EventContext = EventContext(parameters=kwargs, invocation_timestamp=time.time())
         ctx.event = event
 
         # Get all handlers
@@ -579,9 +569,7 @@ class EventRouter:
             else:
                 self._sync_bridge.create_background_task(run_handlers())
 
-    def apply_sync(
-        self, event: EventName, **kwargs
-    ) -> EventContext[dict[str, Any], Any]:
+    def apply_sync(self, event: EventName, **kwargs) -> EventContext[dict[str, Any], Any]:
         """
         Synchronous blocking event dispatch.
 
@@ -669,9 +657,7 @@ class EventRouter:
 
         return ctx
 
-    async def apply_async(
-        self, event: EventName, **kwargs
-    ) -> EventContext[dict[str, Any], Any]:
+    async def apply_async(self, event: EventName, **kwargs) -> EventContext[dict[str, Any], Any]:
         """
         Asynchronous blocking event dispatch.
 
@@ -758,7 +744,7 @@ class EventRouter:
         start_time = time.perf_counter()
 
         # Extract output if provided (don't remove from kwargs)
-        initial_output = kwargs.get("output", None)
+        initial_output = kwargs.get("output")
 
         typed_params = self._build_typed_parameters(params_type, kwargs)
 
@@ -834,7 +820,7 @@ class EventRouter:
         start_time = time.perf_counter()
 
         # Extract output if provided (don't remove from kwargs)
-        initial_output = kwargs.get("output", None)
+        initial_output = kwargs.get("output")
 
         typed_params = self._build_typed_parameters(params_type, kwargs)
 

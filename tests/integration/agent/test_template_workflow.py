@@ -96,9 +96,7 @@ As a data analyst, you should:
 {% endblock %}""")
 
             # Create component templates with kebab-case names
-            (
-                prompts / "components" / "headers" / "analysis-framework.prompt"
-            ).write_text("""
+            (prompts / "components" / "headers" / "analysis-framework.prompt").write_text("""
 ## Analysis Framework
 - Data Collection
 - Statistical Analysis
@@ -221,9 +219,7 @@ Limit results to {{ limit | default(10) }} items.""")
         original_content = template_path.read_text()
 
         # Create snapshot before modification
-        snapshot_hash = version_manager.create_snapshot(
-            "system/base", reason="Before modification"
-        )
+        snapshot_hash = version_manager.create_snapshot("system/base", reason="Before modification")
 
         # Modify the template
         modified_content = original_content.replace(
@@ -304,9 +300,7 @@ Limit results to {{ limit | default(10) }} items.""")
 
         try:
             # Create user-specific template
-            (user_dir / "user" / "personal.prompt").parent.mkdir(
-                parents=True, exist_ok=True
-            )
+            (user_dir / "user" / "personal.prompt").parent.mkdir(parents=True, exist_ok=True)
             (user_dir / "user" / "personal.prompt").write_text("""---
 version: 1.0.0
 description: Personal template
@@ -328,9 +322,7 @@ This is my personal template for {{ task }}.""")
 
             # Test priority (project templates override user templates)
             # Create same template in both locations
-            (user_dir / "system" / "base.prompt").parent.mkdir(
-                parents=True, exist_ok=True
-            )
+            (user_dir / "system" / "base.prompt").parent.mkdir(parents=True, exist_ok=True)
             (user_dir / "system" / "base.prompt").write_text("User version")
 
             content = await chained.get("system/base")
@@ -404,9 +396,7 @@ This is my personal template for {{ task }}.""")
 
         # Load and render template
         await manager.preload_templates(["system/base"])
-        initial_render = manager.render(
-            "{% include 'system/base' %}", {"domain": "test"}
-        )
+        initial_render = manager.render("{% include 'system/base' %}", {"domain": "test"})
 
         # Modify template
         template_path = prompts_dir / "system" / "base.prompt"

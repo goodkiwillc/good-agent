@@ -1,10 +1,9 @@
 from unittest.mock import patch
 
 import pytest
-from typer.testing import CliRunner
-
 from good_agent.cli.config import GlobalConfig
 from good_agent.cli.main import app
+from typer.testing import CliRunner
 
 runner = CliRunner()
 
@@ -84,8 +83,7 @@ def test_cli_config_list(mock_config_dir):
     assert result.exit_code == 0
     # The key is resolved to openai_api_key
     assert (
-        "openai_api_key = sk-s...-key" in result.stdout
-        or "openai_api_key = ***" in result.stdout
+        "openai_api_key = sk-s...-key" in result.stdout or "openai_api_key = ***" in result.stdout
     )
     assert "model = gpt-4o" in result.stdout
 
@@ -102,9 +100,7 @@ def test_cli_profile_flag(mock_config_dir):
     # But config subcommands use ctx.obj["profile"]
 
     # We need to pass --profile to the main app, before the subcommand
-    result = runner.invoke(
-        app, ["--profile", "work", "config", "set", "api_key", "12345"]
-    )
+    result = runner.invoke(app, ["--profile", "work", "config", "set", "api_key", "12345"])
     assert result.exit_code == 0
     assert "Set 'api_key' in profile 'work'" in result.stdout
 

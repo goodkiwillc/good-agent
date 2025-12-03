@@ -61,7 +61,7 @@ class InMemoryMessageStore:
             redis_client: Optional Redis client for backing store
             ttl: Time-to-live for Redis entries in seconds (default: 1 hour)
         """
-        self._memory_cache: dict[str, "Message"] = {}
+        self._memory_cache: dict[str, Message] = {}
         self._redis_client = redis_client
         self._ttl = ttl
         self._lock = asyncio.Lock()

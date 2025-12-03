@@ -13,7 +13,6 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import pytest
-
 from good_agent.core.event_router import EventRouter
 
 
@@ -95,9 +94,7 @@ class TestSyncBridgeConcurrency:
 
         def worker(thread_id: int) -> None:
             # Each thread sets unique data
-            router.apply_sync(
-                "ctx:test", thread_id=thread_id, data=f"thread-{thread_id}"
-            )
+            router.apply_sync("ctx:test", thread_id=thread_id, data=f"thread-{thread_id}")
 
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = [executor.submit(worker, tid) for tid in range(5)]

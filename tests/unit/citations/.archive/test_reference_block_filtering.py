@@ -33,9 +33,7 @@ Final content with another citation [!CITE_3!].
             URL("https://example3.com"),
         ]
 
-        agent.append(
-            "assistant", content_with_confused_refs.strip(), citations=citations
-        )
+        agent.append("assistant", content_with_confused_refs.strip(), citations=citations)
 
         # Render for user display (this should filter out reference blocks)
         from good_agent.content import RenderMode

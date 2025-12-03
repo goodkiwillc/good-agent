@@ -1,7 +1,7 @@
+import logging
 from collections.abc import Sequence
 from enum import Enum
 from typing import TYPE_CHECKING
-import logging
 
 from good_agent.messages import (
     AssistantMessage,
@@ -104,9 +104,7 @@ class MessageSequenceValidator:
                 # Record all tool calls from this message
                 for tool_call in msg.tool_calls:
                     if tool_call.id in pending_tool_calls:
-                        issues.append(
-                            f"Duplicate tool_call_id '{tool_call.id}' at index {i}"
-                        )
+                        issues.append(f"Duplicate tool_call_id '{tool_call.id}' at index {i}")
                     pending_tool_calls[tool_call.id] = (
                         i,
                         tool_call.function.name,
@@ -151,13 +149,8 @@ class MessageSequenceValidator:
                     found = False
                     for prev_i in range(i - 1, -1, -1):
                         prev_msg = messages[prev_i]
-                        if (
-                            isinstance(prev_msg, AssistantMessage)
-                            and prev_msg.tool_calls
-                        ):
-                            if any(
-                                tc.id == msg.tool_call_id for tc in prev_msg.tool_calls
-                            ):
+                        if isinstance(prev_msg, AssistantMessage) and prev_msg.tool_calls:
+                            if any(tc.id == msg.tool_call_id for tc in prev_msg.tool_calls):
                                 found = True
                                 # But it should have been handled already
                                 issues.append(
@@ -166,9 +159,7 @@ class MessageSequenceValidator:
                                 )
                                 break
                     if not found:
-                        issues.append(
-                            f"Tool response at index {i} has no corresponding tool call"
-                        )
+                        issues.append(f"Tool response at index {i} has no corresponding tool call")
 
             # Non-tool message with pending tool calls
             elif pending_tool_calls and not isinstance(msg, ToolMessage):
@@ -176,8 +167,7 @@ class MessageSequenceValidator:
                 unresolved = list(pending_tool_calls.keys())
                 if unresolved:
                     issues.append(
-                        f"Unresolved tool calls {unresolved} before {msg.role} "
-                        f"message at index {i}"
+                        f"Unresolved tool calls {unresolved} before {msg.role} message at index {i}"
                     )
 
         # Check for any remaining unresolved tool calls
@@ -202,9 +192,7 @@ class MessageSequenceValidator:
 
         # Skip system messages at the beginning
         start_idx = 0
-        while start_idx < len(messages) and isinstance(
-            messages[start_idx], SystemMessage
-        ):
+        while start_idx < len(messages) and isinstance(messages[start_idx], SystemMessage):
             start_idx += 1
 
         last_non_tool_role = None
@@ -230,8 +218,7 @@ class MessageSequenceValidator:
                     if last_non_tool_idx is not None:
                         # Check if there were tool messages between the two assistant messages
                         has_tool_messages_between = any(
-                            messages[j].role == "tool"
-                            for j in range(last_non_tool_idx + 1, i)
+                            messages[j].role == "tool" for j in range(last_non_tool_idx + 1, i)
                         )
                         # Check if current assistant has tool calls
                         current_has_tool_calls = (
@@ -240,8 +227,7 @@ class MessageSequenceValidator:
                         # Check if previous assistant had tool calls
                         prev_msg = messages[last_non_tool_idx]
                         prev_has_tool_calls = (
-                            isinstance(prev_msg, AssistantMessage)
-                            and prev_msg.tool_calls
+                            isinstance(prev_msg, AssistantMessage) and prev_msg.tool_calls
                         )
 
                         # Only report issue if none of these conditions are met
@@ -274,9 +260,7 @@ class MessageSequenceValidator:
         issues: list[str] = []
 
         # Find all system message indices
-        system_indices = [
-            i for i, msg in enumerate(messages) if isinstance(msg, SystemMessage)
-        ]
+        system_indices = [i for i, msg in enumerate(messages) if isinstance(msg, SystemMessage)]
 
         if not system_indices:
             return issues
@@ -352,11 +336,7 @@ class MessageSequenceValidator:
                 "before user message",
                 "before assistant message",
             ]
-            issues = [
-                issue
-                for issue in issues
-                if not any(p in issue for p in suppress_patterns)
-            ]
+            issues = [issue for issue in issues if not any(p in issue for p in suppress_patterns)]
 
         # Handle logging/raising for the REMAINING issues only
         if issues:

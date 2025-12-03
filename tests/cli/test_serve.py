@@ -1,9 +1,9 @@
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-
-from good_agent.cli.serve import create_app
 from good_agent.agent.core import Agent
+from good_agent.cli.serve import create_app
 from good_agent.messages import AssistantMessage
 
 
@@ -56,6 +56,7 @@ async def test_serve_missing_deps(monkeypatch):
     # Simulate missing dependencies
     with patch.dict("sys.modules", {"fastapi": None, "uvicorn": None}):
         import importlib
+
         import good_agent.cli.serve
 
         # Expect SystemExit when reloading triggers the import check

@@ -1,7 +1,6 @@
 import asyncio
 
 import pytest
-
 from good_agent import Agent, AgentComponent, tool
 
 
@@ -16,9 +15,7 @@ class MockComponent(AgentComponent):
     async def install(self, agent: "Agent"):
         """Install with custom initialization logic."""
         self.initialization_log.append("install_start")
-        await super().install(
-            agent
-        )  # Important: call parent to trigger tool registration
+        await super().install(agent)  # Important: call parent to trigger tool registration
         self.initialization_log.append("install_end")
 
     @tool
@@ -30,9 +27,7 @@ class MockComponent(AgentComponent):
     @tool
     async def async_mock_tool(self, data: str) -> dict:
         """An async mock tool for testing."""
-        self.tool_calls["async_mock_tool"] = (
-            self.tool_calls.get("async_mock_tool", 0) + 1
-        )
+        self.tool_calls["async_mock_tool"] = self.tool_calls.get("async_mock_tool", 0) + 1
         return {"processed": data, "async": True}
 
 
@@ -146,7 +141,7 @@ class TestTaskBasedComponentInitialization:
             tool = agent.tools["custom_tool"]
             result = await tool(_agent=agent, value="test")
             assert result.success
-            assert "Custom: test" == result.response
+            assert result.response == "Custom: test"
 
     @pytest.mark.asyncio
     async def test_agent_ready_waits_for_component_tasks(self):
@@ -253,4 +248,4 @@ class TestTaskBasedComponentInitialization:
             event_tool = agent.tools["event_tool"]
             result = await event_tool(_agent=agent, value="test")
             assert result.success
-            assert "Event component: test" == result.response
+            assert result.response == "Event component: test"

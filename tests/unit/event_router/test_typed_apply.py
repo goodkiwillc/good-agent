@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import TypedDict
 
 import pytest
-
 from good_agent.core.event_router import EventContext, EventRouter
 
 

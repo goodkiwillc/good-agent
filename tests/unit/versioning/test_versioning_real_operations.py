@@ -217,9 +217,7 @@ class TestVersioningWithRealOperations:
             from litellm.types.utils import Message
 
             # Create proper Message object
-            mock_msg = Message(
-                content="Test response", role="assistant", tool_calls=None
-            )
+            mock_msg = Message(content="Test response", role="assistant", tool_calls=None)
 
             # Create a Choices object with all required fields
             mock_choice = Choices(
@@ -233,9 +231,7 @@ class TestVersioningWithRealOperations:
             # Create response with choices
             mock_response = Mock()
             mock_response.choices = [mock_choice]
-            mock_response.usage = Mock(
-                prompt_tokens=10, completion_tokens=5, total_tokens=15
-            )
+            mock_response.usage = Mock(prompt_tokens=10, completion_tokens=5, total_tokens=15)
             return mock_response
 
         # Patch the model's complete method

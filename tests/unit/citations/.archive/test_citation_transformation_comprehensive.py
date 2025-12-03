@@ -155,9 +155,7 @@ class TestCitationFormatRoundTrips:
 
         # Display format should use markdown links (URLs may have trailing slashes)
         display_content = message.render(RenderMode.DISPLAY)
-        assert (
-            "[example.com](https://example.com" in display_content
-        )  # May have trailing /
+        assert "[example.com](https://example.com" in display_content  # May have trailing /
         assert "[docs.org](https://docs.org" in display_content  # May have trailing /
 
 

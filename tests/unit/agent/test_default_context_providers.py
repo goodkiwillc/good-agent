@@ -33,9 +33,7 @@ async def test_today_context_provider():
     provider_date = today_value.date()
     system_date = date.today()
     delta = abs((provider_date - system_date).days)
-    assert delta <= 1, (
-        f"Provider date {provider_date} too far from system date {system_date}"
-    )
+    assert delta <= 1, f"Provider date {provider_date} too far from system date {system_date}"
 
     await agent.events.close()
 

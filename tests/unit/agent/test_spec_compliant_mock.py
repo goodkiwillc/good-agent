@@ -104,9 +104,7 @@ class TestSpecCompliantMockAPI:
             mock_ctx = agent.mock(
                 agent.mock.create(
                     "I'll check the weather",
-                    tool_calls=[
-                        {"name": "get_weather", "arguments": {"location": "NYC"}}
-                    ],
+                    tool_calls=[{"name": "get_weather", "arguments": {"location": "NYC"}}],
                 ),
                 agent.mock.tool_call(
                     "get_weather",
@@ -122,10 +120,7 @@ class TestSpecCompliantMockAPI:
                 # Check first message
                 assert responses[0].type == "message"
                 assert responses[0].content == "I'll check the weather"
-                assert (
-                    responses[0].tool_calls is not None
-                    and len(responses[0].tool_calls) == 1
-                )
+                assert responses[0].tool_calls is not None and len(responses[0].tool_calls) == 1
 
                 # Check tool call
                 assert responses[1].type == "tool_call"
@@ -184,9 +179,7 @@ class TestSpecCompliantMockAPI:
             with agent.mock(
                 agent.mock.create(
                     "I'll check the weather",
-                    tool_calls=[
-                        {"name": "get_weather", "arguments": {"location": "NYC"}}
-                    ],
+                    tool_calls=[{"name": "get_weather", "arguments": {"location": "NYC"}}],
                 ),
                 agent.mock.tool_call(
                     "get_weather",
@@ -228,9 +221,7 @@ class TestMockVsTestingFixtures:
         try:
             # This is for testing agent behavior - conversation flow, message handling, etc.
             # WITHOUT making actual LLM API calls
-            with agent.mock(
-                agent.mock.create("Mocked response", role="assistant")
-            ) as mock_agent:
+            with agent.mock(agent.mock.create("Mocked response", role="assistant")) as mock_agent:
                 # This will use pre-programmed responses instead of calling LLM
                 assert isinstance(mock_agent.responses[0].content, str)
         finally:

@@ -177,9 +177,7 @@ class TestDateHandling:
         # Check that the until date is either today or yesterday relative to system time
         until_date = query.until.date()
         delta = abs((until_date - today).days)
-        assert delta <= 1, (
-            f"Query until date {until_date} too far from system date {today}"
-        )
+        assert delta <= 1, f"Query until date {until_date} too far from system date {today}"
 
         # Check that since date is 1 day before until date
         since_date = query.since.date()

@@ -14,16 +14,12 @@ def test_signature_inspection():
     # Get the unbound method
     unbound_method = AgentSearch.search
     print(f"Unbound method signature: {inspect.signature(unbound_method)}")
-    print(
-        f"Unbound method params: {list(inspect.signature(unbound_method).parameters.keys())}"
-    )
+    print(f"Unbound method params: {list(inspect.signature(unbound_method).parameters.keys())}")
 
     # Get the bound method
     bound_method = search_component.search
     print(f"Bound method signature: {inspect.signature(bound_method)}")
-    print(
-        f"Bound method params: {list(inspect.signature(bound_method).parameters.keys())}"
-    )
+    print(f"Bound method params: {list(inspect.signature(bound_method).parameters.keys())}")
 
     # Check the descriptor
     bound_tool_descriptor = AgentSearch.__dict__["search"]

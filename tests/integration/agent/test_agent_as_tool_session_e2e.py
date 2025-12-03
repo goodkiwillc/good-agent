@@ -3,12 +3,11 @@ import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from litellm.utils import Message as LiteLLMMessage
-from litellm.types.utils import Choices
-
 from good_agent import Agent
 from good_agent.messages import ToolMessage
 from good_agent.tools.agent_tool import AgentAsTool, SessionIdGenerator
+from litellm.types.utils import Choices
+from litellm.utils import Message as LiteLLMMessage
 
 
 class MockLLMResponse:
@@ -52,9 +51,7 @@ async def test_agent_as_tool_session_e2e():
     ]
 
     # Patch worker model to return fixed responses
-    with patch.object(
-        worker.model, "complete", AsyncMock(side_effect=worker_responses)
-    ):
+    with patch.object(worker.model, "complete", AsyncMock(side_effect=worker_responses)):
         # 3. Wrap Worker as Tool
         worker_tool_wrapper = AgentAsTool(worker, multi_turn=True)
         worker_tool = worker_tool_wrapper.as_tool()
@@ -78,9 +75,7 @@ async def test_agent_as_tool_session_e2e():
         call2.id = "call_2"
         call2.type = "function"
         call2.function.name = "worker"
-        call2.function.arguments = json.dumps(
-            {"prompt": "Say hello again", "session_id": "1"}
-        )
+        call2.function.arguments = json.dumps({"prompt": "Say hello again", "session_id": "1"})
 
         manager_responses = [
             # Response 1: Decide to call worker
@@ -94,9 +89,7 @@ async def test_agent_as_tool_session_e2e():
         ]
 
         # Patch manager model
-        with patch.object(
-            manager.model, "complete", AsyncMock(side_effect=manager_responses)
-        ):
+        with patch.object(manager.model, "complete", AsyncMock(side_effect=manager_responses)):
             # Seed the conversation
             manager.append("Please coordinate the worker.", role="user")
 

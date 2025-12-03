@@ -4,7 +4,6 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, runtime_checkable
 
 from good_agent.core.event_router import EventContext, on
-
 from good_agent.events import AgentEvents
 
 if TYPE_CHECKING:
@@ -70,9 +69,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - agent: The initialized Agent instance
             - tools: Optional list of tools to be loaded
         """
-        return self.on(
-            AgentEvents.AGENT_INIT_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.AGENT_INIT_AFTER, priority=priority, predicate=predicate)
 
     def on_agent_state_change(
         self,
@@ -90,9 +87,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - new_state: The new AgentState
             - old_state: The previous AgentState
         """
-        return self.on(
-            AgentEvents.AGENT_STATE_CHANGE, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.AGENT_STATE_CHANGE, priority=priority, predicate=predicate)
 
     def on_agent_fork(
         self,
@@ -110,9 +105,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - child: The forked Agent
             - config_changes: Optional configuration changes
         """
-        return self.on(
-            AgentEvents.AGENT_FORK_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.AGENT_FORK_AFTER, priority=priority, predicate=predicate)
 
     def on_agent_version_change(
         self,
@@ -131,9 +124,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - new_version: New version ULID
             - changes: Dictionary describing what changed
         """
-        return self.on(
-            AgentEvents.AGENT_VERSION_CHANGE, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.AGENT_VERSION_CHANGE, priority=priority, predicate=predicate)
 
     # ========================================================================
     # Message Events
@@ -154,9 +145,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - message: The appended Message
             - agent: The Agent instance
         """
-        return self.on(
-            AgentEvents.MESSAGE_APPEND_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.MESSAGE_APPEND_AFTER, priority=priority, predicate=predicate)
 
     def on_message_create(
         self,
@@ -179,9 +168,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
         Returns:
             Modified parameters dictionary or None
         """
-        return self.on(
-            AgentEvents.MESSAGE_CREATE_BEFORE, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.MESSAGE_CREATE_BEFORE, priority=priority, predicate=predicate)
 
     def on_message_replace(
         self,
@@ -199,9 +186,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - message: The new Message
             - agent: The Agent instance
         """
-        return self.on(
-            AgentEvents.MESSAGE_REPLACE_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.MESSAGE_REPLACE_AFTER, priority=priority, predicate=predicate)
 
     def on_message_set_system(
         self,
@@ -218,9 +203,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - message: The system Message
             - agent: The Agent instance
         """
-        return self.on(
-            AgentEvents.MESSAGE_SET_SYSTEM_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.MESSAGE_SET_SYSTEM_AFTER, priority=priority, predicate=predicate)
 
     def on_message_render(
         self,
@@ -241,9 +224,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
         Returns:
             Modified rendered string or None
         """
-        return self.on(
-            AgentEvents.MESSAGE_RENDER_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.MESSAGE_RENDER_AFTER, priority=priority, predicate=predicate)
 
     # ========================================================================
     # LLM Events
@@ -268,9 +249,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - tools: Optional tool definitions
             - response: ResponseWithUsage (after event)
         """
-        return self.on(
-            AgentEvents.LLM_COMPLETE_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.LLM_COMPLETE_AFTER, priority=priority, predicate=predicate)
 
     def on_llm_extract(
         self,
@@ -292,9 +271,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
         Returns:
             Modified output or None
         """
-        return self.on(
-            AgentEvents.LLM_EXTRACT_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.LLM_EXTRACT_AFTER, priority=priority, predicate=predicate)
 
     def on_llm_stream(
         self,
@@ -314,9 +291,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - max_tokens: Optional max tokens
             - chunk: Stream chunk (for stream:chunk event)
         """
-        return self.on(
-            AgentEvents.LLM_STREAM_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.LLM_STREAM_AFTER, priority=priority, predicate=predicate)
 
     def on_llm_stream_chunk(
         self,
@@ -334,9 +309,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - messages: Original messages
             - model: Model name
         """
-        return self.on(
-            AgentEvents.LLM_STREAM_CHUNK, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.LLM_STREAM_CHUNK, priority=priority, predicate=predicate)
 
     def on_llm_error(
         self,
@@ -382,9 +355,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
         Returns:
             Modified arguments dictionary or None
         """
-        return self.on(
-            AgentEvents.TOOL_CALL_BEFORE, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.TOOL_CALL_BEFORE, priority=priority, predicate=predicate)
 
     def on_tool_call_after(
         self,
@@ -406,9 +377,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - success: Whether call succeeded
             - agent: The Agent instance
         """
-        return self.on(
-            AgentEvents.TOOL_CALL_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.TOOL_CALL_AFTER, priority=priority, predicate=predicate)
 
     def on_tool_call_error(
         self,
@@ -430,9 +399,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - parameters: Tool parameters
             - agent: The Agent instance
         """
-        return self.on(
-            AgentEvents.TOOL_CALL_ERROR, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.TOOL_CALL_ERROR, priority=priority, predicate=predicate)
 
     # ========================================================================
     # Execution Events
@@ -453,9 +420,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - agent: The Agent instance
             - max_iterations: Maximum iterations allowed
         """
-        return self.on(
-            AgentEvents.EXECUTE_BEFORE, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.EXECUTE_BEFORE, priority=priority, predicate=predicate)
 
     def on_execute_after(
         self,
@@ -473,9 +438,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - iterations: Number of iterations executed
             - final_message: Final message or None
         """
-        return self.on(
-            AgentEvents.EXECUTE_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.EXECUTE_AFTER, priority=priority, predicate=predicate)
 
     def on_execute_iteration(
         self,
@@ -493,9 +456,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - iteration: Current iteration number
             - messages_count: Number of messages (before event)
         """
-        return self.on(
-            AgentEvents.EXECUTE_ITERATION_BEFORE, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.EXECUTE_ITERATION_BEFORE, priority=priority, predicate=predicate)
 
     # ========================================================================
     # Context and Template Events
@@ -520,9 +481,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
         Returns:
             Modified result or None
         """
-        return self.on(
-            AgentEvents.CONTEXT_PROVIDER_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.CONTEXT_PROVIDER_AFTER, priority=priority, predicate=predicate)
 
     def on_template_compile(
         self,
@@ -543,9 +502,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
         Returns:
             Modified compiled result or None
         """
-        return self.on(
-            AgentEvents.TEMPLATE_COMPILE_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.TEMPLATE_COMPILE_AFTER, priority=priority, predicate=predicate)
 
     # ========================================================================
     # Storage Events
@@ -568,9 +525,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - ttl: Optional TTL
             - success: Whether save succeeded (after event)
         """
-        return self.on(
-            AgentEvents.STORAGE_SAVE_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.STORAGE_SAVE_AFTER, priority=priority, predicate=predicate)
 
     def on_storage_load(
         self,
@@ -591,9 +546,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
         Returns:
             Modified value or None
         """
-        return self.on(
-            AgentEvents.STORAGE_LOAD_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.STORAGE_LOAD_AFTER, priority=priority, predicate=predicate)
 
     # ========================================================================
     # Cache Events
@@ -668,9 +621,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - key: Optional specific key to invalidate
             - pattern: Optional pattern for invalidation
         """
-        return self.on(
-            AgentEvents.CACHE_INVALIDATE, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.CACHE_INVALIDATE, priority=priority, predicate=predicate)
 
     # ========================================================================
     # Validation Events
@@ -693,9 +644,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - errors: Validation errors (after/error events)
             - valid: Whether validation passed (after event)
         """
-        return self.on(
-            AgentEvents.VALIDATION_AFTER, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.VALIDATION_AFTER, priority=priority, predicate=predicate)
 
     def on_validation_error(
         self,
@@ -713,9 +662,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - schema: Optional validation schema
             - errors: List of validation errors
         """
-        return self.on(
-            AgentEvents.VALIDATION_ERROR, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.VALIDATION_ERROR, priority=priority, predicate=predicate)
 
     # ========================================================================
     # Extension Events
@@ -736,9 +683,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - extension: The AgentComponent being installed
             - agent: The Agent instance
         """
-        return self.on(
-            AgentEvents.EXTENSION_INSTALL, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.EXTENSION_INSTALL, priority=priority, predicate=predicate)
 
     def on_extension_error(
         self,
@@ -757,9 +702,7 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             - context: Where the error occurred
             - agent: The Agent instance
         """
-        return self.on(
-            AgentEvents.EXTENSION_ERROR, priority=priority, predicate=predicate
-        )
+        return self.on(AgentEvents.EXTENSION_ERROR, priority=priority, predicate=predicate)
 
 
 # ============================================================================
@@ -824,9 +767,7 @@ def on_execute_iteration(
         def handle_iteration(ctx: EventContext[ExecuteIterationParams, None]):
             iteration = ctx.parameters["iteration"]
     """
-    return on(
-        AgentEvents.EXECUTE_ITERATION_BEFORE, priority=priority, predicate=predicate
-    )
+    return on(AgentEvents.EXECUTE_ITERATION_BEFORE, priority=priority, predicate=predicate)
 
 
 def on_llm_stream(

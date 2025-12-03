@@ -20,10 +20,9 @@ from typing import (
 
 from pydantic import BaseModel
 
+from good_agent.agent.config import PASS_THROUGH_KEYS, AgentConfigManager, ModelConfig
 from good_agent.core.components import AgentComponent
 from good_agent.core.types import URL
-
-from good_agent.agent.config import PASS_THROUGH_KEYS, AgentConfigManager, ModelConfig
 from good_agent.events import AgentEvents
 from good_agent.messages import (
     AssistantMessage,
@@ -99,9 +98,7 @@ class LanguageModel(AgentComponent):
             elif type_name == "ChatCompletionContentPartImageParam":
                 from litellm.types.completion import ChatCompletionContentPartImageParam
 
-                cls._litellm_types_cache[type_name] = (
-                    ChatCompletionContentPartImageParam
-                )
+                cls._litellm_types_cache[type_name] = ChatCompletionContentPartImageParam
             elif type_name == "ImageURL":
                 from litellm.types.completion import ImageURL
 
@@ -125,9 +122,7 @@ class LanguageModel(AgentComponent):
             elif type_name == "ChatCompletionAssistantMessageParam":
                 from litellm.types.completion import ChatCompletionAssistantMessageParam
 
-                cls._litellm_types_cache[type_name] = (
-                    ChatCompletionAssistantMessageParam
-                )
+                cls._litellm_types_cache[type_name] = ChatCompletionAssistantMessageParam
             elif type_name == "ChatCompletionToolMessageParam":
                 from litellm.types.completion import ChatCompletionToolMessageParam
 
@@ -213,9 +208,7 @@ class LanguageModel(AgentComponent):
         """Pre-API call logging hook"""
         self.api_requests.append({"model": model, "messages": messages, **kwargs})
         if self._debug:
-            logger.debug(
-                f"Pre-API call logging hook triggered - {model=}, {messages=}, {kwargs=}"
-            )
+            logger.debug(f"Pre-API call logging hook triggered - {model=}, {messages=}, {kwargs=}")
 
     async def async_log_success_event(
         self,
@@ -444,9 +437,7 @@ class LanguageModel(AgentComponent):
                 if not isinstance(_content, (list, tuple)):
                     content_parts = tuple([_content])
                 else:
-                    content_parts = (
-                        tuple(_content) if isinstance(_content, list) else _content
-                    )
+                    content_parts = tuple(_content) if isinstance(_content, list) else _content
 
         if len(content_parts) == 1 and isinstance(content_parts[0], Message):
             # If a single Message object is passed, set agent and return it directly
@@ -676,9 +667,7 @@ class LanguageModel(AgentComponent):
                     total = getattr(default_timeout, "_timeout", None)
                     config["timeout"] = float(total) if total else 30.0
                 else:
-                    config["timeout"] = (
-                        float(default_timeout) if default_timeout else 30.0
-                    )
+                    config["timeout"] = float(default_timeout) if default_timeout else 30.0
             except Exception:
                 config["timeout"] = 30.0
 
@@ -825,9 +814,9 @@ class LanguageModel(AgentComponent):
             llm=self,
         )
 
-        if "parallel_tool_calls" in ctx.parameters["config"] and not ctx.parameters[
-            "config"
-        ].get("tools"):
+        if "parallel_tool_calls" in ctx.parameters["config"] and not ctx.parameters["config"].get(
+            "tools"
+        ):
             logger.warning("`parallel_tool_calls` added back in")
 
         try:

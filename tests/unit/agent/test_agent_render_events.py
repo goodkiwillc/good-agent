@@ -1,7 +1,7 @@
 import pytest
 from good_agent import Agent, AgentEvents
-from good_agent.messages import RenderMode, UserMessage
 from good_agent.core.event_router import EventContext
+from good_agent.messages import RenderMode, UserMessage
 
 
 @pytest.mark.asyncio
@@ -21,9 +21,7 @@ class TestAgentRenderEvents:
                 output = ctx.parameters["output"]
                 # Extract text from content parts
                 content_text = (
-                    output[0].text
-                    if isinstance(output[0], TextContentPart)
-                    else str(output[0])
+                    output[0].text if isinstance(output[0], TextContentPart) else str(output[0])
                 )
                 events_captured.append(
                     {
@@ -145,9 +143,7 @@ class TestAgentRenderEvents:
                 modified_parts = []
                 for part in output:
                     if isinstance(part, TextContentPart):
-                        modified_parts.append(
-                            TextContentPart(text=f"[PREFIX] {part.text}")
-                        )
+                        modified_parts.append(TextContentPart(text=f"[PREFIX] {part.text}"))
                     else:
                         modified_parts.append(part)
                 ctx.parameters["output"] = modified_parts
@@ -160,9 +156,7 @@ class TestAgentRenderEvents:
                 modified_parts = []
                 for part in output:
                     if isinstance(part, TextContentPart):
-                        modified_parts.append(
-                            TextContentPart(text=f"{part.text} [SUFFIX]")
-                        )
+                        modified_parts.append(TextContentPart(text=f"{part.text} [SUFFIX]"))
                     else:
                         modified_parts.append(part)
                 ctx.parameters["output"] = modified_parts
@@ -194,13 +188,9 @@ class TestAgentRenderEvents:
                 for part in output:
                     if isinstance(part, TextContentPart):
                         if mode == RenderMode.LLM:
-                            modified_parts.append(
-                                TextContentPart(text=f"<llm>{part.text}</llm>")
-                            )
+                            modified_parts.append(TextContentPart(text=f"<llm>{part.text}</llm>"))
                         elif mode == RenderMode.DISPLAY:
-                            modified_parts.append(
-                                TextContentPart(text=f"**{part.text}**")
-                            )
+                            modified_parts.append(TextContentPart(text=f"**{part.text}**"))
                         else:
                             # No transformation for RAW
                             modified_parts.append(part)
@@ -243,9 +233,7 @@ class TestAgentRenderEvents:
             tool_call = ToolCall(
                 id="test_id",
                 type="function",
-                function=ToolCallFunction(
-                    name="test_tool", arguments='{"arg": "value"}'
-                ),
+                function=ToolCallFunction(name="test_tool", arguments='{"arg": "value"}'),
             )
 
             agent.assistant.append("", tool_calls=[tool_call])
@@ -301,9 +289,7 @@ class TestAgentRenderEvents:
                 for part in output:
                     if isinstance(part, TextContentPart):
                         modified_parts.append(
-                            TextContentPart(
-                                text=f"{part.text} (render {render_count['count']})"
-                            )
+                            TextContentPart(text=f"{part.text} (render {render_count['count']})")
                         )
                     else:
                         modified_parts.append(part)

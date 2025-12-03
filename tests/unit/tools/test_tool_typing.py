@@ -6,7 +6,6 @@ from good_agent import Tool, ToolResponse, tool
 from good_agent.tools import BoundTool
 from pydantic import BaseModel, Field
 
-
 ToolLike = Tool[Any, Any] | BoundTool[Any, Any, Any]
 
 
@@ -101,9 +100,7 @@ class TestToolWithParameters:
             return a + b
 
         custom_adder = as_tool(
-            tool(name="custom_adder", description="Adds numbers together")(
-                cast(Any, add)
-            )
+            tool(name="custom_adder", description="Adds numbers together")(cast(Any, add))
         )
 
         assert custom_adder.name == "custom_adder"
@@ -229,9 +226,7 @@ class TestComplexTypes:
         """Test tool with Dict and List types."""
 
         @tool
-        def process_collections(
-            items: list[str], mapping: dict[str, int]
-        ) -> dict[str, Any]:
+        def process_collections(items: list[str], mapping: dict[str, int]) -> dict[str, Any]:
             """Process collections."""
             return {
                 "item_count": len(items),

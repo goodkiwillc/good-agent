@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from good_agent.core.event_router import ApplyInterrupt, EventContext, EventRouter
 
 

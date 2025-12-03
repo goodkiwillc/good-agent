@@ -1,9 +1,8 @@
 import importlib
 import types
 
-import pytest
-
 import good_agent.model as model_module
+import pytest
 
 
 def test_lazy_import_loads_and_caches_attribute(monkeypatch):
@@ -21,7 +20,7 @@ def test_lazy_import_loads_and_caches_attribute(monkeypatch):
     try:
         assert model_module.DummyAttr == "loaded"
         # Attribute should now be cached on the module
-        assert getattr(model_module, "DummyAttr") == "loaded"
+        assert model_module.DummyAttr == "loaded"
     finally:
         if hasattr(model_module, "DummyAttr"):
             delattr(model_module, "DummyAttr")

@@ -36,17 +36,13 @@ class TestContentParts:
 
     def test_template_content_part_without_context(self):
         """Test template content part without context."""
-        part = TemplateContentPart(
-            template="Hello {{ name }}", context_requirements=["name"]
-        )
+        part = TemplateContentPart(template="Hello {{ name }}", context_requirements=["name"])
 
         # Without context, template renders with empty variables
         assert part.render(RenderMode.DISPLAY) == "Hello "
 
         # Create a new part for testing with context (avoid cache)
-        part2 = TemplateContentPart(
-            template="Hello {{ name }}", context_requirements=["name"]
-        )
+        part2 = TemplateContentPart(template="Hello {{ name }}", context_requirements=["name"])
 
         # With context
         rendered = part2.render(RenderMode.DISPLAY, context={"name": "World"})
@@ -86,14 +82,10 @@ class TestContentParts:
 
     def test_image_content_part_with_url(self):
         """Test image content part with URL."""
-        part = ImageContentPart(
-            image_url="https://example.com/image.jpg", detail="high"
-        )
+        part = ImageContentPart(image_url="https://example.com/image.jpg", detail="high")
 
         # Display rendering
-        assert (
-            part.render(RenderMode.DISPLAY) == "[Image: https://example.com/image.jpg]"
-        )
+        assert part.render(RenderMode.DISPLAY) == "[Image: https://example.com/image.jpg]"
 
         # LLM format
         llm_format = part.to_llm_format()
@@ -243,9 +235,7 @@ class TestMessageRendering:
 
         # Create a wrapper message that references the first
         message2 = SystemMessage(
-            content_parts=[
-                TextContentPart(text="System says: " + message1.__display__())
-            ]
+            content_parts=[TextContentPart(text="System says: " + message1.__display__())]
         )
 
         result = message2.render(RenderMode.DISPLAY)

@@ -76,9 +76,7 @@ async def test_component_tools_registration():
     """Test that component tools are properly registered with the agent."""
     # Create agent with TaskManager component
     task_manager = TaskManager()
-    async with Agent(
-        "You are a task management assistant", extensions=[task_manager]
-    ) as agent:
+    async with Agent("You are a task management assistant", extensions=[task_manager]) as agent:
         # Tools should now be registered immediately after initialize() completes
 
         # Check that tools were registered
@@ -108,6 +106,7 @@ async def test_component_tools_execution():
         "You are a task management assistant. Use the tools to manage tasks.",
         extensions=[task_manager],
     ) as agent:
+
         @dataclass
         class MockFunction:
             name: str
@@ -157,9 +156,7 @@ async def test_component_tools_execution():
         assert len(task_manager.lists) > 0
 
         # The list should have the requested name
-        created_lists = [
-            lst for lst in task_manager.lists.values() if lst.name == "Work Tasks"
-        ]
+        created_lists = [lst for lst in task_manager.lists.values() if lst.name == "Work Tasks"]
         assert len(created_lists) > 0
 
 

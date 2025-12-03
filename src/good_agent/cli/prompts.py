@@ -70,9 +70,7 @@ def _load_config() -> dict:
 @app.command()
 def init(
     path: Path = typer.Argument(Path("."), help="Project directory"),
-    force: bool = typer.Option(
-        False, "--force", "-f", help="Overwrite existing config"
-    ),
+    force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing config"),
 ):
     """Initialize a new prompts directory structure."""
     print("Initializing prompts directory")
@@ -155,16 +153,10 @@ You are a helpful AI assistant.
 @app.command()
 def new(
     name: str = typer.Argument(..., help="Template name (e.g., 'system/analyst')"),
-    description: str = typer.Option(
-        "", "--description", "-d", help="Template description"
-    ),
+    description: str = typer.Option("", "--description", "-d", help="Template description"),
     author: str = typer.Option("", "--author", "-a", help="Template author"),
-    tags: str | None = typer.Option(
-        None, "--tags", "-t", help="Comma-separated list of tags"
-    ),
-    extends: str | None = typer.Option(
-        None, "--extends", "-e", help="Parent template to extend"
-    ),
+    tags: str | None = typer.Option(None, "--tags", "-t", help="Comma-separated list of tags"),
+    extends: str | None = typer.Option(None, "--extends", "-e", help="Parent template to extend"),
 ):
     """Create a new prompt template."""
 
@@ -211,7 +203,9 @@ def new(
         content += "# Your template content here\n"
         content += "{% endblock %}\n"
     else:
-        content += "# Your template content here\n\n{% if variable %}\n{{ variable }}\n{% endif %}\n"
+        content += (
+            "# Your template content here\n\n{% if variable %}\n{{ variable }}\n{% endif %}\n"
+        )
 
     template_path.write_text(content)
 
@@ -232,12 +226,8 @@ def new(
 
 @app.command(name="list")
 def list_templates(
-    tags: str | None = typer.Option(
-        None, "--tags", "-t", help="Filter by tags (comma-separated)"
-    ),
-    format: str = typer.Option(
-        "table", "--format", "-f", help="Output format: table, tree, json"
-    ),
+    tags: str | None = typer.Option(None, "--tags", "-t", help="Filter by tags (comma-separated)"),
+    format: str = typer.Option("table", "--format", "-f", help="Output format: table, tree, json"),
 ):
     """List all prompt templates."""
 
@@ -319,9 +309,7 @@ def scan(
     auto_version: bool = typer.Option(
         True, "--auto-version/--no-auto-version", help="Auto-increment versions"
     ),
-    verbose: bool = typer.Option(
-        False, "--verbose", "-v", help="Show detailed changes"
-    ),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed changes"),
 ):
     """Scan templates for changes and update index."""
 
@@ -380,9 +368,7 @@ def scan(
 @app.command()
 def validate(
     name: str | None = typer.Argument(None, help="Template name to validate (or all)"),
-    fix: bool = typer.Option(
-        False, "--fix", "-f", help="Auto-fix issues where possible"
-    ),
+    fix: bool = typer.Option(False, "--fix", "-f", help="Auto-fix issues where possible"),
 ):
     """Validate template syntax and structure."""
 
@@ -415,9 +401,7 @@ def validate(
             issues_found = True
             rprint(f"\n[red]❌ {template_path.relative_to(prompts_dir)}[/red]")
             for error in errors:
-                line_info = (
-                    f"line {error.get('line', '?')}" if error.get("line") else ""
-                )
+                line_info = f"line {error.get('line', '?')}" if error.get("line") else ""
                 rprint(f"  • {error['type']}: {error['message']} {line_info}")
         else:
             rprint(f"[green]✓[/green] {template_path.relative_to(prompts_dir)}")
@@ -435,9 +419,7 @@ def validate(
 @app.command()
 def render(
     name: str = typer.Argument(..., help="Template name to render"),
-    context: str | None = typer.Option(
-        None, "--context", "-c", help="Context as JSON string"
-    ),
+    context: str | None = typer.Option(None, "--context", "-c", help="Context as JSON string"),
     context_file: Path | None = typer.Option(
         None, "--context-file", help="Path to JSON file with context"
     ),
@@ -493,9 +475,7 @@ def render(
 @app.command()
 def snapshot(
     name: str = typer.Argument(..., help="Template name to snapshot"),
-    reason: str = typer.Option(
-        "Manual snapshot", "--reason", "-r", help="Reason for snapshot"
-    ),
+    reason: str = typer.Option("Manual snapshot", "--reason", "-r", help="Reason for snapshot"),
 ):
     """Create a version snapshot of a template."""
 
@@ -507,17 +487,13 @@ def snapshot(
     config = _load_config()
     prompts_dir = project_root / config.get("prompts_dir", "prompts")
 
-    version_manager = TemplateVersionManager(
-        prompts_dir, versions_dir=prompts_dir / ".snapshots"
-    )
+    version_manager = TemplateVersionManager(prompts_dir, versions_dir=prompts_dir / ".snapshots")
     version_hash = version_manager.create_snapshot(name, reason)
 
     if version_hash:
         try:
             flat_name = name.replace("/", "-")
-            flat_path = (
-                prompts_dir / ".snapshots"
-            ) / f"{flat_name}@{version_hash}.prompt"
+            flat_path = (prompts_dir / ".snapshots") / f"{flat_name}@{version_hash}.prompt"
             nested_path = prompts_dir / ".snapshots" / name / f"{version_hash}.prompt"
             if nested_path.exists():
                 flat_path.parent.mkdir(parents=True, exist_ok=True)
@@ -558,9 +534,7 @@ def history(
         rprint(f"[red]Template '{name}' not found.[/red]")
         raise typer.Exit(1)
 
-    version_manager = TemplateVersionManager(
-        prompts_dir, versions_dir=prompts_dir / ".snapshots"
-    )
+    version_manager = TemplateVersionManager(prompts_dir, versions_dir=prompts_dir / ".snapshots")
     snapshots = version_manager.list_snapshots(name)
 
     def _format_timestamp(value: object) -> str:
@@ -612,9 +586,7 @@ def history(
 def restore(
     name: str = typer.Argument(..., help="Template name"),
     version: str = typer.Argument(..., help="Version hash to restore"),
-    force: bool = typer.Option(
-        True, "--force", "-f", help="Force restore without confirmation"
-    ),
+    force: bool = typer.Option(True, "--force", "-f", help="Force restore without confirmation"),
 ):
     """Restore a template to a previous version."""
 
@@ -626,9 +598,7 @@ def restore(
     config = _load_config()
     prompts_dir = project_root / config.get("prompts_dir", "prompts")
 
-    version_manager = TemplateVersionManager(
-        prompts_dir, versions_dir=prompts_dir / ".snapshots"
-    )
+    version_manager = TemplateVersionManager(prompts_dir, versions_dir=prompts_dir / ".snapshots")
     success = version_manager.restore_snapshot(name, version)
 
     if success:

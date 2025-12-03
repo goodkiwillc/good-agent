@@ -70,9 +70,7 @@ class TestMarkdownCitationBlocksFix:
         import re
 
         problematic = re.compile(r"\[!CITE_\d+!\]:\s*\[!CITE_\d+!\]")
-        assert not problematic.search(display), (
-            f"Found problematic pattern in: {display}"
-        )
+        assert not problematic.search(display), f"Found problematic pattern in: {display}"
 
         # Reference blocks should be completely removed
         assert "[1]: " not in display

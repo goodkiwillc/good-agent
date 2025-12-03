@@ -37,9 +37,7 @@ class CitationPatterns:
 
     # XML patterns - group 1 captures the value
     XML_IDX_ATTR = re.compile(r'idx="(\d+)"')
-    XML_URL_ATTR = re.compile(
-        r'(?:url|href)="([^"]+)"'
-    )  # Matches both url and href attributes
+    XML_URL_ATTR = re.compile(r'(?:url|href)="([^"]+)"')  # Matches both url and href attributes
 
     # Block patterns for markdown reference lists
     # Supports both plain URLs and URLs wrapped in angle brackets <...>
@@ -47,9 +45,7 @@ class CitationPatterns:
     MARKDOWN_REF_BLOCK = re.compile(r"^\s*\[(\d+)\]:\s*(?:<(.+?)>|(.+))$", re.MULTILINE)
 
     # Pattern for already-processed reference blocks that got converted to [!CITE_X!]: [!CITE_Y!] format
-    PROCESSED_REF_BLOCK = re.compile(
-        r"^\s*\[!CITE_\d+!\]:\s*\[!CITE_\d+!\]\s*$", re.MULTILINE
-    )
+    PROCESSED_REF_BLOCK = re.compile(r"^\s*\[!CITE_\d+!\]:\s*\[!CITE_\d+!\]\s*$", re.MULTILINE)
 
     @classmethod
     def detect_format(cls, text: str) -> CitationFormat:
@@ -85,9 +81,7 @@ class CitationExtractor:
     """Extract citations from text content."""
 
     @staticmethod
-    def extract_citations(
-        text: str, format: CitationFormat | None = None
-    ) -> list[CitationMatch]:
+    def extract_citations(text: str, format: CitationFormat | None = None) -> list[CitationMatch]:
         """
         Extract all citations from text.
 
@@ -406,9 +400,7 @@ class CitationTransformer:
 
             # Replace URL with local citation (1-based)
             citation_ref = f"[!CITE_{index + 1}!]"
-            result_text = (
-                result_text[: match.start()] + citation_ref + result_text[match.end() :]
-            )
+            result_text = result_text[: match.start()] + citation_ref + result_text[match.end() :]
 
         # 2. Handle any existing citation references (normalize to local indices)
         format = CitationPatterns.detect_format(result_text)

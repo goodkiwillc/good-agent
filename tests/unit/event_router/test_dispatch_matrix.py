@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any
 
 import pytest
-
 from good_agent.core.event_router import EventContext, EventRouter
 
 

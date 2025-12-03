@@ -15,7 +15,9 @@ from good_agent.extensions.search.models import (
 
 # Try to import providers
 try:
-    from good_agent_valueserp.search_provider import WebSearchProvider  # type: ignore[import-not-found]
+    from good_agent_valueserp.search_provider import (
+        WebSearchProvider,  # type: ignore[import-not-found]
+    )
 
     print("✓ WebSearchProvider imported successfully")
 except ImportError as e:
@@ -23,7 +25,9 @@ except ImportError as e:
     WebSearchProvider = None
 
 try:
-    from good_agent_twitter.search_provider import TwitterSearchProvider  # type: ignore[import-not-found]
+    from good_agent_twitter.search_provider import (
+        TwitterSearchProvider,  # type: ignore[import-not-found]
+    )
 
     print("✓ TwitterSearchProvider imported successfully")
 except ImportError as e:
@@ -125,9 +129,7 @@ async def test_web_search():
     query = SearchQuery(
         text="artificial intelligence news",
         limit=5,
-        since=datetime.combine(
-            date.today() - timedelta(days=7), datetime.min.time()
-        ),  # last week
+        since=datetime.combine(date.today() - timedelta(days=7), datetime.min.time()),  # last week
         until=datetime.combine(date.today(), datetime.max.time()),
     )
 
@@ -187,9 +189,7 @@ async def test_twitter_search():
     query = SearchQuery(
         text="machine learning",
         limit=5,
-        since=datetime.combine(
-            date.today() - timedelta(days=1), datetime.min.time()
-        ),  # yesterday
+        since=datetime.combine(date.today() - timedelta(days=1), datetime.min.time()),  # yesterday
         until=datetime.combine(date.today(), datetime.max.time()),
     )
 
@@ -198,8 +198,7 @@ async def test_twitter_search():
         (
             c
             for c in provider.capabilities
-            if c.operation == OperationType.SEARCH
-            and c.domain == DataDomain.SOCIAL_MEDIA
+            if c.operation == OperationType.SEARCH and c.domain == DataDomain.SOCIAL_MEDIA
         ),
         None,
     )
@@ -310,9 +309,7 @@ async def test_date_range_functionality():
 
         # Mock all provider search methods
         for provider in search.registry._providers.values():
-            with patch.object(
-                provider, "search", new_callable=AsyncMock
-            ) as mock_search:
+            with patch.object(provider, "search", new_callable=AsyncMock) as mock_search:
                 mock_search.return_value = []
 
         response = await agent.invoke(
@@ -326,9 +323,7 @@ async def test_date_range_functionality():
         print(f"Response type: {type(response)}")
 
         # Test relative date functionality
-        response = await agent.invoke(
-            "search", query="recent news", last_week=True
-        )
+        response = await agent.invoke("search", query="recent news", last_week=True)
 
         print("✓ Relative date search (last_week) completed successfully")
 
@@ -354,9 +349,7 @@ async def main():
     # Test individual providers (commented out to avoid API calls)
     print("\n=== Individual Provider Tests (Commented Out) ===")
     print("Individual provider tests are commented out to avoid API calls.")
-    print(
-        "Uncomment test_web_search() and test_twitter_search() to test with real APIs."
-    )
+    print("Uncomment test_web_search() and test_twitter_search() to test with real APIs.")
     # await test_web_search()
     # await test_twitter_search()
 

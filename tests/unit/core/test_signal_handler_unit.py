@@ -3,9 +3,8 @@ import signal
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-import pytest
-
 import good_agent.core.signal_handler as sh
+import pytest
 from good_agent.core.signal_handler import SignalHandler, _RouterRef
 
 
@@ -99,9 +98,7 @@ def test_handle_signal_triggers_shutdown(monkeypatch):
     assert handler.is_shutdown_initiated() is True
 
     # Restore original KeyboardInterrupt for subsequent assertions
-    monkeypatch.setitem(
-        builtins.__dict__, "KeyboardInterrupt", original_keyboard_interrupt
-    )
+    monkeypatch.setitem(builtins.__dict__, "KeyboardInterrupt", original_keyboard_interrupt)
 
     exit_mock = MagicMock()
     exit_mock.side_effect = SystemExit(1)

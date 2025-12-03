@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import contextvars
 from dataclasses import dataclass
-from typing import Generic
+from typing import Generic, TypeAlias, TypeVar
 
 from good_agent.core.event_router.protocols import (
     ApplyInterrupt,
@@ -16,8 +16,8 @@ from good_agent.core.event_router.protocols import (
     T_Return,
 )
 
-
-type EventResult[T_Return] = T_Return | BaseException
+T_Result = TypeVar("T_Result")
+EventResult: TypeAlias = "T_Result | BaseException"
 
 
 @dataclass(slots=True)

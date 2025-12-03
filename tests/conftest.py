@@ -7,9 +7,8 @@ from pathlib import Path
 import pytest
 import pytest_asyncio
 import vcr  # type: ignore[import-untyped]
-from pydantic import PydanticDeprecatedSince20, PydanticDeprecatedSince211
-
 from good_agent.core.event_router import current_test_nodeid
+from pydantic import PydanticDeprecatedSince20, PydanticDeprecatedSince211
 
 # ---------------------------------------------------------------------------
 # Coverage policy helpers
@@ -89,7 +88,7 @@ try:
         async def noop_worker_loop(self):
             pass
 
-        setattr(LoggingWorker, "_worker_loop", noop_worker_loop)
+        LoggingWorker._worker_loop = noop_worker_loop
     except ImportError:
         pass
 
@@ -152,9 +151,7 @@ async def _patched_to_serialized_response(resp, aread):
                     except zlib.error:
                         # Try without header
                         content = zlib.decompress(content, -zlib.MAX_WBITS)
-                        logger.debug(
-                            "Manually decompressed raw deflate content for VCR"
-                        )
+                        logger.debug("Manually decompressed raw deflate content for VCR")
             except Exception as e:
                 logger.debug(f"Could not decompress content: {e}, using as-is")
 
@@ -283,8 +280,7 @@ def _temporary_llm_keys(record_mode: str, cassette_path: Path):
     if not any(os.environ.get(env) for env in LLM_API_ENV_PLACEHOLDERS):
         joined = ", ".join(LLM_API_ENV_PLACEHOLDERS)
         raise RuntimeError(
-            f"VCR_RECORD_MODE={record_mode} requires a real LLM API key."
-            f" Export one of: {joined}."
+            f"VCR_RECORD_MODE={record_mode} requires a real LLM API key. Export one of: {joined}."
         )
 
     yield

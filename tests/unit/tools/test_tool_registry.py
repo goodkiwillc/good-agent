@@ -97,9 +97,7 @@ class TestToolRegistry:
     async def registry(self):
         """Create a fresh registry for each test"""
         reg = ToolRegistry()
-        await reg.initialize(
-            load_entry_points=False
-        )  # Don't load entry points in tests
+        await reg.initialize(load_entry_points=False)  # Don't load entry points in tests
         return reg
 
     @pytest.mark.asyncio
@@ -443,9 +441,7 @@ class TestRegisterToolDecorator:
 
     @patch("good_agent.tools.registry.get_tool_registry_sync")
     @patch("good_agent.tools.tools.Tool")  # Patch where Tool is imported in registry
-    def test_register_tool_decorator_auto_register(
-        self, mock_tool_class, mock_get_registry
-    ):
+    def test_register_tool_decorator_auto_register(self, mock_tool_class, mock_get_registry):
         """Test decorator with auto registration"""
         mock_registry = MagicMock()
         mock_get_registry.return_value = mock_registry
@@ -475,9 +471,7 @@ class TestPatternMatching:
         await registry.initialize(load_entry_points=False)
 
         # Weather tools
-        await registry.register(
-            "get_weather", MockTool("get_weather"), tags=["weather", "api"]
-        )
+        await registry.register("get_weather", MockTool("get_weather"), tags=["weather", "api"])
         await registry.register(
             "weather_forecast",
             MockTool("weather_forecast"),
@@ -486,17 +480,11 @@ class TestPatternMatching:
 
         # API tools
         await registry.register("http_get", MockTool("http_get"), tags=["api", "http"])
-        await registry.register(
-            "rest_call", MockTool("rest_call"), tags=["api", "rest"]
-        )
+        await registry.register("rest_call", MockTool("rest_call"), tags=["api", "rest"])
 
         # Utility tools
-        await registry.register(
-            "string_utils", MockTool("string_utils"), tags=["util", "string"]
-        )
-        await registry.register(
-            "math_calc", MockTool("math_calc"), tags=["util", "math"]
-        )
+        await registry.register("string_utils", MockTool("string_utils"), tags=["util", "string"])
+        await registry.register("math_calc", MockTool("math_calc"), tags=["util", "math"])
 
         # Multi-tagged tool
         await registry.register(

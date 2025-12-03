@@ -119,9 +119,7 @@ class SearchResult(GoodBase):
     def to_citation(self) -> dict:
         """Convert to citation format for CitationManager."""
         title = (
-            f"{self.author_name}: {self.content[:100]}"
-            if self.author_name
-            else self.content[:100]
+            f"{self.author_name}: {self.content[:100]}" if self.author_name else self.content[:100]
         )
         return {
             "url": self.url,
@@ -196,12 +194,8 @@ class ProviderCapability:
     geo_restricted: list[str] | None = None  # Country codes
 
     # Additional metadata
-    unique_features: list[str] = field(
-        default_factory=list
-    )  # Platform-specific features
-    supported_filters: list[str] = field(
-        default_factory=list
-    )  # Available filter options
+    unique_features: list[str] = field(default_factory=list)  # Platform-specific features
+    supported_filters: list[str] = field(default_factory=list)  # Available filter options
 
 
 @dataclass

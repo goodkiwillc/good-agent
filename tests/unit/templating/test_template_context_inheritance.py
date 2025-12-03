@@ -3,8 +3,8 @@ from datetime import datetime
 
 import pytest
 from good_agent import Agent, UserMessage
-from good_agent.extensions.template_manager import Template
 from good_agent.content import TemplateContentPart
+from good_agent.extensions.template_manager import Template
 from good_agent.messages import RenderMode
 
 
@@ -394,9 +394,7 @@ async def test_system_prompt_template_with_citation_manager():
 
     # Create CitationManager and agent with it as extension
     citation_manager = CitationManager()
-    agent = Agent(
-        system_prompt, context={"today": today}, extensions=[citation_manager]
-    )
+    agent = Agent(system_prompt, context={"today": today}, extensions=[citation_manager])
     await agent.initialize()
 
     # Check that the system message exists

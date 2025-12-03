@@ -1,6 +1,5 @@
 import pytest
 import pytest_asyncio
-
 from good_agent import Agent, tool
 from good_agent.tools import get_tool_registry
 
@@ -39,18 +38,10 @@ async def setup_test_tools():
         return a * b
 
     # Register with tags
-    await registry.register(
-        "get_current_weather", get_current_weather, tags=["weather", "api"]
-    )
-    await registry.register(
-        "get_weather_forecast", get_weather_forecast, tags=["weather", "api"]
-    )
-    await registry.register(
-        "calculate_sum", calculate_sum, tags=["math", "calculation"]
-    )
-    await registry.register(
-        "calculate_product", calculate_product, tags=["math", "calculation"]
-    )
+    await registry.register("get_current_weather", get_current_weather, tags=["weather", "api"])
+    await registry.register("get_weather_forecast", get_weather_forecast, tags=["weather", "api"])
+    await registry.register("calculate_sum", calculate_sum, tags=["math", "calculation"])
+    await registry.register("calculate_product", calculate_product, tags=["math", "calculation"])
 
     return registry
 
@@ -78,9 +69,7 @@ class TestToolPatternMatching:
     async def test_multiple_patterns(self, setup_test_tools):
         """Test using multiple patterns"""
         # Create agent with multiple patterns
-        agent = Agent(
-            "You are a multi-purpose assistant", tools=["weather:*", "calculate_sum"]
-        )
+        agent = Agent("You are a multi-purpose assistant", tools=["weather:*", "calculate_sum"])
 
         # Wait for agent to be ready (tools will be loaded)
         await agent.initialize()
@@ -96,9 +85,7 @@ class TestToolPatternMatching:
     async def test_specific_tag_tool_pattern(self, setup_test_tools):
         """Test selecting specific tool with tag using tag:tool_name pattern"""
         # Create agent with specific tag:tool pattern
-        agent = Agent(
-            "You are a weather assistant", tools=["weather:get_current_weather"]
-        )
+        agent = Agent("You are a weather assistant", tools=["weather:get_current_weather"])
 
         # Wait for agent to be ready (tools will be loaded)
         await agent.initialize()
@@ -187,9 +174,7 @@ class TestToolPatternMatching:
         await agent.initialize()
 
         # Execute a tool
-        response = await agent.invoke(
-            "get_current_weather", location="New York"
-        )
+        response = await agent.invoke("get_current_weather", location="New York")
 
         # Check execution worked
         assert response.success

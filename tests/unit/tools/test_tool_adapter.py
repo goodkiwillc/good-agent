@@ -3,7 +3,6 @@ from typing import Any, cast
 from unittest.mock import MagicMock
 
 import pytest
-
 from good_agent import Agent, AgentComponent, tool
 from good_agent.core.components import (
     AdapterMetadata,
@@ -58,9 +57,7 @@ class SimpleAdapter(ToolAdapter):
         return "url" in tool.name.lower()
 
     def analyze_transformation(self, tool, signature):
-        return AdapterMetadata(
-            modified_params=set(), added_params={"prefix"}, removed_params=set()
-        )
+        return AdapterMetadata(modified_params=set(), added_params={"prefix"}, removed_params=set())
 
     def adapt_signature(self, tool, signature, agent):
         self.adapt_count += 1

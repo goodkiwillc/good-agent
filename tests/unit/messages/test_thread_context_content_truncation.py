@@ -70,12 +70,8 @@ class TestBranchContentTruncation:
 
             # Add new messages with condensed context
             # The LLM would see the condensed version, saving tokens
-            ctx.append(
-                "Based on the condensed context, tell me about Flask specifically"
-            )
-            ctx.append(
-                "Flask is a lightweight Python web framework...", role="assistant"
-            )
+            ctx.append("Based on the condensed context, tell me about Flask specifically")
+            ctx.append("Flask is a lightweight Python web framework...", role="assistant")
 
             # Context has condensed version + new messages
             assert len(ctx.messages) == 6  # system + user + condensed + user + 2 new
@@ -120,9 +116,7 @@ class TestBranchContentTruncation:
         agent.append("Search for machine learning basics")
 
         # Manually add tool response (simulating what execute would do)
-        tool_response_1 = await agent.invoke(
-            "search_web", query="machine learning basics"
-        )
+        tool_response_1 = await agent.invoke("search_web", query="machine learning basics")
         agent.append(str(tool_response_1), role="assistant")
 
         agent.append("Now search for neural networks")
@@ -239,9 +233,7 @@ class TestBranchContentTruncation:
 
             # Work with ultra-condensed version in fork
             fork.append("Based on this timeline, what's next?")
-            fork.append(
-                "• Next: Quantum AI, neuromorphic computing, AGI", role="assistant"
-            )
+            fork.append("• Next: Quantum AI, neuromorphic computing, AGI", role="assistant")
 
             # Fork has condensed conversation
             sum(len(str(msg)) for msg in fork.messages)
@@ -266,9 +258,7 @@ class TestBranchContentTruncation:
 
         # Original verbose message
         agent.append("Explain quantum computing")
-        agent.append(
-            "Quantum computing is... [10,000 character explanation]", role="assistant"
-        )
+        agent.append("Quantum computing is... [10,000 character explanation]", role="assistant")
 
         original_response = str(agent.messages[1])
 
@@ -290,9 +280,7 @@ class TestBranchContentTruncation:
             async with ctx1.branch() as ctx2:
                 # Aggressively condense
                 ctx2.messages[1] = AssistantMessage(
-                    content_parts=[
-                        TextContentPart(text="QC: qubits enable exponential speedup")
-                    ]
+                    content_parts=[TextContentPart(text="QC: qubits enable exponential speedup")]
                 )
 
                 len(str(ctx2.messages[1]))

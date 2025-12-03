@@ -42,16 +42,13 @@ class ModelAllFields(BaseModelLike, ABC):
         for key, field_info in cls.model_fields.items():  # type: ignore[attr-defined]
             type_info = TypeInfo(
                 field_info.annotation,
-                (not field_info.is_required)
-                and field_info.default is PydanticUndefined,
+                (not field_info.is_required) and field_info.default is PydanticUndefined,
                 metadata=field_info.metadata,
             )
             model_fields[key] = type_info
         computed_fields = {}
         for key, field_info in cls.model_computed_fields.items():
-            type_info = TypeInfo.annotation_extract_primary_type(
-                annotation=field_info.return_type
-            )
+            type_info = TypeInfo.annotation_extract_primary_type(annotation=field_info.return_type)
             computed_fields[key] = type_info
 
         return {**model_fields, **computed_fields}
@@ -75,9 +72,7 @@ class Convertible(BaseModel, ABC):
         exclude = exclude or set()
 
         if cls.model_config.get("extra", "") != "allow":
-            exclude |= set(type(self).model_fields.keys()) - set(
-                cls.model_fields.keys()
-            )
+            exclude |= set(type(self).model_fields.keys()) - set(cls.model_fields.keys())
         _data = (
             self.model_dump(
                 exclude=exclude,

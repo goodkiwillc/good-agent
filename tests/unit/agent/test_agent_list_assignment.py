@@ -1,6 +1,6 @@
-import pytest
 from typing import Any, cast
 
+import pytest
 from good_agent import (
     Agent,
     AssistantMessage,
@@ -105,9 +105,7 @@ async def test_agent_setitem_type_validation():
 
         # Try to assign a list with non-Message objects
         with pytest.raises(TypeError, match="All values must be Message objects"):
-            agent[1:2] = cast(
-                list[Any], ["Not a message", UserMessage(content="Valid")]
-            )
+            agent[1:2] = cast(list[Any], ["Not a message", UserMessage(content="Valid")])
 
 
 @pytest.mark.asyncio
@@ -134,18 +132,14 @@ async def test_agent_setitem_value_count_mismatch():
         agent.append("Message 3")
 
         # Try to assign 2 messages to 3 indices
-        with pytest.raises(
-            ValueError, match="Number of values .* must match number of indices"
-        ):
+        with pytest.raises(ValueError, match="Number of values .* must match number of indices"):
             agent[1:4] = [
                 UserMessage(content="Only one"),
                 UserMessage(content="Only two"),
             ]
 
         # Try to assign 3 messages to 2 indices
-        with pytest.raises(
-            ValueError, match="Number of values .* must match number of indices"
-        ):
+        with pytest.raises(ValueError, match="Number of values .* must match number of indices"):
             agent[[1, 2]] = [
                 UserMessage(content="One"),
                 UserMessage(content="Two"),
@@ -190,9 +184,7 @@ async def test_agent_setitem_with_assistant_and_tool_messages():
         agent.append("User message")
         agent.append(AssistantMessage(content="Assistant response"))
         agent.append(
-            ToolMessage(
-                content="Tool result", tool_call_id="call_123", tool_name="test_tool"
-            )
+            ToolMessage(content="Tool result", tool_call_id="call_123", tool_name="test_tool")
         )
 
         # Replace the assistant message

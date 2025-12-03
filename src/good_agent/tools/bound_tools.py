@@ -66,9 +66,7 @@ class BoundTool(Generic[ComponentSelf, P, FuncResp]):
         self.unbound_method = unbound_method
         self.metadata = metadata
         self.config = config
-        self._bound_instances: dict[
-            int, Tool[P, FuncResp]
-        ] = {}  # Cache by component instance id
+        self._bound_instances: dict[int, Tool[P, FuncResp]] = {}  # Cache by component instance id
 
         # Store original signature for reference
         self._original_sig = inspect.signature(unbound_method)
@@ -112,9 +110,7 @@ class BoundTool(Generic[ComponentSelf, P, FuncResp]):
     ) -> BoundTool[ComponentSelf, P, FuncResp]: ...
 
     @overload
-    def __get__(
-        self, instance: ComponentSelf, owner: type[Any]
-    ) -> Tool[P, FuncResp]: ...
+    def __get__(self, instance: ComponentSelf, owner: type[Any]) -> Tool[P, FuncResp]: ...
 
     def __get__(
         self,
@@ -174,9 +170,7 @@ class BoundTool(Generic[ComponentSelf, P, FuncResp]):
 
     def __repr__(self) -> str:
         """String representation of the BoundTool."""
-        return (
-            f"<BoundTool '{self.metadata.name}' of {self.unbound_method.__qualname__}>"
-        )
+        return f"<BoundTool '{self.metadata.name}' of {self.unbound_method.__qualname__}>"
 
 
 def create_component_tool_decorator():

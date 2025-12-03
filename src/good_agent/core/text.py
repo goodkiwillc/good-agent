@@ -83,9 +83,7 @@ class StringFormatter:
             return ""
         return textwrap.dedent(s).strip()
 
-    def remove_all_indents(
-        self, text: str, width: bool = False, strip: bool = True
-    ) -> str:
+    def remove_all_indents(self, text: str, width: bool = False, strip: bool = True) -> str:
         return self.undent(text, width, strip)
 
     def get_indentation(self, line: str) -> str:
@@ -119,8 +117,7 @@ class StringFormatter:
                 num_newlines_before_paragraphs += 1
             elif (
                 paragraph_lines  # new paragraph with different indentation
-                and self.get_indentation(line)
-                != self.get_indentation(paragraph_lines[-1])
+                and self.get_indentation(line) != self.get_indentation(paragraph_lines[-1])
             ):
                 paragraph = os.linesep.join(paragraph_lines)
                 paragraphs.append((num_newlines_before_paragraphs, paragraph))
@@ -141,8 +138,7 @@ class StringFormatter:
 
     def unwrap(self, text: str) -> str:
         toks = [
-            line.rstrip() if i == 0 else line.strip()
-            for i, line in enumerate(text.splitlines())
+            line.rstrip() if i == 0 else line.strip() for i, line in enumerate(text.splitlines())
         ]
         unwrapped = " ".join(toks).rstrip()
         return unwrapped
@@ -171,15 +167,12 @@ class StringFormatter:
         text = textwrap.dedent(text)
 
         if strip:
-            text = self.lstring_empty_lines(
-                text
-            )  # preserve indentation; only strip empty lines
+            text = self.lstring_empty_lines(text)  # preserve indentation; only strip empty lines
             text = text.rstrip()
 
         if width is False:  # unwrap
             paragraphs = [
-                (newlines, self.unwrap(p))
-                for newlines, p in self.split_into_paragraphs(text)
+                (newlines, self.unwrap(p)) for newlines, p in self.split_into_paragraphs(text)
             ]
             text = self.combine_paragraphs(paragraphs)
         elif width:
@@ -350,13 +343,9 @@ class StringFormatter:
             #     Version 2.0, January 2004
             #     http://www.apache.org/licenses/
             para_split = line_split.split(paragraph)
-            all_lines_short = all(
-                len(line.strip().split(" ")) < 5 for line in para_split
-            )
+            all_lines_short = all(len(line.strip().split(" ")) < 5 for line in para_split)
             contains_sentence_punctuation = any(
-                SENTENCE_PUNCT_RE.search(line.strip())
-                for line in para_split
-                if line.strip()
+                SENTENCE_PUNCT_RE.search(line.strip()) for line in para_split if line.strip()
             )
             # pytesseract converts some bullet points to standalone "e" characters
             if UNICODE_BULLETS_RE.match(paragraph.strip()) or E_BULLET_PATTERN.match(
@@ -495,9 +484,7 @@ class StringFormatter:
         s = s.translate(tbl)
         return s
 
-    def remove_sentence_punctuation(
-        self, s: str, exclude_punctuation: list | None
-    ) -> str:
+    def remove_sentence_punctuation(self, s: str, exclude_punctuation: list | None) -> str:
         tbl_new = tbl.copy()
         if exclude_punctuation:
             for punct in exclude_punctuation:
@@ -543,9 +530,7 @@ class StringFormatter:
         5 w=E2=80-99s -> 5 w’s
         """
         formatted_encoding = self.format_encoding_str(encoding)
-        return quopri.decodestring(text.encode(formatted_encoding)).decode(
-            formatted_encoding
-        )
+        return quopri.decodestring(text.encode(formatted_encoding)).decode(formatted_encoding)
 
     def clean_prefix(
         self, text: str, pattern: str, ignore_case: bool = False, strip: bool = True
@@ -605,15 +590,11 @@ class StringFormatter:
 
         cleaned_text = text.lower() if lowercase else text
         cleaned_text = (
-            self.clean_trailing_punctuation(cleaned_text)
-            if trailing_punctuation
-            else cleaned_text
+            self.clean_trailing_punctuation(cleaned_text) if trailing_punctuation else cleaned_text
         )
         cleaned_text = self.clean_dashes(cleaned_text) if dashes else cleaned_text
         cleaned_text = (
-            self.clean_extra_whitespace(cleaned_text)
-            if extra_whitespace
-            else cleaned_text
+            self.clean_extra_whitespace(cleaned_text) if extra_whitespace else cleaned_text
         )
         cleaned_text = self.clean_bullets(cleaned_text) if bullets else cleaned_text
         return cleaned_text.strip()
@@ -625,9 +606,7 @@ class StringFormatter:
         formatted_encoding = self.format_encoding_str(encoding)
         return text_bytes.decode(formatted_encoding)
 
-    def clean_extra_whitespace_with_index_run(
-        self, text: str
-    ) -> tuple[str, np.ndarray]:
+    def clean_extra_whitespace_with_index_run(self, text: str) -> tuple[str, np.ndarray]:
         """Cleans extra whitespace characters that appear between words.
         Calculate distance between characters of original text and cleaned text.
 
@@ -697,9 +676,7 @@ clean_postfix = string.clean_postfix
 clean = string.clean
 bytes_string_to_string = string.bytes_string_to_string
 clean_extra_whitespace_with_index_run = string.clean_extra_whitespace_with_index_run
-index_adjustment_after_clean_extra_whitespace = (
-    string.index_adjustment_after_clean_extra_whitespace
-)
+index_adjustment_after_clean_extra_whitespace = string.index_adjustment_after_clean_extra_whitespace
 
 
 # __all__ = ["string"]

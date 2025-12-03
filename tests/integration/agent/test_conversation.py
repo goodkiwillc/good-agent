@@ -41,25 +41,25 @@ class TestConversation:
         async with (
             (agent1 := Agent("You are agent 1", name="agent1")),
             (agent2 := Agent("You are agent 2", name="agent2")),
+            agent1 | agent2,
         ):
-            async with agent1 | agent2:
-                # Initially, both agents should have only system messages
-                assert len(agent1.messages) == 1  # system message
-                assert len(agent2.messages) == 1  # system message
+            # Initially, both agents should have only system messages
+            assert len(agent1.messages) == 1  # system message
+            assert len(agent2.messages) == 1  # system message
 
-                # Add assistant message to agent1
-                agent1.assistant.append("Hello from agent 1")
+            # Add assistant message to agent1
+            agent1.assistant.append("Hello from agent 1")
 
-                # Give event system time to process
-                await asyncio.sleep(0.01)
+            # Give event system time to process
+            await asyncio.sleep(0.01)
 
-                # Agent1 should have system + assistant message
-                assert len(agent1.messages) == 2
+            # Agent1 should have system + assistant message
+            assert len(agent1.messages) == 2
 
-                # Agent2 should have system + forwarded user message
-                assert len(agent2.messages) == 2
-                assert isinstance(agent2.messages[1], UserMessage)
-                assert agent2.messages[1].content == "Hello from agent 1"
+            # Agent2 should have system + forwarded user message
+            assert len(agent2.messages) == 2
+            assert isinstance(agent2.messages[1], UserMessage)
+            assert agent2.messages[1].content == "Hello from agent 1"
 
     @pytest.mark.asyncio
     async def test_bidirectional_forwarding(self):
@@ -67,29 +67,25 @@ class TestConversation:
         async with (
             (agent1 := Agent("You are agent 1", name="agent1")),
             (agent2 := Agent("You are agent 2", name="agent2")),
+            agent1 | agent2,
         ):
-            async with agent1 | agent2:
-                # Agent1 sends message
-                agent1.assistant.append("Message from agent 1")
-                await asyncio.sleep(0.01)
+            # Agent1 sends message
+            agent1.assistant.append("Message from agent 1")
+            await asyncio.sleep(0.01)
 
-                # Agent2 sends message
-                agent2.assistant.append("Message from agent 2")
-                await asyncio.sleep(0.01)
+            # Agent2 sends message
+            agent2.assistant.append("Message from agent 2")
+            await asyncio.sleep(0.01)
 
-                # Check agent1 received agent2's message
-                user_messages_in_agent1 = [
-                    m for m in agent1.messages if isinstance(m, UserMessage)
-                ]
-                assert len(user_messages_in_agent1) == 1
-                assert user_messages_in_agent1[0].content == "Message from agent 2"
+            # Check agent1 received agent2's message
+            user_messages_in_agent1 = [m for m in agent1.messages if isinstance(m, UserMessage)]
+            assert len(user_messages_in_agent1) == 1
+            assert user_messages_in_agent1[0].content == "Message from agent 2"
 
-                # Check agent2 received agent1's message
-                user_messages_in_agent2 = [
-                    m for m in agent2.messages if isinstance(m, UserMessage)
-                ]
-                assert len(user_messages_in_agent2) == 1
-                assert user_messages_in_agent2[0].content == "Message from agent 1"
+            # Check agent2 received agent1's message
+            user_messages_in_agent2 = [m for m in agent2.messages if isinstance(m, UserMessage)]
+            assert len(user_messages_in_agent2) == 1
+            assert user_messages_in_agent2[0].content == "Message from agent 1"
 
     @pytest.mark.asyncio
     async def test_multi_agent_forwarding(self):
@@ -98,28 +94,24 @@ class TestConversation:
             (agent1 := Agent("Agent 1", name="agent1")),
             (agent2 := Agent("Agent 2", name="agent2")),
             (agent3 := Agent("Agent 3", name="agent3")),
+            agent1 | agent2 | agent3,
         ):
-            async with agent1 | agent2 | agent3:
-                # Agent1 sends message
-                agent1.append(AssistantMessage(content="Hello from agent 1"))
-                await asyncio.sleep(0.01)
+            # Agent1 sends message
+            agent1.append(AssistantMessage(content="Hello from agent 1"))
+            await asyncio.sleep(0.01)
 
-                # Both agent2 and agent3 should receive the message
-                user_messages_agent2 = [
-                    m for m in agent2.messages if isinstance(m, UserMessage)
-                ]
-                user_messages_agent3 = [
-                    m for m in agent3.messages if isinstance(m, UserMessage)
-                ]
+            # Both agent2 and agent3 should receive the message
+            user_messages_agent2 = [m for m in agent2.messages if isinstance(m, UserMessage)]
+            user_messages_agent3 = [m for m in agent3.messages if isinstance(m, UserMessage)]
 
-                assert len(user_messages_agent2) == 1
-                assert len(user_messages_agent3) == 1
-                # In group chat (>2 agents), messages are wrapped with author metadata
-                assert "Hello from agent 1" in user_messages_agent2[0].content
-                assert "Hello from agent 1" in user_messages_agent3[0].content
-                # Verify author metadata
-                assert "author=@agent1" in user_messages_agent2[0].content
-                assert "author=@agent1" in user_messages_agent3[0].content
+            assert len(user_messages_agent2) == 1
+            assert len(user_messages_agent3) == 1
+            # In group chat (>2 agents), messages are wrapped with author metadata
+            assert "Hello from agent 1" in user_messages_agent2[0].content
+            assert "Hello from agent 1" in user_messages_agent3[0].content
+            # Verify author metadata
+            assert "author=@agent1" in user_messages_agent2[0].content
+            assert "author=@agent1" in user_messages_agent3[0].content
 
     @pytest.mark.asyncio
     async def test_conversation_events(self):
@@ -187,14 +179,8 @@ class TestConversation:
                         m for m in agent1.messages if isinstance(m, UserMessage)
                     ]
 
-                    assert any(
-                        msg.content == "Hello from agent 1"
-                        for msg in user_messages_agent2
-                    )
-                    assert any(
-                        msg.content == "Hello from agent 2"
-                        for msg in user_messages_agent1
-                    )
+                    assert any(msg.content == "Hello from agent 1" for msg in user_messages_agent2)
+                    assert any(msg.content == "Hello from agent 2" for msg in user_messages_agent1)
 
     @pytest.mark.asyncio
     async def test_conversation_messages_property(self):
@@ -212,9 +198,7 @@ class TestConversation:
 
             # Messages should be in chronological order
             # (exact order depends on timing, but structure should be preserved)
-            assistant_messages = [
-                m for m in all_messages if isinstance(m, AssistantMessage)
-            ]
+            assistant_messages = [m for m in all_messages if isinstance(m, AssistantMessage)]
             assert len(assistant_messages) == 2
 
     @pytest.mark.asyncio
@@ -235,22 +219,19 @@ class TestConversation:
     @pytest.mark.asyncio
     async def test_user_messages_not_forwarded(self):
         """Test that only assistant messages are forwarded, not user messages."""
-        async with Agent("Agent 1") as agent1, Agent("Agent 2") as agent2:
-            async with agent1 | agent2:
-                # Add user message (should not be forwarded)
-                agent1.append(UserMessage(content="User message"))
-                await asyncio.sleep(0.01)
+        async with Agent("Agent 1") as agent1, Agent("Agent 2") as agent2, agent1 | agent2:
+            # Add user message (should not be forwarded)
+            agent1.append(UserMessage(content="User message"))
+            await asyncio.sleep(0.01)
 
-                # Add assistant message (should be forwarded)
-                agent1.append(AssistantMessage(content="Assistant message"))
-                await asyncio.sleep(0.01)
+            # Add assistant message (should be forwarded)
+            agent1.append(AssistantMessage(content="Assistant message"))
+            await asyncio.sleep(0.01)
 
-                # Agent2 should only have the forwarded assistant message (as user message)
-                user_messages_in_agent2 = [
-                    m for m in agent2.messages if isinstance(m, UserMessage)
-                ]
-                assert len(user_messages_in_agent2) == 1
-                assert user_messages_in_agent2[0].content == "Assistant message"
+            # Agent2 should only have the forwarded assistant message (as user message)
+            user_messages_in_agent2 = [m for m in agent2.messages if isinstance(m, UserMessage)]
+            assert len(user_messages_in_agent2) == 1
+            assert user_messages_in_agent2[0].content == "Assistant message"
 
     @pytest.mark.asyncio
     async def test_llm_generated_messages_forwarded(self):
@@ -268,8 +249,7 @@ class TestConversation:
                         m for m in agent2.messages if isinstance(m, UserMessage)
                     ]
                     assert any(
-                        msg.content == "LLM response from agent 1"
-                        for msg in agent2_user_messages
+                        msg.content == "LLM response from agent 1" for msg in agent2_user_messages
                     )
 
                     await agent2.call("Replying now")
@@ -279,6 +259,5 @@ class TestConversation:
                         m for m in agent1.messages if isinstance(m, UserMessage)
                     ]
                     assert any(
-                        msg.content == "LLM response from agent 2"
-                        for msg in agent1_user_messages
+                        msg.content == "LLM response from agent 2" for msg in agent1_user_messages
                     )

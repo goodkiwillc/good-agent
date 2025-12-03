@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-
 import pytest
-
 from good_agent import Agent, ModeContext
 
 
@@ -60,20 +58,19 @@ async def test_mode_stacking():
         assert agent_param.mode.state.get("outer_var") == "outer"
         yield agent_param
 
-    async with agent:
-        async with agent.modes["outer"]:
-            assert agent.current_mode == "outer"
-            assert agent.mode_stack == ["outer"]
+    async with agent, agent.modes["outer"]:
+        assert agent.current_mode == "outer"
+        assert agent.mode_stack == ["outer"]
 
-            async with agent.modes["inner"]:
-                assert agent.current_mode == "inner"
-                assert agent.mode_stack == ["outer", "inner"]
-                assert agent.in_mode("outer")
-                assert agent.in_mode("inner")
+        async with agent.modes["inner"]:
+            assert agent.current_mode == "inner"
+            assert agent.mode_stack == ["outer", "inner"]
+            assert agent.in_mode("outer")
+            assert agent.in_mode("inner")
 
-            assert agent.current_mode == "outer"
-            assert agent.mode_stack == ["outer"]
-            assert not agent.in_mode("inner")
+        assert agent.current_mode == "outer"
+        assert agent.mode_stack == ["outer"]
+        assert not agent.in_mode("inner")
 
 
 @pytest.mark.asyncio
@@ -99,32 +96,31 @@ async def test_scoped_state():
 
         yield agent_param
 
-    async with agent:
-        async with agent.modes["outer"]:
-            # Manually set state for testing
-            agent.modes.set_state("x", "outer")
-            agent.modes.set_state("y", "only-outer")
+    async with agent, agent.modes["outer"]:
+        # Manually set state for testing
+        agent.modes.set_state("x", "outer")
+        agent.modes.set_state("y", "only-outer")
 
-            # Outer state: x='outer', y='only-outer'
-            assert agent.modes.get_state("x") == "outer"
+        # Outer state: x='outer', y='only-outer'
+        assert agent.modes.get_state("x") == "outer"
+        assert agent.modes.get_state("y") == "only-outer"
+
+        async with agent.modes["inner"]:
+            # Shadow outer state
+            agent.modes.set_state("x", "inner")
+            agent.modes.set_state("z", "only-inner")
+
+            # Inner state (with shadowing)
+            # x='inner' (shadowed), y='only-outer' (inherited), z='only-inner'
+            assert agent.modes.get_state("x") == "inner"
             assert agent.modes.get_state("y") == "only-outer"
+            assert agent.modes.get_state("z") == "only-inner"
 
-            async with agent.modes["inner"]:
-                # Shadow outer state
-                agent.modes.set_state("x", "inner")
-                agent.modes.set_state("z", "only-inner")
-
-                # Inner state (with shadowing)
-                # x='inner' (shadowed), y='only-outer' (inherited), z='only-inner'
-                assert agent.modes.get_state("x") == "inner"
-                assert agent.modes.get_state("y") == "only-outer"
-                assert agent.modes.get_state("z") == "only-inner"
-
-            # Back to outer - shadow removed
-            # x='outer' (restored), y='only-outer', z removed
-            assert agent.modes.get_state("x") == "outer"
-            assert agent.modes.get_state("y") == "only-outer"
-            assert agent.modes.get_state("z") is None
+        # Back to outer - shadow removed
+        # x='outer' (restored), y='only-outer', z removed
+        assert agent.modes.get_state("x") == "outer"
+        assert agent.modes.get_state("y") == "only-outer"
+        assert agent.modes.get_state("z") is None
 
 
 @pytest.mark.asyncio
@@ -216,9 +212,7 @@ async def test_mode_context_add_system_message():
     @agent.modes("research")
     async def research_mode(agent_param: Agent):
         # Use agent.append() to add system message to conversation
-        agent_param.append(
-            "You are in research mode. Focus on accuracy.", role="system"
-        )
+        agent_param.append("You are in research mode. Focus on accuracy.", role="system")
         yield agent_param
 
     async with agent:
@@ -228,9 +222,7 @@ async def test_mode_context_add_system_message():
 
     system_messages = [m for m in agent.messages if m.role == "system"]
     assert system_messages
-    assert any(
-        "research mode" in str(m.content).lower() for m in system_messages if m.content
-    )
+    assert any("research mode" in str(m.content).lower() for m in system_messages if m.content)
 
 
 @pytest.mark.asyncio
@@ -337,9 +329,7 @@ async def test_mode_transition_exit():
     @agent.modes("outer")
     async def outer_mode(agent_param: Agent):
         outer_runs.append(tuple(agent_param.mode.stack))
-        agent_param.mode.state["outer_counter"] = (
-            agent_param.mode.state.get("outer_counter", 0) + 1
-        )
+        agent_param.mode.state["outer_counter"] = agent_param.mode.state.get("outer_counter", 0) + 1
         yield agent_param
 
     @agent.modes("inner")
@@ -562,9 +552,7 @@ async def test_legacy_handler_deprecation_warning():
                     await agent.call("test")
 
                 # Should have deprecation warning
-                deprecation_warnings = [
-                    x for x in w if issubclass(x.category, DeprecationWarning)
-                ]
+                deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
                 assert len(deprecation_warnings) >= 1
                 assert "ModeContext" in str(deprecation_warnings[0].message)
 
@@ -862,12 +850,11 @@ async def test_isolation_hierarchy_validation():
     async def inner_none(agent: Agent):
         yield agent
 
-    async with agent:
-        async with agent.modes["outer_fork"]:
-            # Attempting to enter a less isolated mode should fail
-            with pytest.raises(ValueError, match="less restrictive"):
-                async with agent.modes["inner_none"]:
-                    pass
+    async with agent, agent.modes["outer_fork"]:
+        # Attempting to enter a less isolated mode should fail
+        with pytest.raises(ValueError, match="less restrictive"):
+            async with agent.modes["inner_none"]:
+                pass
 
 
 @pytest.mark.asyncio
@@ -885,11 +872,10 @@ async def test_isolation_hierarchy_valid_increase():
     async def inner_fork(agent: Agent):
         yield agent
 
-    async with agent:
-        async with agent.modes["outer_none"]:
-            # More isolated mode is allowed
-            async with agent.modes["inner_fork"]:
-                assert agent.mode.stack == ["outer_none", "inner_fork"]
+    async with agent, agent.modes["outer_none"]:
+        # More isolated mode is allowed
+        async with agent.modes["inner_fork"]:
+            assert agent.mode.stack == ["outer_none", "inner_fork"]
 
 
 @pytest.mark.asyncio
@@ -1218,11 +1204,10 @@ async def test_modes_register_standalone():
     # Mode should be registered
     assert "analysis" in agent.modes.list_modes()
 
-    async with agent:
-        async with agent.modes["analysis"]:
-            with agent.mock("ok"):
-                await agent.call("test")
-            assert agent.modes.get_state("analyzing") is True
+    async with agent, agent.modes["analysis"]:
+        with agent.mock("ok"):
+            await agent.call("test")
+        assert agent.modes.get_state("analyzing") is True
 
 
 @pytest.mark.asyncio
@@ -1240,11 +1225,10 @@ async def test_modes_register_raw_handler():
 
     assert "custom_mode" in agent.modes.list_modes()
 
-    async with agent:
-        async with agent.modes["custom_mode"]:
-            with agent.mock("ok"):
-                await agent.call("test")
-            assert agent.modes.get_state("custom") is True
+    async with agent, agent.modes["custom_mode"]:
+        with agent.mock("ok"):
+            await agent.call("test")
+        assert agent.modes.get_state("custom") is True
 
 
 @pytest.mark.asyncio
@@ -1524,9 +1508,8 @@ async def test_parameterized_mode_entry_handler_access():
         seen_params["max_depth"] = agent.mode.state.get("max_depth")
         yield agent
 
-    async with agent:
-        async with agent.modes["analysis"](subject="physics", max_depth=5):
-            pass
+    async with agent, agent.modes["analysis"](subject="physics", max_depth=5):
+        pass
 
     # Handler should have seen the parameters
     assert seen_params["subject"] == "physics"
@@ -1564,15 +1547,14 @@ async def test_parameterized_mode_nested():
     async def inner_mode(agent: Agent):
         yield agent
 
-    async with agent:
-        async with agent.modes["outer"](level="outer"):
-            assert agent.mode.state["level"] == "outer"
+    async with agent, agent.modes["outer"](level="outer"):
+        assert agent.mode.state["level"] == "outer"
 
-            async with agent.modes["inner"](level="inner", extra="data"):
-                # Inner state shadows outer
-                assert agent.mode.state["level"] == "inner"
-                assert agent.mode.state["extra"] == "data"
+        async with agent.modes["inner"](level="inner", extra="data"):
+            # Inner state shadows outer
+            assert agent.mode.state["level"] == "inner"
+            assert agent.mode.state["extra"] == "data"
 
-            # Back to outer state
-            assert agent.mode.state["level"] == "outer"
-            assert agent.mode.state.get("extra") is None
+        # Back to outer state
+        assert agent.mode.state["level"] == "outer"
+        assert agent.mode.state.get("extra") is None

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
-import logging
 
 from good_agent.content import ContentPartType, TemplateContentPart, TextContentPart
+from good_agent.core.components.component import AgentComponent
 from good_agent.events import AgentEvents
 from good_agent.messages import SystemMessage, UserMessage
-from good_agent.core.components.component import AgentComponent
 
 logger = logging.getLogger(__name__)
 

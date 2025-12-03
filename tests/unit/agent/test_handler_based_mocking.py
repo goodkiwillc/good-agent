@@ -9,17 +9,15 @@ from typing import TYPE_CHECKING
 
 import pytest
 from good_agent import Agent
-from good_agent.mock import (
-    MockResponse,
-    mock_message,
-)
 
 # Import new handler types
 from good_agent.mock import (
     ConditionalHandler,
     MockContext,
+    MockResponse,
     QueuedResponseHandler,
     TranscriptHandler,
+    mock_message,
 )
 
 if TYPE_CHECKING:
@@ -76,9 +74,7 @@ class TestBackwardsCompatibility:
         """Test that agent.mock.tool_call() helper still works"""
         agent = Agent("You are helpful")
 
-        with agent.mock(
-            agent.mock.tool_call("weather", location="Paris", result={"temp": 72})
-        ):
+        with agent.mock(agent.mock.tool_call("weather", location="Paris", result={"temp": 72})):
             # Tool call mocking should work as before
             pass
 
@@ -410,15 +406,12 @@ class TestConditionalHandler:
     async def test_conditional_handler_without_default_raises(self):
         """Test that ConditionalHandler raises when no match and no default"""
         handler = ConditionalHandler()
-        handler.when(
-            lambda ctx: "weather" in ctx.agent.user[-1].content.lower(), respond="Sunny"
-        )
+        handler.when(lambda ctx: "weather" in ctx.agent.user[-1].content.lower(), respond="Sunny")
 
         agent = Agent("You are helpful")
 
-        with agent.mock(handler):
-            with pytest.raises(Exception, match="no match|no default"):
-                await agent.call("Random question")
+        with agent.mock(handler), pytest.raises(Exception, match="no match|no default"):
+            await agent.call("Random question")
 
     async def test_conditional_handler_checks_rules_in_order(self):
         """Test that ConditionalHandler checks rules in order added"""
@@ -447,8 +440,7 @@ class TestConditionalHandler:
 
             def setup_rules(self):
                 self.when(
-                    lambda ctx: ctx.call_count == 1
-                    and "weather" in ctx.agent.user[-1].content,
+                    lambda ctx: ctx.call_count == 1 and "weather" in ctx.agent.user[-1].content,
                     respond=MockResponse(
                         content="I'll check",
                         tool_calls=[
@@ -460,9 +452,7 @@ class TestConditionalHandler:
                             }
                         ],  # type: ignore[typeddict-item]
                     ),
-                ).when(
-                    lambda ctx: ctx.call_count == 2, respond="Based on the tool: sunny"
-                )
+                ).when(lambda ctx: ctx.call_count == 2, respond="Based on the tool: sunny")
 
         agent = Agent("You are helpful")
 
@@ -691,9 +681,9 @@ class TestConvenienceAPI:
 
         # Should provide shorthand for creating ConditionalHandler
         handler = agent.mock.conditional()
-        handler.when(
-            lambda ctx: "test" in ctx.agent.user[-1].content, respond="Matched"
-        ).default("No match")
+        handler.when(lambda ctx: "test" in ctx.agent.user[-1].content, respond="Matched").default(
+            "No match"
+        )
 
         with agent.mock(handler):
             result = await agent.call("This is a test")
@@ -731,18 +721,16 @@ class TestErrorHandling:
 
         agent = Agent("You are helpful")
 
-        with agent.mock(failing_handler):
-            with pytest.raises(ValueError, match="Handler failed"):
-                await agent.call("Question")
+        with agent.mock(failing_handler), pytest.raises(ValueError, match="Handler failed"):
+            await agent.call("Question")
 
     async def test_invalid_handler_type_raises_error(self):
         """Test that invalid handler type raises clear error"""
         agent = Agent("You are helpful")
 
         # Not a callable, not a string, not a MockResponse
-        with pytest.raises(TypeError):
-            with agent.mock(12345):  # Invalid
-                pass
+        with pytest.raises(TypeError), agent.mock(12345):  # Invalid
+            pass
 
     async def test_handler_returning_invalid_type_raises_error(self):
         """Test that handler returning non-MockResponse raises error"""
@@ -752,9 +740,8 @@ class TestErrorHandling:
 
         agent = Agent("You are helpful")
 
-        with agent.mock(bad_handler):
-            with pytest.raises((TypeError, ValueError)):
-                await agent.call("Question")
+        with agent.mock(bad_handler), pytest.raises((TypeError, ValueError)):
+            await agent.call("Question")
 
 
 # ============================================================================
@@ -847,9 +834,7 @@ class TestAgentPipeConversation:
         alice_handler = ConditionalHandler().default("Hello Bob! How are you today?")
 
         # Bob responds to Alice's greeting
-        bob_handler = ConditionalHandler().default(
-            "Hi Alice! I'm doing great, thanks for asking!"
-        )
+        bob_handler = ConditionalHandler().default("Hi Alice! I'm doing great, thanks for asking!")
 
         with alice.mock(alice_handler), bob.mock(bob_handler):
             # Pipe alice into bob
@@ -869,10 +854,7 @@ class TestAgentPipeConversation:
                 assert messages[0].content == "Hello Bob! How are you today?"
 
                 # Bob should have received Alice's message and responded
-                assert (
-                    messages[-1].content
-                    == "Hi Alice! I'm doing great, thanks for asking!"
-                )
+                assert messages[-1].content == "Hi Alice! I'm doing great, thanks for asking!"
 
     async def test_piped_agents_with_transcripts(self):
         """Test agent | agent with predefined conversation transcripts"""
@@ -931,9 +913,7 @@ class TestAgentPipeConversation:
                     {
                         "call_count": ctx.call_count,
                         "user_messages": len(ctx.agent.user) if ctx.agent else 0,
-                        "assistant_messages": (
-                            len(ctx.agent.assistant) if ctx.agent else 0
-                        ),
+                        "assistant_messages": (len(ctx.agent.assistant) if ctx.agent else 0),
                     }
                 )
                 return MockResponse(content=f"{self.name} speaking")
@@ -1111,9 +1091,7 @@ class TestToolExecutionInspection:
                 {
                     "call_count": ctx.call_count,
                     "total_messages": len(ctx.messages),
-                    "tool_messages": [
-                        msg for msg in ctx.messages if msg.role == "tool"
-                    ],
+                    "tool_messages": [msg for msg in ctx.messages if msg.role == "tool"],
                 }
             )
 
@@ -1135,9 +1113,7 @@ class TestToolExecutionInspection:
             # Check if we can find the tool result
             tool_msgs = [msg for msg in ctx.messages if msg.role == "tool"]
             if tool_msgs:
-                return MockResponse(
-                    content="Based on the data: Weather in Paris is Sunny!"
-                )
+                return MockResponse(content="Based on the data: Weather in Paris is Sunny!")
 
             return MockResponse(content="Hmm, no tool result found")
 

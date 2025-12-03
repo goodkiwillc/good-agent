@@ -58,9 +58,7 @@ async def test_all_citation_scenarios():
     print(f"Global index: {dict(cm2.index.items())}")
 
     # Now test referencing these
-    agent2.append(
-        AssistantMessage("Referring to [!CITE_1!], [!CITE_2!], and [!CITE_3!]")
-    )
+    agent2.append(AssistantMessage("Referring to [!CITE_1!], [!CITE_2!], and [!CITE_3!]"))
     msg2b = agent2[-1]
     print(f"Referenced citations: {msg2b.citations}")
     print()
@@ -121,9 +119,7 @@ async def test_all_citation_scenarios():
     await agent5.initialize()
 
     # Create message with citations
-    msg5 = AssistantMessage(
-        "Check [1] and [2]", citations=["https://url1.com", "https://url2.com"]
-    )
+    msg5 = AssistantMessage("Check [1] and [2]", citations=["https://url1.com", "https://url2.com"])
     agent5.append(msg5)
     final_msg = agent5[-1]
 

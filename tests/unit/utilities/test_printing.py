@@ -1,7 +1,5 @@
 """Tests for utilities/printing.py module."""
 
-from rich.console import Console
-
 from good_agent.messages import AssistantMessage, ToolMessage
 from good_agent.tools import ToolCall, ToolCallFunction, ToolResponse
 from good_agent.utilities.printing import (
@@ -10,6 +8,7 @@ from good_agent.utilities.printing import (
     _preprocess_xml_tags,
     print_message,
 )
+from rich.console import Console
 
 
 class TestDetectMarkdown:
@@ -99,9 +98,7 @@ class TestPreprocessXmlTags:
         content = "Before <tag/> after"
         result = _preprocess_xml_tags(content)
         # Should wrap self-closing tag
-        assert (
-            "```xml" in result or result == content
-        )  # May or may not wrap depending on proximity
+        assert "```xml" in result or result == content  # May or may not wrap depending on proximity
 
     def test_empty_string(self):
         """Test empty string is unchanged."""

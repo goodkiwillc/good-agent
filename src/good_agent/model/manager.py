@@ -118,9 +118,7 @@ def get_managed_router_class():
                 """No-op replacement for deployment callbacks that expect bool return."""
                 return True
 
-            async def async_deployment_callback_on_failure(
-                self, *args, **kwargs
-            ) -> None:
+            async def async_deployment_callback_on_failure(self, *args, **kwargs) -> None:
                 """Async no-op replacement for deployment callbacks."""
                 pass
 
@@ -128,15 +126,11 @@ def get_managed_router_class():
                 """Async no-op replacement for deployment callbacks."""
                 pass
 
-            def sync_deployment_callback_on_success(
-                self, *args, **kwargs
-            ) -> str | None:
+            def sync_deployment_callback_on_success(self, *args, **kwargs) -> str | None:
                 """No-op replacement for deployment callbacks that expect str|None return."""
                 return None
 
-            async def async_deployment_callback_on_success(
-                self, *args, **kwargs
-            ) -> None:
+            async def async_deployment_callback_on_success(self, *args, **kwargs) -> None:
                 """Async no-op replacement for deployment callbacks."""
                 pass
 
@@ -320,13 +314,9 @@ def get_managed_router_class():
                         self._instructor_client, "create"
                     ):
                         self.aextract = self._instructor_client.create
-                        self.extract = (
-                            self._instructor_client.create
-                        )  # Same for sync version
+                        self.extract = self._instructor_client.create  # Same for sync version
                 except ImportError:
-                    logger.warning(
-                        "Instructor not installed, structured output unavailable"
-                    )
+                    logger.warning("Instructor not installed, structured output unavailable")
 
                 return self
 
@@ -360,11 +350,7 @@ def get_managed_router_class():
             def get_available_models(self) -> list[str]:
                 """Get list of available model names."""
                 return list(
-                    {
-                        m.get("model_name", "")
-                        for m in self.model_list
-                        if m.get("model_name")
-                    }
+                    {m.get("model_name", "") for m in self.model_list if m.get("model_name")}
                 )
 
             def cleanup(self):
@@ -452,9 +438,7 @@ class ModelManager:
         """Initialize the model manager."""
         self._models: dict[str, ModelDefinition] = {}
         self._overrides = model_override_registry
-        self._router_pool: WeakValueDictionary[int, ManagedRouter] = (
-            WeakValueDictionary()
-        )
+        self._router_pool: WeakValueDictionary[int, ManagedRouter] = WeakValueDictionary()
 
     def register_model(self, name: str, provider: str, **kwargs) -> None:
         """
@@ -578,9 +562,7 @@ class ModelManager:
             if hasattr(override, "pattern"):
                 # Can't list all possible pattern matches
                 continue
-            elif (
-                hasattr(override, "model_pattern") and "*" not in override.model_pattern
-            ):
+            elif hasattr(override, "model_pattern") and "*" not in override.model_pattern:
                 # Only add exact model names, not patterns
                 all_models.add(override.model_pattern)
 

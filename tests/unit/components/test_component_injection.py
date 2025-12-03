@@ -1,13 +1,13 @@
 import pytest
 from good_agent import Agent, AgentEvents
-from good_agent.core.components import (
-    MessageInjectorComponent,
-    SimpleMessageInjector,
-)
 from good_agent.content import (
     RenderMode,
     TemplateContentPart,
     TextContentPart,
+)
+from good_agent.core.components import (
+    MessageInjectorComponent,
+    SimpleMessageInjector,
 )
 from good_agent.messages import SystemMessage, UserMessage
 

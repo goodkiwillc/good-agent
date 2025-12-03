@@ -14,7 +14,6 @@ from datetime import datetime, timedelta
 from enum import Enum, IntEnum, auto
 from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypeVar
 
-
 if TYPE_CHECKING:
     from good_agent.agent.core import Agent
     from good_agent.messages import AssistantMessage
@@ -137,8 +136,7 @@ def _validate_handler(handler: Callable[..., Any]) -> None:
         )
     else:
         raise ModeHandlerError(
-            f"Mode handler must be async generator function, "
-            f"got {type(handler).__name__}"
+            f"Mode handler must be async generator function, got {type(handler).__name__}"
         )
 
 
@@ -599,9 +597,7 @@ class ModeStack:
 
 
 # Type for mode handler functions (supports both legacy ModeContext and v2 Agent styles)
-ModeHandler = (
-    Callable[[ModeContext], Awaitable[Any]] | Callable[["Agent"], Awaitable[Any]]
-)
+ModeHandler = Callable[[ModeContext], Awaitable[Any]] | Callable[["Agent"], Awaitable[Any]]
 
 
 class ModeContextManager:
@@ -1002,15 +998,11 @@ You are now operating in {mode_name} mode. Your responses should align with this
             try:
                 await gen.__anext__()
                 # If generator yields again, that's an error
-                raise RuntimeError(
-                    f"Mode handler '{entry.name}' yielded more than once"
-                )
+                raise RuntimeError(f"Mode handler '{entry.name}' yielded more than once")
             except StopAsyncIteration:
                 # Generator completed - check if handler set exit behavior in state
                 exit_behavior = entry.state.get("_exit_behavior")
-                if exit_behavior is not None and isinstance(
-                    exit_behavior, ModeExitBehavior
-                ):
+                if exit_behavior is not None and isinstance(exit_behavior, ModeExitBehavior):
                     return exit_behavior
                 return ModeExitBehavior.AUTO
         finally:
@@ -1040,9 +1032,7 @@ You are now operating in {mode_name} mode. Your responses should align with this
         # Snapshot messages for THREAD and FORK isolation
         if isolation in (IsolationLevel.THREAD, IsolationLevel.FORK):
             if hasattr(self._agent, "_version_manager"):
-                snapshot.message_version_ids = (
-                    self._agent._version_manager.current_version.copy()
-                )
+                snapshot.message_version_ids = self._agent._version_manager.current_version.copy()
             snapshot.message_count = len(self._agent.messages)
 
         # Snapshot tool state for CONFIG and FORK isolation
@@ -1054,9 +1044,7 @@ You are now operating in {mode_name} mode. Your responses should align with this
 
         return snapshot
 
-    def _restore_from_isolation_snapshot(
-        self, snapshot: IsolationSnapshot | None
-    ) -> None:
+    def _restore_from_isolation_snapshot(self, snapshot: IsolationSnapshot | None) -> None:
         """Restore agent state from isolation snapshot.
 
         Args:
@@ -1070,10 +1058,7 @@ You are now operating in {mode_name} mode. Your responses should align with this
         # Restore messages based on isolation level
         if isolation == IsolationLevel.THREAD:
             # Thread: restore original messages but keep new ones added during mode
-            if (
-                hasattr(self._agent, "_version_manager")
-                and snapshot.message_version_ids
-            ):
+            if hasattr(self._agent, "_version_manager") and snapshot.message_version_ids:
                 current_version = self._agent._version_manager.current_version
                 # New messages are those beyond original count
                 new_message_ids = current_version[snapshot.message_count :]
@@ -1082,22 +1067,24 @@ You are now operating in {mode_name} mode. Your responses should align with this
                 self._agent._version_manager.add_version(restored_ids)
                 self._agent._messages._sync_from_version()
 
-        elif isolation == IsolationLevel.FORK:
+        elif (
+            isolation == IsolationLevel.FORK
+            and hasattr(self._agent, "_version_manager")
+            and snapshot.message_version_ids
+        ):
             # Fork: complete restore - discard all changes
-            if (
-                hasattr(self._agent, "_version_manager")
-                and snapshot.message_version_ids
-            ):
-                self._agent._version_manager.add_version(snapshot.message_version_ids)
-                self._agent._messages._sync_from_version()
+            self._agent._version_manager.add_version(snapshot.message_version_ids)
+            self._agent._messages._sync_from_version()
 
         # Restore tool state for CONFIG and FORK
-        if isolation in (IsolationLevel.CONFIG, IsolationLevel.FORK):
-            if snapshot.tool_state:
-                from good_agent.tools import ToolManager
+        if (
+            isolation in (IsolationLevel.CONFIG, IsolationLevel.FORK)
+            and snapshot.tool_state
+        ):
+            from good_agent.tools import ToolManager
 
-                tool_manager = self._agent[ToolManager]
-                tool_manager._import_state(snapshot.tool_state)
+            tool_manager = self._agent[ToolManager]
+            tool_manager._import_state(snapshot.tool_state)
 
     async def _enter_mode(self, mode_name: str, **params: Any) -> None:
         """Enter a mode (internal).
@@ -1287,9 +1274,7 @@ You are now operating in {mode_name} mode. Your responses should align with this
                     # Pass exception to generator via athrow
                     await gen.athrow(exception)
                     # If generator yields again after handling exception, that's an error
-                    raise RuntimeError(
-                        f"Mode handler '{entry.name}' yielded more than once"
-                    )
+                    raise RuntimeError(f"Mode handler '{entry.name}' yielded more than once")
                 except StopAsyncIteration:
                     # Generator completed after handling exception - suppressed
                     suppressed = True

@@ -1,7 +1,7 @@
 """Type protocols and data structures for the model package."""
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Protocol, TypedDict, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, TypeAlias, TypedDict, runtime_checkable
 
 if TYPE_CHECKING:
     from litellm.types.utils import Choices, StreamingChoices, Usage
@@ -44,7 +44,7 @@ class ResponseWithResponseHeaders(ModelResponseProtocol, Protocol):
     def _response_headers(self) -> dict[str, Any] | Any: ...
 
 
-type ModelName = str
+ModelName: TypeAlias = str
 
 
 class CompletionEvent(TypedDict):

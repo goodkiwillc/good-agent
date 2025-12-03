@@ -130,9 +130,7 @@ class TestHiddenParameters:
 
         # Check response
         assert response.success
-        assert "Processed test_data with token auth_token, debug=True" in str(
-            response.response
-        )
+        assert "Processed test_data with token auth_token, debug=True" in str(response.response)
 
         # Check recorded parameters
         assistant_msg = agent.assistant[-1]
@@ -175,11 +173,7 @@ class TestHiddenParameters:
         # Check that assistant message has only visible params
         assistant_msg = None
         for msg in agent.messages:
-            if (
-                msg.role == "assistant"
-                and hasattr(msg, "tool_calls")
-                and msg.tool_calls
-            ):
+            if msg.role == "assistant" and hasattr(msg, "tool_calls") and msg.tool_calls:
                 assistant_msg = msg
                 break
 

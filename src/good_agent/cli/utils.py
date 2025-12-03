@@ -1,14 +1,15 @@
 import importlib
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, Tuple, Union
+from typing import Any
 
 from good_agent.agent.core import Agent
 
 
 def load_agent_from_path(
     path_str: str,
-) -> Tuple[Union[Agent, Callable[..., Agent]], Dict[str, Any]]:
+) -> tuple[Agent | Callable[..., Agent], dict[str, Any]]:
     """
     Load an agent object or factory from a string path 'module:object'.
 
@@ -42,9 +43,7 @@ def load_agent_from_path(
         path_str = BUILT_IN_AGENTS[path_str]
 
     if ":" not in path_str:
-        raise ValueError(
-            f"Invalid agent path format '{path_str}'. Expected 'module:object'."
-        )
+        raise ValueError(f"Invalid agent path format '{path_str}'. Expected 'module:object'.")
 
     module_path, object_name = path_str.split(":", 1)
 

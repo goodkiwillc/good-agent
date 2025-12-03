@@ -30,10 +30,7 @@ class StatefulResourceMeta(ABCMeta):
                 elif hasattr(attr_value, "_tool_metadata"):
                     # This is a legacy tool-decorated method
                     cls._resource_tools[attr_name] = attr_value
-                elif (
-                    hasattr(attr_value, "__class__")
-                    and attr_value.__class__.__name__ == "Tool"
-                ):
+                elif hasattr(attr_value, "__class__") and attr_value.__class__.__name__ == "Tool":
                     # This is a Tool instance (shouldn't happen but handle it)
                     cls._resource_tools[attr_name] = attr_value
 

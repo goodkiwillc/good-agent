@@ -83,11 +83,7 @@ class AgentAsTool:
         # If multi-turn is enabled, wrap the response in XML tags with the session ID
         # This provides consistent context to the parent agent and easy reference
         if self.multi_turn and current_session_id:
-            return (
-                f'<{self.name} session_id="{current_session_id}">\n'
-                f"{content}\n"
-                f"</{self.name}>"
-            )
+            return f'<{self.name} session_id="{current_session_id}">\n{content}\n</{self.name}>'
 
         return content
 

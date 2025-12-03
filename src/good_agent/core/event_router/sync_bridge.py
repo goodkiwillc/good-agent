@@ -289,9 +289,7 @@ class SyncBridge:
                     logger.warning(f"Timeout waiting for {len(self._tasks)} tasks")
 
         if self._event_loop:
-            future = asyncio.run_coroutine_threadsafe(
-                wait_for_tasks(), self._event_loop
-            )
+            future = asyncio.run_coroutine_threadsafe(wait_for_tasks(), self._event_loop)
             future.result()
 
     async def join(self, timeout: float = 5.0) -> None:
@@ -309,9 +307,7 @@ class SyncBridge:
         try:
             with self._lock:
                 tasks = list(self._tasks)
-            await asyncio.wait_for(
-                asyncio.gather(*tasks, return_exceptions=True), timeout=timeout
-            )
+            await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=timeout)
         except TimeoutError:
             if self._debug:
                 logger.warning(f"Timeout waiting for {len(self._tasks)} tasks")
@@ -344,9 +340,7 @@ class SyncBridge:
                         await asyncio.gather(*tasks_to_cancel, return_exceptions=True)
 
                 try:
-                    future = asyncio.run_coroutine_threadsafe(
-                        cancel_and_wait(), self._event_loop
-                    )
+                    future = asyncio.run_coroutine_threadsafe(cancel_and_wait(), self._event_loop)
                     future.result(timeout=1.0)
                 except Exception:
                     # Best effort - continue with shutdown
@@ -429,7 +423,4 @@ class SyncBridge:
             True if calling thread is the event loop thread
         """
         with self._lock:
-            return (
-                self._loop_thread is not None
-                and threading.current_thread() == self._loop_thread
-            )
+            return self._loop_thread is not None and threading.current_thread() == self._loop_thread

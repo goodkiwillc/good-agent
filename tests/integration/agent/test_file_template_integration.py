@@ -75,9 +75,7 @@ Additional context: {{ details }}
             os.chdir(original_cwd)
 
     @pytest.mark.asyncio
-    async def test_agent_loads_file_templates_automatically(
-        self, project_with_templates
-    ):
+    async def test_agent_loads_file_templates_automatically(self, project_with_templates):
         """Test that Agent automatically loads file templates."""
         # Create agent with file template reference
         # This should work WITHOUT manual rendering
@@ -182,9 +180,7 @@ Additional context: {{ details }}
         """Test that registry templates still work."""
         async with Agent("Test", model="gpt-4") as agent:
             # Register a template in the traditional way
-            agent.template.add_template(
-                "registered_template", "This is registered: {{ value }}"
-            )
+            agent.template.add_template("registered_template", "This is registered: {{ value }}")
 
             # Use both file and registry templates
             agent.append(
@@ -215,9 +211,7 @@ Additional context: {{ details }}
 
             try:
                 # Create agent without prompts directory
-                async with Agent(
-                    "Regular system prompt without templates", model="gpt-4"
-                ) as agent:
+                async with Agent("Regular system prompt without templates", model="gpt-4") as agent:
                     # Should work normally
                     assert len(agent.messages) == 1
                     assert "Regular system prompt" in str(agent.messages[0].content)

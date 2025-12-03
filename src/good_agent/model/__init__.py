@@ -3,14 +3,6 @@ from typing import TYPE_CHECKING
 # For static type checking only - lazy load everything
 if TYPE_CHECKING:
     from good_agent.model.llm import LanguageModel, ModelConfig
-    from good_agent.model.protocols import (
-        CompletionEvent,
-        ModelResponseProtocol,
-        ResponseWithHiddenParams,
-        ResponseWithResponseHeaders,
-        ResponseWithUsage,
-        StreamChunk,
-    )
     from good_agent.model.manager import (
         ManagedRouter,
         ModelDefinition,
@@ -24,6 +16,14 @@ if TYPE_CHECKING:
         ModelOverrideRegistry,
         ParameterOverride,
         model_override_registry,
+    )
+    from good_agent.model.protocols import (
+        CompletionEvent,
+        ModelResponseProtocol,
+        ResponseWithHiddenParams,
+        ResponseWithResponseHeaders,
+        ResponseWithUsage,
+        StreamChunk,
     )
 
 # Lazy loading implementation

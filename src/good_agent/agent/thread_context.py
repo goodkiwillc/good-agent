@@ -61,9 +61,7 @@ class ForkContext:
                 self.forked_agent._messages = MessageList(truncated)
                 self.forked_agent._messages._set_agent(self.forked_agent)
 
-        logger.debug(
-            f"Created fork of agent {self.agent._id} -> {self.forked_agent._id}"
-        )
+        logger.debug(f"Created fork of agent {self.agent._id} -> {self.forked_agent._id}")
         return self.forked_agent
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -103,9 +101,7 @@ class ThreadContext:
         if hasattr(self.agent, "_version_manager"):
             # Versioned agent path
             # Save the current version ID list
-            self._original_version_ids = (
-                self.agent._version_manager.current_version.copy()
-            )
+            self._original_version_ids = self.agent._version_manager.current_version.copy()
             self._entry_version_count = len(self._original_version_ids)
 
             if self.truncate_at is not None:
@@ -114,9 +110,7 @@ class ThreadContext:
                 self.agent._version_manager.add_version(truncated_ids)
                 self.agent._messages._sync_from_version()
 
-                logger.debug(
-                    f"Truncated agent {self.agent._id} to {self.truncate_at} messages"
-                )
+                logger.debug(f"Truncated agent {self.agent._id} to {self.truncate_at} messages")
         else:
             # Non-versioned agent path (for backward compatibility)
             self._entry_message_count = len(self.agent.messages)
@@ -189,9 +183,7 @@ class ThreadContext:
                 self.agent._messages._set_agent(self.agent)
 
 
-def fork_context(
-    agent: Agent, truncate_at: int | None = None, **fork_kwargs
-) -> ForkContext:
+def fork_context(agent: Agent, truncate_at: int | None = None, **fork_kwargs) -> ForkContext:
     """Create a fork context for isolated operations.
 
     Args:

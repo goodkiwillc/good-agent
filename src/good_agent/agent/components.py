@@ -78,10 +78,13 @@ class ComponentRegistry:
         # Also register under base classes for compatibility
         # This allows agent[TemplateManager] to find TemplateManager
         for base in ext_type.__bases__:
-            if issubclass(base, AgentComponent) and base != AgentComponent:
-                # Don't overwrite if a more specific implementation exists
-                if base not in self._extensions:
-                    self._extensions[base] = extension
+            # Don't overwrite if a more specific implementation exists
+            if (
+                issubclass(base, AgentComponent)
+                and base != AgentComponent
+                and base not in self._extensions
+            ):
+                self._extensions[base] = extension
 
         # Store by name if available
         if hasattr(extension, "name"):
@@ -120,9 +123,7 @@ class ComponentRegistry:
 
             # Get extension name for debugging
             extension_name = (
-                extension.name
-                if hasattr(extension, "name")
-                else extension.__class__.__name__
+                extension.name if hasattr(extension, "name") else extension.__class__.__name__
             )
 
             # Emit extension:install event with extension name
@@ -195,9 +196,7 @@ class ComponentRegistry:
             skip: Optional set of extension keys to skip cloning
         """
         skip = skip or set()
-        unique_extensions = list(
-            {id(ext): ext for ext in self._extensions.values()}.values()
-        )
+        unique_extensions = list({id(ext): ext for ext in self._extensions.values()}.values())
 
         # Import here to avoid circular dependency
         from good_agent.mock import AgentMockInterface
@@ -221,20 +220,16 @@ class ComponentRegistry:
         ]
         target_config["extensions"] = additional_extensions
 
-    def track_component_task(
-        self, component: AgentComponent, task: asyncio.Task
-    ) -> None:
+    def track_component_task(self, _component: AgentComponent, task: asyncio.Task) -> None:
         """Track a component initialization task.
 
         Args:
-            component: Component that owns the task
+            _component: Component that owns the task (unused, for future use)
             task: Async task to track
         """
         self._component_tasks.append(task)
 
-    def get_extension_by_type(
-        self, ext_type: type[AgentComponent]
-    ) -> AgentComponent | None:
+    def get_extension_by_type(self, ext_type: type[AgentComponent]) -> AgentComponent | None:
         """Get extension by type.
 
         Args:

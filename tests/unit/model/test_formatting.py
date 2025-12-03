@@ -3,7 +3,6 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
-
 from good_agent.content import FileContentPart, ImageContentPart, RenderMode
 from good_agent.messages import Message, UserMessage
 from good_agent.model.formatting import MessageFormatter

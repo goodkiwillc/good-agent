@@ -8,10 +8,9 @@ from ulid import ULID
 if TYPE_CHECKING:
     ConversationSelf = TypeVar("ConversationSelf", bound="Conversation")
 
+from good_agent.agent.core import Agent
 from good_agent.events import AgentEvents
 from good_agent.messages import AssistantMessage, Message, UserMessage
-
-from good_agent.agent.core import Agent
 
 
 class Conversation:
@@ -143,9 +142,7 @@ class Conversation:
         def handle_append(ctx):
             self._handle_message_append(source_agent, ctx)
 
-        registered_handler = source_agent.on(AgentEvents.MESSAGE_APPEND_AFTER)(
-            handle_append
-        )
+        registered_handler = source_agent.on(AgentEvents.MESSAGE_APPEND_AFTER)(handle_append)
 
         handler_id = getattr(registered_handler, "_handler_id", None)
         if handler_id is None:
@@ -183,11 +180,7 @@ class Conversation:
             content = message.content
             if is_group_chat:
                 # Wrap content for group chat context
-                content = (
-                    f"!# section message author=@{source_name}\n"
-                    f"{content}\n"
-                    f"!# end section"
-                )
+                content = f"!# section message author=@{source_name}\n{content}\n!# end section"
 
             forwarded_message = UserMessage(content=content)
             forwarded_message._conversation_forwarded = True  # type: ignore[attr-defined]

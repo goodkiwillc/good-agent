@@ -42,9 +42,7 @@ class TestVersioningWithRealLLM:
     @pytest.mark.vcr
     async def test_versioning_with_multiple_calls(self, llm_vcr):
         """Test versioning across multiple real LLM calls."""
-        agent = Agent(
-            "You are a helpful assistant. Be very concise.", model="gpt-4.1-mini"
-        )
+        agent = Agent("You are a helpful assistant. Be very concise.", model="gpt-4.1-mini")
         await agent.initialize()
 
         # First call
@@ -105,9 +103,7 @@ class TestVersioningWithRealLLM:
         response = await agent.call("What is 15 * 23?")
 
         # Should have added multiple messages (user, assistant with tool call, tool response, final assistant)
-        assert (
-            len(agent.messages) > initial_count + 2
-        )  # At least user + assistant + tool messages
+        assert len(agent.messages) > initial_count + 2  # At least user + assistant + tool messages
 
         # Should have created versions for each message
         assert agent._version_manager.version_count >= 3
@@ -144,9 +140,7 @@ class TestVersioningWithRealLLM:
             assert len(ctx.messages) == 3
 
             # Continue in a different direction
-            response = await ctx.call(
-                "Actually, make the robot evil instead. One sentence."
-            )
+            response = await ctx.call("Actually, make the robot evil instead. One sentence.")
 
             # Context should have new continuation
             assert len(ctx.messages) == 5  # truncated 3 + new Q&A
@@ -176,9 +170,7 @@ class TestVersioningWithRealLLM:
     @pytest.mark.vcr
     async def test_isolated_with_real_llm(self, llm_vcr):
         """Test isolated() with real LLM interactions."""
-        agent = Agent(
-            "You are a helpful assistant. Be very concise.", model="gpt-4.1-mini"
-        )
+        agent = Agent("You are a helpful assistant. Be very concise.", model="gpt-4.1-mini")
         await agent.initialize()
 
         # Build conversation
@@ -209,9 +201,7 @@ class TestVersioningWithRealLLM:
     @pytest.mark.vcr
     async def test_message_content_replacement_with_llm(self, llm_vcr):
         """Test replacing message content and getting LLM response."""
-        agent = Agent(
-            "You are a helpful assistant. Be very concise.", model="gpt-4.1-mini"
-        )
+        agent = Agent("You are a helpful assistant. Be very concise.", model="gpt-4.1-mini")
         await agent.initialize()
 
         # Initial conversation
@@ -224,15 +214,11 @@ class TestVersioningWithRealLLM:
             from good_agent.content.parts import TextContentPart
 
             ctx.messages[-2] = UserMessage(
-                content_parts=[
-                    TextContentPart(text="Tell me about cats in one sentence.")
-                ]
+                content_parts=[TextContentPart(text="Tell me about cats in one sentence.")]
             )
 
             # Get new response with replaced context
-            response = await ctx.call(
-                "What are their main characteristics? One sentence."
-            )
+            response = await ctx.call("What are their main characteristics? One sentence.")
 
             # Response should follow from the cat context (but exact content varies)
             response.content.lower()

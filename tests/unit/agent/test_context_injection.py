@@ -45,9 +45,7 @@ class TestContextValueDescriptor:
 
     def test_context_value_default_and_factory_exclusive(self):
         """Test that default and default_factory are mutually exclusive."""
-        with pytest.raises(
-            ValueError, match="Cannot specify both default and default_factory"
-        ):
+        with pytest.raises(ValueError, match="Cannot specify both default and default_factory"):
             ContextValue("test", default="value", default_factory=lambda: "other")
 
 
@@ -233,11 +231,7 @@ class TestContextInjectionIntegration:
             return f"Agent {agent.id} with multiplier {mult}"
 
         # Pass the agent's vars as base context
-        base_context = (
-            agent.vars.as_dict()
-            if hasattr(agent.vars, "as_dict")
-            else {"multiplier": 3}
-        )
+        base_context = agent.vars.as_dict() if hasattr(agent.vars, "as_dict") else {"multiplier": 3}
         context = await agent.template.resolve_context(base_context)
 
         assert f"Agent {agent.id} with multiplier 3" in context["computed"]
@@ -263,9 +257,9 @@ class TestErrorHandling:
 
         # Check if the error is in the response
         assert result.success is False
-        assert "MissingContextValueError" in str(
+        assert "MissingContextValueError" in str(result.error) or "required_data" in str(
             result.error
-        ) or "required_data" in str(result.error)
+        )
 
     @pytest.mark.asyncio
     async def test_optional_missing_context_value(self):

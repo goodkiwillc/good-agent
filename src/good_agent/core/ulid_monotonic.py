@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import threading
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, ClassVar
 
 from pydantic import GetCoreSchemaHandler
@@ -66,7 +66,7 @@ class MonotonicULID:
         """
         with cls._state.lock:
             # Get current timestamp in milliseconds
-            current_timestamp = int(datetime.now(timezone.utc).timestamp() * 1000)
+            current_timestamp = int(datetime.now(UTC).timestamp() * 1000)
 
             # Check if we're in the same millisecond as the last generation
             if current_timestamp == cls._state.last_timestamp:
@@ -149,7 +149,7 @@ class MonotonicULIDField(ULID):
     """
 
     @classmethod
-    def create(cls) -> "MonotonicULIDField":
+    def create(cls) -> MonotonicULIDField:
         """
         Create a new monotonic ULID instance.
 
@@ -197,9 +197,7 @@ class MonotonicULIDField(ULID):
             elif isinstance(value, int):
                 return cls(value.to_bytes(16, "big"))  # type: ignore[return-value]
             else:
-                raise ValueError(
-                    f"Cannot convert {type(value).__name__} to MonotonicULIDField"
-                )
+                raise ValueError(f"Cannot convert {type(value).__name__} to MonotonicULIDField")
 
         return core_schema.no_info_plain_validator_function(
             validate_ulid,

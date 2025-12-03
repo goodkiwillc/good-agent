@@ -2,11 +2,9 @@ from collections.abc import Callable
 from typing import Any, Protocol, TypeVar, cast
 
 import pytest
-
 from good_agent.core.event_router.context import EventContext
 from good_agent.core.event_router.core import EventRouter
 from good_agent.core.event_router.decorators import emit, on, typed_on
-
 
 T_Handler = TypeVar("T_Handler", bound=Callable[..., Any])
 EmitDecorator = Callable[[T_Handler], T_Handler]

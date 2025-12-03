@@ -1,5 +1,6 @@
 import asyncio
 import importlib.metadata
+import logging
 import os
 import threading
 from collections import defaultdict
@@ -11,8 +12,6 @@ from typing import (
     Any,
     Optional,
 )
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -314,9 +313,7 @@ class ToolRegistry:
         for reg in pending:
             try:
                 await self.register(**reg)
-                logger.debug(
-                    f"Processed deferred registration for tool '{reg['name']}'"
-                )
+                logger.debug(f"Processed deferred registration for tool '{reg['name']}'")
             except Exception as e:
                 logger.error(
                     f"Failed to process deferred registration for '{reg.get('name', 'unknown')}': {e}"
@@ -331,9 +328,7 @@ class ToolRegistry:
 
         try:
             # Load from good_agent.tools entry point group
-            entry_points = importlib.metadata.entry_points().select(
-                group="good_agent.tools"
-            )
+            entry_points = importlib.metadata.entry_points().select(group="good_agent.tools")
 
             for entry_point in entry_points:
                 try:

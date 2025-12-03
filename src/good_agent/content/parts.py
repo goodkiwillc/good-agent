@@ -139,9 +139,7 @@ class TemplateContentPart(BaseContentPart):
         # Render template
         try:
             if template_manager:
-                rendered = template_manager.render_template(
-                    self.template, render_context
-                )
+                rendered = template_manager.render_template(self.template, render_context)
             else:
                 # Simple Jinja2 fallback with sandbox by default
                 from good_agent.core import templating

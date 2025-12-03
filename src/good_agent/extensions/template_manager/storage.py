@@ -1,17 +1,18 @@
 import asyncio
 import hashlib
 import json
+import logging
 import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
-import logging
 
 import yaml  # type: ignore[import-untyped]
-from good_agent.core import templating
-from good_agent.core.templating import TemplateRegistry
 from jinja2 import BaseLoader, ChoiceLoader, Environment, TemplateNotFound
 from pydantic import BaseModel, Field
+
+from good_agent.core import templating
+from good_agent.core.templating import TemplateRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -259,9 +260,7 @@ class GitVersionProvider:
             for line in result.stdout.strip().split("\n"):
                 if line:
                     commit, date, message = line.split("|", 2)
-                    history.append(
-                        {"commit": commit[:12], "date": date, "message": message}
-                    )
+                    history.append({"commit": commit[:12], "date": date, "message": message})
             return history
         except (subprocess.CalledProcessError, FileNotFoundError):
             return []
@@ -281,9 +280,7 @@ class ChainedStorage:
                 if content is not None:
                     return content
             except Exception as e:
-                logger.warning(
-                    f"Error accessing {storage.__class__.__name__} for '{key}': {e}"
-                )
+                logger.warning(f"Error accessing {storage.__class__.__name__} for '{key}': {e}")
         return None
 
     async def put(self, key: str, content: str, metadata: dict | None = None) -> None:
@@ -396,9 +393,7 @@ class StorageTemplateLoader(BaseLoader):
         self.storage = storage
         self._cache: dict[str, str] = {}
 
-    def get_source(
-        self, environment: Environment, template: str
-    ) -> tuple[str, str | None, Any]:
+    def get_source(self, environment: Environment, template: str) -> tuple[str, str | None, Any]:
         """Get template source for Jinja2."""
         # Check cache first
         content: str | None
@@ -423,9 +418,7 @@ class StorageTemplateLoader(BaseLoader):
                         new_loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(new_loop)
                         try:
-                            result = new_loop.run_until_complete(
-                                self.storage.get(template)
-                            )
+                            result = new_loop.run_until_complete(self.storage.get(template))
                         finally:
                             new_loop.close()
                     except Exception as e:

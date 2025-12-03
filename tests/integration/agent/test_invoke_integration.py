@@ -38,9 +38,7 @@ class TestInvokeIntegration:
             agent.append("What's the weather like in Paris?")
 
             # Directly invoke tool - this creates assistant message AND tool response
-            weather_result = await agent.invoke(
-                get_weather, location="Paris"
-            )
+            weather_result = await agent.invoke(get_weather, location="Paris")
 
             assert weather_result.success is True
             assert "Paris" in weather_result.response
@@ -169,9 +167,7 @@ class TestInvokeIntegration:
             tools=[translate],
         ) as agent:
             # Create a bound function for English to Spanish translation
-            to_spanish = agent.invoke_func(
-                translate, from_lang="en", to_lang="es"
-            )
+            to_spanish = agent.invoke_func(translate, from_lang="en", to_lang="es")
 
             # Use it multiple times
             greetings = ["Hello", "Goodbye", "Thank you"]
@@ -205,9 +201,7 @@ class TestInvokeIntegration:
             tools=[search_web, summarize],
         ) as agent:
             # User asks complex question
-            agent.append(
-                "Search for information about quantum computing and summarize it"
-            )
+            agent.append("Search for information about quantum computing and summarize it")
 
             # Simulate LLM response with multiple tool calls
             agent.assistant.append(
@@ -226,9 +220,7 @@ class TestInvokeIntegration:
                         type="function",
                         function=ToolCallFunction(
                             name="search_web",
-                            arguments=json.dumps(
-                                {"query": "quantum computing applications"}
-                            ),
+                            arguments=json.dumps({"query": "quantum computing applications"}),
                         ),
                     ),
                 ],
@@ -295,17 +287,13 @@ class TestInvokeIntegration:
             tools=[validate_email],
         ) as agent:
             # Test valid email
-            valid_result = await agent.invoke(
-                validate_email, email="user@example.com"
-            )
+            valid_result = await agent.invoke(validate_email, email="user@example.com")
             assert valid_result.success is True
             assert valid_result.response["valid"] is True
             assert valid_result.response["domain"] == "example.com"
 
             # Test invalid email
-            invalid_result = await agent.invoke(
-                validate_email, email="not-an-email"
-            )
+            invalid_result = await agent.invoke(validate_email, email="not-an-email")
             assert invalid_result.success is False
             assert "Invalid email format" in invalid_result.error
 

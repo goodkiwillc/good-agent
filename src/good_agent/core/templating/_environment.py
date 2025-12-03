@@ -23,11 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 def _get_template(cls):
-    return (
-        inspect.cleandoc(cls.__template__).strip()
-        if cls.__template__
-        else inspect.getdoc(cls)
-    )
+    return inspect.cleandoc(cls.__template__).strip() if cls.__template__ else inspect.getdoc(cls)
 
 
 DEFAULT_CONFIG = {
@@ -226,9 +222,7 @@ def create_environment(
                         "__repr__",
                         "__bool__",
                     ):
-                        raise AttributeError(
-                            f"Access to attribute '{attribute}' is blocked"
-                        )
+                        raise AttributeError(f"Access to attribute '{attribute}' is blocked")
 
                 # Block access to function/method internals and frames
                 if attribute in (
@@ -249,9 +243,7 @@ def create_environment(
                     "__code__",
                     "__closure__",
                 ):
-                    raise AttributeError(
-                        f"Access to attribute '{attribute}' is blocked"
-                    )
+                    raise AttributeError(f"Access to attribute '{attribute}' is blocked")
 
                 return super().getattr(obj, attribute)
 
@@ -376,9 +368,7 @@ def render_template(
             _template = env.from_string(template)
             return _template.render(**filter_nulls(context))
         else:
-            raise TypeError(
-                f"Template must be a string or AbstractTemplate, got {type(template)}"
-            )
+            raise TypeError(f"Template must be a string or AbstractTemplate, got {type(template)}")
     except Exception as e:
         # Build detailed error message
         error_parts = [f"Error rendering template: {e}"]
@@ -394,10 +384,7 @@ def render_template(
                 matches = re.findall(section_pattern, template)
                 for match in matches:
                     name = match[0] or match[1]
-                    if (
-                        "-" in name
-                        or not name.replace("_", "").replace("-", "").isalnum()
-                    ):
+                    if "-" in name or not name.replace("_", "").replace("-", "").isalnum():
                         error_parts.append(
                             f"\nHint: Section name '{name}' contains special characters."
                         )
@@ -431,11 +418,7 @@ def render_template(
         if isinstance(template, str):
             template_lines = template.split("\n")
             # Check if exception has line number - direct check for Jinja2 exception
-            lineno = (
-                getattr(e, "lineno", None)
-                if isinstance(e, TemplateSyntaxError)
-                else None
-            )
+            lineno = getattr(e, "lineno", None) if isinstance(e, TemplateSyntaxError) else None
             if lineno and lineno <= len(template_lines):
                 # Show the problematic line with context
                 start = max(0, lineno - 2)

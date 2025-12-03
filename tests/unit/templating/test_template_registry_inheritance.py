@@ -35,12 +35,12 @@ def test_template_registry_parent_lookup():
 
     # Should find global template
     template = local_registry.get_template("global_test")
-    assert "Global: {{ value }}" == template
+    assert template == "Global: {{ value }}"
 
     # Should also work via get_source (Jinja2 loader interface)
     env = Environment()
     source, _, _ = local_registry.get_source(env, "global_test")
-    assert "Global: {{ value }}" == source
+    assert source == "Global: {{ value }}"
 
 
 def test_template_registry_local_override():
@@ -56,11 +56,11 @@ def test_template_registry_local_override():
 
     # Should get local version
     template = local_registry.get_template("shared_name")
-    assert "Local version" == template
+    assert template == "Local version"
 
     # Global should still have its version
     global_template = get_named_template("shared_name")
-    assert "Global version" == global_template
+    assert global_template == "Global version"
 
 
 def test_template_registry_list_templates():
@@ -108,7 +108,7 @@ def test_template_registry_getitem_lookup():
 
     # Should work with bracket notation
     template = local_registry["bracket_test"]
-    assert "Bracket access" == template
+    assert template == "Bracket access"
 
 
 def test_template_not_found_with_parent():
@@ -136,7 +136,7 @@ def test_template_registry_no_parent():
 
     # Should work normally
     template = standalone_registry.get_template("standalone")
-    assert "Standalone template" == template
+    assert template == "Standalone template"
 
     # Should not find global templates (since we're not using the global singleton)
     add_named_template("global_only", "Global only")
@@ -176,12 +176,12 @@ async def test_agent_template_manager_inheritance():
     try:
         # Agent should find global template
         template = agent.template.get_template("agent_global")
-        assert "Agent can use global: {{ msg }}" == template
+        assert template == "Agent can use global: {{ msg }}"
 
         # Agent should be able to add local templates
         agent.template.add_template("agent_local", "Local template: {{ msg }}")
         local_template = agent.template.get_template("agent_local")
-        assert "Local template: {{ msg }}" == local_template
+        assert local_template == "Local template: {{ msg }}"
 
         # Both should be in template names
         names = agent.template._registry.get_template_names()
@@ -208,7 +208,7 @@ async def test_agent_template_rendering_with_inheritance():
 
         # Should render successfully
         rendered = agent.messages[-1].render()
-        assert "Message: Hello World!" == rendered.strip()
+        assert rendered.strip() == "Message: Hello World!"
 
     finally:
         await agent.events.close()
@@ -227,20 +227,18 @@ async def test_agent_local_template_override():
     try:
         # Agent should initially get global version
         template = agent.template.get_template("override_test")
-        assert "Global version: {{ value }}" == template
+        assert template == "Global version: {{ value }}"
 
         # Add local override
-        agent.template.add_template(
-            "override_test", "Local version: {{ value }}", replace=True
-        )
+        agent.template.add_template("override_test", "Local version: {{ value }}", replace=True)
 
         # Should now get local version
         template = agent.template.get_template("override_test")
-        assert "Local version: {{ value }}" == template
+        assert template == "Local version: {{ value }}"
 
         # Global should be unchanged
         global_template = get_named_template("override_test")
-        assert "Global version: {{ value }}" == global_template
+        assert global_template == "Global version: {{ value }}"
 
     finally:
         await agent.events.close()

@@ -61,18 +61,14 @@ async def create_test_agent():
             # Mock responses: first with tool call, then final response
             responses = [
                 # First call returns tool request
-                MockLLMResponse(
-                    "I'll check the weather for you.", tool_calls=[mock_tool_call]
-                ),
+                MockLLMResponse("I'll check the weather for you.", tool_calls=[mock_tool_call]),
                 # Second call returns final response after tool execution
                 MockLLMResponse(
                     "Based on my check, the weather in New York is sunny and 72°F. It's a beautiful day!"
                 ),
             ]
 
-            with patch.object(
-                agent.model, "complete", AsyncMock(side_effect=responses)
-            ):
+            with patch.object(agent.model, "complete", AsyncMock(side_effect=responses)):
                 # Call should automatically execute tools and return final response
                 response = await agent.call("What's the weather in New York?")
 
@@ -108,13 +104,9 @@ async def test_call_with_auto_execute_false():
         mock_tool_call.function.name = "calculate"
         mock_tool_call.function.arguments = json.dumps({"expression": "2 + 2"})
 
-        mock_response = MockLLMResponse(
-            "I'll calculate that for you.", tool_calls=[mock_tool_call]
-        )
+        mock_response = MockLLMResponse("I'll calculate that for you.", tool_calls=[mock_tool_call])
 
-        with patch.object(
-            agent.model, "complete", AsyncMock(return_value=mock_response)
-        ):
+        with patch.object(agent.model, "complete", AsyncMock(return_value=mock_response)):
             # Call with auto_execute_tools=False should return tool calls without executing
             response = await agent.call("What is 2 + 2?", auto_execute_tools=False)
 
@@ -156,15 +148,11 @@ async def test_call_handles_multiple_tool_calls():
                 tool_calls=[weather_call, calc_call],
             ),
             # Final response after tool executions
-            MockLLMResponse(
-                "The weather in Paris is sunny and 72°F, which is about 22°C."
-            ),
+            MockLLMResponse("The weather in Paris is sunny and 72°F, which is about 22°C."),
         ]
 
         with patch.object(agent.model, "complete", AsyncMock(side_effect=responses)):
-            response = await agent.call(
-                "What's the weather in Paris and what's that in Celsius?"
-            )
+            response = await agent.call("What's the weather in Paris and what's that in Celsius?")
 
             # Verify final response
             assert isinstance(response, AssistantMessage)
@@ -185,9 +173,7 @@ async def test_call_without_tools_returns_immediately():
             "Hello! I'm here to help you with any questions you might have."
         )
 
-        with patch.object(
-            agent.model, "complete", AsyncMock(return_value=mock_response)
-        ):
+        with patch.object(agent.model, "complete", AsyncMock(return_value=mock_response)):
             response = await agent.call("Hello!")
 
             # Verify we got a direct response
@@ -212,9 +198,7 @@ async def test_call_respects_max_iterations():
         mock_tool_call.function.arguments = json.dumps({"location": "Tokyo"})
 
         # Mock responses that always return tool calls (simulating a loop)
-        always_tools_response = MockLLMResponse(
-            "Checking...", tool_calls=[mock_tool_call]
-        )
+        always_tools_response = MockLLMResponse("Checking...", tool_calls=[mock_tool_call])
 
         call_count = 0
 

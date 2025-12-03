@@ -13,9 +13,7 @@ def to_yaml(value):
 
 
 @register_filter("strftime", deprecated_aliases=["fmt_datetime"])
-def format_datetime(
-    value: datetime.datetime | datetime.date, fmt: str = "%Y-%m-%d %H:%M:%S"
-):
+def format_datetime(value: datetime.datetime | datetime.date, fmt: str = "%Y-%m-%d %H:%M:%S"):
     """Format datetime/date with strftime; ISO when no format provided."""
     if not value:
         return ""

@@ -5,23 +5,19 @@ import logging
 import threading
 import weakref
 from abc import ABC
-from datetime import timezone
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
     Literal,
     Self,
+    TypeAlias,
     overload,
 )
 
 from openai.types.completion_usage import CompletionUsage
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from ulid import ULID
-
-from good_agent.core.models import GoodBase, PrivateAttrBase
-from good_agent.core.types import URL
-from good_agent.core.ulid_monotonic import create_monotonic_ulid
 
 # Import content parts
 from good_agent.content import (
@@ -34,6 +30,9 @@ from good_agent.content import (
     deserialize_content_part,
     is_template,
 )
+from good_agent.core.models import GoodBase, PrivateAttrBase
+from good_agent.core.types import URL
+from good_agent.core.ulid_monotonic import create_monotonic_ulid
 from good_agent.utilities.typing import (
     SupportsDisplay,
     SupportsLLM,
@@ -66,8 +65,8 @@ def _get_render_stack() -> set[str]:
 MessageRole = Literal["system", "user", "assistant", "tool"]
 ImageDetail = Literal["high", "low", "auto"]
 
-type IMAGE = URL | bytes
-type MessageContent = (
+IMAGE: TypeAlias = "URL | bytes"
+MessageContent: TypeAlias = (
     "Message | SupportsLLM | SupportsDisplay | SupportsString | SupportsRender | str"
 )
 
@@ -81,7 +80,7 @@ class Annotation(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-type AnnotationLike = Annotation | dict[str, Any]
+AnnotationLike: TypeAlias = "Annotation | dict[str, Any]"
 
 
 class Message(PrivateAttrBase, GoodBase, ABC):
@@ -149,9 +148,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
                 return parts[0]
             else:
                 # Combine into single text part
-                combined_text = "\n".join(
-                    part.render(RenderMode.DISPLAY) for part in parts
-                )
+                combined_text = "\n".join(part.render(RenderMode.DISPLAY) for part in parts)
                 return TextContentPart(text=combined_text)
 
         # Check for protocol support using isinstance
@@ -205,9 +202,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
                 parts.extend(part.content_parts)
             else:
                 # Create new content part
-                content_part = cls._create_content_part(
-                    part, template_detection=template_detection
-                )
+                content_part = cls._create_content_part(part, template_detection=template_detection)
                 parts.append(content_part)
         return parts
 
@@ -297,18 +292,14 @@ class Message(PrivateAttrBase, GoodBase, ABC):
 
         fallback_seed: str | None = None
         if not kwargs.get("content_parts") and _content:
-            fallback_seed = "\n".join(
-                str(part) for part in _content if part is not None
-            )
+            fallback_seed = "\n".join(str(part) for part in _content if part is not None)
 
         super().__init__(**kwargs)
 
         # Finalize content parts (extract template variables if agent is set)
         self._finalize_content_parts()
 
-        fallback_value = (
-            legacy_content_arg if legacy_content_arg is not None else fallback_seed
-        )
+        fallback_value = legacy_content_arg if legacy_content_arg is not None else fallback_seed
         if fallback_value:
             self._legacy_content_fallback = str(fallback_value)
 
@@ -316,13 +307,10 @@ class Message(PrivateAttrBase, GoodBase, ABC):
         """Finalize content parts after message creation."""
         if self.agent is not None and self.agent.template:
             for part in self.content_parts:
-                if (
-                    isinstance(part, TemplateContentPart)
-                    and not part.context_requirements
-                ):
+                if isinstance(part, TemplateContentPart) and not part.context_requirements:
                     # Extract template variables using TemplateManager
-                    part.context_requirements = (
-                        self.agent.template.extract_template_variables(part.template)
+                    part.context_requirements = self.agent.template.extract_template_variables(
+                        part.template
                     )
 
     def render(self, mode: RenderMode = RenderMode.DISPLAY) -> str:
@@ -501,9 +489,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
 
     @overload
     @classmethod
-    def from_llm_response(
-        cls, response: dict[str, Any], role: Literal["user"]
-    ) -> UserMessage: ...
+    def from_llm_response(cls, response: dict[str, Any], role: Literal["user"]) -> UserMessage: ...
 
     @overload
     @classmethod
@@ -513,9 +499,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
 
     @overload
     @classmethod
-    def from_llm_response(
-        cls, response: dict[str, Any], role: Literal["tool"]
-    ) -> ToolMessage: ...
+    def from_llm_response(cls, response: dict[str, Any], role: Literal["tool"]) -> ToolMessage: ...
 
     @classmethod
     def from_llm_response(
@@ -731,7 +715,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
     role: MessageRole
     name: str | None = None
     timestamp: datetime.datetime = Field(
-        default_factory=lambda: datetime.datetime.now(timezone.utc)
+        default_factory=lambda: datetime.datetime.now(datetime.UTC)
     )
     metadata: dict[str, Any] | None = None
 
@@ -832,11 +816,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
         # Update with remaining values
         data.update(kwargs)
 
-        if (
-            "legacy_content" not in data
-            and "content" not in data
-            and not data.get("content_parts")
-        ):
+        if "legacy_content" not in data and "content" not in data and not data.get("content_parts"):
             data["legacy_content"] = self.render(RenderMode.DISPLAY)
 
         # Create new instance of the same type

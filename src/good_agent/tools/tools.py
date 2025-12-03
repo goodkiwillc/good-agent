@@ -15,9 +15,9 @@ from typing import (
     Literal,
     ParamSpec,
     Protocol,
+    TypeAlias,
     TypedDict,
     TypeVar,
-    Union,
     cast,
     get_args,
     get_type_hints,
@@ -46,12 +46,11 @@ from good_agent.core.models import Renderable
 
 logger = logging.getLogger(__name__)
 
-type ToolCallId = str
-type ToolLike = Union["Tool[..., Any]", Callable[..., Any], "Agent"]
+ToolCallId: TypeAlias = str
+ToolLike: TypeAlias = "Tool[..., Any] | Callable[..., Any] | Agent"
 
 if TYPE_CHECKING:
     from good_agent.agent import Agent
-
     from good_agent.agent.config import AgentConfigManager
     from good_agent.extensions.template_manager.injection import (
         _ContextValueDescriptor,
@@ -129,9 +128,7 @@ class ToolManager(AgentComponent):
 
     def _export_state(self) -> dict[str, Any]:
         state = super()._export_state()
-        state["tools"] = {
-            name: copy.deepcopy(tool) for name, tool in self._tools.items()
-        }
+        state["tools"] = {name: copy.deepcopy(tool) for name, tool in self._tools.items()}
         return state
 
     def _import_state(self, state: dict[str, Any]) -> None:
@@ -247,9 +244,7 @@ class ToolManager(AgentComponent):
         # Register globally if requested
         if register_globally:
             await self._ensure_registry_initialized()
-            await self._registry.register(
-                name, tool_instance, tags=tags or [], replace=replace
-            )
+            await self._registry.register(name, tool_instance, tags=tags or [], replace=replace)
 
     def register_tool_sync(
         self,
@@ -375,9 +370,7 @@ class ToolManager(AgentComponent):
             self._tools[tool_name] = tool_adapter
             logger.debug(f"Loaded MCP tool: {tool_name}")
 
-        logger.info(
-            f"Loaded {len(mcp_tools)} tools from {len(server_configs)} MCP servers"
-        )
+        logger.info(f"Loaded {len(mcp_tools)} tools from {len(server_configs)} MCP servers")
 
     async def disconnect_mcp_servers(self) -> None:
         """Disconnect from all MCP servers and remove their tools."""
@@ -475,9 +468,7 @@ class ToolManager(AgentComponent):
 
         return tool_context()
 
-    def _ensure_tool(
-        self, tool_or_callable: ToolLike, name: str | None = None
-    ) -> Tool[..., Any]:
+    def _ensure_tool(self, tool_or_callable: ToolLike, name: str | None = None) -> Tool[..., Any]:
         """
         Ensure we have a Tool instance, wrapping a callable if necessary.
 
@@ -512,9 +503,7 @@ class ToolManager(AgentComponent):
                 description=inspect.getdoc(tool_or_callable) or f"Tool: {tool_name}",
             )
         else:
-            raise TypeError(
-                f"Expected Tool, Agent, or Callable, got {type(tool_or_callable)}"
-            )
+            raise TypeError(f"Expected Tool, Agent, or Callable, got {type(tool_or_callable)}")
 
 
 class ToolCall(BaseModel):
@@ -769,9 +758,11 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
             # Method 2: Check for __origin__ attribute
             if not is_annotated and hasattr(annotation, "__origin__"):
                 origin = annotation.__origin__
-                if hasattr(origin, "__name__") and origin.__name__ == "Annotated":
-                    is_annotated = True
-                elif str(origin) == "typing.Annotated":
+                if (
+                    hasattr(origin, "__name__")
+                    and origin.__name__ == "Annotated"
+                    or str(origin) == "typing.Annotated"
+                ):
                     is_annotated = True
 
             # Method 3: Check string representation
@@ -861,8 +852,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
 
         # If no modifications needed, return original
         if len(new_params) == len(sig.parameters) and all(
-            p1 == p2
-            for p1, p2 in zip(new_params, sig.parameters.values(), strict=False)
+            p1 == p2 for p1, p2 in zip(new_params, sig.parameters.values(), strict=False)
         ):
             return fn
 
@@ -889,9 +879,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
 
         return wrapper
 
-    def _on_function_add_retry(
-        self, fn: Callable[..., FuncResp]
-    ) -> Callable[..., FuncResp]:
+    def _on_function_add_retry(self, fn: Callable[..., FuncResp]) -> Callable[..., FuncResp]:
         """Add retry logic to the function"""
         return retry(
             wait=wait_exponential(multiplier=1, min=4, max=10),
@@ -903,9 +891,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
     @property
     def signature(self) -> ToolSignature:
         """Get the tool signature in OpenAI format"""
-        _schema = self.model.model_json_schema(
-            schema_generator=BaseToolGenerateJsonSchema
-        )
+        _schema = self.model.model_json_schema(schema_generator=BaseToolGenerateJsonSchema)
         return ToolSignature(
             type="function",
             function=_ToolSignatureFunction(
@@ -978,10 +964,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
             # Handle ContextValue injection
             sig = inspect.signature(self._original_fn)
             for param_name, param in sig.parameters.items():
-                if (
-                    isinstance(param.default, _ContextValueDescriptor)
-                    and param_name not in kwargs
-                ):
+                if isinstance(param.default, _ContextValueDescriptor) and param_name not in kwargs:
                     context_value: _ContextValueDescriptor = param.default
                     # Try to get from agent vars (template variables)
                     if agent and hasattr(agent, "vars"):
@@ -1004,9 +987,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
                             available_keys = []
                             if hasattr(agent.vars, "as_dict"):
                                 available_keys = list(agent.vars.as_dict().keys())
-                            raise MissingContextValueError(
-                                context_value.name, available_keys
-                            )
+                            raise MissingContextValueError(context_value.name, available_keys)
                     else:
                         # No agent context available - use defaults if available
                         if context_value.default is not ContextValue._MISSING:  # type: ignore[attr-defined]
@@ -1031,9 +1012,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
                     )
                 if tool_call is not None:
                     stack.enter_context(
-                        dependency_provider.scope(
-                            _get_tool_call_provider, lambda: tool_call
-                        )
+                        dependency_provider.scope(_get_tool_call_provider, lambda: tool_call)
                     )
 
                 # Call the injected function; await if it returns an awaitable
@@ -1073,9 +1052,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
             # Normalize validation-related errors to include a standard phrase
             lower = err_msg.lower()
             if "validation error" not in lower and (
-                "optionitem[" in lower
-                or "incoming options" in lower
-                or "field required" in lower
+                "optionitem[" in lower or "incoming options" in lower or "field required" in lower
             ):
                 err_msg = f"Validation error: {err_msg}"
 
@@ -1385,9 +1362,7 @@ def tool(  # type: ignore[misc]
         # Update parameter descriptions from Tool's annotation descriptions
         for param_name, param_info in parameters.items():
             if param_name in tool_instance._annotation_descriptions:
-                param_info.description = tool_instance._annotation_descriptions[
-                    param_name
-                ]
+                param_info.description = tool_instance._annotation_descriptions[param_name]
 
         # Create metadata object for compatibility
         metadata = ToolMetadata(

@@ -16,9 +16,7 @@ class TestMockExecution:
         """Test that call() returns the first mocked assistant response"""
         agent = Agent("System prompt")
 
-        with agent.mock(
-            agent.mock.create("Hello from mock!", role="assistant")
-        ) as mock_agent:
+        with agent.mock(agent.mock.create("Hello from mock!", role="assistant")) as mock_agent:
             result = await mock_agent.call()
 
             assert isinstance(result, AssistantMessage)

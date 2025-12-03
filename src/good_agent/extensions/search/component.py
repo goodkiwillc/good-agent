@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING, Any, Literal
 from good_common.utilities import now_pt
 
 from good_agent.core.components import AgentComponent
-from good_agent.tools import tool
-
 from good_agent.extensions.search.models import (
     DataDomain,
     OperationType,
@@ -21,6 +19,7 @@ from good_agent.extensions.search.providers import (
     SearchProvider,
     SearchProviderRegistry,
 )
+from good_agent.tools import tool
 
 if TYPE_CHECKING:
     pass
@@ -51,9 +50,7 @@ class AgentSearch(AgentComponent):
             parallel_execution: Execute multi-platform searches in parallel
         """
         super().__init__(**kwargs)
-        logger.warning(
-            "AgentSearch component is experimental and may change in future releases."
-        )
+        logger.warning("AgentSearch component is experimental and may change in future releases.")
 
         self.registry = SearchProviderRegistry()
         self.auto_discover = auto_discover
@@ -138,14 +135,10 @@ class AgentSearch(AgentComponent):
                 required_features=required_features or [],
                 optimize_for=optimize_for if optimize_for != "all" else "balanced",
             )
-            providers = self._select_providers_with_constraints(
-                platforms, domains, constraints
-            )
+            providers = self._select_providers_with_constraints(platforms, domains, constraints)
 
         if not providers:
-            logger.warning(
-                f"No providers available for platforms={platforms}, domains={domains}"
-            )
+            logger.warning(f"No providers available for platforms={platforms}, domains={domains}")
             return {}
 
         logger.info(f"Search starting with {len(providers)} providers")
@@ -288,9 +281,7 @@ class AgentSearch(AgentComponent):
         if platforms:
             # Filter to requested platforms
             platform_set = set(platforms)
-            providers = [
-                p for p in providers if p.platform and p.platform.value in platform_set
-            ]
+            providers = [p for p in providers if p.platform and p.platform.value in platform_set]
 
         if not providers:
             return {"error": [{"message": "No providers support trend analysis"}]}
@@ -310,15 +301,11 @@ class AgentSearch(AgentComponent):
                 if location:
                     query.location = location
 
-                capability = provider.get_capability(
-                    OperationType.ANALYZE, DataDomain.SOCIAL_MEDIA
-                )
+                capability = provider.get_capability(OperationType.ANALYZE, DataDomain.SOCIAL_MEDIA)
                 if capability:
                     # This would ideally call a trends-specific method
                     results = await provider.search(query, capability)
-                    trends[
-                        provider.platform.value if provider.platform else provider.name
-                    ] = [
+                    trends[provider.platform.value if provider.platform else provider.name] = [
                         {"topic": r.content, "metrics": r.metrics} for r in results[:10]
                     ]
             except Exception as e:
@@ -381,9 +368,7 @@ class AgentSearch(AgentComponent):
         if not platforms and not domains:
             # No specific requirements - get all search providers
             for domain in DataDomain:
-                providers.extend(
-                    self.registry.find_capable_providers(OperationType.SEARCH, domain)
-                )
+                providers.extend(self.registry.find_capable_providers(OperationType.SEARCH, domain))
 
         # Deduplicate providers
         seen = set()

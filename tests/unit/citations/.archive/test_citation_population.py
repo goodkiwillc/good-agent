@@ -65,9 +65,7 @@ The research [1] shows interesting results.
     msg5 = agent[-1]
     print(f"  Original content (first 50 chars): {msg5.content_parts[0].text[:50]}...")
     print(f"  Citations field: {msg5.citations}")
-    print(
-        f"  Transformed content has [!CITE_X!]: {'[!CITE_' in msg5.content_parts[0].text}"
-    )
+    print(f"  Transformed content has [!CITE_X!]: {'[!CITE_' in msg5.content_parts[0].text}")
     print()
 
     await agent.events.close()

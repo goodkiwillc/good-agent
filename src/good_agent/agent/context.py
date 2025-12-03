@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import logging
-import orjson
 from typing import TYPE_CHECKING, Any, Literal
 
+import orjson
 from ulid import ULID
 
 from good_agent.agent.config import AGENT_CONFIG_KEYS
+from good_agent.agent.pool import AgentPool
 from good_agent.events import AgentEvents
 from good_agent.messages import (
     AssistantMessage,
@@ -16,7 +17,6 @@ from good_agent.messages import (
     ToolMessage,
     UserMessage,
 )
-from good_agent.agent.pool import AgentPool
 from good_agent.tools import ToolCall, ToolCallFunction, ToolResponse
 
 if TYPE_CHECKING:
@@ -84,9 +84,7 @@ class ContextManager:
                 "extensions",
             }
         }
-        self.agent._component_registry.clone_extensions_for_config(
-            filtered_config, override_keys
-        )
+        self.agent._component_registry.clone_extensions_for_config(filtered_config, override_keys)
 
         # Create new agent using the constructor
         new_agent = Agent(**filtered_config)
@@ -107,38 +105,26 @@ class ContextManager:
                 match msg:
                     case SystemMessage():
                         # Use set_system_message for system messages
-                        new_msg = new_agent.model.create_message(
-                            **msg_data, role="system"
-                        )
+                        new_msg = new_agent.model.create_message(**msg_data, role="system")
                         new_agent.set_system_message(new_msg)
                     case UserMessage():
-                        new_msg = new_agent.model.create_message(
-                            **msg_data, role="user"
-                        )
+                        new_msg = new_agent.model.create_message(**msg_data, role="user")
                         new_agent.append(new_msg)
                     case AssistantMessage():
-                        new_msg = new_agent.model.create_message(
-                            **msg_data, role="assistant"
-                        )
+                        new_msg = new_agent.model.create_message(**msg_data, role="assistant")
                         new_agent.append(new_msg)
                     case ToolMessage():
-                        new_msg = new_agent.model.create_message(
-                            **msg_data, role="tool"
-                        )
+                        new_msg = new_agent.model.create_message(**msg_data, role="tool")
                         new_agent.append(new_msg)
                     case _:
                         raise ValueError(f"Unknown message type: {type(msg).__name__}")
 
         # Set version to match source (until modified)
-        new_agent._versioning_manager._version_id = (
-            self.agent._versioning_manager._version_id
-        )
+        new_agent._versioning_manager._version_id = self.agent._versioning_manager._version_id
 
         # Initialize version history with current state
         if new_agent._messages:
-            new_agent._versioning_manager._versions = [
-                [msg.id for msg in new_agent._messages]
-            ]
+            new_agent._versioning_manager._versions = [[msg.id for msg in new_agent._messages]]
 
         # Emit agent:fork event
         # @TODO: event naming
@@ -151,9 +137,7 @@ class ContextManager:
 
         return new_agent
 
-    def fork_context(
-        self, truncate_at: int | None = None, **fork_kwargs
-    ) -> ForkContext:
+    def fork_context(self, truncate_at: int | None = None, **fork_kwargs) -> ForkContext:
         """Create a fork context for isolated operations.
 
         Args:
@@ -281,7 +265,7 @@ class ContextManager:
             result="success",
         )
 
-    async def _merge_as_tool_calls(self, *agents: Agent, **kwargs: Any) -> None:
+    async def _merge_as_tool_calls(self, *agents: Agent, **_kwargs: Any) -> None:
         """Helper that converts child outputs into tool calls on the parent."""
 
         tool_calls: list[ToolCall] = []

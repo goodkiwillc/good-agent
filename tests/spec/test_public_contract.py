@@ -34,9 +34,7 @@ def tools():
         return f"In {city}, It's sunny and 75 degrees."
 
     # Return as namespace for dot notation
-    return SimpleNamespace(
-        get_ip=get_ip, get_location=get_location, get_weather=get_weather
-    )
+    return SimpleNamespace(get_ip=get_ip, get_location=get_location, get_weather=get_weather)
 
 
 class TestBasicUsage:
@@ -49,9 +47,7 @@ class TestBasicUsage:
             # Typed, role-aware message history
             assert "4" in agent[-1].content
 
-            assert (
-                agent[-1] == agent.assistant[-1]
-            )  # last assistant message is last message
+            assert agent[-1] == agent.assistant[-1]  # last assistant message is last message
 
             assert agent.user[-1].content == "What is 2+2?"  # last user message
 
@@ -60,9 +56,7 @@ class TestBasicUsage:
             "You are a helpful assistant.",
             context={"name": "Alice"},
         ) as agent:
-            resp = await agent.call(
-                "Greet user `{{ name }}` using the template 'Hello, [NAME]!'"
-            )
+            resp = await agent.call("Greet user `{{ name }}` using the template 'Hello, [NAME]!'")
             logger.info(resp)
             assert resp.content == "Hello, Alice!"
 
@@ -132,9 +126,7 @@ class TestBasicUsage:
                     case AssistantMessage(i=i, tool_calls=tool_calls):
                         if tool_calls:
                             for call in tool_calls:
-                                logger.info(
-                                    f"{i}: Assistant requested tool call:", call.name
-                                )
+                                logger.info(f"{i}: Assistant requested tool call:", call.name)
                         else:
                             logger.info(f"{i}: Assistant:", message.content)
 
@@ -214,9 +206,7 @@ class TestBasicUsage:
             message_indexer=lambda message, agent: True,
         )
 
-        await agent.call(
-            include="message_match_pattern*.", exclude="mesage match pattern"
-        )
+        await agent.call(include="message_match_pattern*.", exclude="mesage match pattern")
 
         async def truncate(message: Message) -> Message:
             return message.copy_with(
@@ -226,11 +216,7 @@ class TestBasicUsage:
             )
 
         await agent.call(
-            transforms={
-                '//message[@role="tool" and rindex>10 ]': lambda message: truncate(
-                    message
-                )
-            }
+            transforms={'//message[@role="tool" and rindex>10 ]': lambda message: truncate(message)}
         )
 
 
@@ -309,9 +295,7 @@ def search_web():
         # Dummy implementation
         results: SearchResults = await search_client.search(query, limit=limit)
         if fetch_pages:
-            pages: dict[str, str] = await fetcher.fetch_urls(
-                [r.url for r in results.items]
-            )
+            pages: dict[str, str] = await fetcher.fetch_urls([r.url for r in results.items])
             for url, page in pages.items():
                 results[url].content = page
 
@@ -360,13 +344,9 @@ class TestComponents:
         cites = CitationManager()  # maps URLs -> indices; presents [!CITE_{x}!] to LLM
         tasks = TaskManager()  # exposes todo tools and renders task state into context
 
-        async with Agent(
-            "Research with citations and todos.", extensions=[cites, tasks]
-        ) as agent:
+        async with Agent("Research with citations and todos.", extensions=[cites, tasks]) as agent:
             # Use component tools directly via invoke
-            await agent.invoke(
-                "create_list", name="plan", items=["search", "summarize"]
-            )
+            await agent.invoke("create_list", name="plan", items=["search", "summarize"])
             agent.append("Research Python pattern matching; cite sources.")
             await agent.call()
 

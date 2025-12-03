@@ -5,10 +5,9 @@ import logging
 from abc import ABCMeta
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from good_agent.core.event_router import EventContext, EventRouter, on
-
-from good_agent.events import AgentEvents
 from good_agent.core.components.tool_adapter import ToolAdapter, ToolAdapterRegistry
+from good_agent.core.event_router import EventContext, EventRouter, on
+from good_agent.events import AgentEvents
 
 if TYPE_CHECKING:
     from good_agent.agent import Agent
@@ -41,10 +40,7 @@ class AgentComponentType(ABCMeta):
                 elif hasattr(attr_value, "_tool_metadata"):
                     # This is a legacy tool-decorated method
                     cls._component_tools[attr_name] = attr_value
-                elif (
-                    hasattr(attr_value, "__class__")
-                    and attr_value.__class__.__name__ == "Tool"
-                ):
+                elif hasattr(attr_value, "__class__") and attr_value.__class__.__name__ == "Tool":
                     # This is a Tool instance (shouldn't happen but handle it)
                     cls._component_tools[attr_name] = attr_value
 
@@ -224,9 +220,7 @@ class AgentComponent(EventRouter, metaclass=AgentComponentType):
                 # Skip any attributes that can't be accessed
                 pass
 
-    def get_dependency(
-        self, component_class: type[T_AgentComponent]
-    ) -> T_AgentComponent | None:
+    def get_dependency(self, component_class: type[T_AgentComponent]) -> T_AgentComponent | None:
         """
         Get a component dependency from the agent.
 
@@ -265,9 +259,7 @@ class AgentComponent(EventRouter, metaclass=AgentComponentType):
                     self._agent.tools[tool_name] = tool_instance
                     self._registered_tool_names.append(tool_name)
                 except Exception as e:
-                    logger.error(
-                        f"Failed to register tool {tool_name}: {e}", exc_info=True
-                    )
+                    logger.error(f"Failed to register tool {tool_name}: {e}", exc_info=True)
 
             # Handle legacy tool-decorated methods (backward compatibility)
             elif hasattr(method, "_tool_metadata"):
@@ -295,9 +287,7 @@ class AgentComponent(EventRouter, metaclass=AgentComponentType):
                     self._registered_tool_names.append(tool_name)
                     # logger.debug(f"Registered tool {tool_name} with agent")
                 except Exception as e:
-                    logger.error(
-                        f"Failed to register tool {tool_name}: {e}", exc_info=True
-                    )
+                    logger.error(f"Failed to register tool {tool_name}: {e}", exc_info=True)
 
     def _unregister_component_tools(self):
         """Unregister all component tools from the agent."""
@@ -355,9 +345,7 @@ class AgentComponent(EventRouter, metaclass=AgentComponentType):
             return
 
         # Apply adapters to transform the signature
-        adapted_signature = self._tool_adapter_registry.adapt_signature(
-            tool, signature, agent
-        )
+        adapted_signature = self._tool_adapter_registry.adapt_signature(tool, signature, agent)
 
         # Update the output if signature was modified
         if adapted_signature != signature:

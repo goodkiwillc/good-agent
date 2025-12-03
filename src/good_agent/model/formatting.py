@@ -13,7 +13,7 @@ from good_agent.content import (
     TemplateContentPart,
     TextContentPart,
 )
-from good_agent.utilities import url_to_base64
+from good_agent.core.types import URL
 from good_agent.events import AgentEvents
 from good_agent.messages import (
     AssistantMessage,
@@ -22,7 +22,7 @@ from good_agent.messages import (
     ToolMessage,
     UserMessage,
 )
-from good_agent.core.types import URL
+from good_agent.utilities import url_to_base64
 
 if TYPE_CHECKING:
     from litellm.types.completion import ChatCompletionMessageParam
@@ -77,18 +77,14 @@ class MessageFormatter:
                 ChatCompletionContentPartTextParam = self.llm._get_litellm_type(
                     "ChatCompletionContentPartTextParam"
                 )
-                result.append(
-                    ChatCompletionContentPartTextParam(text=part.text, type="text")
-                )
+                result.append(ChatCompletionContentPartTextParam(text=part.text, type="text"))
             elif isinstance(part, TemplateContentPart):
                 # Render template for LLM
                 rendered = message._render_part(part, mode)
                 ChatCompletionContentPartTextParam = self.llm._get_litellm_type(
                     "ChatCompletionContentPartTextParam"
                 )
-                result.append(
-                    ChatCompletionContentPartTextParam(text=rendered, type="text")
-                )
+                result.append(ChatCompletionContentPartTextParam(text=rendered, type="text"))
             elif isinstance(part, ImageContentPart):
                 ChatCompletionContentPartImageParam = self.llm._get_litellm_type(
                     "ChatCompletionContentPartImageParam"
@@ -203,10 +199,8 @@ class MessageFormatter:
 
                     for image in images:
                         if isinstance(image, URL):
-                            ChatCompletionContentPartImageParam = (
-                                self.llm._get_litellm_type(
-                                    "ChatCompletionContentPartImageParam"
-                                )
+                            ChatCompletionContentPartImageParam = self.llm._get_litellm_type(
+                                "ChatCompletionContentPartImageParam"
                             )
                             ImageURL = self.llm._get_litellm_type("ImageURL")
                             _content.append(
@@ -216,10 +210,8 @@ class MessageFormatter:
                                 )
                             )
                         elif isinstance(image, bytes):
-                            ChatCompletionContentPartImageParam = (
-                                self.llm._get_litellm_type(
-                                    "ChatCompletionContentPartImageParam"
-                                )
+                            ChatCompletionContentPartImageParam = self.llm._get_litellm_type(
+                                "ChatCompletionContentPartImageParam"
                             )
                             ImageURL = self.llm._get_litellm_type("ImageURL")
                             _content.append(
@@ -256,9 +248,7 @@ class MessageFormatter:
                     # Join text parts for assistant messages
                     _content = (
                         "".join(
-                            part.get("text", "")
-                            if isinstance(part, dict)
-                            else str(part)
+                            part.get("text", "") if isinstance(part, dict) else str(part)
                             for part in _content
                             if isinstance(part, dict) and part.get("type") == "text"
                         )
@@ -307,9 +297,7 @@ class MessageFormatter:
                     # Join text parts for tool messages
                     _content = (
                         "".join(
-                            part.get("text", "")
-                            if isinstance(part, dict)
-                            else str(part)
+                            part.get("text", "") if isinstance(part, dict) else str(part)
                             for part in _content
                             if isinstance(part, dict) and part.get("type") == "text"
                         )
@@ -357,9 +345,7 @@ class MessageFormatter:
         # Ensure all tool calls have corresponding tool responses
         # This is critical for AssistantMessageStructuredOutput which may have
         # tool_calls in the message history but no actual ToolMessage responses
-        messages_for_llm = self.ensure_tool_call_pairs_for_formatted_messages(
-            messages_for_llm
-        )
+        messages_for_llm = self.ensure_tool_call_pairs_for_formatted_messages(messages_for_llm)
 
         return messages_for_llm
 
@@ -402,9 +388,7 @@ class MessageFormatter:
             role = _get_attr(msg, "role", None)
 
             # If assistant with tool_calls, ensure immediate tool responses exist
-            tool_calls = (
-                _get_attr(msg, "tool_calls", None) if role == "assistant" else None
-            )
+            tool_calls = _get_attr(msg, "tool_calls", None) if role == "assistant" else None
             if role == "assistant" and tool_calls:
                 # Append the assistant message first
                 result.append(msg)

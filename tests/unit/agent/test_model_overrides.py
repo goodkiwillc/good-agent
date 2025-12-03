@@ -211,9 +211,7 @@ class TestModelCapabilities:
         # Test Claude capabilities
         claude_caps = registry.get_model_capabilities("claude-3-5-sonnet-20241022")
         assert claude_caps.function_calling is True
-        assert (
-            claude_caps.parallel_function_calling is False
-        )  # Claude doesn't support parallel
+        assert claude_caps.parallel_function_calling is False  # Claude doesn't support parallel
         assert claude_caps.context_caching is True
         assert claude_caps.pdf_input is True
 
@@ -246,9 +244,7 @@ class TestIntegrationWithLanguageModel:
         import os
         import sys
 
-        tests_dir = os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        )
+        tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
         sys.path.insert(0, os.path.join(tests_dir, "fixtures", "helpers"))
         from good_agent.model.llm import LanguageModel
         from test_helpers import MockAgent  # type: ignore[import-not-found]
@@ -339,9 +335,7 @@ class TestIntegrationWithLanguageModel:
         import os
         import sys
 
-        tests_dir = os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        )
+        tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
         sys.path.insert(0, os.path.join(tests_dir, "fixtures", "helpers"))
         from good_agent.model.llm import LanguageModel
         from test_helpers import MockAgent  # type: ignore[import-not-found]
@@ -354,8 +348,5 @@ class TestIntegrationWithLanguageModel:
         # Check capabilities for different models
         assert llm.supports_function_calling("gpt-5-mini") is True
         assert llm.supports_streaming("o1-preview") is False
-        assert (
-            llm.supports_parallel_function_calling("claude-3-5-sonnet-20241022")
-            is False
-        )
+        assert llm.supports_parallel_function_calling("claude-3-5-sonnet-20241022") is False
         assert llm.supports_video("gemini-pro") is True

@@ -1,9 +1,8 @@
-import pytest
 from typing import Any, cast
 
+import pytest
 from good_agent import Agent, Tool, tool
 from good_agent.tools import BoundTool
-
 
 ToolLike = Tool[Any, Any] | BoundTool[Any, Any, Any]
 
@@ -67,9 +66,7 @@ class TestToolsContextManager:
     @pytest.mark.asyncio
     async def test_replace_mode_replaces_all_tools(self):
         """Test that replace mode replaces all tools within context."""
-        async with Agent(
-            "Test agent", tools=[original_tool, another_original_tool]
-        ) as agent:
+        async with Agent("Test agent", tools=[original_tool, another_original_tool]) as agent:
             # Verify original tools
             assert "original_tool" in agent.tools
             assert "another_original_tool" in agent.tools
@@ -120,9 +117,7 @@ class TestToolsContextManager:
             assert len(agent.tools) == 3
 
             # Use filter mode to keep only tools with "original" in name
-            async with agent.tools(
-                mode="filter", filter_fn=lambda name, tool: "original" in name
-            ):
+            async with agent.tools(mode="filter", filter_fn=lambda name, tool: "original" in name):
                 # Inside context: only "original" tools
                 assert "original_tool" in agent.tools
                 assert "another_original_tool" in agent.tools
@@ -170,9 +165,7 @@ class TestToolsContextManager:
     @pytest.mark.asyncio
     async def test_empty_replace_clears_all_tools(self):
         """Test that replace mode with no tools clears all tools."""
-        async with Agent(
-            "Test agent", tools=[original_tool, another_original_tool]
-        ) as agent:
+        async with Agent("Test agent", tools=[original_tool, another_original_tool]) as agent:
             assert len(agent.tools) == 2
 
             # Replace with empty list
@@ -265,9 +258,7 @@ class TestToolsContextManager:
     @pytest.mark.asyncio
     async def test_filter_mode_with_none_filter_keeps_all(self):
         """Test that filter mode with None filter function keeps all tools."""
-        async with Agent(
-            "Test agent", tools=[original_tool, another_original_tool]
-        ) as agent:
+        async with Agent("Test agent", tools=[original_tool, another_original_tool]) as agent:
             original_count = len(agent.tools)
 
             # Filter with None should keep everything
@@ -285,9 +276,7 @@ class TestToolsContextManager:
             """Modified version of original tool."""
             return f"modified: {value}"
 
-        modified_original = as_tool(
-            tool(name="original_tool")(cast(Any, modified_original_impl))
-        )
+        modified_original = as_tool(tool(name="original_tool")(cast(Any, modified_original_impl)))
 
         async with Agent("Test agent", tools=[original_tool]) as agent:
             # Test original behavior

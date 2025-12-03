@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Any, Protocol, TypeGuard, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, TypeGuard, TypeVar, runtime_checkable
+
+T = TypeVar("T")
 
 if TYPE_CHECKING:
     from good_agent.content import RenderMode
@@ -66,7 +68,7 @@ def is_render_mode_enum(obj: Any) -> TypeGuard[RenderMode]:
     return isinstance(obj, RenderMode)
 
 
-def is_not_none[T](obj: T | None) -> TypeGuard[T]:
+def is_not_none(obj: T | None) -> TypeGuard[T]:
     """True when *obj* is not None."""
 
     return obj is not None
@@ -86,7 +88,7 @@ def is_message(obj: Any) -> TypeGuard[Message]:
     return isinstance(obj, Message)
 
 
-def safe_get_attr[T](obj: Any, attr: str, default: T) -> T | Any:
+def safe_get_attr(obj: Any, attr: str, default: T) -> T | Any:
     """Return getattr(obj, attr, default) but protect against None."""
 
     if obj is None:
@@ -94,7 +96,7 @@ def safe_get_attr[T](obj: Any, attr: str, default: T) -> T | Any:
     return getattr(obj, attr, default)
 
 
-def safe_get_dict_value[T](d: dict[Any, Any] | None, key: Any, default: T) -> T | Any:
+def safe_get_dict_value(d: dict[Any, Any] | None, key: Any, default: T) -> T | Any:
     """Return dictionary value or default when *d* is None/missing key."""
 
     if d is None:

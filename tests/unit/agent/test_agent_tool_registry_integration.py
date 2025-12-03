@@ -49,9 +49,7 @@ class TestAgentToolRegistryIntegration:
 
         # Register tools with tags
         await registry.register("get_weather", get_weather, tags=["weather", "api"])
-        await registry.register(
-            "get_forecast", get_forecast, tags=["weather", "forecast"]
-        )
+        await registry.register("get_forecast", get_forecast, tags=["weather", "forecast"])
 
         # Create agent with tool patterns
         async with Agent("You are a weather assistant", tools=["weather:*"]) as agent:
@@ -77,9 +75,7 @@ class TestAgentToolRegistryIntegration:
             return f"{value} {from_unit} = ? {to_unit}"
 
         await registry.register("calculate", calculate, tags=["math"])
-        await registry.register(
-            "convert_units", convert_units, tags=["math", "conversion"]
-        )
+        await registry.register("convert_units", convert_units, tags=["math", "conversion"])
 
         # Create agent with specific tool name
         async with Agent("You are a math assistant", tools=["calculate"]) as agent:
@@ -257,23 +253,21 @@ class TestAgentToolRegistryIntegration:
         await registry.register("math_tool", math_tool, tags=["math"])
 
         # Create agents with different tool patterns
-        async with Agent(
-            "Weather assistant", tools=["weather:*", "shared_tool"]
-        ) as weather_agent:
-            async with Agent(
-                "Math assistant", tools=["math:*", "shared_tool"]
-            ) as math_agent:
-                # Agent is already ready from async context manager
+        async with (
+            Agent("Weather assistant", tools=["weather:*", "shared_tool"]) as weather_agent,
+            Agent("Math assistant", tools=["math:*", "shared_tool"]) as math_agent,
+        ):
+            # Agent is already ready from async context manager
 
-                # Weather agent should have weather and shared tools
-                assert "weather_tool" in weather_agent.tools
-                assert "shared_tool" in weather_agent.tools
-                assert "math_tool" not in weather_agent.tools
+            # Weather agent should have weather and shared tools
+            assert "weather_tool" in weather_agent.tools
+            assert "shared_tool" in weather_agent.tools
+            assert "math_tool" not in weather_agent.tools
 
-                # Math agent should have math and shared tools
-                assert "math_tool" in math_agent.tools
-                assert "shared_tool" in math_agent.tools
-                assert "weather_tool" not in math_agent.tools
+            # Math agent should have math and shared tools
+            assert "math_tool" in math_agent.tools
+            assert "shared_tool" in math_agent.tools
+            assert "weather_tool" not in math_agent.tools
 
     @pytest.mark.asyncio
     async def test_sync_tool_registration(self, clean_registry):
@@ -325,15 +319,10 @@ class TestAgentToolRegistryIntegration:
 
             # Test spec behavior: accessing tool properties
             tool_instance = agent.tools["get_weather"]
-            assert (
-                tool_instance.description
-                == "Get the current weather for a given location."
-            )
+            assert tool_instance.description == "Get the current weather for a given location."
 
             # Test spec behavior: modifying tool properties
-            agent.tools[
-                "get_weather"
-            ].description = "Get the current weather for a given location."
+            agent.tools["get_weather"].description = "Get the current weather for a given location."
             assert (
                 agent.tools["get_weather"].description
                 == "Get the current weather for a given location."
@@ -358,12 +347,8 @@ class TestAgentToolRegistryIntegration:
             return "weather alerts"
 
         await registry.register("get_weather", get_weather, tags=["weather"])
-        await registry.register(
-            "get_forecast", get_forecast, tags=["weather", "forecast"]
-        )
-        await registry.register(
-            "weather_alerts", weather_alerts, tags=["weather", "alerts"]
-        )
+        await registry.register("get_forecast", get_forecast, tags=["weather", "forecast"])
+        await registry.register("weather_alerts", weather_alerts, tags=["weather", "alerts"])
 
         # Test spec example: tools=["weather:*"]
         async with Agent(

@@ -165,9 +165,7 @@ class TestMCPClientManager:
             mock_session = AsyncMock(spec=ClientSession)
             mock_session.initialize = AsyncMock()
             mock_session.list_tools = AsyncMock(return_value=ListToolsResult(tools=[]))
-            mock_session.list_resources = AsyncMock(
-                return_value=MagicMock(resources=[])
-            )
+            mock_session.list_resources = AsyncMock(return_value=MagicMock(resources=[]))
             mock_create.return_value = mock_session
 
             # Connect to a server
@@ -199,12 +197,8 @@ class TestMCPClientManager:
         with patch.object(manager, "_create_session") as mock_create:
             mock_session = AsyncMock(spec=ClientSession)
             mock_session.initialize = AsyncMock()
-            mock_session.list_tools = AsyncMock(
-                return_value=ListToolsResult(tools=[mock_tool])
-            )
-            mock_session.list_resources = AsyncMock(
-                return_value=MagicMock(resources=[])
-            )
+            mock_session.list_tools = AsyncMock(return_value=ListToolsResult(tools=[mock_tool]))
+            mock_session.list_resources = AsyncMock(return_value=MagicMock(resources=[]))
             mock_create.return_value = mock_session
 
             # Connect and discover tools
@@ -232,12 +226,8 @@ class TestMCPClientManager:
         with patch.object(manager, "_create_session") as mock_create:
             mock_session = AsyncMock(spec=ClientSession)
             mock_session.initialize = AsyncMock()
-            mock_session.list_tools = AsyncMock(
-                return_value=ListToolsResult(tools=[mock_tool])
-            )
-            mock_session.list_resources = AsyncMock(
-                return_value=MagicMock(resources=[])
-            )
+            mock_session.list_tools = AsyncMock(return_value=ListToolsResult(tools=[mock_tool]))
+            mock_session.list_resources = AsyncMock(return_value=MagicMock(resources=[]))
             mock_create.return_value = mock_session
 
             # Connect with namespace
@@ -294,9 +284,7 @@ class TestAgentMCPIntegration:
         agent.tools["mcp_tool"] = mock_adapter
 
         # Invoke the tool
-        result = await agent.invoke(
-            "mcp_tool", question="What is the answer?"
-        )
+        result = await agent.invoke("mcp_tool", question="What is the answer?")
 
         # Check the result
         assert result.tool_name == "mcp_tool"
@@ -306,9 +294,7 @@ class TestAgentMCPIntegration:
     @pytest.mark.asyncio
     async def test_agent_cleanup_disconnects_mcp(self):
         """Test that agent cleanup disconnects MCP servers."""
-        with patch(
-            "good_agent.tools.ToolManager.disconnect_mcp_servers"
-        ) as mock_disconnect:
+        with patch("good_agent.tools.ToolManager.disconnect_mcp_servers") as mock_disconnect:
             mock_disconnect.return_value = None
 
             agent = Agent(

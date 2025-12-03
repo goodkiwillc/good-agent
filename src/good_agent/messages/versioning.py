@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import logging
 import weakref
 from typing import TYPE_CHECKING, Any
-import logging
 
 from ulid import ULID
 
@@ -182,9 +182,7 @@ class VersionManager:
         """
         return len(self._versions)
 
-    def add_version(
-        self, message_ids: list[ULID], metadata: dict[str, Any] | None = None
-    ) -> int:
+    def add_version(self, message_ids: list[ULID], metadata: dict[str, Any] | None = None) -> int:
         """Create a new version.
 
         Args:
@@ -281,14 +279,10 @@ class VersionManager:
         if fork._versions:
             fork._current_version_index = len(fork._versions) - 1
 
-        logger.debug(
-            f"Forked at version {target_index}, fork has {len(fork._versions)} versions"
-        )
+        logger.debug(f"Forked at version {target_index}, fork has {len(fork._versions)} versions")
         return fork
 
-    def get_changes_between(
-        self, version_a: int, version_b: int
-    ) -> dict[str, list[ULID]]:
+    def get_changes_between(self, version_a: int, version_b: int) -> dict[str, list[ULID]]:
         """Get the differences between two versions.
 
         Args:
@@ -320,18 +314,14 @@ class VersionManager:
         if version_index < len(self._versions) - 1:
             removed_count = len(self._versions) - version_index - 1
             self._versions = self._versions[: version_index + 1]
-            self._current_version_index = min(
-                self._current_version_index, version_index
-            )
+            self._current_version_index = min(self._current_version_index, version_index)
 
             # Clean up metadata for removed versions
             keys_to_remove = [k for k in self._metadata.keys() if k > version_index]
             for k in keys_to_remove:
                 del self._metadata[k]
 
-            logger.debug(
-                f"Truncated {removed_count} versions after index {version_index}"
-            )
+            logger.debug(f"Truncated {removed_count} versions after index {version_index}")
 
     def get_metadata(self, version_index: int) -> dict[str, Any]:
         """Get metadata for a specific version.

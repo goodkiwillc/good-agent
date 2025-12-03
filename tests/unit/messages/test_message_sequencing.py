@@ -48,9 +48,7 @@ class TestMessageSequencing:
                     for j in range(1, expected_responses + 1):
                         next_msg = messages[i + j] if i + j < len(messages) else None
 
-                        assert next_msg is not None, (
-                            f"Missing tool response at position {i + j}"
-                        )
+                        assert next_msg is not None, f"Missing tool response at position {i + j}"
                         assert isinstance(next_msg, ToolMessage), (
                             f"Expected ToolMessage at position {i + j}, got {type(next_msg).__name__}"
                         )
@@ -86,9 +84,7 @@ class TestMessageSequencing:
             agent.append("Process these numbers")
 
             # Execute multiple tools in parallel
-            await agent.invoke_many(
-                [(tool_a, {"x": 5}), (tool_b, {"x": 5}), (tool_c, {"x": 5})]
-            )
+            await agent.invoke_many([(tool_a, {"x": 5}), (tool_b, {"x": 5}), (tool_c, {"x": 5})])
 
             # Count assistant messages with tool calls
             assistant_with_tools = [
@@ -178,15 +174,9 @@ class TestMessageSequencing:
 
         async with Agent("Test agent", tools=[process_data]) as agent:
             # Create multiple bound functions
-            upper_processor = agent.invoke_func(
-                process_data, operation="UPPER"
-            )
-            lower_processor = agent.invoke_func(
-                process_data, operation="lower"
-            )
-            title_processor = agent.invoke_func(
-                process_data, operation="Title"
-            )
+            upper_processor = agent.invoke_func(process_data, operation="UPPER")
+            lower_processor = agent.invoke_func(process_data, operation="lower")
+            title_processor = agent.invoke_func(process_data, operation="Title")
 
             agent.append("Process this data")
 
@@ -255,9 +245,7 @@ class TestMessageSequencing:
             # With all three tool calls
             tool_calls = assistant_msgs[0].tool_calls
             assert tool_calls is not None
-            assert len(tool_calls) == 3, (
-                f"Expected 3 tool calls in message, got {len(tool_calls)}"
-            )
+            assert len(tool_calls) == 3, f"Expected 3 tool calls in message, got {len(tool_calls)}"
 
             # Followed by three tool responses
             idx = agent.messages.index(assistant_msgs[0])

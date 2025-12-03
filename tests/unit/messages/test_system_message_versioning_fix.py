@@ -16,9 +16,7 @@ class TestSystemMessageVersioningFix:
         assert agent._version_manager.version_count == 1, (
             "System message should create initial version"
         )
-        assert len(agent.current_version) == 1, (
-            "Current version should contain system message ID"
-        )
+        assert len(agent.current_version) == 1, "Current version should contain system message ID"
 
         # System message should be in registry
         sys_msg = agent.messages[0]
@@ -53,9 +51,7 @@ class TestSystemMessageVersioningFix:
         # New system message should have different ID
         new_sys_msg = agent.messages[0]
         assert isinstance(new_sys_msg, SystemMessage)
-        assert new_sys_msg.id != original_sys_msg_id, (
-            "New system message should have different ID"
-        )
+        assert new_sys_msg.id != original_sys_msg_id, "New system message should have different ID"
 
         # Both system messages should be in registry
         assert agent._message_registry.get(original_sys_msg_id) is not None, (
@@ -84,9 +80,7 @@ class TestSystemMessageVersioningFix:
         assert agent._version_manager.version_count == 1, (
             "Adding system message should create version"
         )
-        assert len(agent.current_version) == 1, (
-            "Version should contain system message ID"
-        )
+        assert len(agent.current_version) == 1, "Version should contain system message ID"
         assert len(agent.messages) == 1
         assert isinstance(agent.messages[0], SystemMessage)
 
@@ -115,15 +109,11 @@ class TestSystemMessageVersioningFix:
         agent.revert_to_version(1)
 
         # Should have system message + first user message
-        assert len(agent.messages) == 2, (
-            "Should have system message and first user message"
-        )
+        assert len(agent.messages) == 2, "Should have system message and first user message"
         assert isinstance(agent.messages[0], SystemMessage), (
             "First message should be system message after revert"
         )
-        assert "Message 1" in str(agent.messages[1]), (
-            "Second message should be 'Message 1'"
-        )
+        assert "Message 1" in str(agent.messages[1]), "Second message should be 'Message 1'"
 
         # System message should still be the same
         assert "System prompt" in str(agent.messages[0])
@@ -188,9 +178,7 @@ class TestSystemMessageVersioningFix:
         assert "Original system" in str(agent.messages[0]), (
             "Original system message should be restored"
         )
-        assert "Context message" in str(agent.messages[-1]), (
-            "Context message should be preserved"
-        )
+        assert "Context message" in str(agent.messages[-1]), "Context message should be preserved"
 
         await agent.events.close()
 

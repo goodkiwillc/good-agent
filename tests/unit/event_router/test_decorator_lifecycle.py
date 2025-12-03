@@ -9,7 +9,6 @@ This suite targets coverage gaps in decorators.py, specifically:
 """
 
 import pytest
-
 from good_agent.core.event_router import EventRouter
 from good_agent.core.event_router.decorators import emit, emit_event
 from good_agent.core.event_router.registration import LifecyclePhase

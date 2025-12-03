@@ -1,7 +1,8 @@
 import sys
 import time
 import uuid
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 # Optional dependencies check
 try:
@@ -14,16 +15,17 @@ except ImportError:
     )
     sys.exit(1)
 
-from pydantic import BaseModel
-
 from good_agent.agent.core import Agent
 from good_agent.cli.utils import load_agent_from_path
 from good_agent.messages import (
-    Message as GAMessage,
-    UserMessage,
-    SystemMessage,
     AssistantMessage,
+    SystemMessage,
+    UserMessage,
 )
+from good_agent.messages import (
+    Message as GAMessage,
+)
+from pydantic import BaseModel
 
 # --- OpenAI-compatible Models ---
 
@@ -179,9 +181,7 @@ def serve_agent(
             def agent_factory() -> Agent:
                 return agent_obj()
     else:
-        print(
-            f"Error: The object at '{agent_path}' is not an Agent instance or factory."
-        )
+        print(f"Error: The object at '{agent_path}' is not an Agent instance or factory.")
         return
 
     # Create App

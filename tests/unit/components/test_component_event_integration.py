@@ -68,16 +68,12 @@ class DecoratorPatternComponent(AgentComponent):
             if hasattr(agent, "vars"):
                 # The vars object uses a ChainMap internally
                 context_dict = (
-                    dict(agent.vars._chainmap)
-                    if hasattr(agent.vars, "_chainmap")
-                    else {}
+                    dict(agent.vars._chainmap) if hasattr(agent.vars, "_chainmap") else {}
                 )
                 context_keys = list(context_dict.keys())
             else:
                 context_keys = []
-            self.install_events.append(
-                f"execute_before_install:context_keys={len(context_keys)}"
-            )
+            self.install_events.append(f"execute_before_install:context_keys={len(context_keys)}")
 
         @agent.on(AgentEvents.EXECUTE_AFTER)
         async def on_execute_after_install_async(ctx):
@@ -226,12 +222,8 @@ class TestAgentComponentEventIntegration:
             await asyncio.sleep(0.01)
 
             # Verify decorator handlers captured the events
-            assert any(
-                "tool_before_static" in event for event in component.decorator_events
-            )
-            assert any(
-                "tool_after_static" in event for event in component.decorator_events
-            )
+            assert any("tool_before_static" in event for event in component.decorator_events)
+            assert any("tool_after_static" in event for event in component.decorator_events)
 
     async def test_manual_registration_phases(self):
         """Test that manual registration works in setup and install phases."""
@@ -244,9 +236,7 @@ class TestAgentComponentEventIntegration:
             await asyncio.sleep(0.01)
 
             # Verify setup handlers fired
-            assert any(
-                "message_append_setup" in event for event in component.setup_events
-            )
+            assert any("message_append_setup" in event for event in component.setup_events)
 
             # Execute agent to trigger install handlers
             # Note: We'll use a mock to avoid full LLM execution
@@ -257,9 +247,7 @@ class TestAgentComponentEventIntegration:
             await agent.events.apply(
                 AgentEvents.EXECUTE_BEFORE, agent=agent, messages=agent.messages
             )
-            await agent.events.apply(
-                AgentEvents.EXECUTE_AFTER, agent=agent, response=mock_response
-            )
+            await agent.events.apply(AgentEvents.EXECUTE_AFTER, agent=agent, response=mock_response)
 
             # Give async handlers time to complete
             await asyncio.sleep(0.01)
@@ -267,12 +255,11 @@ class TestAgentComponentEventIntegration:
             # The execute_before handler is now fixed
 
             # Verify install handlers fired
+            assert any("execute_before_install" in event for event in component.install_events), (
+                f"Events: {component.install_events}"
+            )
             assert any(
-                "execute_before_install" in event for event in component.install_events
-            ), f"Events: {component.install_events}"
-            assert any(
-                "execute_after_install_async" in event
-                for event in component.install_events
+                "execute_after_install_async" in event for event in component.install_events
             ), f"Events: {component.install_events}"
 
     async def test_component_state_interactions(self):
@@ -293,9 +280,7 @@ class TestAgentComponentEventIntegration:
             # Setup handlers should not fire when disabled
             # (Note: Static @on handlers will still fire as they don't check enabled)
             disabled_setup_count = len(component.setup_events)
-            assert disabled_setup_count == 0, (
-                "Manual handlers should respect enabled state"
-            )
+            assert disabled_setup_count == 0, "Manual handlers should respect enabled state"
 
             # Re-enable and verify handlers work again
             component.enabled = True
@@ -309,9 +294,7 @@ class TestAgentComponentEventIntegration:
         component_high = ManualRegistrationComponent(custom_priority=250)
         component_low = ManualRegistrationComponent(custom_priority=50)
 
-        async with Agent(
-            "Test system", extensions=[component_high, component_low]
-        ) as agent:
+        async with Agent("Test system", extensions=[component_high, component_low]) as agent:
             # Both components should register handlers
             assert component_high.handler_count == 3
             assert component_low.handler_count == 3
@@ -333,9 +316,7 @@ class TestAgentComponentEventIntegration:
             )
 
             # Verify both components captured events with their priorities
-            high_events = [
-                e for e in component_high.events if "dynamic_priority:250" in e
-            ]
+            high_events = [e for e in component_high.events if "dynamic_priority:250" in e]
             low_events = [e for e in component_low.events if "dynamic_priority:50" in e]
 
             assert len(high_events) > 0, "High priority component should handle events"
@@ -353,12 +334,8 @@ class TestAgentComponentEventIntegration:
             high_conditional = [e for e in component_high.events if "conditional" in e]
             low_conditional = [e for e in component_low.events if "conditional" in e]
 
-            assert len(high_conditional) > 0, (
-                "High priority component should meet predicate"
-            )
-            assert len(low_conditional) == 0, (
-                "Low priority component should not meet predicate"
-            )
+            assert len(high_conditional) > 0, "High priority component should meet predicate"
+            assert len(low_conditional) == 0, "Low priority component should not meet predicate"
 
     async def test_hybrid_pattern_execution_order(self):
         """Test that static and dynamic handlers execute in correct priority order."""
@@ -435,10 +412,7 @@ class TestAgentComponentEventIntegration:
             assert "working_handler" in component.events
 
             # Failing handlers should have started
-            assert (
-                "before_error" in component.events
-                or "before_dynamic_error" in component.events
-            )
+            assert "before_error" in component.events or "before_dynamic_error" in component.events
 
     async def test_component_tool_integration(self):
         """Test that component tools work correctly with event handlers."""
@@ -481,9 +455,7 @@ class TestAgentComponentEventIntegration:
             tool_before_events = [
                 e for e in component.decorator_events if "tool_before_static" in e
             ]
-            tool_after_events = [
-                e for e in component.decorator_events if "tool_after_static" in e
-            ]
+            tool_after_events = [e for e in component.decorator_events if "tool_after_static" in e]
 
             assert len(tool_before_events) > 0, "Tool before handler should fire"
             assert len(tool_after_events) > 0, "Tool after handler should fire"

@@ -25,9 +25,8 @@ from __future__ import annotations
 
 import functools
 import inspect
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any, TypeVar, cast
-from collections.abc import Awaitable
 
 from good_agent.core.event_router.context import EventContext
 from good_agent.core.event_router.protocols import ApplyInterrupt, EventName, F

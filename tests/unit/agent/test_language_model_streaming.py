@@ -1,8 +1,8 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from litellm.types.completion import ChatCompletionMessageParam
 from good_agent.model.llm import LanguageModel, StreamChunk
+from litellm.types.completion import ChatCompletionMessageParam
 
 
 class MockStreamChoice:
@@ -251,9 +251,7 @@ async def test_stream_with_reasoning_content():
 
     class MockStreamResponseWithReasoning:
         def __init__(self, content=None, reasoning=None, finish_reason=None):
-            self.choices = [
-                MockStreamChoiceWithReasoning(content, reasoning, finish_reason)
-            ]
+            self.choices = [MockStreamChoiceWithReasoning(content, reasoning, finish_reason)]
             # Add _hidden_params to match litellm's expected structure
             self._hidden_params = MockHiddenParams()
             # Add common litellm response attributes
@@ -417,9 +415,7 @@ async def test_stream_integration_with_agent():
     mock_router.acompletion = AsyncMock(return_value=mock_stream())
     lm._router = mock_router
 
-    messages: list[ChatCompletionMessageParam] = [
-        {"role": "user", "content": "Are you ready?"}
-    ]
+    messages: list[ChatCompletionMessageParam] = [{"role": "user", "content": "Are you ready?"}]
 
     # Stream through language model
     chunks = []

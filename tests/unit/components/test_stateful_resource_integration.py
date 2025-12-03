@@ -41,7 +41,7 @@ async def test_full_integration_with_branch_and_tools():
             if messages and messages[0].content != original_content:
                 messages_modified = True
 
-    setattr(agent._context_manager, "thread_context", tracking_branch)
+    agent._context_manager.thread_context = tracking_branch
 
     # Use the resource
     async with resource(agent):
@@ -73,7 +73,7 @@ async def test_full_integration_with_branch_and_tools():
     assert resource.state == "Hello universe"
 
     # Restore original branch
-    setattr(agent._context_manager, "thread_context", original_branch)
+    agent._context_manager.thread_context = original_branch
 
 
 @pytest.mark.asyncio
@@ -99,9 +99,7 @@ async def test_nested_resource_contexts():
 
             # Can edit doc2
             replace_tool = agent.tools["replace"]
-            await replace_tool(
-                _agent=agent, old_text="Document 2", new_text="Modified Doc 2"
-            )
+            await replace_tool(_agent=agent, old_text="Document 2", new_text="Modified Doc 2")
             assert resource2.state == "Modified Doc 2"
 
         # Back to doc1 context - tools restored to doc1
@@ -122,9 +120,7 @@ async def test_resource_with_agent_call():
     agent = Agent("You are a helpful editor")
     await agent.initialize()
 
-    resource = EditableResource(
-        "This is a test dokument with misteaks.", name="document"
-    )
+    resource = EditableResource("This is a test dokument with misteaks.", name="document")
 
     async with resource(agent):
         # Agent should have editing tools available

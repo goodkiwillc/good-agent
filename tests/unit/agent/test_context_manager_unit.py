@@ -23,9 +23,7 @@ class StubAgent:
         self._component_registry = SimpleNamespace(
             clone_extensions_for_config=lambda cfg, overrides: None
         )
-        self.template = SimpleNamespace(
-            context_provider=lambda name: f"provider:{name}"
-        )
+        self.template = SimpleNamespace(context_provider=lambda name: f"provider:{name}")
         self._messages: list[StubMessage] = []
         self.system: list[StubMessage] = []
         self.append_calls: list[StubMessage] = []
