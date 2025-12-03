@@ -15,7 +15,7 @@ class _RouterRef:
 
     __slots__ = ("_weakref", "_strong", "_hash")
 
-    def __init__(self, router: Any, finalizer: Callable[["_RouterRef"], None]):
+    def __init__(self, router: Any, finalizer: Callable[[_RouterRef], None]):
         self._hash = id(router)
         self._weakref: weakref.ref[Any] | None = None
         self._strong: Any | None = None

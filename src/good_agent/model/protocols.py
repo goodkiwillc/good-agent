@@ -17,7 +17,7 @@ class ModelResponseProtocol(Protocol):
     def id(self) -> str: ...
 
     @property
-    def choices(self) -> "Choices | StreamingChoices": ...
+    def choices(self) -> Choices | StreamingChoices: ...
 
     @property
     def model(self) -> str | Any: ...
@@ -29,7 +29,7 @@ class ModelResponseProtocol(Protocol):
 @runtime_checkable
 class ResponseWithUsage(Protocol):
     @property
-    def usage(self) -> "Usage | None": ...
+    def usage(self) -> Usage | None: ...
 
 
 @runtime_checkable
@@ -50,10 +50,10 @@ ModelName: TypeAlias = str
 class CompletionEvent(TypedDict):
     """Event type for chat completion without response model extraction."""
 
-    messages: list["Any"]  # ChatCompletionMessageParam
-    config: "ModelConfig"
-    response_model: type["BaseModel"] | None
-    llm: "Any"  # LanguageModel
+    messages: list[Any]  # ChatCompletionMessageParam
+    config: ModelConfig
+    response_model: type[BaseModel] | None
+    llm: Any  # LanguageModel
 
 
 @dataclass

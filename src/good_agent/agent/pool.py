@@ -16,7 +16,7 @@ class AgentPool:
     ``examples/pool/agent_pool.py`` for round-robin dispatching.
     """
 
-    def __init__(self, agents: list["Agent"]):
+    def __init__(self, agents: list[Agent]):
         """Store agents without copying; the pool itself remains read-only."""
         self._agents = agents
 
@@ -24,17 +24,17 @@ class AgentPool:
         """Get the number of agents in the pool"""
         return len(self._agents)
 
-    def __iter__(self) -> Iterator["Agent"]:
+    def __iter__(self) -> Iterator[Agent]:
         """Iterate over agents in the pool"""
         return iter(self._agents)
 
     @overload
-    def __getitem__(self, index: int) -> "Agent": ...
+    def __getitem__(self, index: int) -> Agent: ...
 
     @overload
-    def __getitem__(self, index: slice) -> list["Agent"]: ...
+    def __getitem__(self, index: slice) -> list[Agent]: ...
 
-    def __getitem__(self, index: int | slice) -> "Agent | list[Agent]":
+    def __getitem__(self, index: int | slice) -> Agent | list[Agent]:
         """
         Get agent(s) by index.
 

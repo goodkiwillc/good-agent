@@ -404,7 +404,7 @@ class TestInjectionWithStreaming:
         """Test that injection works with streaming tools."""
 
         @typed_tool(hide=["agent"])
-        async def streaming_tool(prompt: str, agent: "Agent") -> str:
+        async def streaming_tool(prompt: str, agent: Agent) -> str:
             """Tool that yields streaming response (collected into string)."""
             # Collect streaming results into a single string
             result_parts = []

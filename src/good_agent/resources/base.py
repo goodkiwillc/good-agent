@@ -106,7 +106,7 @@ class StatefulResource(ABC, Generic[T], metaclass=StatefulResourceMeta):
         return tools
 
     @asynccontextmanager
-    async def __call__(self, agent: "Agent"):
+    async def __call__(self, agent: Agent):
         """Bind resource to agent temporarily.
 
         Uses agent's branch and tools context managers for clean isolation.

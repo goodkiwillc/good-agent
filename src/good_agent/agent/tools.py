@@ -36,7 +36,7 @@ class ToolExecutor:
     - Tool error handling and event emission
     """
 
-    def __init__(self, agent: "Agent") -> None:
+    def __init__(self, agent: Agent) -> None:
         """Initialize ToolExecutor.
 
         Args:

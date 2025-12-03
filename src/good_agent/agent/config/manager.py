@@ -348,7 +348,7 @@ class AgentConfigManager(ConfigStack):
     @contextmanager
     def __call__(
         self, disable_extensions: list[type] | None = None, **kwargs
-    ) -> Iterator["AgentConfigManager"]:
+    ) -> Iterator[AgentConfigManager]:
         """
         Context manager for temporary overrides that notifies the agent.
 

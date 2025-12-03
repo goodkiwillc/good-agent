@@ -13,7 +13,7 @@ class MockComponent(AgentComponent):
         self.initialization_log: list[str] = []
         self.tool_calls: dict[str, int] = {}
 
-    async def install(self, agent: "Agent"):
+    async def install(self, agent: Agent):
         """Install with custom initialization logic."""
         self.initialization_log.append("install_start")
         await super().install(agent)  # Important: call parent to trigger tool registration
@@ -39,7 +39,7 @@ class ComponentWithoutSuperCall(AgentComponent):
     def forgotten_tool(self, x: int) -> int:
         return x * 2
 
-    async def install(self, agent: "Agent"):
+    async def install(self, agent: Agent):
         """Install method that doesn't call super() - tools won't register."""
         self._agent = agent
         # Missing: await super().install(agent)
@@ -52,7 +52,7 @@ class ComponentWithInitializationTask(AgentComponent):
         super().__init__()
         self.custom_init_completed = False
 
-    async def install(self, agent: "Agent"):
+    async def install(self, agent: Agent):
         """Install with custom async initialization task."""
         await super().install(agent)
 

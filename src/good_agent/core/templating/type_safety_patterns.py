@@ -34,7 +34,7 @@ class ErrorWithContext(Protocol):
 class SingletonWithState:
     """Example of type-safe singleton pattern without hasattr."""
 
-    _instance: "SingletonWithState | None" = None
+    _instance: SingletonWithState | None = None
 
     def __new__(cls):
         if cls._instance is None:
@@ -108,7 +108,7 @@ if TYPE_CHECKING:
     from typing import TypeGuard
 
 
-def has_location_info(e: Exception) -> "TypeGuard[ErrorWithContext]":
+def has_location_info(e: Exception) -> TypeGuard[ErrorWithContext]:
     """Type guard to check if exception has location information."""
     return isinstance(e, ErrorWithContext) and any([e.lineno, e.name, e.filename])
 
@@ -169,7 +169,7 @@ class ErrorInfo:
     name: str | None = None
 
     @classmethod
-    def from_exception(cls, e: Exception) -> "ErrorInfo":
+    def from_exception(cls, e: Exception) -> ErrorInfo:
         """Create ErrorInfo from any exception safely."""
         return cls(
             message=str(e),

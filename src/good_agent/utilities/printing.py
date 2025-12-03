@@ -255,7 +255,7 @@ def _detect_markdown(content: str | None) -> bool:
 
 
 def print_message(
-    message: "Message",
+    message: Message,
     console: Console | None = None,
     format: Literal["plain", "markdown", "rich"] = "rich",
     title: str | None = None,
@@ -264,7 +264,7 @@ def print_message(
     include_tool_calls: bool = True,
     truncate: bool = False,
     max_length: int = 500,
-    render_mode: "RenderMode | str | None" = None,
+    render_mode: RenderMode | str | None = None,
     force_markdown: bool | None = None,
 ) -> None:
     """Print a message with Rich formatting support.

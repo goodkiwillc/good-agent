@@ -61,7 +61,7 @@ class TemplateRegistry(BaseLoader):
             # Create new instance for non-global registries
             return super().__new__(cls)
 
-    def __init__(self, *mappings, parent: "TemplateRegistry | None" = None):
+    def __init__(self, *mappings, parent: TemplateRegistry | None = None):
         # Avoid re-initializing singleton instance
         # Use getattr with default to be type-safe
         if getattr(self, "_initialized", False):
@@ -98,7 +98,7 @@ class TemplateRegistry(BaseLoader):
 
     def get_source(
         self,
-        environment: "Environment",
+        environment: Environment,
         template: str,
     ) -> tuple[str, None, Callable[[], bool]]:
         if template in self.templates:

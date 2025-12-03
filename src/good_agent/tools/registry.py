@@ -10,7 +10,6 @@ from re import Pattern
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
 )
 
 logger = logging.getLogger(__name__)
@@ -24,7 +23,7 @@ class ToolRegistration:
     """Registration information for a tool"""
 
     name: str
-    tool: "Tool"
+    tool: Tool
     tags: set[str] = field(default_factory=set)
     version: str = "1.0.0"
     description: str | None = None
@@ -109,7 +108,7 @@ class ToolRegistry:
     async def register(
         self,
         name: str,
-        tool: "Tool",
+        tool: Tool,
         *,
         tags: list[str] | None = None,
         version: str = "1.0.0",
@@ -199,7 +198,7 @@ class ToolRegistry:
         del self._tools[name]
         return True
 
-    async def get(self, name: str) -> Optional["Tool"]:
+    async def get(self, name: str) -> Tool | None:
         """
         Get a tool by name.
 
@@ -247,7 +246,7 @@ class ToolRegistry:
                 if registration.matches_pattern(pattern)
             ]
 
-    async def select_tools(self, patterns: list[str]) -> dict[str, "Tool"]:
+    async def select_tools(self, patterns: list[str]) -> dict[str, Tool]:
         """
         Select tools matching any of the given patterns.
 
@@ -383,7 +382,7 @@ class ToolRegistry:
     def register_sync(
         self,
         name: str,
-        tool: "Tool",
+        tool: Tool,
         *,
         tags: list[str] | None = None,
         version: str = "1.0.0",

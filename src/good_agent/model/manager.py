@@ -137,7 +137,7 @@ def get_managed_router_class():
             def __init__(
                 self,
                 model_list: list[dict[str, Any]] | None = None,
-                managed_callbacks: list["CustomLogger"] | None = None,
+                managed_callbacks: list[CustomLogger] | None = None,
                 **router_kwargs,
             ):
                 """
@@ -206,7 +206,7 @@ def get_managed_router_class():
                 messages: list[Any],
                 stream: Literal[True],
                 **kwargs: Any,
-            ) -> "CustomStreamWrapper": ...
+            ) -> CustomStreamWrapper: ...
 
             @overload
             async def acompletion(
@@ -215,12 +215,12 @@ def get_managed_router_class():
                 messages: list[Any],
                 stream: Literal[False] = ...,
                 **kwargs: Any,
-            ) -> "ModelResponse": ...
+            ) -> ModelResponse: ...
 
             @overload
             async def acompletion(
                 self, model: str, messages: list[Any], stream: bool = ..., **kwargs: Any
-            ) -> "ModelResponse | CustomStreamWrapper": ...
+            ) -> ModelResponse | CustomStreamWrapper: ...
 
             async def acompletion(self, *args, **kwargs):
                 """
@@ -320,7 +320,7 @@ def get_managed_router_class():
 
                 return self
 
-            def add_callback(self, callback: "CustomLogger") -> None:
+            def add_callback(self, callback: CustomLogger) -> None:
                 """
                 Add a callback handler to this instance.
 
@@ -331,7 +331,7 @@ def get_managed_router_class():
                     self._managed_callbacks.append(callback)
                     logger.debug(f"Added callback: {callback.__class__.__name__}")
 
-            def remove_callback(self, callback: "CustomLogger") -> None:
+            def remove_callback(self, callback: CustomLogger) -> None:
                 """
                 Remove a callback handler from this instance.
 
@@ -392,13 +392,13 @@ def create_managed_router(*args, **kwargs) -> ManagedRouter:
 
 
 # Global router pool to avoid LiteLLM's callback limit
-_GLOBAL_ROUTER_POOL: list["Router"] = []
+_GLOBAL_ROUTER_POOL: list[Router] = []
 _ROUTER_POOL_SIZE = 10
 _router_pool_index = 0
 _router_pool_lock = asyncio.Lock() if asyncio else None
 
 
-def _get_or_create_base_router(model_list: list[dict[str, Any]]) -> "Router":
+def _get_or_create_base_router(model_list: list[dict[str, Any]]) -> Router:
     """Get a base Router from the pool or create one if under the limit.
 
     This helps avoid LiteLLM's internal callback limit (30) by reusing
@@ -477,7 +477,7 @@ class ModelManager:
         self,
         primary_model: str,
         fallback_models: list[str] | None = None,
-        managed_callbacks: list["CustomLogger"] | None = None,
+        managed_callbacks: list[CustomLogger] | None = None,
         **router_kwargs,
     ) -> ManagedRouter:
         """

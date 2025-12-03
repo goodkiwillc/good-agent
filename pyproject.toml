@@ -6,14 +6,14 @@ readme = "README.md"
 authors = [
     { name = "Chris Goddard", email = "chris@goodkiwi.llc" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     "good-common>=1.2.1",
     "instructor>=1.12.0",
     "jinja2>=3.1.6",
     "lxml-html-clean>=0.4.3",
     "markdown>=3.9",
-    "litellm>=1.50.0",
+    "litellm @ git+https://github.com/BerriAI/litellm.git",
     "mcp>=1.0.0",
     "rich>=13.7.0",
     "numpy>=2.3.4",
@@ -22,7 +22,6 @@ dependencies = [
     "types-lxml>=2025.8.25",
     "prompt-toolkit>=3.0.52",
     "tomli-w>=1.0.0",
-    "grpcio>=1.76.0",
 ]
 
 [project.optional-dependencies]
@@ -33,6 +32,11 @@ good-agent = "good_agent.cli.main:app"
 [build-system]
 requires = ["uv_build>=0.8.22,<0.9.0"]
 build-backend = "uv_build"
+
+[tool.uv]
+override-dependencies = [
+    "grpcio>=1.76.0",  # Force Python 3.14 compatible version
+]
 
 [dependency-groups]
 dev = [
@@ -144,7 +148,7 @@ omit = [
 ]
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py314"
 line-length = 100
 
 [tool.ruff.lint]

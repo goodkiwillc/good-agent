@@ -69,7 +69,7 @@ class TemplateSnapshot(BaseModel):
         git_commit: str | None = None,
         semantic_version: str | None = None,
         metadata: dict | None = None,
-    ) -> "TemplateSnapshot":
+    ) -> TemplateSnapshot:
         """Create snapshot from template content."""
         content_hash = hashlib.sha256(content.encode()).hexdigest()[:12]
         return cls(

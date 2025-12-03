@@ -1,7 +1,7 @@
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack
-from typing import TYPE_CHECKING, Any, Self, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Self, TypeVar
 
 from ulid import ULID
 
@@ -35,7 +35,7 @@ class Conversation:
         self._handler_ids: dict[Agent, list[int]] = {}
         self._exit_stack = AsyncExitStack()
 
-    def __or__(self, other: Union[Agent, "Conversation"]) -> "Conversation":
+    def __or__(self, other: Agent | Conversation) -> Conversation:
         """Chain agents or conversations together using the | operator."""
         if isinstance(other, Agent):
             # Add agent to this conversation

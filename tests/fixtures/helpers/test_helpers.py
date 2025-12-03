@@ -7,7 +7,7 @@ from good_agent.core.components import AgentComponent
 class _MockAgentEvents:
     """Lightweight facade that mimics :class:`Agent.events` for tests."""
 
-    def __init__(self, agent: "MockAgent") -> None:
+    def __init__(self, agent: MockAgent) -> None:
         self._agent = agent
         self._event_trace_enabled = False
 
