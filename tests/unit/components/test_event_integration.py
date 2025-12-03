@@ -4,6 +4,7 @@ import asyncio
 from typing import cast
 
 import pytest
+
 from good_agent.agent import Agent
 from good_agent.core.components import AgentComponent
 from good_agent.core.event_router import EventContext, EventRouter, on

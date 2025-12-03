@@ -251,10 +251,7 @@ def _detect_markdown(content: str | None) -> bool:
     # Check for numbered lists (1. 2. etc)
     import re
 
-    if re.search(r"^\d+\.\s", content, re.MULTILINE):
-        return True
-
-    return False
+    return bool(re.search(r"^\d+\.\s", content, re.MULTILINE))
 
 
 def print_message(

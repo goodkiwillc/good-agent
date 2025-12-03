@@ -2,11 +2,12 @@ import logging
 from typing import Annotated
 
 import pytest
+from pydantic import Field
+
 from good_agent import Agent
 from good_agent.core.types import URL
 from good_agent.extensions.citations import CitationManager
 from good_agent.tools import Tool
-from pydantic import Field
 
 
 def mock_fetch_url(url: URL) -> str:

@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent
 from good_agent.core.types import URL
 from good_agent.extensions.citations import CitationManager

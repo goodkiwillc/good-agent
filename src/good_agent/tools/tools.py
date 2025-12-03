@@ -134,7 +134,7 @@ class ToolManager(AgentComponent):
     def _import_state(self, state: dict[str, Any]) -> None:
         super()._import_state(state)
         tools = state.get("tools", {})
-        self._tools = {name: tool for name, tool in tools.items()}
+        self._tools = dict(tools.items())
 
     @property
     def config(self) -> AgentConfigManager:

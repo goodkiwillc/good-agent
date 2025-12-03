@@ -2,6 +2,8 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from ulid import ULID
+
 from good_agent.messages import AssistantMessage, UserMessage
 from good_agent.messages.store import (
     InMemoryMessageStore,
@@ -12,7 +14,6 @@ from good_agent.messages.store import (
     put_message,
     set_message_store,
 )
-from ulid import ULID
 
 
 class TestInMemoryMessageStore:

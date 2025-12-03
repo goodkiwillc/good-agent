@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import BaseModel
+
 from good_agent import Agent, AgentComponent, tool
 from good_agent.tools import BoundTool, Tool
-from pydantic import BaseModel
 
 FuncT = TypeVar("FuncT", bound=Callable[..., Any])
 

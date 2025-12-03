@@ -4,6 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
+from jinja2 import TemplateNotFound
+
 from good_agent.extensions.template_manager.storage import (
     ChainedStorage,
     FileSystemStorage,
@@ -12,7 +14,6 @@ from good_agent.extensions.template_manager.storage import (
     TemplateSnapshot,
     TemplateValidator,
 )
-from jinja2 import TemplateNotFound
 
 
 class TestFileSystemStorage:

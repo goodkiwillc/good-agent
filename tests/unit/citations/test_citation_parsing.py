@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent.extensions.citations import CitationManager
 
 

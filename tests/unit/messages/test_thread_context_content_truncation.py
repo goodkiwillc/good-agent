@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent, tool
 from good_agent.content.parts import TextContentPart
 from good_agent.messages import AssistantMessage
@@ -18,33 +19,33 @@ class TestBranchContentTruncation:
 
         # Add a verbose assistant response (simulating tool output)
         verbose_response = """I found extensive information about Python:
-        
-        Python is a high-level, interpreted programming language known for its simplicity 
+
+        Python is a high-level, interpreted programming language known for its simplicity
         and readability. It was created by Guido van Rossum and first released in 1991.
-        
+
         Key Features:
         - Dynamic typing and automatic memory management
         - Extensive standard library
         - Support for multiple programming paradigms
         - Cross-platform compatibility
         - Large ecosystem of third-party packages
-        
+
         Popular Use Cases:
         1. Web Development (Django, Flask, FastAPI)
         2. Data Science and Machine Learning (NumPy, Pandas, Scikit-learn, TensorFlow)
         3. Automation and Scripting
         4. Scientific Computing
         5. Game Development
-        
+
         ... [10 more paragraphs of detailed information] ...
-        
+
         Total results: 1,247 articles found across 50 sources."""
 
         agent.append(verbose_response, role="assistant")
         agent.append("Can you give me more specific information about web frameworks?")
 
         # Capture original messages
-        [msg for msg in agent.messages]
+        list(agent.messages)
         original_verbose_content = str(agent.messages[2])  # The verbose response
 
         # Use Branch to work with condensed versions
@@ -99,11 +100,11 @@ class TestBranchContentTruncation:
             # Simulate verbose tool response
             return f"""
             Searching for: {query}
-            
+
             Result 1: [500 words of content about {query}]
             Result 2: [500 words of content about {query}]
             Result 3: [500 words of content about {query}]
-            ... 
+            ...
             Total: 25 results from 10 sources
             Processing time: 2.3 seconds
             Confidence: 0.95
@@ -183,7 +184,7 @@ class TestBranchContentTruncation:
             """
         The history of computing spans several millennia, from ancient counting devices
         to modern quantum computers. Key milestones include:
-        
+
         [5000 words of detailed history including:]
         - Abacus (2700 BCE)
         - Antikythera mechanism (100 BCE)
@@ -196,7 +197,7 @@ class TestBranchContentTruncation:
         - Internet (1969-1990s)
         - Smartphones (2007)
         - Quantum computing (2019)
-        
+
         [Detailed descriptions of each era...]
         """,
             role="assistant",

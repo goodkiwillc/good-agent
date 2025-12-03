@@ -142,3 +142,34 @@ omit = [
     "src/good_agent/core/models/protocols.py",
     "src/good_agent/core/templating/type_safety_patterns.py",
 ]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+ignore = [
+    "E501",    # Line too long - handled by formatter
+    "SIM102",  # Use a single if statement - sometimes nested ifs are clearer
+    "SIM108",  # Use ternary operator - sometimes if-else is clearer
+    "SIM105",  # Use contextlib.suppress - sometimes try-except-pass is intentional
+    "UP040",   # TypeAlias annotation - keep for broader Python compatibility
+    "UP046",   # Use `type` instead of TypeAlias - keep for broader Python compatibility
+    "UP047",   # Generic functions - keep for broader Python compatibility
+    "B008",    # Do not perform function call in argument defaults - common pattern in CLI
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "ARG001",  # Unused function argument - pytest fixtures
+    "ARG002",  # Unused method argument - pytest fixtures
+    "ARG005",  # Unused lambda argument - test mocks
+    "SIM116",  # Use dictionary instead of if - test readability
+    "SIM117",  # Use single with statement - test readability
+    "SIM118",  # Use `key in dict` - test explicitness
+]
+"src/**/*.py" = [
+    "ARG002",  # Unused method argument - interface implementations
+    "ARG001",  # Unused function argument - callback signatures
+]

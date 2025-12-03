@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent, AgentEvents
 from good_agent.content import (
     RenderMode,

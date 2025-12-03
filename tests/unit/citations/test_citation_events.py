@@ -1,6 +1,7 @@
 import logging
 
 import pytest
+
 from good_agent import Agent
 from good_agent.content import RenderMode
 from good_agent.events import AgentEvents
@@ -134,7 +135,7 @@ class TestMessageCreateEvent:
         content_text = str(message.content_parts[0])
         assert "<results>" in content_text
 
-        for idx, url in enumerate(message.citations, start=1):
+        for idx, _url in enumerate(message.citations, start=1):
             assert f'<item idx="{idx}"' in content_text
 
         await agent.events.close()

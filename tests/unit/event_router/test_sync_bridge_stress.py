@@ -13,6 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import pytest
+
 from good_agent.core.event_router import EventRouter
 
 

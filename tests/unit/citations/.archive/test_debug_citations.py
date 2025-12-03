@@ -4,9 +4,10 @@ import asyncio
 import sys
 
 import pytest
+from loguru import logger
+
 from good_agent import Agent, AssistantMessage
 from good_agent.extensions import CitationManager
-from loguru import logger
 
 # Enable debug logging
 logger.remove()

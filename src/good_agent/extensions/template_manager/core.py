@@ -205,7 +205,7 @@ class TemplateManager(AgentComponent):
         else:
             # Basic environment without file support
             self._env = templating.create_environment(
-                config=dict(trim_blocks=False),
+                config={"trim_blocks": False},
                 loader=self._registry,
                 use_sandbox=self.use_sandbox,
             )
@@ -249,7 +249,7 @@ class TemplateManager(AgentComponent):
             needs_agent = False
             needs_message = False
 
-            for param_name, param in sig.parameters.items():
+            for _param_name, param in sig.parameters.items():
                 if param.annotation == inspect.Parameter.empty:
                     continue
                 # Check for Agent type without Depends
@@ -353,7 +353,7 @@ class TemplateManager(AgentComponent):
         else:
             # No file sources found, use basic environment
             self._env = templating.create_environment(
-                config=dict(trim_blocks=False),
+                config={"trim_blocks": False},
                 loader=self._registry,
                 use_sandbox=self.use_sandbox,
             )

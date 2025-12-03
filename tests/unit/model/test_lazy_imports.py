@@ -1,8 +1,9 @@
 import importlib
 import types
 
-import good_agent.model as model_module
 import pytest
+
+import good_agent.model as model_module
 
 
 def test_lazy_import_loads_and_caches_attribute(monkeypatch):

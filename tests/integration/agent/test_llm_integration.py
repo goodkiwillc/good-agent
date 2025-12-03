@@ -2,11 +2,12 @@ import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from litellm.types.utils import Choices
+from litellm.utils import Message as LiteLLMMessage
+
 from good_agent import Agent
 from good_agent.messages import AssistantMessage, ToolMessage, UserMessage
 from good_agent.tools import ToolCall, ToolCallFunction, tool
-from litellm.types.utils import Choices
-from litellm.utils import Message as LiteLLMMessage
 
 
 class MockLLMResponse:

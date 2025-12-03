@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+
 from good_agent import Agent
 from good_agent.extensions.template_manager.injection import (
     CircularDependencyError,
@@ -157,6 +158,7 @@ class TestFunctionInjectionModification:
     def test_mixed_injection_types(self):
         """Test mixing ContextValue with Depends injection."""
         from fast_depends import Depends
+
         from good_agent.extensions.template_manager.injection import (
             _get_injection_params,
         )

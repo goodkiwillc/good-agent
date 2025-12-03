@@ -3,6 +3,8 @@ from collections import ChainMap
 from typing import cast
 
 import pytest
+from pydantic import BaseModel
+
 from good_agent.agent import Agent
 from good_agent.content import TextContentPart
 from good_agent.messages import (
@@ -12,7 +14,6 @@ from good_agent.messages import (
     ToolMessage,
     UserMessage,
 )
-from pydantic import BaseModel
 
 
 class DummyAgent:

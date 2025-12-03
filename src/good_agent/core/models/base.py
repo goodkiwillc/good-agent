@@ -25,7 +25,7 @@ class PrivateAttrBase(PydanticBaseModel):
 
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs):
-        for k in cls.model_fields.keys():
+        for k in cls.model_fields:
             if f"_{k}" in cls.__private_attributes__:
                 warnings.warn(
                     f"Model field `{k}` has the same name as a private attribute (with prefix).\n"

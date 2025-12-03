@@ -8,6 +8,7 @@ existing queue-based API.
 from typing import TYPE_CHECKING
 
 import pytest
+
 from good_agent import Agent
 
 # Import new handler types

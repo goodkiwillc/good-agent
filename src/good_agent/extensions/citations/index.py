@@ -479,7 +479,7 @@ class CitationIndex(Index[URL, int, Renderable]):
         Returns:
             Iterator yielding (URL, value) tuples
         """
-        for canonical_url, index in self.url_to_index.items():
+        for _canonical_url, index in self.url_to_index.items():
             url = self.index_to_url[index]
             value = self.index_to_value.get(index)
             yield url, value
@@ -492,7 +492,7 @@ class CitationIndex(Index[URL, int, Renderable]):
             Dictionary mapping URL to value (or None if no value stored)
         """
         result = {}
-        for canonical_url, index in self.url_to_index.items():
+        for _canonical_url, index in self.url_to_index.items():
             url = self.index_to_url[index]
             value = self.index_to_value.get(index)
             result[url] = value

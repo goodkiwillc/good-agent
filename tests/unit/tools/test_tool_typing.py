@@ -2,9 +2,10 @@ import asyncio
 from typing import Any, cast
 
 import pytest
+from pydantic import BaseModel, Field
+
 from good_agent import Tool, ToolResponse, tool
 from good_agent.tools import BoundTool
-from pydantic import BaseModel, Field
 
 ToolLike = Tool[Any, Any] | BoundTool[Any, Any, Any]
 

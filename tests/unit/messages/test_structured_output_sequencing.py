@@ -4,14 +4,15 @@ from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from good_agent import Agent
-from good_agent.content.parts import TextContentPart
-from good_agent.messages import AssistantMessageStructuredOutput, UserMessage
-from good_agent.tools import ToolCall, ToolCallFunction
 from litellm.types.completion import ChatCompletionMessageParam
 from litellm.types.utils import Choices
 from litellm.utils import Message as LiteLLMMessage
 from pydantic import BaseModel
+
+from good_agent import Agent
+from good_agent.content.parts import TextContentPart
+from good_agent.messages import AssistantMessageStructuredOutput, UserMessage
+from good_agent.tools import ToolCall, ToolCallFunction
 
 
 class MockLLMResponse:

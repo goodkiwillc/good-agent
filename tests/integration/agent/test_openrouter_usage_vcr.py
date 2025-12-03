@@ -1,6 +1,7 @@
 import os
 
 import pytest
+
 from good_agent.messages import AssistantMessage, Message
 
 

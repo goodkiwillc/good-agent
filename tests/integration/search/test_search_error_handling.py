@@ -2,6 +2,7 @@ import asyncio
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+
 from good_agent import Agent
 from good_agent.extensions.search import (
     AgentSearch,
@@ -58,9 +59,7 @@ class FailingProvider(BaseSearchProvider):
 
     async def validate(self):
         """Validation can also fail."""
-        if self.failure_mode == "invalid_config":
-            return False
-        return True
+        return self.failure_mode != "invalid_config"
 
 
 class TestErrorHandling:

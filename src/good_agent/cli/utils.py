@@ -50,11 +50,11 @@ def load_agent_from_path(
     try:
         module = importlib.import_module(module_path)
     except ImportError as e:
-        raise ImportError(f"Could not import module '{module_path}': {e}")
+        raise ImportError(f"Could not import module '{module_path}': {e}") from e
 
     try:
         agent = getattr(module, object_name)
-    except AttributeError:
-        raise AttributeError(f"Module '{module_path}' has no attribute '{object_name}'")
+    except AttributeError as e:
+        raise AttributeError(f"Module '{module_path}' has no attribute '{object_name}'") from e
 
     return agent, {}

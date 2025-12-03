@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import pytest_asyncio
+
 from good_agent import Tool
 from good_agent.tools import (
     ToolRegistration,

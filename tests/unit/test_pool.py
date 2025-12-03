@@ -1,6 +1,7 @@
 """Tests for agent pool functionality."""
 
 import pytest
+
 from good_agent import Agent
 from good_agent.agent.pool import AgentPool
 
@@ -154,7 +155,7 @@ class TestAgentPoolIteration:
         second_list = list(pool)
 
         assert len(first_list) == len(second_list) == 3
-        assert all(a is b for a, b in zip(first_list, second_list))
+        assert all(a is b for a, b in zip(first_list, second_list, strict=False))
 
 
 class TestAgentPoolConcurrentAccess:

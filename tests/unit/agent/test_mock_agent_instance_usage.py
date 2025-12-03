@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent
 from good_agent.mock import MockAgent, mock_message
 

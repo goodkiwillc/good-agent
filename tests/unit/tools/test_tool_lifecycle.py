@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
 from good_agent import Agent, AgentEvents, EventContext, Tool
 from good_agent.agent.tools import ToolExecutor
 

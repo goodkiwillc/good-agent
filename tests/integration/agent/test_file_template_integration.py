@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 import pytest_asyncio
 import yaml
+
 from good_agent import Agent
 from good_agent.extensions.template_manager import TemplateManager
 
@@ -157,7 +158,7 @@ Additional context: {{ details }}
         async with Agent(
             """
             {% include 'system/base' %}
-            
+
             Additional instructions:
             - Today's date is {{ current_date }}
             - Focus on {{ focus_area }}

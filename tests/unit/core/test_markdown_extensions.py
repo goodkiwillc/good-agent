@@ -2,6 +2,7 @@ from collections.abc import MutableMapping
 from typing import Any, Protocol, cast
 
 import markdown
+
 from good_agent.core.markdown import CitationManager, CitationPreprocessor
 
 

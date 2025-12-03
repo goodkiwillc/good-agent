@@ -1,9 +1,10 @@
 from typing import Any
 
 import pytest
+from pydantic import BaseModel
+
 from good_agent import Agent
 from good_agent.tools import ToolResponse, tool
-from pydantic import BaseModel
 
 
 class CustomResponse(BaseModel):

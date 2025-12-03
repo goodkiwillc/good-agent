@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent
 from good_agent.content import RenderMode
 from good_agent.extensions.citations import CitationManager
@@ -12,7 +13,7 @@ class TestMarkdownCitationBlocksFix:
         """Test that reference blocks are completely removed from content."""
         content = """
         Some content with citations [1] and [2].
-        
+
         [1]: https://example.com
         [2]: https://other.com
         """
@@ -50,9 +51,9 @@ class TestMarkdownCitationBlocksFix:
 
         content = """
         Document with citations [1], [2], [3].
-        
+
         [1]: https://new1.com
-        [2]: https://new2.com  
+        [2]: https://new2.com
         [3]: https://new3.com
         """
 
@@ -82,16 +83,16 @@ class TestMarkdownCitationBlocksFix:
         """Test content mixed with reference blocks."""
         content = """
         # Document Title
-        
+
         Some text with citation [1].
-        
+
         More text here [2].
-        
+
         [1]: https://source1.com
         [2]: https://source2.com
-        
+
         Final paragraph with [3].
-        
+
         [3]: https://source3.com
         """
 
@@ -122,7 +123,7 @@ class TestMarkdownCitationBlocksFix:
         """Test reference blocks with URLs in angle brackets."""
         content = """
         Citations [1] and [2].
-        
+
         [1]: <https://example.com/with/angle/brackets>
         [2]: https://normal.com
         """
@@ -175,7 +176,7 @@ class TestMarkdownCitationBlocksFix:
         """Test that the reference block format itself isn't treated as a citation."""
         content = """
         Text with [1] citation.
-        
+
         [1]: https://example.com
         """
 

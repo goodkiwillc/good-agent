@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from typing import cast
 
 import pytest
+
 from good_agent import Agent
 from good_agent.extensions.task_manager import TaskManager
 

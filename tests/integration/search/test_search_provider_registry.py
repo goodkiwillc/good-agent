@@ -2,6 +2,7 @@ from typing import Literal
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+
 from good_agent.extensions.search import (
     DataDomain,
     OperationType,

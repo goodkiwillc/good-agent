@@ -2,6 +2,8 @@ import datetime
 from typing import Any, cast
 
 import pytest
+from pydantic import BaseModel, ValidationError
+
 from good_agent.core.models.serializers import DateTimeSerializedUTC
 from good_agent.core.types._dates import (
     NullableParsedDate,
@@ -10,7 +12,6 @@ from good_agent.core.types._dates import (
     ParsedDateTime,
 )
 from good_agent.core.types._uuid import UUID
-from pydantic import BaseModel, ValidationError
 
 
 class _SerializerModel(BaseModel):

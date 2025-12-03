@@ -1,6 +1,7 @@
 from typing import Any, cast
 
 import pytest
+
 from good_agent import Agent, Tool, tool
 from good_agent.tools import BoundTool
 

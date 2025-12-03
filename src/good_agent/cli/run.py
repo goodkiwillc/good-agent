@@ -3,9 +3,6 @@ from __future__ import annotations
 import asyncio
 from typing import Literal
 
-from good_agent.agent.core import Agent
-from good_agent.cli.utils import load_agent_from_path
-from good_agent.messages import AssistantMessage, Message, ToolMessage
 from prompt_toolkit import PromptSession
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import InMemoryHistory
@@ -14,6 +11,10 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.text import Text
+
+from good_agent.agent.core import Agent
+from good_agent.cli.utils import load_agent_from_path
+from good_agent.messages import AssistantMessage, Message, ToolMessage
 
 OutputFormatType = Literal["rich", "plain", "json"]
 

@@ -1,5 +1,7 @@
 """Tests for utilities/printing.py module."""
 
+from rich.console import Console
+
 from good_agent.messages import AssistantMessage, ToolMessage
 from good_agent.tools import ToolCall, ToolCallFunction, ToolResponse
 from good_agent.utilities.printing import (
@@ -8,7 +10,6 @@ from good_agent.utilities.printing import (
     _preprocess_xml_tags,
     print_message,
 )
-from rich.console import Console
 
 
 class TestDetectMarkdown:

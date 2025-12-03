@@ -1,5 +1,6 @@
 import pytest
 import pytest_asyncio
+
 from good_agent import Agent
 from good_agent.agent.thread_context import ForkContext, ThreadContext
 from good_agent.messages import AssistantMessage, SystemMessage, UserMessage

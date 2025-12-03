@@ -1,11 +1,12 @@
 import pytest
+from ulid import ULID
+
 from good_agent import Agent
 from good_agent.messages.store import (
     InMemoryMessageStore,
     message_store,
     set_message_store,
 )
-from ulid import ULID
 
 
 class TestAgentMessageStoreIntegration:

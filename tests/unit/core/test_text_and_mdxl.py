@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent.core.mdxl import MDXL
 from good_agent.core.text import StringFormatter
 

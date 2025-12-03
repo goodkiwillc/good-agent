@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent, AgentEvents
 from good_agent.mock import MockAgent, create_citation, mock_message
 

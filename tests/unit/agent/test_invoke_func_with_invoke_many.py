@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Any
 
 import pytest
+
 from good_agent import Agent, tool
 from good_agent.messages import AssistantMessage, ToolMessage
 
@@ -53,7 +54,7 @@ class TestInvokeFuncWithInvokeMany:
 
             # Use invoke_many with the bound function
             results = await agent.invoke_many(
-                invocations=[(search_tool, dict(query=q)) for q in queries]
+                invocations=[(search_tool, {"query": q}) for q in queries]
             )
 
             # Check that we got all results

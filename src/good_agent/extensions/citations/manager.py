@@ -590,7 +590,7 @@ class CitationManager(AgentComponent):
                 final_citations.append(citation)
 
         # Phase 3: Normalize content to use local indices
-        for content, part, part_citations, markdown_mapping in content_texts:
+        for content, part, _part_citations, _markdown_mapping in content_texts:
             if content is None:
                 # Non-text part, pass through
                 processed_parts.append(part)

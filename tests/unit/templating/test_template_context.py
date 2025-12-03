@@ -1,6 +1,7 @@
 import asyncio
 
 import pytest
+
 from good_agent import Agent, global_context_provider
 from good_agent.messages import UserMessage
 

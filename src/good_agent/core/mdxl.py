@@ -1375,7 +1375,7 @@ class MDXL:
             if has_text:
                 lines.append("")
 
-            for i, child in enumerate(element):
+            for _i, child in enumerate(element):
                 # Format child recursively
                 child_str = self._format_element(child, indent + 1)
                 lines.append(child_str)

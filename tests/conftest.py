@@ -7,8 +7,9 @@ from pathlib import Path
 import pytest
 import pytest_asyncio
 import vcr  # type: ignore[import-untyped]
-from good_agent.core.event_router import current_test_nodeid
 from pydantic import PydanticDeprecatedSince20, PydanticDeprecatedSince211
+
+from good_agent.core.event_router import current_test_nodeid
 
 # ---------------------------------------------------------------------------
 # Coverage policy helpers

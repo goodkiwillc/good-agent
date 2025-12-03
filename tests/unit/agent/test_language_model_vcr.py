@@ -1,12 +1,13 @@
 from typing import cast
 
 import pytest
-from good_agent import Agent
-from good_agent.messages import AssistantMessage
-from good_agent.model.llm import LanguageModel, StreamChunk
 from litellm.types.completion import ChatCompletionMessageParam
 from litellm.types.utils import Choices
 from pydantic import BaseModel
+
+from good_agent import Agent
+from good_agent.messages import AssistantMessage
+from good_agent.model.llm import LanguageModel, StreamChunk
 
 
 class WeatherInfo(BaseModel):

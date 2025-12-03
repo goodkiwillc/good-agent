@@ -1,4 +1,6 @@
 import pytest
+from jinja2 import Environment, TemplateNotFound
+
 from good_agent import Agent
 from good_agent.core.templating import (
     TEMPLATE_REGISTRY,
@@ -6,7 +8,6 @@ from good_agent.core.templating import (
     add_named_template,
     get_named_template,
 )
-from jinja2 import Environment, TemplateNotFound
 
 
 @pytest.fixture(autouse=True)

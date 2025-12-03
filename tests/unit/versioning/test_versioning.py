@@ -2,6 +2,8 @@ from typing import cast
 from unittest.mock import Mock
 
 import pytest
+from ulid import ULID
+
 from good_agent import Agent
 from good_agent.messages import SystemMessage, UserMessage
 from good_agent.messages.store import MessageStore
@@ -11,7 +13,6 @@ from good_agent.messages.versioning import (
     MessageRegistry,
     VersionManager,
 )
-from ulid import ULID
 
 
 class TestMessageRegistry:

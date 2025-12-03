@@ -3,8 +3,9 @@ import signal
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-import good_agent.core.signal_handler as sh
 import pytest
+
+import good_agent.core.signal_handler as sh
 from good_agent.core.signal_handler import SignalHandler, _RouterRef
 
 

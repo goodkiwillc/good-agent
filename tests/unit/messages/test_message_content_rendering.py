@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import pytest
+
 from good_agent.agent import Agent
 from good_agent.content import (
     FileContentPart,

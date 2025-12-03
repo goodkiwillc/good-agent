@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 import pytest
+
 from good_agent import Agent
 from good_agent.extensions.template_manager import _GLOBAL_CONTEXT_PROVIDERS
 

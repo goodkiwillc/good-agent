@@ -1,6 +1,8 @@
 from typing import Literal
 
 import pytest
+from ulid import ULID
+
 from good_agent import Agent
 from good_agent.messages import (
     AssistantMessage,
@@ -14,7 +16,6 @@ from good_agent.messages.validation import (
     ValidationMode,
 )
 from good_agent.tools import ToolCall, ToolCallFunction
-from ulid import ULID
 
 
 class TestMessageSequenceValidator:

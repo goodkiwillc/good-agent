@@ -4,6 +4,10 @@ from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
+from openai.types.completion_usage import CompletionUsage
+from pydantic import BaseModel
+from ulid import ULID
+
 from good_agent.agent import Agent
 from good_agent.content import (
     RenderMode,
@@ -24,9 +28,6 @@ from good_agent.messages import (
     UserMessage,
 )
 from good_agent.tools import ToolCall, ToolResponse
-from openai.types.completion_usage import CompletionUsage
-from pydantic import BaseModel
-from ulid import ULID
 
 
 class TestAnnotation:

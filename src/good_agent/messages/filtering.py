@@ -117,10 +117,7 @@ class FilteredMessageList(MessageList[T_Message], Generic[T_Message]):
         Returns:
             True if messages exist, False otherwise
         """
-        for msg in self._agent.messages:
-            if msg.role == self._role:
-                return True
-        return False
+        return any(msg.role == self._role for msg in self._agent.messages)
 
 
 __all__ = ["FilteredMessageList"]

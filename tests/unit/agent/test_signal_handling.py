@@ -12,11 +12,12 @@ from typing import cast
 from unittest.mock import MagicMock, patch
 
 import pytest
+from litellm.types.completion import ChatCompletionMessageParam
+
 from good_agent import Agent, tool
 from good_agent.agent import AgentState
 from good_agent.core.components import AgentComponent
 from good_agent.core.signal_handler import SignalHandler, _global_handler
-from litellm.types.completion import ChatCompletionMessageParam
 
 # Mark all tests in this file as requiring signal handling
 pytestmark = pytest.mark.requires_signals

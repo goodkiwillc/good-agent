@@ -4,8 +4,9 @@ from pathlib import Path
 
 import pytest
 import yaml
-from good_agent.cli.prompts import app
 from typer.testing import CliRunner
+
+from good_agent.cli.prompts import app
 
 
 class TestPromptsCLI:

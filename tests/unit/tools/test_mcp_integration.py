@@ -2,14 +2,15 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from mcp import ClientSession
+from mcp.types import ListToolsResult
+from mcp.types import Tool as MCPTool
+
 from good_agent import Agent
 from good_agent.mcp import MCPClientManager, MCPToolAdapter
 from good_agent.mcp.adapter import MCPToolSpec
 from good_agent.mcp.client import MCPServerConfig
 from good_agent.tools import ToolResponse
-from mcp import ClientSession
-from mcp.types import ListToolsResult
-from mcp.types import Tool as MCPTool
 
 
 @pytest.fixture

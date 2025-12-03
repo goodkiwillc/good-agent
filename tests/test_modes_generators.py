@@ -1,6 +1,7 @@
 """Tests for async generator mode handlers."""
 
 import pytest
+
 from good_agent import Agent
 from good_agent.agent.modes import ModeHandlerError
 
@@ -886,7 +887,7 @@ class TestExecuteLoopIntegration:
                 mock_message("", tool_calls=[("enter_mode_a", {})]),
                 "Now in mode A",
             ):
-                async for msg in agent.execute("Enter mode A"):
+                async for _msg in agent.execute("Enter mode A"):
                     mode_during_calls.append(agent.mode.name)
 
         # After tool call is processed, mode should be active

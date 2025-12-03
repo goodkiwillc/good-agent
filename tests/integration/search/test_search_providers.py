@@ -5,6 +5,7 @@ import os
 from datetime import date, datetime, timedelta
 
 import pytest
+
 from good_agent import Agent
 from good_agent.extensions.search import AgentSearch, SearchProviderRegistry
 from good_agent.extensions.search.models import (

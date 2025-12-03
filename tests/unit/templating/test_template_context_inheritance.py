@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 
 import pytest
+
 from good_agent import Agent, UserMessage
 from good_agent.content import TemplateContentPart
 from good_agent.extensions.template_manager import Template

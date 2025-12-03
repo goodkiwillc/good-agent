@@ -1,4 +1,5 @@
 import typer
+
 from good_agent.cli.config import GlobalConfig
 from good_agent.cli.prompts import register_commands as register_prompt_commands
 from good_agent.cli.run import run_agent

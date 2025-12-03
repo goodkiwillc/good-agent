@@ -7,10 +7,11 @@ from typing import cast
 from unittest.mock import MagicMock, patch
 
 import pytest
+from litellm.types.completion import ChatCompletionMessageParam
+
 from good_agent import Agent
 from good_agent.agent import AgentState
 from good_agent.tools import tool
-from litellm.types.completion import ChatCompletionMessageParam
 
 
 def _make_mock_llm_response(content: str = "mock response"):
@@ -93,7 +94,7 @@ class TestAgentInterruption:
             """Helper to consume the async generator."""
             formatted = await agent.model.format_message_list_for_llm(agent.messages)
             formatted_sequence = cast(Sequence[ChatCompletionMessageParam], formatted)
-            async for chunk in agent.model.stream(formatted_sequence):
+            async for _chunk in agent.model.stream(formatted_sequence):
                 pass  # Just consume chunks
 
         with patch.object(agent.model, "stream", mock_stream):

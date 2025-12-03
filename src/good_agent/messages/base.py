@@ -263,7 +263,7 @@ class Message(PrivateAttrBase, GoodBase, ABC):
                 if isinstance(content, str):
                     _content = [content]
                 elif isinstance(content, (list, tuple)):
-                    _content = [c for c in content]  # type: ignore[misc]
+                    _content = list(content)  # type: ignore[misc]
                 else:
                     raise TypeError(
                         f"Invalid content type: {type(content)}. Expected str, list, or tuple."

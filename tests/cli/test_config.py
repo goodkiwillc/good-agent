@@ -1,9 +1,10 @@
 from unittest.mock import patch
 
 import pytest
+from typer.testing import CliRunner
+
 from good_agent.cli.config import GlobalConfig
 from good_agent.cli.main import app
-from typer.testing import CliRunner
 
 runner = CliRunner()
 

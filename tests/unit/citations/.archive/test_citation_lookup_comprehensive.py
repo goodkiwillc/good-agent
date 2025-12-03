@@ -25,7 +25,7 @@ async def test_citation_lookup_comprehensive():
 
     # Populate the global index
     agent.append("""Initial sources:
-    
+
     [1]: https://example.com/source1.pdf
     [2]: https://example.com/source2.html
     [3]: https://example.com/source3.json
@@ -43,7 +43,7 @@ async def test_citation_lookup_comprehensive():
 
     llm_response_1 = AssistantMessage(
         """Based on [!CITE_1!] and [!CITE_2!], we conclude:
-        
+
         The data in [!CITE_1!] shows positive trends.
         Additional evidence from [!CITE_3!] confirms this."""
     )
@@ -68,7 +68,7 @@ async def test_citation_lookup_comprehensive():
 
     llm_response_2 = AssistantMessage(
         """According to [1] and recent findings [2]:
-        
+
         - Point from source [1]
         - Data from [2] and [3]"""
     )

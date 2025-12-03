@@ -86,7 +86,7 @@ def dedent(value):
     if len(lines) > 1:
         # Find if any lines still have leading whitespace
         result_lines = []
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             if line.strip():  # Non-empty line
                 result_lines.append(line.lstrip())
             else:

@@ -962,12 +962,12 @@ You are now operating in {mode_name} mode. Your responses should align with this
         # Run setup phase (until yield)
         try:
             await gen.__anext__()  # type: ignore[attr-defined]
-        except StopAsyncIteration:
+        except StopAsyncIteration as exc:
             # Generator returned without yielding - this is an error
             raise ModeHandlerError(
                 f"Mode handler '{mode_name}' must yield. "
                 "All mode handlers are async generators that yield control after setup."
-            )
+            ) from exc
 
         # Generator yielded - store it for later cleanup
         entry.active_generator = ActiveModeGenerator(

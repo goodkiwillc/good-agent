@@ -7,7 +7,6 @@ import functools
 import logging
 import random
 import sys
-import typing
 from collections import ChainMap
 from collections.abc import AsyncGenerator, Awaitable, Callable, Mapping, MutableMapping
 from enum import Enum, auto
@@ -21,7 +20,7 @@ from typing import (
 
 logger = logging.getLogger(__name__)
 
-TIME_UNIT_TYPE = typing.Union[int, float, datetime.timedelta]
+TIME_UNIT_TYPE = int | float | datetime.timedelta
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -70,7 +69,7 @@ class wait_base(abc.ABC):
         raise TypeError("Unsupported operand type for wait_base addition")
 
 
-WaitBaseT = typing.Union[wait_base, Callable[["RetryState[Any]"], float | int]]
+WaitBaseT = wait_base | Callable[["RetryState[Any]"], float | int]
 
 
 class wait_fixed(wait_base):

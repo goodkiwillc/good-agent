@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent
 from good_agent.content import RenderMode
 from good_agent.extensions.citations import CitationManager
@@ -18,7 +19,7 @@ async def test_markdown_reference_block_takes_precedence():
     # Content with markdown citations AND a reference block
     content_with_refs = """
     This document cites [1] and [2] and [3].
-    
+
     [1]: https://local1.com/paper.pdf
     [2]: https://local2.com/paper.pdf
     [3]: https://local3.com/paper.pdf

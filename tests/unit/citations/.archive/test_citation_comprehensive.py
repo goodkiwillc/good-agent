@@ -23,7 +23,7 @@ async def test_all_citation_scenarios():
 
     agent1.append("""
     Here's some content [1] with citations [2].
-    
+
     [1]: https://example.com/one.pdf
     [2]: https://example.com/two.pdf
     """)
@@ -45,7 +45,7 @@ async def test_all_citation_scenarios():
 
     agent2.append("""
     References in weird order:
-    
+
     [3]: https://example.com/three.pdf
     [1]: https://example.com/one.pdf
     [2]: https://example.com/two.pdf

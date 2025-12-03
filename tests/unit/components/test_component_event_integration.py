@@ -2,6 +2,7 @@ import asyncio
 from unittest.mock import MagicMock
 
 import pytest
+
 from good_agent import Agent, AgentComponent, AgentEvents, tool
 from good_agent.core.event_router import EventContext, on
 

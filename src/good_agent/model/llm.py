@@ -435,7 +435,7 @@ class LanguageModel(AgentComponent):
             if _content := kwargs.pop("content", None):
                 # Convert to tuple for proper typing
                 if not isinstance(_content, (list, tuple)):
-                    content_parts = tuple([_content])
+                    content_parts = (_content,)
                 else:
                     content_parts = tuple(_content) if isinstance(_content, list) else _content
 

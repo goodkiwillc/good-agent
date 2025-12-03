@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent, tool
 from good_agent.messages import (
     AssistantMessage,
@@ -146,7 +147,7 @@ class TestMessageSequencing:
             # Document the broken behavior (this will fail with proper implementation)
             if len(assistant_msgs) > 1:
                 # Current broken behavior - multiple assistant messages
-                for i, (idx, assistant_msg) in enumerate(assistant_msgs):
+                for _i, (idx, assistant_msg) in enumerate(assistant_msgs):
                     # Check if tool response immediately follows
                     next_msg = messages[idx + 1] if idx + 1 < len(messages) else None
 

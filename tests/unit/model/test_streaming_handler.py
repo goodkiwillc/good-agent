@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+
 from good_agent.events import AgentEvents
 from good_agent.model.streaming import StreamingHandler
 

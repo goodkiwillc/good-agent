@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+
 from good_agent.agent.core import Agent
 from good_agent.cli.serve import create_app
 from good_agent.messages import AssistantMessage

@@ -10,6 +10,11 @@ from typing import Any
 import typer
 import yaml
 from click.utils import get_text_stream
+from rich.console import Console
+from rich.panel import Panel
+from rich.syntax import Syntax
+from rich.table import Table
+from rich.tree import Tree
 
 # Agent templating components
 from good_agent.extensions.template_manager.index import (
@@ -21,11 +26,6 @@ from good_agent.extensions.template_manager.storage import (
     FileTemplateManager,
     TemplateValidator,
 )
-from rich.console import Console
-from rich.panel import Panel
-from rich.syntax import Syntax
-from rich.table import Table
-from rich.tree import Tree
 
 
 def _get_console() -> Console:

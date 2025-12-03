@@ -3,11 +3,12 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import pytest_asyncio
+from openai.types.completion_usage import CompletionUsage
+
 from good_agent import Agent, tool
 from good_agent.content.parts import TextContentPart
 from good_agent.messages import AssistantMessage, SystemMessage, UserMessage
 from good_agent.messages.versioning import MessageRegistry
-from openai.types.completion_usage import CompletionUsage
 
 
 class TestVersioningWithAgentOperations:

@@ -317,7 +317,7 @@ class VersionManager:
             self._current_version_index = min(self._current_version_index, version_index)
 
             # Clean up metadata for removed versions
-            keys_to_remove = [k for k in self._metadata.keys() if k > version_index]
+            keys_to_remove = [k for k in self._metadata if k > version_index]
             for k in keys_to_remove:
                 del self._metadata[k]
 

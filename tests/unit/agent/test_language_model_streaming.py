@@ -1,8 +1,9 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from good_agent.model.llm import LanguageModel, StreamChunk
 from litellm.types.completion import ChatCompletionMessageParam
+
+from good_agent.model.llm import LanguageModel, StreamChunk
 
 
 class MockStreamChoice:

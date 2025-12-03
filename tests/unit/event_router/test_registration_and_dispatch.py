@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+
 from good_agent.core.event_router import (
     EventContext,
     EventRouter,

@@ -2,6 +2,7 @@ from datetime import date, datetime
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+
 from good_agent import Agent
 from good_agent.core.types import URL
 from good_agent.extensions.search import (

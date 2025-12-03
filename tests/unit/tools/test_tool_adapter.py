@@ -3,6 +3,7 @@ from typing import Any, cast
 from unittest.mock import MagicMock
 
 import pytest
+
 from good_agent import Agent, AgentComponent, tool
 from good_agent.core.components import (
     AdapterMetadata,

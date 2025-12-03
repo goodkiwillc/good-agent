@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent.core.templates import render_template, render_template_async
 
 

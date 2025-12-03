@@ -2,6 +2,7 @@ import asyncio
 from typing import Any
 
 import pytest
+
 from good_agent import Agent
 from good_agent.core.components import AgentComponent
 

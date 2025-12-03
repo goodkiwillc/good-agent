@@ -15,6 +15,8 @@ except ImportError:
     )
     sys.exit(1)
 
+from pydantic import BaseModel
+
 from good_agent.agent.core import Agent
 from good_agent.cli.utils import load_agent_from_path
 from good_agent.messages import (
@@ -25,7 +27,6 @@ from good_agent.messages import (
 from good_agent.messages import (
     Message as GAMessage,
 )
-from pydantic import BaseModel
 
 # --- OpenAI-compatible Models ---
 
@@ -116,14 +117,14 @@ def create_app(agent_factory: Callable[[], Agent]) -> FastAPI:
             # Clear existing and add new?
             # request_agent.messages.clear() # No clear method on MessageList?
             # Let's rely on _fork_with_messages as it was seen in core.py
-            raise HTTPException(status_code=500, detail=f"Agent fork failed: {e}")
+            raise HTTPException(status_code=500, detail=f"Agent fork failed: {e}") from e
 
         # 4. Run Agent
         # We use call() for a single turn
         try:
             response_message = await request_agent.call()
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Agent execution failed: {e}")
+            raise HTTPException(status_code=500, detail=f"Agent execution failed: {e}") from e
 
         # 5. Format Response
         content = str(response_message.content) if response_message.content else ""

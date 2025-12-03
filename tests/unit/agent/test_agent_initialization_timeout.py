@@ -3,6 +3,7 @@ import time
 from typing import Any, cast
 
 import pytest
+
 from good_agent import Agent, tool
 
 

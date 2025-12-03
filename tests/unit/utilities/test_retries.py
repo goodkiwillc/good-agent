@@ -3,6 +3,7 @@
 from typing import Any
 
 import pytest
+
 from good_agent.utilities.retries import (
     Retry,
     RetryAction,
@@ -238,7 +239,7 @@ class TestRetryBasic:
 
         retry: Retry[Any] = Retry(max_attempts=5)
 
-        async for state in retry(always_fails):
+        async for _state in retry(always_fails):
             pass
 
         assert attempt_count == 5

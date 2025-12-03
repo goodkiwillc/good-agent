@@ -1,6 +1,7 @@
 import pytest
-from good_agent.core.templating._extensions import MultiLineInclude, SectionExtension
 from jinja2 import DictLoader, Environment, TemplateSyntaxError
+
+from good_agent.core.templating._extensions import MultiLineInclude, SectionExtension
 
 
 def _render(template: str) -> str:

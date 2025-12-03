@@ -2,6 +2,7 @@ import os
 
 import pytest
 from box import Box
+
 from good_agent import Agent
 from good_agent.resources import EditableYAML
 

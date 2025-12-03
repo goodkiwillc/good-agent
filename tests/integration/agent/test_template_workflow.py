@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 import pytest_asyncio
 import yaml
+
 from good_agent import Agent
 from good_agent.extensions.template_manager.index import (
     TemplateIndex,
