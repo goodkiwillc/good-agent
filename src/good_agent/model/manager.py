@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import logging
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -190,7 +191,7 @@ def get_managed_router_class():
                     if hasattr(callback, method_name):
                         try:
                             method = getattr(callback, method_name)
-                            if asyncio.iscoroutinefunction(method):
+                            if inspect.iscoroutinefunction(method):
                                 await method(*args, **kwargs)
                             else:
                                 method(*args, **kwargs)

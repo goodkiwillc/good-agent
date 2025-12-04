@@ -41,17 +41,17 @@ class SupportsRender(Protocol):
 def is_async_function(func: Callable | Any) -> TypeGuard[Callable[..., Awaitable[Any]]]:
     """Return True when *func* is an async function."""
 
-    import asyncio
+    import inspect
 
-    return asyncio.iscoroutinefunction(func)
+    return inspect.iscoroutinefunction(func)
 
 
 def is_sync_function(func: Callable | Any) -> TypeGuard[Callable[..., Any]]:
     """Return True when *func* is a synchronous function."""
 
-    import asyncio
+    import inspect
 
-    return callable(func) and not asyncio.iscoroutinefunction(func)
+    return callable(func) and not inspect.iscoroutinefunction(func)
 
 
 def has_attribute(obj: Any, attr: str) -> bool:

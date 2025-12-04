@@ -860,7 +860,7 @@ class Tool(BaseToolDefinition, Generic[P, FuncResp]):
         new_sig = sig.replace(parameters=new_params)
 
         # Create wrapper that applies the new signature
-        if asyncio.iscoroutinefunction(fn):
+        if inspect.iscoroutinefunction(fn):
 
             async def wrapper(*args, **kwargs):  # type: ignore[reportRedeclaration]
                 return await fn(*args, **kwargs)

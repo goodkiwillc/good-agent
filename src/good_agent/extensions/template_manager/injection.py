@@ -208,13 +208,13 @@ class ContextResolver:
                             ) from None
 
             # Call provider with resolved context values
-            if asyncio.iscoroutinefunction(provider):
+            if inspect.iscoroutinefunction(provider):
                 return await provider(**kwargs)
             else:
                 return provider(**kwargs)
         else:
             # Simple provider without context dependencies
-            if asyncio.iscoroutinefunction(provider):
+            if inspect.iscoroutinefunction(provider):
                 return await provider()
             else:
                 return provider()
@@ -453,7 +453,7 @@ def _modify_function_for_injection(func: Callable) -> Callable:
             kwargs.pop("_context", None)
 
             # Call original function
-            if asyncio.iscoroutinefunction(func):
+            if inspect.iscoroutinefunction(func):
                 return await func(*args, **kwargs)
             else:
                 return func(*args, **kwargs)

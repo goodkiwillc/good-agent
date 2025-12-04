@@ -4,6 +4,7 @@ import abc
 import asyncio
 import datetime
 import functools
+import inspect
 import logging
 import random
 import sys
@@ -477,7 +478,7 @@ class Retry(Generic[T]):
         kwargs: Mapping[str, Any],
     ) -> AsyncGenerator[RetryState[T]]:
         """Async generator for retry operations."""
-        is_async = asyncio.iscoroutinefunction(function)
+        is_async = inspect.iscoroutinefunction(function)
         current_attempt = 0
         current_args = args
         current_kwargs: MutableMapping[str, Any] = dict(kwargs)

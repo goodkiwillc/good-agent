@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import logging
 from collections import ChainMap
 from collections.abc import Callable
@@ -277,7 +278,7 @@ class TemplateManager(AgentComponent):
                                 kwargs["message"] = self._agent.messages[-1]
 
                     # Call the function
-                    if asyncio.iscoroutinefunction(func):
+                    if inspect.iscoroutinefunction(func):
                         return await func(*args, **kwargs)
                     else:
                         return func(*args, **kwargs)
@@ -647,7 +648,7 @@ class TemplateManager(AgentComponent):
                     )
 
                 # Only support sync providers in sync context
-                if not asyncio.iscoroutinefunction(provider):
+                if not inspect.iscoroutinefunction(provider):
                     value = provider()
 
                     # Emit context:provider:response event (modifiable)
@@ -679,7 +680,7 @@ class TemplateManager(AgentComponent):
                     )
 
                 # Only support sync providers in sync context
-                if not asyncio.iscoroutinefunction(provider):
+                if not inspect.iscoroutinefunction(provider):
                     value = provider()
 
                     # Emit context:provider:response event (modifiable)
