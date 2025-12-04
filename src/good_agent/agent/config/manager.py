@@ -1,4 +1,5 @@
 import inspect
+import sys
 import types
 from collections import ChainMap
 from collections.abc import Callable, Iterator, MutableMapping
@@ -15,6 +16,10 @@ from typing import (
 )
 
 from httpx import Timeout
+
+# Python 3.14+ uses annotationlib for annotation handling
+if sys.version_info >= (3, 14):
+    import annotationlib
 
 T = TypeVar("T", bound="ConfigStack")
 
@@ -94,7 +99,14 @@ class ConfigStackMeta(type):
     """Metaclass to process field annotations and create descriptors"""
 
     def __new__(mcs, name, bases, namespace, **_kwargs):
-        annotations = namespace.get("__annotations__", {})
+        # Python 3.14+ uses __annotate_func__ instead of __annotations__
+        if sys.version_info >= (3, 14) and "__annotate_func__" in namespace:
+            try:
+                annotations = namespace["__annotate_func__"](annotationlib.Format.VALUE)
+            except Exception:
+                annotations = {}
+        else:
+            annotations = namespace.get("__annotations__", {})
 
         # Create descriptors for annotated fields
         for field_name, field_type in annotations.items():
