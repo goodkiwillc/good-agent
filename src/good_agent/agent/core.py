@@ -120,6 +120,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+logger.info("Importing good_agent.agent.core...")
+
 FilterPattern: TypeAlias = str
 
 P_Message = TypeVar("P_Message", bound=Message)
@@ -546,6 +548,8 @@ class Agent(EventRouter):
                 template_manager or TemplateManager(use_sandbox=use_sandbox),
             ]
         )
+
+        logger.info("Registering agent extensions...")
 
         # Register extensions after EventRouter initialization
         for extension in extensions:

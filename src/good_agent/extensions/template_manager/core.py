@@ -1,6 +1,6 @@
-import asyncio
 import inspect
 import logging
+import os
 from collections import ChainMap
 from collections.abc import Callable
 from datetime import UTC
@@ -99,8 +99,18 @@ def _provide_now():
 
 
 def find_prompts_directory() -> Path | None:
-    """Find the prompts directory by looking for prompts.yaml."""
+    """Find the prompts directory from env override or by looking for prompts.yaml."""
+    env_dir = os.getenv("GOOD_AGENT_PROMPTS_DIR")
+    logger.info(f"Searching for prompts directory...")
+    if env_dir:
+        env_path = Path(env_dir).expanduser()
+        logger.info(f"Using prompts directory from GOOD_AGENT_PROMPTS_DIR: {env_path}")
+        if env_path.exists():
+            return env_path
+
     current = Path.cwd()
+
+    logger.info(current)
 
     # Check current directory and parents
     for directory in [current] + list(current.parents):
@@ -187,6 +197,11 @@ class TemplateManager(AgentComponent):
         self._context_providers: dict[str, Callable[[], Any]] = {}
         self._context_stack: list[dict[str, Any]] = []
         self.use_sandbox = use_sandbox
+
+        logger.info(
+            f"Initializing TemplateManager with file templates "
+            f"{'enabled' if enable_file_templates else 'disabled'}."
+        )
 
         # Initialize context resolver
         self._context_resolver = ContextResolver(self)
@@ -304,6 +319,8 @@ class TemplateManager(AgentComponent):
             FileSystemStorage,
             StorageTemplateLoader,
         )
+
+        logger.info("Setting up file-based template loading...")
 
         # Build storage chain
         storages = []

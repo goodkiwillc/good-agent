@@ -2,11 +2,13 @@ import logging
 from typing import TYPE_CHECKING
 
 from good_agent.content import RenderMode
-
-# Minimal eager imports - only the most commonly used classes
 from good_agent.core.components import AgentComponent
 from good_agent.events import AgentEvents
+from good_agent.utilities.logger import configure_library_logging
 
+# Minimal eager imports - only the most commonly used classes
+
+configure_library_logging()
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 
