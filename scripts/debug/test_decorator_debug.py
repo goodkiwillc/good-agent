@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent, AgentComponent, AgentEvents
 from good_agent.core.event_router import EventContext, on
 

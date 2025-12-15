@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Automated release helper for good-agent."""
-
 from __future__ import annotations
 
 import argparse
@@ -8,10 +7,8 @@ import datetime as dt
 import re
 import subprocess
 import sys
-from pathlib import Path
-
 import tomllib
-
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PYPROJECT_PATH = ROOT / "pyproject.toml"

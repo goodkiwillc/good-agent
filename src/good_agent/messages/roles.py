@@ -23,12 +23,12 @@ class UserMessage(Message):
     """User message with optional images and image detail settings."""
 
     @overload
-    def __init__(self, content: str | None = None, **data): ...
+    def __init__(self, content: str | None = None, **data: Any): ...
 
     @overload
-    def __init__(self, *content: MessageContent, **data): ...
+    def __init__(self, *content: MessageContent, **data: Any): ...
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
     role: Literal["user"] = "user"  # type: ignore[assignment]
@@ -40,12 +40,12 @@ class SystemMessage(Message):
     """System message for providing instructions to the LLM."""
 
     @overload
-    def __init__(self, content: str | None = None, **data): ...
+    def __init__(self, content: str | None = None, **data: Any): ...
 
     @overload
-    def __init__(self, *content: MessageContent, **data): ...
+    def __init__(self, *content: MessageContent, **data: Any): ...
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
     role: Literal["system"] = "system"  # type: ignore[assignment]
@@ -64,7 +64,7 @@ class ToolMessage(Message, Generic[T_ToolResponse]):
         tool_call_id: str | None = None,
         tool_name: str | None = None,
         tool_response: T_ToolResponse | None = None,
-        **data,
+        **data: Any,
     ): ...
 
     @overload
@@ -74,13 +74,13 @@ class ToolMessage(Message, Generic[T_ToolResponse]):
         tool_call_id: str | None = None,
         tool_name: str | None = None,
         tool_response: T_ToolResponse | None = None,
-        **data,
+        **data: Any,
     ): ...
 
     @overload
-    def __init__(self, *content: MessageContent, **data): ...
+    def __init__(self, *content: MessageContent, **data: Any): ...
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs: Any):
         # Handle tool_name to name aliasing
         if "tool_name" in kwargs and "name" not in kwargs:
             kwargs["name"] = kwargs["tool_name"]
@@ -131,13 +131,13 @@ class AssistantMessage(Message):
         refusal: str | None = None,
         citations: list[CitationURL] | None = None,
         annotations: list[AnnotationLike] | None = None,
-        **data,
+        **data: Any,
     ): ...
 
     @overload
-    def __init__(self, *content: MessageContent, **data): ...
+    def __init__(self, *content: MessageContent, **data: Any): ...
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
     role: Literal["assistant"] = "assistant"  # type: ignore[assignment]

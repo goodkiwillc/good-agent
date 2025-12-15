@@ -3,8 +3,6 @@
 import logging
 from typing import Any
 
-import pytest
-
 from good_agent.utilities.logger import DEFAULT_FORMAT, configure_library_logging
 
 

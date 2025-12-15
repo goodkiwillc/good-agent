@@ -118,9 +118,7 @@ class EventRouter:
 
         # Register for signal handling if enabled
         if self._signal_handling_enabled:
-            from good_agent.core.event_router.signal_handler import (
-                register_for_signals,  # type: ignore[import-not-found]
-            )
+            from good_agent.core.signal_handler import register_for_signals
 
             register_for_signals(self)
 
@@ -904,9 +902,7 @@ class EventRouter:
         """Clean up resources and wait for outstanding tasks."""
         # Unregister from signal handling
         if self._signal_handling_enabled:
-            from good_agent.core.event_router.signal_handler import (
-                unregister_from_signals,
-            )  # type: ignore[import-not-found]
+            from good_agent.core.signal_handler import unregister_from_signals
 
             unregister_from_signals(self)
         await self._sync_bridge.close()
@@ -914,9 +910,7 @@ class EventRouter:
     def close_sync(self) -> None:
         """Synchronous helper that performs immediate cleanup."""
         if self._signal_handling_enabled:
-            from good_agent.core.event_router.signal_handler import (
-                unregister_from_signals,
-            )  # type: ignore[import-not-found]
+            from good_agent.core.signal_handler import unregister_from_signals
 
             unregister_from_signals(self)
 

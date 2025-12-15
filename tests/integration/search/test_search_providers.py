@@ -16,8 +16,8 @@ from good_agent.extensions.search.models import (
 
 # Try to import providers
 try:
-    from good_agent_valueserp.search_provider import (
-        WebSearchProvider,  # type: ignore[import-not-found]
+    from good_agent_valueserp.search_provider import (  # type: ignore[import-not-found]
+        WebSearchProvider,
     )
 
     print("✓ WebSearchProvider imported successfully")
@@ -26,8 +26,8 @@ except ImportError as e:
     WebSearchProvider = None
 
 try:
-    from good_agent_twitter.search_provider import (
-        TwitterSearchProvider,  # type: ignore[import-not-found]
+    from good_agent_twitter.search_provider import (  # type: ignore[import-not-found]
+        TwitterSearchProvider,
     )
 
     print("✓ TwitterSearchProvider imported successfully")

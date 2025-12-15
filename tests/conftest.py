@@ -124,8 +124,8 @@ try:
         def noop_flush(self):
             return None
 
-        LoggingWorker._worker_loop = noop_worker_loop
-        LoggingWorker._flush_on_exit = noop_flush
+        LoggingWorker._worker_loop = noop_worker_loop  # type: ignore[method-assign]
+        LoggingWorker._flush_on_exit = noop_flush  # type: ignore[method-assign]
     except ImportError:
         pass
 

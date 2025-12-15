@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 
-
 DEFAULT_FORMAT = "%(levelname)s %(name)s - %(message)s"
 
 

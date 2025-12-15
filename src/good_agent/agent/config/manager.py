@@ -1,3 +1,4 @@
+import annotationlib
 import inspect
 import sys
 import types
@@ -16,10 +17,6 @@ from typing import (
 )
 
 from httpx import Timeout
-
-# Python 3.14+ uses annotationlib for annotation handling
-if sys.version_info >= (3, 14):
-    import annotationlib
 
 T = TypeVar("T", bound="ConfigStack")
 
