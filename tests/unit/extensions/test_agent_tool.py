@@ -1,8 +1,10 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from good_agent.agent.core import Agent
-from good_agent.tools.agent_tool import AgentAsTool
 from good_agent.mock import mock_message
+from good_agent.tools.agent_tool import AgentAsTool
 
 
 @pytest.mark.asyncio

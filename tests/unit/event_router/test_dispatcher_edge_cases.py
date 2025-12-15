@@ -210,9 +210,7 @@ class TestBroadcastRouting:
 
         @router1.on("reverse:event")
         def handler_in_router1(ctx: EventContext) -> None:
-            events_in_router1.append(
-                "reverse:event"
-            )  # Simplified - actual event tracking
+            events_in_router1.append("reverse:event")  # Simplified - actual event tracking
 
         # Connect routers bidirectionally
         router1.broadcast_to(router2)

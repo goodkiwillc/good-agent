@@ -35,7 +35,7 @@ def test_datetime_serializer_converts_to_utc():
     )
     model = _SerializerModel(ts=aware)
     dump = model.model_dump()
-    assert dump["ts"].tzinfo == datetime.timezone.utc
+    assert dump["ts"].tzinfo == datetime.UTC
     assert dump["ts"].hour == 10
 
 

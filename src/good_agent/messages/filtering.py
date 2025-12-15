@@ -30,9 +30,7 @@ class FilteredMessageList(MessageList[T_Message], Generic[T_Message]):
         >>> agent.assistant.append("Hi!")  # Creates AssistantMessage automatically
     """
 
-    def __init__(
-        self, agent: Agent, role: str, messages: Iterable[T_Message] | None = None
-    ):
+    def __init__(self, agent: Agent, role: str, messages: Iterable[T_Message] | None = None):
         # Initialize with provided messages
         super().__init__(messages)
         self._agent = agent
@@ -82,13 +80,11 @@ class FilteredMessageList(MessageList[T_Message], Generic[T_Message]):
             ValueError: If called on non-system role
         """
         if self._role != "system":
-            raise ValueError(
-                f"set() is only available for system messages, not {self._role}"
-            )
+            raise ValueError(f"set() is only available for system messages, not {self._role}")
 
         # Import here to avoid circular dependency
-        from good_agent.messages.roles import SystemMessage
         from good_agent.agent.config import AGENT_CONFIG_KEYS
+        from good_agent.messages.roles import SystemMessage
 
         # Extract and apply config parameters
         message_kwargs = {}
@@ -121,10 +117,7 @@ class FilteredMessageList(MessageList[T_Message], Generic[T_Message]):
         Returns:
             True if messages exist, False otherwise
         """
-        for msg in self._agent.messages:
-            if msg.role == self._role:
-                return True
-        return False
+        return any(msg.role == self._role for msg in self._agent.messages)
 
 
 __all__ = ["FilteredMessageList"]

@@ -5,10 +5,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from ulid import ULID
+
 from good_agent.core.ulid_monotonic import create_monotonic_ulid
 from good_agent.events import AgentEvents
 from good_agent.messages.versioning import VersionManager
-from ulid import ULID
 
 if TYPE_CHECKING:
     from good_agent.agent import Agent
@@ -101,9 +102,7 @@ class AgentVersioningManager:
         # Emit agent:version:change event
         changes = {
             "messages": len(self.agent._messages),
-            "last_version_messages": len(self._versions[-2])
-            if len(self._versions) > 1
-            else 0,
+            "last_version_messages": len(self._versions[-2]) if len(self._versions) > 1 else 0,
         }
         # @TODO: event naming
         self.agent.do(

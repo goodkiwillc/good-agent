@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import BaseModel
+
 from good_agent import Agent, AgentComponent, tool
 from good_agent.tools import BoundTool, Tool
-from pydantic import BaseModel
 
 FuncT = TypeVar("FuncT", bound=Callable[..., Any])
 
@@ -76,9 +77,7 @@ async def test_component_tools_registration():
     """Test that component tools are properly registered with the agent."""
     # Create agent with TaskManager component
     task_manager = TaskManager()
-    async with Agent(
-        "You are a task management assistant", extensions=[task_manager]
-    ) as agent:
+    async with Agent("You are a task management assistant", extensions=[task_manager]) as agent:
         # Tools should now be registered immediately after initialize() completes
 
         # Check that tools were registered
@@ -158,9 +157,7 @@ async def test_component_tools_execution():
         assert len(task_manager.lists) > 0
 
         # The list should have the requested name
-        created_lists = [
-            lst for lst in task_manager.lists.values() if lst.name == "Work Tasks"
-        ]
+        created_lists = [lst for lst in task_manager.lists.values() if lst.name == "Work Tasks"]
         assert len(created_lists) > 0
 
 

@@ -2,11 +2,12 @@ import logging
 from typing import Annotated
 
 import pytest
+from pydantic import Field
+
 from good_agent import Agent
+from good_agent.core.types import URL
 from good_agent.extensions.citations import CitationManager
 from good_agent.tools import Tool
-from good_agent.core.types import URL
-from pydantic import Field
 
 
 def mock_fetch_url(url: URL) -> str:
@@ -117,10 +118,7 @@ class TestToolSignatureTransformation:
             assert "url" not in params
 
             # description should mention citation
-            assert (
-                params["citation_idx"]["description"]
-                == "Index of the citation to use (0-based)"
-            )
+            assert params["citation_idx"]["description"] == "Index of the citation to use (0-based)"
 
             # citation_idx should be integer
             assert params["citation_idx"]["type"] == "integer"
@@ -150,10 +148,7 @@ class TestToolSignatureTransformation:
             # citation_idxs should be array of integers
             assert params["citation_idxs"]["type"] == "array"
             assert params["citation_idxs"]["items"]["type"] == "integer"
-            assert (
-                params["citation_idxs"]["description"]
-                == "List of citation indices (0-based)"
-            )
+            assert params["citation_idxs"]["description"] == "List of citation indices (0-based)"
 
             await agent.events.close()
 

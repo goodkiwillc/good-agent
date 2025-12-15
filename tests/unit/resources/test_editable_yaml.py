@@ -2,6 +2,7 @@ from typing import Any, cast
 
 import pytest
 import yaml
+
 from good_agent.resources import EditableYAML
 from good_agent.tools import ToolResponse
 
@@ -19,9 +20,7 @@ fields:
     assert r_get.success is True
     assert r_get.response.strip().startswith("o.id")
 
-    r_set = cast(
-        ToolResponse[str], await ed.set("fields.created_at", {"path": "o.created_at"})
-    )
+    r_set = cast(ToolResponse[str], await ed.set("fields.created_at", {"path": "o.created_at"}))
     assert r_set.success is True and r_set.response == "ok"
     full = cast(ToolResponse[str], await ed.text())
     y = yaml.safe_load(full.response) or {}
@@ -121,9 +120,7 @@ fields:
 @pytest.mark.asyncio
 async def test_validation_and_rollback_v2():
     def validator(doc: dict):
-        fields = (
-            set((doc.get("fields") or {}).keys()) if isinstance(doc, dict) else set()
-        )
+        fields = set((doc.get("fields") or {}).keys()) if isinstance(doc, dict) else set()
         if "invalid_col" in fields:
             return False, ["invalid_col not allowed"]
         return True, []
@@ -143,9 +140,7 @@ fields:
     g = cast(ToolResponse[str], await ed.get("fields.invalid_col"))
     assert g.response.strip() == ""
 
-    r_bad = cast(
-        ToolResponse[str], await ed.replace(r"fields:\n", "fields\n", validate=True)
-    )
+    r_bad = cast(ToolResponse[str], await ed.replace(r"fields:\n", "fields\n", validate=True))
     assert r_bad.success is True and r_bad.response.startswith("ERROR:")
     t = cast(ToolResponse[str], await ed.read())
     assert "ok:" in t.response

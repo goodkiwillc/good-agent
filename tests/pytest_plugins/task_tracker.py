@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from typing import Any, Callable, cast
+from collections.abc import Callable
+from typing import Any, cast
 
 from good_agent.core.event_router import current_test_nodeid
 
@@ -29,8 +30,7 @@ def pytest_configure(config):
 
             # Log with more context
             logger.error(
-                "Task '%s' destroyed while pending in test: %s\n"
-                "Task was created at: %s",
+                "Task '%s' destroyed while pending in test: %s\nTask was created at: %s",
                 self.get_name(),
                 test_info,
                 getattr(self, "_source_traceback", "unknown"),
@@ -41,8 +41,8 @@ def pytest_configure(config):
 
     # Only patch if not already patched
     if not _is_patched(task_destructor):
-        setattr(asyncio.Task, "__del__", enhanced_task_del)
-        setattr(enhanced_task_del, "_patched", True)
+        asyncio.Task.__del__ = enhanced_task_del
+        enhanced_task_del._patched = True
 
 
 def pytest_runtest_setup(item):

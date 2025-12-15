@@ -1,6 +1,7 @@
 import asyncio
 
 import pytest
+
 from good_agent import Agent, AgentComponent, AgentEvents, tool
 from good_agent.core.event_router import EventContext, on
 
@@ -142,9 +143,7 @@ class TestComponentDecoratorPatterns:
         # Test enabled state (default)
         assert component.enabled
         agent.append("Message 1")
-        enabled_count = len(
-            [e for e in component.events if "manual:message_append" in e]
-        )
+        enabled_count = len([e for e in component.events if "manual:message_append" in e])
         assert enabled_count > 0
 
         # Disable component
@@ -153,9 +152,7 @@ class TestComponentDecoratorPatterns:
         agent.append("Message 2")
 
         # Manual handlers should respect enabled state
-        disabled_count = len(
-            [e for e in component.events if "manual:message_append" in e]
-        )
+        disabled_count = len([e for e in component.events if "manual:message_append" in e])
         assert disabled_count == 0, "Manual handlers should respect enabled state"
 
         # Note: @on decorator handlers don't automatically check enabled state

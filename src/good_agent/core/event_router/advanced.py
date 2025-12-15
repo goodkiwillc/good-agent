@@ -39,9 +39,7 @@ class TypedApply(Generic[T_Parameters, T_Return]):
         self.params_type = params_type
         self.return_type = return_type
 
-    async def apply(
-        self, event: EventName, **kwargs: Any
-    ) -> EventContext[T_Parameters, T_Return]:
+    async def apply(self, event: EventName, **kwargs: Any) -> EventContext[T_Parameters, T_Return]:
         """Apply the event asynchronously with type safety.
 
         This method delegates to EventRouter.apply_typed() with the stored
@@ -61,13 +59,9 @@ class TypedApply(Generic[T_Parameters, T_Return]):
             result: ProcessResult | None = ctx.return_value
             ```
         """
-        return await self.router.apply_typed(
-            event, self.params_type, self.return_type, **kwargs
-        )
+        return await self.router.apply_typed(event, self.params_type, self.return_type, **kwargs)
 
-    def apply_sync(
-        self, event: EventName, **kwargs: Any
-    ) -> EventContext[T_Parameters, T_Return]:
+    def apply_sync(self, event: EventName, **kwargs: Any) -> EventContext[T_Parameters, T_Return]:
         """Apply the event synchronously with type safety.
 
         This method delegates to EventRouter.apply_typed_sync() with the stored
@@ -87,6 +81,4 @@ class TypedApply(Generic[T_Parameters, T_Return]):
             result: ProcessResult | None = ctx.return_value
             ```
         """
-        return self.router.apply_typed_sync(
-            event, self.params_type, self.return_type, **kwargs
-        )
+        return self.router.apply_typed_sync(event, self.params_type, self.return_type, **kwargs)

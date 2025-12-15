@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent.core.types import URL
 from good_agent.extensions.citations import CitationIndex
 
@@ -500,9 +501,7 @@ class TestCitationIndexIntegration:
         ]
 
         # Add all citations
-        for url, metadata, tags in zip(
-            research_urls, metadata_list, tag_list, strict=False
-        ):
+        for url, metadata, tags in zip(research_urls, metadata_list, tag_list, strict=False):
             index.add(url, tags=tags, **metadata)
 
         # Verify all added correctly

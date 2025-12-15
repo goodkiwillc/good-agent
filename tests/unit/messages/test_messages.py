@@ -1,5 +1,4 @@
 import datetime
-from datetime import timezone
 from typing import Any, cast
 from unittest.mock import patch
 
@@ -15,6 +14,7 @@ from good_agent.content import (
     TemplateContentPart,
     TextContentPart,
 )
+from good_agent.core.types import URL
 from good_agent.messages import (
     Annotation,
     AssistantMessage,
@@ -28,7 +28,6 @@ from good_agent.messages import (
     UserMessage,
 )
 from good_agent.tools import ToolCall, ToolResponse
-from good_agent.core.types import URL
 
 
 class TestAnnotation:
@@ -68,9 +67,9 @@ class TestMessageBase:
 
     def test_message_timestamp(self):
         """Test timestamp is set on creation."""
-        before = datetime.datetime.now(timezone.utc)
+        before = datetime.datetime.now(datetime.UTC)
         msg = UserMessage("Test")
-        after = datetime.datetime.now(timezone.utc)
+        after = datetime.datetime.now(datetime.UTC)
         assert before <= msg.timestamp <= after
 
     def test_message_metadata(self):
@@ -327,9 +326,7 @@ class TestToolMessage:
 
     def test_tool_message_role(self):
         """Test ToolMessage has correct role."""
-        msg: ToolMessage = ToolMessage(
-            "Result", tool_call_id="123", tool_name="calculator"
-        )
+        msg: ToolMessage = ToolMessage("Result", tool_call_id="123", tool_name="calculator")
         assert msg.role == "tool"
 
     def test_tool_message_required_fields(self):
@@ -530,9 +527,7 @@ class TestMessageList:
         assert all(m.role == "user" for m in user_msgs)
 
         # Filter assistant messages
-        assistant_msgs: MessageList[AssistantMessage] = msg_list.filter(
-            role="assistant"
-        )
+        assistant_msgs: MessageList[AssistantMessage] = msg_list.filter(role="assistant")
         assert len(assistant_msgs) == 2
         assert all(m.role == "assistant" for m in assistant_msgs)
 
@@ -598,9 +593,7 @@ class TestMessageList:
         msg_list = MessageList(messages)
 
         # Chain filters
-        result: MessageList[UserMessage] = msg_list.filter(role="user").filter(
-            name="alice"
-        )
+        result: MessageList[UserMessage] = msg_list.filter(role="user").filter(name="alice")
         assert len(result) == 1
         assert result[0].name == "alice"
 
@@ -847,11 +840,7 @@ class TestMessageEventIntegration:
         # The content should have been transformed
         if isinstance(user_msg["content"], list):
             text_content = next(
-                (
-                    item["text"]
-                    for item in user_msg["content"]
-                    if item.get("type") == "text"
-                ),
+                (item["text"] for item in user_msg["content"] if item.get("type") == "text"),
                 None,
             )
             assert text_content == "[TEST]"
@@ -1050,9 +1039,7 @@ class TestErrorHandling:
         import weakref
         from weakref import ReferenceType
 
-        msg._agent_ref = cast(
-            ReferenceType[Agent], weakref.ref(cast(Agent, mock_agent))
-        )
+        msg._agent_ref = cast(ReferenceType[Agent], weakref.ref(cast(Agent, mock_agent)))
 
         # Verify it works
         assert msg.agent is mock_agent

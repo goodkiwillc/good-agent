@@ -1,8 +1,9 @@
 import json
-from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast
 from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, ParamSpec, TypeVar, cast
 
 import pytest
+
 from good_agent import Agent, tool
 from good_agent.core.components import AgentComponent
 from good_agent.tools import BoundTool, Tool, ToolContext, ToolResponse
@@ -31,9 +32,7 @@ def typed_tool(*decorator_args: Any, **decorator_kwargs: Any):
         return as_tool(cast(ToolLike, decorated))
 
     def wrapper(func: Callable[..., Any]):
-        decorated = tool(*decorator_args, **decorator_kwargs)(
-            cast(Callable[..., Any], func)
-        )
+        decorated = tool(*decorator_args, **decorator_kwargs)(cast(Callable[..., Any], func))
         return as_tool(cast(ToolLike, decorated))
 
     return wrapper
@@ -97,9 +96,7 @@ class TestAgentInjection:
             # Verify parameter is hidden from signature
             # Tool decorator returns a Tool instance
             tool_instance = get_session_info
-            assert hasattr(tool_instance, "signature"), (
-                "Tool should have signature property"
-            )
+            assert hasattr(tool_instance, "signature"), "Tool should have signature property"
             signature = tool_instance.signature
             properties = signature["function"]["parameters"]["properties"]
             assert "agent" not in properties
@@ -124,16 +121,12 @@ class TestAgentInjection:
             assert result.success
             response_text = cast(str, result.response)
             assert "Processing 'test query' with limit 5" in response_text
-            assert (
-                "history: 2" in response_text
-            )  # System + user (assistant added after tool runs)
+            assert "history: 2" in response_text  # System + user (assistant added after tool runs)
 
             # Check recorded parameters
             assistant_msg = agent.assistant[-1]
             if assistant_msg.tool_calls:
-                recorded_params = json.loads(
-                    assistant_msg.tool_calls[0].function.arguments
-                )
+                recorded_params = json.loads(assistant_msg.tool_calls[0].function.arguments)
             else:
                 recorded_params = {}
             assert recorded_params == {"query": "test query", "limit": 5}
@@ -156,9 +149,7 @@ class TestAgentInjection:
             agent.append("Tell me about AI")
 
             # Manually execute the tool to test injection
-            result: ToolResponse[str] = await agent.invoke(
-                analyze_conversation, topic="AI"
-            )
+            result: ToolResponse[str] = await agent.invoke(analyze_conversation, topic="AI")
 
             # Verify that agent injection worked - should count all messages
             assert result.success
@@ -187,9 +178,7 @@ class TestAgentComponentInjection:
 
         data_store = DataStore()
 
-        async with Agent(
-            "Test system", tools=[save_data], extensions=[data_store]
-        ) as agent:
+        async with Agent("Test system", tools=[save_data], extensions=[data_store]) as agent:
             result: ToolResponse[str] = await agent.invoke(
                 save_data, key="test_key", value="test_value"
             )
@@ -201,9 +190,7 @@ class TestAgentComponentInjection:
             # Verify parameter is hidden
             # Tool decorator returns a Tool instance
             tool_instance = save_data
-            assert hasattr(tool_instance, "signature"), (
-                "Tool should have signature property"
-            )
+            assert hasattr(tool_instance, "signature"), "Tool should have signature property"
             signature = tool_instance.signature
             properties = signature["function"]["parameters"]["properties"]
             assert "key" in properties
@@ -215,9 +202,7 @@ class TestAgentComponentInjection:
         """Test injection of multiple AgentComponents."""
 
         @typed_tool(hide=["store", "counter"])
-        async def complex_operation(
-            operation: str, store: DataStore, counter: Counter
-        ) -> str:
+        async def complex_operation(operation: str, store: DataStore, counter: Counter) -> str:
             """Perform operation with multiple components."""
             count = counter.increment()
             store.set(f"op_{count}", operation)
@@ -230,15 +215,11 @@ class TestAgentComponentInjection:
             "Test system", tools=[complex_operation], extensions=[data_store, counter]
         ) as agent:
             # First call
-            result1: ToolResponse[str] = await agent.invoke(
-                complex_operation, operation="first"
-            )
+            result1: ToolResponse[str] = await agent.invoke(complex_operation, operation="first")
             assert cast(str, result1.response) == "Operation 1: first"
 
             # Second call
-            result2: ToolResponse[str] = await agent.invoke(
-                complex_operation, operation="second"
-            )
+            result2: ToolResponse[str] = await agent.invoke(complex_operation, operation="second")
             assert cast(str, result2.response) == "Operation 2: second"
 
             # Verify components were updated
@@ -259,9 +240,7 @@ class TestAgentComponentInjection:
         data_store = DataStore()
         data_store.set("name", "Alice")
 
-        async with Agent(
-            "Test system", tools=[lookup_data], extensions=[data_store]
-        ) as agent:
+        async with Agent("Test system", tools=[lookup_data], extensions=[data_store]) as agent:
             # Verify that component injection works in manual tool invocation
             # This tests the core dependency injection functionality
 
@@ -284,9 +263,7 @@ class TestMixedInjection:
         """Test tool with all injection types."""
 
         @typed_tool(hide=["agent", "store"])
-        async def comprehensive_tool(
-            input_data: str, agent: Agent, store: DataStore
-        ) -> str:
+        async def comprehensive_tool(input_data: str, agent: Agent, store: DataStore) -> str:
             """Tool using all injection types."""
             # Store the input
             store.set("last_input", input_data)
@@ -318,9 +295,7 @@ class TestMixedInjection:
             # Verify only visible parameter is recorded
             assistant_msg = agent.assistant[-1]
             if assistant_msg.tool_calls:
-                recorded_params = json.loads(
-                    assistant_msg.tool_calls[0].function.arguments
-                )
+                recorded_params = json.loads(assistant_msg.tool_calls[0].function.arguments)
             else:
                 recorded_params = {}
             assert recorded_params == {"input_data": "test data"}
@@ -333,9 +308,7 @@ class TestMixedInjection:
         async def context_aware_tool(message: str, ctx: ToolContext) -> str:
             """Tool using ToolContext."""
             agent_id = (
-                str(ctx.agent.session_id)[:8]
-                if ctx.agent and ctx.agent.session_id
-                else "N/A"
+                str(ctx.agent.session_id)[:8] if ctx.agent and ctx.agent.session_id else "N/A"
             )
             call_id = (
                 str(ctx.tool_call.id)[:8]
@@ -345,9 +318,7 @@ class TestMixedInjection:
             return f"Message: {message}, Agent: {agent_id}, Call: {call_id}"
 
         async with Agent("Test system", tools=[context_aware_tool]) as agent:
-            result: ToolResponse[str] = await agent.invoke(
-                context_aware_tool, message="Hello"
-            )
+            result: ToolResponse[str] = await agent.invoke(context_aware_tool, message="Hello")
 
             assert result.success
             response_text = cast(str, result.response)
@@ -399,9 +370,7 @@ class TestInjectionEdgeCases:
 
         data_store = DataStore()
 
-        async with Agent(
-            "Test system", tools=[capture_store], extensions=[data_store]
-        ) as agent:
+        async with Agent("Test system", tools=[capture_store], extensions=[data_store]) as agent:
             await agent.invoke(capture_store)
 
             # Verify injected component is the same as agent[DataStore]
@@ -435,7 +404,7 @@ class TestInjectionWithStreaming:
         """Test that injection works with streaming tools."""
 
         @typed_tool(hide=["agent"])
-        async def streaming_tool(prompt: str, agent: "Agent") -> str:
+        async def streaming_tool(prompt: str, agent: Agent) -> str:
             """Tool that yields streaming response (collected into string)."""
             # Collect streaming results into a single string
             result_parts = []
@@ -447,9 +416,7 @@ class TestInjectionWithStreaming:
             agent.append("User message")
 
             # Note: Modified to return collected string instead of generator
-            result: ToolResponse[str] = await agent.invoke(
-                streaming_tool, prompt="hello world"
-            )
+            result: ToolResponse[str] = await agent.invoke(streaming_tool, prompt="hello world")
 
             # Should work with collected string result
             assert result.success
@@ -465,9 +432,7 @@ class TestDocumentation:
         """Test that tool metadata excludes injected parameters."""
 
         @typed_tool(hide=["agent", "store"])
-        def documented_tool(
-            query: str, limit: int, agent: Agent, store: DataStore
-        ) -> str:
+        def documented_tool(query: str, limit: int, agent: Agent, store: DataStore) -> str:
             """
             Search for data.
 

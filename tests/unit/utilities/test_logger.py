@@ -1,45 +1,74 @@
 """Tests for utilities/logger.py module."""
 
 import logging
+from typing import Any
+
+import pytest
+
+from good_agent.utilities.logger import DEFAULT_FORMAT, configure_library_logging
 
 
-from good_agent.utilities.logger import get_logger
+class TestConfigureLibraryLogging:
+    """Tests for configure_library_logging helper."""
 
+    def test_configures_basic_logging_when_no_handlers(self, monkeypatch):
+        root_logger = logging.getLogger()
+        original_handlers = list(root_logger.handlers)
+        root_logger.handlers = []
 
-class TestGetLogger:
-    """Tests for get_logger function."""
+        captured_kwargs: dict[str, Any] = {}
 
-    def test_returns_logger_instance(self):
-        """Test that get_logger returns a logger instance."""
-        logger = get_logger()
-        assert isinstance(logger, logging.Logger)
+        def fake_basic_config(**kwargs):
+            captured_kwargs.update(kwargs)
 
-    def test_returns_logger_with_name(self):
-        """Test that get_logger returns logger with specified name."""
-        logger = get_logger("test_logger")
-        # Should return a logger (name may vary depending on Prefect context)
-        assert isinstance(logger, logging.Logger)
+        monkeypatch.setattr(logging, "basicConfig", fake_basic_config)
 
-    def test_returns_logger_without_name(self):
-        """Test that get_logger works without name parameter."""
-        logger = get_logger()
-        assert isinstance(logger, logging.Logger)
+        try:
+            configure_library_logging(level=logging.DEBUG, format="%(message)s", foo="bar")
+        finally:
+            root_logger.handlers = original_handlers
 
-    def test_logger_has_standard_methods(self):
-        """Test that returned logger has standard logging methods."""
-        logger = get_logger()
+        assert captured_kwargs == {
+            "level": logging.DEBUG,
+            "format": "%(message)s",
+            "foo": "bar",
+        }
 
-        assert hasattr(logger, "debug")
-        assert hasattr(logger, "info")
-        assert hasattr(logger, "warning")
-        assert hasattr(logger, "error")
-        assert hasattr(logger, "critical")
+    def test_does_nothing_when_handlers_present(self, monkeypatch):
+        root_logger = logging.getLogger()
+        handler = logging.NullHandler()
+        root_logger.addHandler(handler)
 
-    def test_logger_can_log_messages(self):
-        """Test that logger can log messages without errors."""
-        logger = get_logger("test")
+        called = False
 
-        # Should not raise any exceptions
-        logger.debug("Debug message")
-        logger.info("Info message")
-        logger.warning("Warning message")
+        def fake_basic_config(**kwargs):
+            nonlocal called
+            called = True
+
+        monkeypatch.setattr(logging, "basicConfig", fake_basic_config)
+
+        try:
+            configure_library_logging()
+        finally:
+            root_logger.removeHandler(handler)
+
+        assert called is False
+
+    def test_defaults_are_respected_when_invoked(self, monkeypatch):
+        root_logger = logging.getLogger()
+        original_handlers = list(root_logger.handlers)
+        root_logger.handlers = []
+
+        captured_kwargs: dict[str, Any] = {}
+
+        def fake_basic_config(**kwargs):
+            captured_kwargs.update(kwargs)
+
+        monkeypatch.setattr(logging, "basicConfig", fake_basic_config)
+
+        try:
+            configure_library_logging()
+        finally:
+            root_logger.handlers = original_handlers
+
+        assert captured_kwargs == {"level": logging.INFO, "format": DEFAULT_FORMAT}

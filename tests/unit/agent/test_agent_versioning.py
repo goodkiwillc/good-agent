@@ -1,5 +1,6 @@
 import pytest
 import pytest_asyncio
+
 from good_agent import Agent
 from good_agent.agent.thread_context import ForkContext, ThreadContext
 from good_agent.messages import AssistantMessage, SystemMessage, UserMessage
@@ -355,9 +356,7 @@ class TestBackwardCompatibility:
         fork2 = agent.fork(include_messages=True)
         await fork2.initialize()
         assert len(fork2.messages) == 2  # System message + user message
-        assert str(fork2.messages[-1]) == str(
-            agent.messages[-1]
-        )  # Last message matches
+        assert str(fork2.messages[-1]) == str(agent.messages[-1])  # Last message matches
 
         await agent.events.close()
         await fork1.close()

@@ -2,6 +2,8 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from ulid import ULID
+
 from good_agent.messages import AssistantMessage, UserMessage
 from good_agent.messages.store import (
     InMemoryMessageStore,
@@ -12,7 +14,6 @@ from good_agent.messages.store import (
     put_message,
     set_message_store,
 )
-from ulid import ULID
 
 
 class TestInMemoryMessageStore:
@@ -66,9 +67,7 @@ class TestInMemoryMessageStore:
         store = InMemoryMessageStore()
         nonexistent_id = ULID()
 
-        with pytest.raises(
-            MessageNotFoundError, match=f"Message {nonexistent_id} not found"
-        ):
+        with pytest.raises(MessageNotFoundError, match=f"Message {nonexistent_id} not found"):
             store.get(nonexistent_id)
 
     def test_exists_method(self):
@@ -230,9 +229,7 @@ class TestInMemoryMessageStore:
 
         # Verify Redis delete was called for each key
         # Note: we can't easily assert on scan_iter calls due to async generator
-        assert (
-            mock_redis.delete.call_count >= 0
-        )  # May be called, but error handling can suppress
+        assert mock_redis.delete.call_count >= 0  # May be called, but error handling can suppress
 
 
 class TestGlobalMessageStore:
@@ -342,9 +339,7 @@ class TestMessageStoreGlobal:
         _message_id = message.id
 
         # This is the exact line from the spec
-        assert (
-            message_store.get(_message_id).content == "The capital of France is Paris."
-        )
+        assert message_store.get(_message_id).content == "The capital of France is Paris."
 
     @pytest.mark.asyncio
     async def test_message_store_async_interface(self):

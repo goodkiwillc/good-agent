@@ -3,6 +3,7 @@
 import asyncio
 
 import pytest
+
 from good_agent import Agent, AssistantMessage
 from good_agent.extensions import CitationManager
 
@@ -28,7 +29,7 @@ async def test_llm_citation_lookup():
     # First, populate the global index with some citations
     # (simulating earlier messages that established citations)
     agent.append("""Initial research found these sources:
-    
+
     [1]: https://example.com/source1.pdf
     [2]: https://example.com/source2.html
     [3]: https://example.com/source3.json
@@ -47,11 +48,11 @@ async def test_llm_citation_lookup():
     # WITHOUT including the URLs (just the reference numbers)
     llm_response = AssistantMessage(
         """Based on the analysis [1] and the data from [2], we can conclude:
-        
+
         1. The trend is positive according to [1]
         2. The statistics in [2] support this
         3. Additional evidence from [3] confirms our hypothesis
-        
+
         The most important finding is in citation [1]."""
     )
 
@@ -68,9 +69,7 @@ async def test_llm_citation_lookup():
             print(f"  [{i}]: {url}")
     else:
         print("  ❌ No citations in message.citations field!")
-        print(
-            "  This is the bug - citations [1], [2], [3] should lookup URLs from global index"
-        )
+        print("  This is the bug - citations [1], [2], [3] should lookup URLs from global index")
     print()
 
     print("Global index still has all citations:")
@@ -86,7 +85,7 @@ async def test_llm_citation_lookup():
     1. CitationManager should detect these references
     2. Look up the URLs from the global index
     3. Populate message.citations with those URLs
-    
+
     Currently: message.citations is None/empty
     Should be: message.citations = [url1, url2, url3] from global index
     """)

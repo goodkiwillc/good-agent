@@ -7,9 +7,7 @@ from good_agent.core.event_router.context import event_ctx
 
 
 def test_stop_with_output_sets_flags_and_raises() -> None:
-    ctx: EventContext[dict[str, int], dict[str, int]] = EventContext(
-        parameters={"a": 1}
-    )
+    ctx: EventContext[dict[str, int], dict[str, int]] = EventContext(parameters={"a": 1})
 
     with pytest.raises(ApplyInterrupt):
         ctx.stop_with_output({"sum": 3})

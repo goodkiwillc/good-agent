@@ -33,10 +33,7 @@ class ModelCapabilities:
         capabilities = model_override_registry.get_model_capabilities(model_name)
 
         # If we have a specific override, use it
-        if any(
-            override.matches(model_name)
-            for override in model_override_registry._overrides
-        ):
+        if any(override.matches(model_name) for override in model_override_registry._overrides):
             return capabilities.function_calling
 
         # Otherwise try litellm
@@ -56,10 +53,7 @@ class ModelCapabilities:
         capabilities = model_override_registry.get_model_capabilities(model_name)
 
         # If we have a specific override, use it
-        if any(
-            override.matches(model_name)
-            for override in model_override_registry._overrides
-        ):
+        if any(override.matches(model_name) for override in model_override_registry._overrides):
             return capabilities.parallel_function_calling
 
         # Otherwise try litellm
@@ -79,10 +73,7 @@ class ModelCapabilities:
         capabilities = model_override_registry.get_model_capabilities(model_name)
 
         # If we have a specific override, use it
-        if any(
-            override.matches(model_name)
-            for override in model_override_registry._overrides
-        ):
+        if any(override.matches(model_name) for override in model_override_registry._overrides):
             return capabilities.vision
 
         # Otherwise try litellm's vision support if available

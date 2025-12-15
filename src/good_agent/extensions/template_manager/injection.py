@@ -1,4 +1,3 @@
-import asyncio
 import inspect
 from collections.abc import Callable
 from typing import Any
@@ -98,9 +97,7 @@ class CircularDependencyError(ContextInjectionError):
 
     def __init__(self, chain: list[str]):
         self.chain = chain
-        message = (
-            f"Circular dependency detected in context providers: {' -> '.join(chain)}"
-        )
+        message = f"Circular dependency detected in context providers: {' -> '.join(chain)}"
         super().__init__(message)
 
 
@@ -122,9 +119,7 @@ class ContextProviderError(ContextInjectionError):
     def __init__(self, provider_name: str, original_error: Exception):
         self.provider_name = provider_name
         self.original_error = original_error
-        message = (
-            f"Failed to execute context provider '{provider_name}': {original_error}"
-        )
+        message = f"Failed to execute context provider '{provider_name}': {original_error}"
         super().__init__(message)
 
 
@@ -212,13 +207,13 @@ class ContextResolver:
                             ) from None
 
             # Call provider with resolved context values
-            if asyncio.iscoroutinefunction(provider):
+            if inspect.iscoroutinefunction(provider):
                 return await provider(**kwargs)
             else:
                 return provider(**kwargs)
         else:
             # Simple provider without context dependencies
-            if asyncio.iscoroutinefunction(provider):
+            if inspect.iscoroutinefunction(provider):
                 return await provider()
             else:
                 return provider()
@@ -267,9 +262,7 @@ class ContextResolver:
 
             # Execute provider with error handling and context injection
             try:
-                value = await self.call_provider_with_injection(
-                    provider, current_context
-                )
+                value = await self.call_provider_with_injection(provider, current_context)
             except CircularDependencyError:
                 # Re-raise circular dependency errors without wrapping
                 raise
@@ -459,7 +452,7 @@ def _modify_function_for_injection(func: Callable) -> Callable:
             kwargs.pop("_context", None)
 
             # Call original function
-            if asyncio.iscoroutinefunction(func):
+            if inspect.iscoroutinefunction(func):
                 return await func(*args, **kwargs)
             else:
                 return func(*args, **kwargs)

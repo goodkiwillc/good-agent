@@ -1,6 +1,7 @@
 import asyncio
 
 import pytest
+
 from good_agent import Agent
 from good_agent.messages.store import message_store
 
@@ -85,7 +86,7 @@ class TestStateManagement:
                 assert len(fork.messages) == len(original.messages)
 
                 # Messages have different IDs but same content
-                for i, (orig_msg, fork_msg) in enumerate(
+                for _i, (orig_msg, fork_msg) in enumerate(
                     zip(original.messages, fork.messages, strict=False)
                 ):
                     assert orig_msg.id != fork_msg.id

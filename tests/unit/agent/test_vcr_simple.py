@@ -2,9 +2,10 @@ import os
 from typing import cast
 
 import pytest
+from litellm.types.utils import Choices
+
 from good_agent import Agent
 from good_agent.model.llm import LanguageModel
-from litellm.types.utils import Choices
 
 
 @pytest.mark.asyncio

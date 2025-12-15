@@ -99,9 +99,7 @@ class TestPreprocessXmlTags:
         content = "Before <tag/> after"
         result = _preprocess_xml_tags(content)
         # Should wrap self-closing tag
-        assert (
-            "```xml" in result or result == content
-        )  # May or may not wrap depending on proximity
+        assert "```xml" in result or result == content  # May or may not wrap depending on proximity
 
     def test_empty_string(self):
         """Test empty string is unchanged."""

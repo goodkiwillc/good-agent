@@ -28,9 +28,7 @@ class SupportsStreamingLanguageModel(Protocol):
     api_responses: list[Any]
     api_errors: list[Any]
 
-    def _prepare_request_config(
-        self, **kwargs: Unpack["ModelConfig"]
-    ) -> dict[str, Any]: ...
+    def _prepare_request_config(self, **kwargs: Unpack[ModelConfig]) -> dict[str, Any]: ...
 
     def _update_usage(self, response_obj: Any) -> None: ...
 
@@ -144,9 +142,7 @@ class StreamingHandler:
                         )
 
                         # Create and yield StreamChunk
-                        stream_chunk = StreamChunk(
-                            content=content, finish_reason=finish_reason
-                        )
+                        stream_chunk = StreamChunk(content=content, finish_reason=finish_reason)
 
                         # Track for debugging
                         self.llm.api_stream_responses.append(stream_chunk)  # type: ignore[arg-type]
@@ -157,9 +153,7 @@ class StreamingHandler:
                 if chunks:
                     try:
                         # Use litellm's chunk builder to reconstruct the full response
-                        complete_response = self.llm.litellm.stream_chunk_builder(
-                            chunks
-                        )
+                        complete_response = self.llm.litellm.stream_chunk_builder(chunks)
 
                         # Update usage tracking
                         self.llm._update_usage(complete_response)
@@ -177,9 +171,7 @@ class StreamingHandler:
                             language_model=self.llm,
                         )
                     except Exception as e:
-                        logger.debug(
-                            f"Could not build complete response from chunks: {e}"
-                        )
+                        logger.debug(f"Could not build complete response from chunks: {e}")
 
                 # If we made it here, streaming succeeded
                 if attempt > 0:

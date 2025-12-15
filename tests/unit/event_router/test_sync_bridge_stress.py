@@ -95,9 +95,7 @@ class TestSyncBridgeConcurrency:
 
         def worker(thread_id: int) -> None:
             # Each thread sets unique data
-            router.apply_sync(
-                "ctx:test", thread_id=thread_id, data=f"thread-{thread_id}"
-            )
+            router.apply_sync("ctx:test", thread_id=thread_id, data=f"thread-{thread_id}")
 
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = [executor.submit(worker, tid) for tid in range(5)]

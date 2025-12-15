@@ -1,5 +1,6 @@
 import json
-from typing import Any, Sequence, cast
+from collections.abc import Sequence
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -45,9 +46,7 @@ class TestStructuredOutputSequencing:
 
         async with Agent("You are helpful") as agent:
             # Manually create an AssistantMessageStructuredOutput
-            weather_output = Weather(
-                location="New York", temperature=72.0, condition="Sunny"
-            )
+            weather_output = Weather(location="New York", temperature=72.0, condition="Sunny")
             tool_call = ToolCall(
                 id="call_weather_123",
                 type="function",
@@ -72,11 +71,7 @@ class TestStructuredOutputSequencing:
 
             print("\n=== Before _ensure_tool_call_pairs ===")
             for i, msg in enumerate(formatted):
-                role = (
-                    msg.get("role")
-                    if isinstance(msg, dict)
-                    else getattr(msg, "role", None)
-                )
+                role = msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", None)
                 tool_calls = (
                     msg.get("tool_calls")
                     if isinstance(msg, dict)
@@ -94,11 +89,7 @@ class TestStructuredOutputSequencing:
 
             print("\n=== After _ensure_tool_call_pairs ===")
             for i, msg in enumerate(with_pairs):
-                role = (
-                    msg.get("role")
-                    if isinstance(msg, dict)
-                    else getattr(msg, "role", None)
-                )
+                role = msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", None)
                 tool_call_id = (
                     msg.get("tool_call_id")
                     if isinstance(msg, dict)
@@ -109,11 +100,7 @@ class TestStructuredOutputSequencing:
             # Find assistant with tool_calls
             assistant_idx = None
             for i, msg in enumerate(with_pairs):
-                role = (
-                    msg.get("role")
-                    if isinstance(msg, dict)
-                    else getattr(msg, "role", None)
-                )
+                role = msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", None)
                 tool_calls = (
                     msg.get("tool_calls")
                     if isinstance(msg, dict)
@@ -146,9 +133,7 @@ class TestStructuredOutputSequencing:
 
         async with Agent("You are a test agent") as agent:
             # Mock the extract and complete methods
-            mock_weather = Weather(
-                location="New York", temperature=72.0, condition="Sunny"
-            )
+            mock_weather = Weather(location="New York", temperature=72.0, condition="Sunny")
 
             # Create tool call that would be on the structured output response
             mock_tool_call = MagicMock()
@@ -162,26 +147,20 @@ class TestStructuredOutputSequencing:
             mock_structured_response = MockLLMResponse(
                 content="Weather data retrieved",
                 tool_calls=[mock_tool_call],
-                usage=MagicMock(
-                    prompt_tokens=10, completion_tokens=20, total_tokens=30
-                ),
+                usage=MagicMock(prompt_tokens=10, completion_tokens=20, total_tokens=30),
             )
 
             # Mock the response for the second regular call
             mock_regular_response = MockLLMResponse(
                 content="Yes, that's typical for this time of year",
-                usage=MagicMock(
-                    prompt_tokens=15, completion_tokens=25, total_tokens=40
-                ),
+                usage=MagicMock(prompt_tokens=15, completion_tokens=25, total_tokens=40),
             )
 
             # Set up mocks
             agent.model.api_responses = [mock_structured_response]
             agent.model.api_requests = [{}]
 
-            with patch.object(
-                agent.model, "extract", AsyncMock(return_value=mock_weather)
-            ):
+            with patch.object(agent.model, "extract", AsyncMock(return_value=mock_weather)):
                 # First call with response_model - creates AssistantMessageStructuredOutput
                 weather = await agent.call(
                     "What's the weather in New York?", response_model=Weather
@@ -198,14 +177,10 @@ class TestStructuredOutputSequencing:
                     "complete",
                     AsyncMock(return_value=mock_regular_response),
                 ) as mock_complete:
-                    response = await agent.call(
-                        "Is that typical for this time of year?"
-                    )
+                    response = await agent.call("Is that typical for this time of year?")
 
                     # The call should succeed
-                    assert (
-                        response.content == "Yes, that's typical for this time of year"
-                    )
+                    assert response.content == "Yes, that's typical for this time of year"
 
                     # Verify that complete was called with properly formatted messages
                     # that include synthetic tool responses
@@ -217,9 +192,7 @@ class TestStructuredOutputSequencing:
                     assistant_idx = None
                     for i, msg in enumerate(formatted_messages):
                         role = (
-                            msg.get("role")
-                            if isinstance(msg, dict)
-                            else getattr(msg, "role", None)
+                            msg.get("role") if isinstance(msg, dict) else getattr(msg, "role", None)
                         )
                         tool_calls = (
                             msg.get("tool_calls")
@@ -240,9 +213,7 @@ class TestStructuredOutputSequencing:
                         if isinstance(tool_response, dict)
                         else getattr(tool_response, "role", None)
                     )
-                    assert role == "tool", (
-                        f"Expected tool response after assistant, got {role}"
-                    )
+                    assert role == "tool", f"Expected tool response after assistant, got {role}"
 
     @pytest.mark.asyncio
     async def test_structured_output_creates_assistant_message(self):
@@ -272,18 +243,14 @@ class TestStructuredOutputSequencing:
             mock_response = MockLLMResponse(
                 content="Found results",
                 tool_calls=[mock_tool_call],
-                usage=MagicMock(
-                    prompt_tokens=10, completion_tokens=20, total_tokens=30
-                ),
+                usage=MagicMock(prompt_tokens=10, completion_tokens=20, total_tokens=30),
             )
 
             # Set api_responses and api_requests manually - extract method accesses both
             agent.model.api_responses = [mock_response]
             agent.model.api_requests = [{}]  # Dummy request
 
-            with patch.object(
-                agent.model, "extract", AsyncMock(return_value=mock_output)
-            ):
+            with patch.object(agent.model, "extract", AsyncMock(return_value=mock_output)):
                 # Make call with response_model
                 response = await agent.call(
                     "Search for python tutorials", response_model=SearchResult
@@ -306,9 +273,7 @@ class TestStructuredOutputSequencing:
 
         async with Agent("You are helpful") as agent:
             # First call with structured output
-            mock_weather = WeatherData(
-                location="Paris", temperature=72, condition="Sunny"
-            )
+            mock_weather = WeatherData(location="Paris", temperature=72, condition="Sunny")
 
             # Mock tool call for structured output
             mock_tool_call = MagicMock()
@@ -321,26 +286,20 @@ class TestStructuredOutputSequencing:
             mock_structured_response = MockLLMResponse(
                 content="Weather data retrieved",
                 tool_calls=[mock_tool_call],
-                usage=MagicMock(
-                    prompt_tokens=10, completion_tokens=20, total_tokens=30
-                ),
+                usage=MagicMock(prompt_tokens=10, completion_tokens=20, total_tokens=30),
             )
 
             # Mock the second regular response
             mock_regular_response = MockLLMResponse(
                 content="The weather looks great!",
-                usage=MagicMock(
-                    prompt_tokens=15, completion_tokens=25, total_tokens=40
-                ),
+                usage=MagicMock(prompt_tokens=15, completion_tokens=25, total_tokens=40),
             )
 
             # Set api_responses and api_requests manually - extract method accesses both
             agent.model.api_responses = [mock_structured_response]
             agent.model.api_requests = [{}]
 
-            with patch.object(
-                agent.model, "extract", AsyncMock(return_value=mock_weather)
-            ):
+            with patch.object(agent.model, "extract", AsyncMock(return_value=mock_weather)):
                 # First call with structured output
                 response1 = await agent.call(
                     "What's the weather in Paris?", response_model=WeatherData
@@ -402,9 +361,7 @@ class TestStructuredOutputSequencing:
                 Sequence[ChatCompletionMessageParam | dict[str, Any]],
                 formatted_messages,
             )
-            result = agent.model._ensure_tool_call_pairs_for_formatted_messages(
-                formatted_sequence
-            )
+            result = agent.model._ensure_tool_call_pairs_for_formatted_messages(formatted_sequence)
 
             # Verify synthetic tool response was inserted
             assert len(result) == 4  # user + assistant + synthetic_tool + user
@@ -457,17 +414,13 @@ class TestStructuredOutputSequencing:
             mock_response_1 = MockLLMResponse(
                 content="Query executed",
                 tool_calls=[mock_tool_call_1],
-                usage=MagicMock(
-                    prompt_tokens=10, completion_tokens=20, total_tokens=30
-                ),
+                usage=MagicMock(prompt_tokens=10, completion_tokens=20, total_tokens=30),
             )
 
             mock_response_2 = MockLLMResponse(
                 content="Query executed",
                 tool_calls=[mock_tool_call_2],
-                usage=MagicMock(
-                    prompt_tokens=10, completion_tokens=20, total_tokens=30
-                ),
+                usage=MagicMock(prompt_tokens=10, completion_tokens=20, total_tokens=30),
             )
 
             mock_regular = MockLLMResponse(
@@ -490,9 +443,7 @@ class TestStructuredOutputSequencing:
                 assert response1.output.query == "first"
 
                 # Regular call
-                with patch.object(
-                    agent.model, "complete", AsyncMock(return_value=mock_regular)
-                ):
+                with patch.object(agent.model, "complete", AsyncMock(return_value=mock_regular)):
                     response2 = await agent.call("Continue")
                     assert response2.content == "Got it"
 
@@ -508,9 +459,7 @@ class TestStructuredOutputSequencing:
                 # Verify all messages are in the conversation
                 messages = agent.messages
                 structured_outputs = [
-                    m
-                    for m in messages
-                    if isinstance(m, AssistantMessageStructuredOutput)
+                    m for m in messages if isinstance(m, AssistantMessageStructuredOutput)
                 ]
                 assert len(structured_outputs) == 2
 
@@ -536,18 +485,14 @@ class TestStructuredOutputSequencing:
             mock_response = MockLLMResponse(
                 content="Configuration set",
                 tool_calls=[mock_tool_call],
-                usage=MagicMock(
-                    prompt_tokens=10, completion_tokens=20, total_tokens=30
-                ),
+                usage=MagicMock(prompt_tokens=10, completion_tokens=20, total_tokens=30),
             )
 
             # Set api_responses and api_requests manually
             agent.model.api_responses = [mock_response]
             agent.model.api_requests = [{}]
 
-            with patch.object(
-                agent.model, "extract", AsyncMock(return_value=mock_config)
-            ):
+            with patch.object(agent.model, "extract", AsyncMock(return_value=mock_config)):
                 # This should not raise validation errors
                 response = await agent.call("Set configuration", response_model=Config)
 
@@ -558,9 +503,7 @@ class TestStructuredOutputSequencing:
 
                 # Message sequence should be valid for subsequent calls
                 # The validation happens during format_message_list_for_llm
-                formatted = await agent.model.format_message_list_for_llm(
-                    agent.messages
-                )
+                formatted = await agent.model.format_message_list_for_llm(agent.messages)
 
                 # Should not raise any validation errors
                 assert len(formatted) > 0

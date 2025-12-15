@@ -3,10 +3,9 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from good_agent.core.indexing import Index
 from good_agent.core.models import Renderable
 from good_agent.core.types import URL
-
-from good_agent.core.indexing import Index
 
 # if TYPE_CHECKING:
 # from ..interfaces import SupportsDisplay, SupportsLLM, SupportsRender, SupportsString
@@ -137,9 +136,7 @@ class CitationIndex(Index[URL, int, Renderable]):
         if metadata:
             self.metadata_store[canonical_url] = metadata.copy()
         if tags:
-            self.tags_store[canonical_url] = (
-                set(tags) if isinstance(tags, list) else {tags}
-            )
+            self.tags_store[canonical_url] = set(tags) if isinstance(tags, list) else {tags}
 
         self.next_index += 1
         return current_index
@@ -284,9 +281,7 @@ class CitationIndex(Index[URL, int, Renderable]):
             {1: 1, 2: 2}  # Local index -> Global index
         """
 
-        local_citations = [
-            URL(url) if not isinstance(url, URL) else url for url in local_citations
-        ]
+        local_citations = [URL(url) if not isinstance(url, URL) else url for url in local_citations]
 
         mapping = {}
 
@@ -484,7 +479,7 @@ class CitationIndex(Index[URL, int, Renderable]):
         Returns:
             Iterator yielding (URL, value) tuples
         """
-        for canonical_url, index in self.url_to_index.items():
+        for _canonical_url, index in self.url_to_index.items():
             url = self.index_to_url[index]
             value = self.index_to_value.get(index)
             yield url, value
@@ -497,7 +492,7 @@ class CitationIndex(Index[URL, int, Renderable]):
             Dictionary mapping URL to value (or None if no value stored)
         """
         result = {}
-        for canonical_url, index in self.url_to_index.items():
+        for _canonical_url, index in self.url_to_index.items():
             url = self.index_to_url[index]
             value = self.index_to_value.get(index)
             result[url] = value
@@ -638,10 +633,7 @@ class CitationIndex(Index[URL, int, Renderable]):
 
         for canonical_url, metadata in self.metadata_store.items():
             # Check if all criteria match
-            if all(
-                key in metadata and metadata[key] == value
-                for key, value in criteria.items()
-            ):
+            if all(key in metadata and metadata[key] == value for key, value in criteria.items()):
                 index = self.url_to_index[canonical_url]
                 results.append(index)
 

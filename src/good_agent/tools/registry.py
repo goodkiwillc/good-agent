@@ -1,5 +1,6 @@
 import asyncio
 import importlib.metadata
+import logging
 import os
 import threading
 from collections import defaultdict
@@ -9,10 +10,7 @@ from re import Pattern
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
 )
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +23,7 @@ class ToolRegistration:
     """Registration information for a tool"""
 
     name: str
-    tool: "Tool"
+    tool: Tool
     tags: set[str] = field(default_factory=set)
     version: str = "1.0.0"
     description: str | None = None
@@ -110,7 +108,7 @@ class ToolRegistry:
     async def register(
         self,
         name: str,
-        tool: "Tool",
+        tool: Tool,
         *,
         tags: list[str] | None = None,
         version: str = "1.0.0",
@@ -200,7 +198,7 @@ class ToolRegistry:
         del self._tools[name]
         return True
 
-    async def get(self, name: str) -> Optional["Tool"]:
+    async def get(self, name: str) -> Tool | None:
         """
         Get a tool by name.
 
@@ -248,7 +246,7 @@ class ToolRegistry:
                 if registration.matches_pattern(pattern)
             ]
 
-    async def select_tools(self, patterns: list[str]) -> dict[str, "Tool"]:
+    async def select_tools(self, patterns: list[str]) -> dict[str, Tool]:
         """
         Select tools matching any of the given patterns.
 
@@ -314,9 +312,7 @@ class ToolRegistry:
         for reg in pending:
             try:
                 await self.register(**reg)
-                logger.debug(
-                    f"Processed deferred registration for tool '{reg['name']}'"
-                )
+                logger.debug(f"Processed deferred registration for tool '{reg['name']}'")
             except Exception as e:
                 logger.error(
                     f"Failed to process deferred registration for '{reg.get('name', 'unknown')}': {e}"
@@ -331,9 +327,7 @@ class ToolRegistry:
 
         try:
             # Load from good_agent.tools entry point group
-            entry_points = importlib.metadata.entry_points().select(
-                group="good_agent.tools"
-            )
+            entry_points = importlib.metadata.entry_points().select(group="good_agent.tools")
 
             for entry_point in entry_points:
                 try:
@@ -388,7 +382,7 @@ class ToolRegistry:
     def register_sync(
         self,
         name: str,
-        tool: "Tool",
+        tool: Tool,
         *,
         tags: list[str] | None = None,
         version: str = "1.0.0",

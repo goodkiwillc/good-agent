@@ -48,9 +48,7 @@ class TestContentPartSerialization:
 
     def test_image_part_serialization(self):
         """Test ImageContentPart serialization."""
-        part = ImageContentPart(
-            image_url="https://example.com/image.jpg", detail="high"
-        )
+        part = ImageContentPart(image_url="https://example.com/image.jpg", detail="high")
         data = part.model_dump()
 
         assert data["type"] == "image"
@@ -172,9 +170,7 @@ class TestContentPartFormats:
     def test_image_to_llm_format(self):
         """Test ImageContentPart LLM format."""
         # With URL
-        part = ImageContentPart(
-            image_url="https://example.com/image.jpg", detail="high"
-        )
+        part = ImageContentPart(image_url="https://example.com/image.jpg", detail="high")
         llm_format = part.to_llm_format()
 
         assert llm_format == {
@@ -218,9 +214,7 @@ class TestContentPartFormats:
         }
 
     def test_image_content_helpers(self):
-        part_from_url = ImageContentPart.from_url(
-            "https://example.com/test.png", detail="high"
-        )
+        part_from_url = ImageContentPart.from_url("https://example.com/test.png", detail="high")
         assert part_from_url.image_url == "https://example.com/test.png"
         assert part_from_url.detail == "high"
 
@@ -229,9 +223,7 @@ class TestContentPartFormats:
         assert part_from_base64.image_base64 == data_url
         assert part_from_base64.mime_type == "image/png"
 
-        part_from_bytes = ImageContentPart.from_bytes(
-            b"binarydata", mime_type="image/gif"
-        )
+        part_from_bytes = ImageContentPart.from_bytes(b"binarydata", mime_type="image/gif")
         assert part_from_bytes.image_base64.startswith("data:image/gif;base64,")
         assert part_from_bytes.mime_type == "image/gif"
 
@@ -252,9 +244,7 @@ class TestContentPartFormats:
 
     def test_mutually_exclusive_fields(self):
         with pytest.raises(ValueError):
-            ImageContentPart(
-                image_url="https://example.com/img.png", image_base64="abc"
-            )
+            ImageContentPart(image_url="https://example.com/img.png", image_base64="abc")
 
         with pytest.raises(ValueError):
             FileContentPart(file_path="file-123", file_content="inline")

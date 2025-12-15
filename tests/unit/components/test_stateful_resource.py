@@ -1,6 +1,7 @@
 from typing import Any, cast
 
 import pytest
+
 from good_agent import Agent, tool
 
 
@@ -144,14 +145,14 @@ class TestStatefulResourceBase:
                     yield messages
 
             # Replace thread_context temporarily (internal API)
-            setattr(agent._context_manager, "thread_context", mock_branch)
+            agent._context_manager.thread_context = mock_branch
 
             async with resource(agent):
                 # branch should have been called
                 assert context_called
 
             # Restore original
-            setattr(agent._context_manager, "thread_context", original_branch)
+            agent._context_manager.thread_context = original_branch
 
     @pytest.mark.asyncio
     async def test_stateful_resource_only_initializes_once(self):
@@ -209,16 +210,15 @@ class TestStatefulResourceBase:
 
         resource = TestResource("doc")
 
-        async with Agent("Test") as agent:
-            async with resource(agent):
-                # Tools should be available with their decorator names
-                assert "read" in agent.tools
-                assert "write" in agent.tools
+        async with Agent("Test") as agent, resource(agent):
+            # Tools should be available with their decorator names
+            assert "read" in agent.tools
+            assert "write" in agent.tools
 
-                # Test they work
-                read_tool = agent.tools["read"]
-                result = await read_tool(_agent=agent)
-                assert result.response == "content"
+            # Test they work
+            read_tool = agent.tools["read"]
+            result = await read_tool(_agent=agent)
+            assert result.response == "content"
 
     @pytest.mark.asyncio
     async def test_stateful_resource_creates_context_prefix(self):

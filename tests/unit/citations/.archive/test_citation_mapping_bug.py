@@ -28,7 +28,7 @@ async def test_citation_mapping_bug():
     # 1. First establish some citations in the index (from ground truth or earlier messages)
     print("Step 1: Populate index with initial citations")
     agent.append("""Initial research sources:
-    
+
     [1]: https://politico.com/article1.html
     [2]: https://latimes.com/news2.html
     [3]: https://sfchronicle.com/report3.html
@@ -42,7 +42,7 @@ async def test_citation_mapping_bug():
     # 2. Add more citations from search results or fetched content
     print("Step 2: Add more citations from search results")
     agent.append("""Additional sources found:
-    
+
     [4]: https://example.com/new-source1.pdf
     [5]: https://research.org/new-source2.html
     [6]: https://news.com/new-source3.html
@@ -56,7 +56,7 @@ async def test_citation_mapping_bug():
     # 3. Now simulate an LLM response that references multiple different citations
     print("Step 3: LLM response with multiple citation references")
     llm_response = AssistantMessage("""Based on my analysis:
-    
+
     - The first finding comes from [!CITE_1!]
     - Additional data from [!CITE_2!] supports this
     - However, [!CITE_3!] presents a different perspective
@@ -84,7 +84,7 @@ async def test_citation_mapping_bug():
     # 4. Test what happens when we add a new message with overlapping references
     print("Step 4: Another message with overlapping references")
     msg2 = AssistantMessage("""Further analysis shows:
-    
+
     - Revisiting [!CITE_1!] for clarity
     - New information from [!CITE_7!] (should not exist)
     - Comparing [!CITE_3!] and [!CITE_5!]

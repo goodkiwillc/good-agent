@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from good_agent import Agent
-    from good_agent.tools import BoundTool, Tool, ToolSignature
     from good_agent.extensions.citations.manager import CitationManager
+    from good_agent.tools import BoundTool, Tool, ToolSignature
 
     CitationManagerType = CitationManager
 else:
@@ -54,9 +54,7 @@ class CitationAdapter(ToolAdapter[CitationManagerType]):
         removed = set()
 
         # Check which parameters we'll modify
-        params: dict[str, Any] = signature["function"]["parameters"].get(
-            "properties", {}
-        )
+        params: dict[str, Any] = signature["function"]["parameters"].get("properties", {})
         for key, schema in params.items():
             # Single URL parameter
             if key == "url" and schema.get("type") == "string":
@@ -69,13 +67,9 @@ class CitationAdapter(ToolAdapter[CitationManagerType]):
                     removed.add("urls")
                     added.add("citation_idxs")
 
-        return AdapterMetadata(
-            modified_params=modified, added_params=added, removed_params=removed
-        )
+        return AdapterMetadata(modified_params=modified, added_params=added, removed_params=removed)
 
-    def should_adapt(
-        self, tool: Tool[Any, Any] | BoundTool[Any, Any, Any], agent: Agent
-    ) -> bool:
+    def should_adapt(self, tool: Tool[Any, Any] | BoundTool[Any, Any, Any], agent: Agent) -> bool:
         """
         Check if this tool should be adapted.
 
@@ -164,9 +158,7 @@ class CitationAdapter(ToolAdapter[CitationManagerType]):
                 else:
                     # Replace 'url' with 'citation_idx' preserving other parts
                     # e.g., 'url_to_fetch' -> 'citation_idx_to_fetch'
-                    new_key = key.replace("url", "citation_idx").replace(
-                        "URL", "citation_idx"
-                    )
+                    new_key = key.replace("url", "citation_idx").replace("URL", "citation_idx")
 
                 # Replace with citation index
                 properties[new_key] = {
@@ -183,8 +175,7 @@ class CitationAdapter(ToolAdapter[CitationManagerType]):
 
             # Handle multiple URLs parameter
             elif (
-                "urls" in key.lower()
-                or ("url" in key.lower() and key.lower().endswith("s"))
+                "urls" in key.lower() or ("url" in key.lower() and key.lower().endswith("s"))
             ) and schema.get("type") == "array":
                 items = schema.get("items", {})
                 if items.get("type") == "string":

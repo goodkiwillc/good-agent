@@ -26,9 +26,7 @@ class SectionExtension(Extension):
         # Register the filter
         environment.filters["section"] = self.section_filter
 
-    def preprocess(
-        self, source: str, name: str | None = None, filename: str | None = None
-    ) -> str:
+    def preprocess(self, source: str, name: str | None = None, filename: str | None = None) -> str:
         """Preprocess the template source to extract indentation information"""
         _ = name, filename  # Mark as intentionally unused
         # Store source for later indentation analysis
@@ -64,9 +62,7 @@ class SectionExtension(Extension):
                 current_type = parser.stream.current.type
 
                 # Validate the name if it's provided as an identifier (not a string)
-                if current_type == "name" and not self._is_valid_identifier(
-                    tag_name_value
-                ):
+                if current_type == "name" and not self._is_valid_identifier(tag_name_value):
                     # Check what makes it invalid
                     invalid_chars = self._get_invalid_identifier_chars(tag_name_value)
                     raise TemplateSyntaxError(
@@ -101,14 +97,8 @@ class SectionExtension(Extension):
                 temp_stream.current_idx = pos
 
                 # Build the problematic name
-                problematic_name = " ".join(
-                    str(t) for t in tokens[:3]
-                )  # Get first few tokens
-                if (
-                    "-" in problematic_name
-                    or "@" in problematic_name
-                    or "." in problematic_name
-                ):
+                problematic_name = " ".join(str(t) for t in tokens[:3])  # Get first few tokens
+                if "-" in problematic_name or "@" in problematic_name or "." in problematic_name:
                     raise TemplateSyntaxError(
                         f"Section name contains invalid characters. "
                         f"Names with special characters must be quoted: "
@@ -152,9 +142,7 @@ class SectionExtension(Extension):
         self.section_indents[section_id] = {"tag_indent": tag_indent}
 
         # Parse the body content until {% end section %}
-        body = parser.parse_statements(
-            ("name:endsection", "name:end"), drop_needle=True
-        )
+        body = parser.parse_statements(("name:endsection", "name:end"), drop_needle=True)
 
         # Support both `{% end section %}` and `{% endsection %}`
         if parser.stream.current.test("name:section"):
@@ -167,9 +155,7 @@ class SectionExtension(Extension):
 
         # Return the call block
         return nodes.CallBlock(
-            self.call_method(
-                "_render_section", [tag_name, kwargs_dict, nodes.Const(section_id)]
-            ),
+            self.call_method("_render_section", [tag_name, kwargs_dict, nodes.Const(section_id)]),
             [],
             [],
             body,
@@ -232,9 +218,7 @@ class SectionExtension(Extension):
 
         return "\n".join(result)
 
-    def section_filter(
-        self, value: Any, tag_name: str = "section", **kwargs: Any
-    ) -> str:
+    def section_filter(self, value: Any, tag_name: str = "section", **kwargs: Any) -> str:
         """Filter that wraps content in a section tag."""
         # Get current indentation context for the template
         # This is tricky with filters since we don't have lineno information
@@ -321,17 +305,13 @@ def _improved_include_statement(block_start, block_end):
 
 
 class MultiLineInclude(Extension):
-    def preprocess(
-        self, source: str, name: str | None = None, filename: str | None = None
-    ) -> str:
+    def preprocess(self, source: str, name: str | None = None, filename: str | None = None) -> str:
         _ = name, filename  # Mark as intentionally unused
         env: Environment = self.environment
 
         block_start: str = env.block_start_string
         block_end: str = env.block_end_string
-        pattern = _improved_include_statement(
-            block_start=block_start, block_end=block_end
-        )
+        pattern = _improved_include_statement(block_start=block_start, block_end=block_end)
         re_newline = re.compile("\n")
 
         def add_indentation_filter(match):
@@ -343,10 +323,7 @@ class MultiLineInclude(Extension):
             # guard against invalid use of improved include statement
             if line_content_before_statement is not None:
                 # line before include statement must be indentation only (empty string is valid)
-                if (
-                    line_content_before_statement
-                    and not line_content_before_statement.isspace()
-                ):
+                if line_content_before_statement and not line_content_before_statement.isspace():
                     start_position = match.start(0)
                     lineno = len(re_newline.findall(source, 0, start_position)) + 1
                     raise TemplateSyntaxError(

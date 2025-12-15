@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent, UserMessage
 from good_agent.content import TemplateContentPart, TextContentPart
 
@@ -96,9 +97,7 @@ async def test_agent_available_in_tool_templates():
     await agent.initialize()
 
     # Invoke tool with Template that uses agent
-    result = await agent.invoke(
-        test_tool, query=Template("Search from agent {{ agent.id }}")
-    )
+    result = await agent.invoke(test_tool, query=Template("Search from agent {{ agent.id }}"))
 
     assert str(agent.id) in result.response
     assert "Search from agent" in result.response

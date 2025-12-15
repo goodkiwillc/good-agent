@@ -352,37 +352,32 @@ class TestEditableMDXL:
 
         resource = EditableMDXL(mdxl)
 
-        async with Agent("Document editor") as agent:
-            async with resource(agent) as r:
-                # Should have all tools
-                assert "read" in agent.tools
-                assert "update" in agent.tools
-                assert "replace_text" in agent.tools
-                assert "insert" in agent.tools  # Unified insert tool
-                assert "append_child" in agent.tools
-                assert "delete" in agent.tools
+        async with Agent("Document editor") as agent, resource(agent) as r:
+            # Should have all tools
+            assert "read" in agent.tools
+            assert "update" in agent.tools
+            assert "replace_text" in agent.tools
+            assert "insert" in agent.tools  # Unified insert tool
+            assert "append_child" in agent.tools
+            assert "delete" in agent.tools
 
-                # Read the document - find the tool by name
-                read_tool = agent.tools["read"]
-                result = await read_tool(_agent=agent)
-                response = (
-                    result.response if hasattr(result, "response") else str(result)
-                )
-                assert "Test Document" in response
+            # Read the document - find the tool by name
+            read_tool = agent.tools["read"]
+            result = await read_tool(_agent=agent)
+            response = result.response if hasattr(result, "response") else str(result)
+            assert "Test Document" in response
 
-                # Update with dict attributes - find the tool by name
-                update_result = await r.update(
-                    xpath="//content",
-                    text_content="Updated content",
-                    attributes={"status": "reviewed", "version": "2"},
-                )
-                update_response = (
-                    update_result.response
-                    if hasattr(update_result, "response")
-                    else str(update_result)
-                )
-                assert "text content" in update_response
-                assert "set status='reviewed'" in update_response
+            # Update with dict attributes - find the tool by name
+            update_result = await r.update(
+                xpath="//content",
+                text_content="Updated content",
+                attributes={"status": "reviewed", "version": "2"},
+            )
+            update_response = (
+                update_result.response if hasattr(update_result, "response") else str(update_result)
+            )
+            assert "text content" in update_response
+            assert "set status='reviewed'" in update_response
 
         # Verify changes persisted
         assert "Updated content" in resource.state.outer

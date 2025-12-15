@@ -1,6 +1,6 @@
 import asyncio
-from typing import Any, Generic, TypeVar
 import logging
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field, create_model
 
@@ -154,9 +154,7 @@ class MCPToolAdapter(Tool[..., T_Response], Generic[T_Response]):
                     validated_input = self._input_model(**kwargs)
                     params = validated_input.model_dump()
                 except Exception as e:
-                    logger.error(
-                        f"Input validation failed for MCP tool {self.spec.name}: {e}"
-                    )
+                    logger.error(f"Input validation failed for MCP tool {self.spec.name}: {e}")
                     return ToolResponse(
                         tool_name=self.name,
                         response=None,  # type: ignore[arg-type]
@@ -187,9 +185,7 @@ class MCPToolAdapter(Tool[..., T_Response], Generic[T_Response]):
                 )
 
             except TimeoutError:
-                logger.error(
-                    f"MCP tool {self.spec.name} timed out after {self.timeout}s"
-                )
+                logger.error(f"MCP tool {self.spec.name} timed out after {self.timeout}s")
                 return ToolResponse(
                     tool_name=self.name,
                     response=None,  # type: ignore[arg-type]

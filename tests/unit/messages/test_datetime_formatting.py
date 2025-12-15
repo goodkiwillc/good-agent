@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 import pytest
+
 from good_agent import Agent
 from good_agent.extensions.template_manager import _GLOBAL_CONTEXT_PROVIDERS
 
@@ -38,9 +39,7 @@ async def test_datetime_attribute_access():
     agent = Agent("Test")
     await agent.initialize()
 
-    agent.append(
-        "Year: {{ today.year }}, Month: {{ today.month }}, Day: {{ today.day }}"
-    )
+    agent.append("Year: {{ today.year }}, Month: {{ today.month }}, Day: {{ today.day }}")
     rendered = agent.messages[-1].render()
 
     today = _GLOBAL_CONTEXT_PROVIDERS["today"]()

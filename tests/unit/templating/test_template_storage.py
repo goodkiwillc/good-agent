@@ -4,6 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
+from jinja2 import TemplateNotFound
+
 from good_agent.extensions.template_manager.storage import (
     ChainedStorage,
     FileSystemStorage,
@@ -12,7 +14,6 @@ from good_agent.extensions.template_manager.storage import (
     TemplateSnapshot,
     TemplateValidator,
 )
-from jinja2 import TemplateNotFound
 
 
 class TestFileSystemStorage:
@@ -124,9 +125,7 @@ Analyze data in {{ analysis_scope }}.
         assert await storage.exists("system/base")
         # Note: exists() doesn't check case variations in current implementation
         # Only checks exact path
-        assert not await storage.exists(
-            "system/base.prompt"
-        )  # Extension handled in get()
+        assert not await storage.exists("system/base.prompt")  # Extension handled in get()
         assert not await storage.exists("nonexistent/template")
 
     @pytest.mark.asyncio
@@ -173,9 +172,7 @@ class TestChainedStorage:
         storage1 = AsyncMock()
         storage1.priority = 100
         storage1.list = AsyncMock(return_value=["template1", "template2"])
-        storage1.get = AsyncMock(
-            side_effect=lambda k: "content1" if k == "template1" else None
-        )
+        storage1.get = AsyncMock(side_effect=lambda k: "content1" if k == "template1" else None)
         storage1.exists = AsyncMock(side_effect=lambda k: k == "template1")
         storage1.get_metadata = AsyncMock(return_value={"source": "storage1"})
 
@@ -183,13 +180,9 @@ class TestChainedStorage:
         storage2.priority = 50
         storage2.list = AsyncMock(return_value=["template2", "template3"])
         storage2.get = AsyncMock(
-            side_effect=lambda k: "content2"
-            if k in ["template2", "template3"]
-            else None
+            side_effect=lambda k: "content2" if k in ["template2", "template3"] else None
         )
-        storage2.exists = AsyncMock(
-            side_effect=lambda k: k in ["template2", "template3"]
-        )
+        storage2.exists = AsyncMock(side_effect=lambda k: k in ["template2", "template3"])
         storage2.get_metadata = AsyncMock(return_value={"source": "storage2"})
 
         return [storage1, storage2]
@@ -274,9 +267,7 @@ class TestTemplateSnapshot:
 
     def test_storage_key_generation(self):
         """Test generating storage keys for snapshots."""
-        snapshot = TemplateSnapshot.from_template(
-            name="test/template", content="Content"
-        )
+        snapshot = TemplateSnapshot.from_template(name="test/template", content="Content")
 
         key = snapshot.to_storage_key()
         assert key.startswith("test/template@")
@@ -357,9 +348,7 @@ class TestStorageTemplateLoader:
         """Create a loader with mock storage."""
         storage = AsyncMock()
         storage.get = AsyncMock(
-            side_effect=lambda k: f"Content of {k}"
-            if k in ["test", "test.prompt"]
-            else None
+            side_effect=lambda k: f"Content of {k}" if k in ["test", "test.prompt"] else None
         )
         storage.exists = AsyncMock(side_effect=lambda k: k in ["test", "test.prompt"])
 

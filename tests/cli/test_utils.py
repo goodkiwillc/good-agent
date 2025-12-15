@@ -2,6 +2,7 @@ import sys
 from unittest.mock import Mock, patch
 
 import pytest
+
 from good_agent.cli.utils import load_agent_from_path
 
 

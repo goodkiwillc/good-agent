@@ -91,7 +91,7 @@ class UUID(_UUID):
                 ulid = cls(int=value)
             elif isinstance(value, str):
                 ulid = cls(hex=value)
-            elif isinstance(value, cls) or isinstance(value, _DEFAULT_UUID):
+            elif isinstance(value, (cls, _DEFAULT_UUID)):
                 ulid = cls(int=value.int)
             else:
                 ulid = cls(bytes=value)

@@ -96,9 +96,8 @@ class TestGeneratorHandlerLifecycle:
             nonlocal cleanup_ran
             cleanup_ran = True
 
-        async with agent:
-            async with agent.modes["gen"]:
-                pass
+        async with agent, agent.modes["gen"]:
+            pass
 
         assert cleanup_ran is True
 
@@ -171,9 +170,8 @@ class TestGeneratorHandlerLifecycle:
             agent.mode.state["setup_value"] = 42
             yield agent
 
-        async with agent:
-            async with agent.modes["gen"]:
-                assert agent.mode.state["setup_value"] == 42
+        async with agent, agent.modes["gen"]:
+            assert agent.mode.state["setup_value"] == 42
 
 
 class TestNestedModeGenerators:
@@ -196,12 +194,11 @@ class TestNestedModeGenerators:
             yield agent
             events.append("inner:cleanup")
 
-        async with agent:
-            async with agent.modes["outer"]:
-                events.append("outer:active")
-                async with agent.modes["inner"]:
-                    events.append("inner:active")
-                events.append("outer:after_inner")
+        async with agent, agent.modes["outer"]:
+            events.append("outer:active")
+            async with agent.modes["inner"]:
+                events.append("inner:active")
+            events.append("outer:after_inner")
 
         assert events == [
             "outer:setup",
@@ -264,10 +261,8 @@ class TestNestedModeGenerators:
             inner_saw = agent.mode.state.get("outer_value")
             yield agent
 
-        async with agent:
-            async with agent.modes["outer"]:
-                async with agent.modes["inner"]:
-                    pass
+        async with agent, agent.modes["outer"], agent.modes["inner"]:
+            pass
 
         assert inner_saw == 42
 
@@ -454,9 +449,8 @@ class TestModeExitBehavior:
             yield agent
             agent.mode.set_exit_behavior(good_agent.ModeExitBehavior.STOP)
 
-        async with agent:
-            async with agent.modes["gen"]:
-                pass
+        async with agent, agent.modes["gen"]:
+            pass
             # Check that the behavior was set (accessible via internal state)
             # The actual behavior affects execute() loop integration (Phase 4)
 
@@ -475,9 +469,8 @@ class TestModeExitBehavior:
             yield agent
             agent.mode.set_exit_behavior(good_agent.ModeExitBehavior.CONTINUE)
 
-        async with agent:
-            async with agent.modes["gen"]:
-                pass
+        async with agent, agent.modes["gen"]:
+            pass
 
         assert True
 
@@ -513,10 +506,9 @@ class TestModeExitBehavior:
             # Set behavior directly in state (alternative to set_exit_behavior)
             agent.mode.state["_exit_behavior"] = good_agent.ModeExitBehavior.STOP
 
-        async with agent:
-            async with agent.modes["gen"]:
-                # Behavior not set yet - we're before cleanup
-                assert agent.mode.state.get("_exit_behavior") is None
+        async with agent, agent.modes["gen"]:
+            # Behavior not set yet - we're before cleanup
+            assert agent.mode.state.get("_exit_behavior") is None
 
         # After mode exit, state is cleaned up
         assert True
@@ -559,10 +551,9 @@ class TestHasPendingTransition:
         async def test_mode(agent: Agent):
             yield agent
 
-        async with agent:
-            async with agent.modes["test"]:
-                agent.schedule_mode_exit()
-                assert agent.modes.has_pending_transition() is True
+        async with agent, agent.modes["test"]:
+            agent.schedule_mode_exit()
+            assert agent.modes.has_pending_transition() is True
 
     @pytest.mark.asyncio
     async def test_no_pending_after_apply(self):
@@ -610,12 +601,11 @@ class TestApplyScheduledModeChangesReturnValue:
             yield agent
             agent.mode.set_exit_behavior(ModeExitBehavior.STOP)
 
-        async with agent:
-            async with agent.modes["test"]:
-                agent.schedule_mode_exit()
+        async with agent, agent.modes["test"]:
+            agent.schedule_mode_exit()
 
-                result = await agent.modes.apply_scheduled_mode_changes()
-                assert result == ModeExitBehavior.STOP
+            result = await agent.modes.apply_scheduled_mode_changes()
+            assert result == ModeExitBehavior.STOP
 
     @pytest.mark.asyncio
     async def test_returns_none_on_switch(self):
@@ -630,14 +620,13 @@ class TestApplyScheduledModeChangesReturnValue:
         async def mode2(agent: Agent):
             yield agent
 
-        async with agent:
-            async with agent.modes["mode1"]:
-                agent.schedule_mode_switch("mode2")
+        async with agent, agent.modes["mode1"]:
+            agent.schedule_mode_switch("mode2")
 
-                result = await agent.modes.apply_scheduled_mode_changes()
-                # Returns None because we're now in a new mode
-                assert result is None
-                assert agent.mode.name == "mode2"
+            result = await agent.modes.apply_scheduled_mode_changes()
+            # Returns None because we're now in a new mode
+            assert result is None
+            assert agent.mode.name == "mode2"
 
 
 class TestIsConversationPending:
@@ -704,9 +693,7 @@ class TestIsConversationPending:
                     ToolCall(
                         id="call-123",
                         type="function",
-                        function=ToolCallFunction(
-                            name="test_tool", arguments='{"arg": "value"}'
-                        ),
+                        function=ToolCallFunction(name="test_tool", arguments='{"arg": "value"}'),
                     )
                 ],
             )
@@ -728,15 +715,14 @@ class TestExecuteLoopIntegration:
             yield agent
             events.append("cleanup")
 
-        async with agent:
-            async with agent.modes["gen"]:
-                events.append("active")
-                agent.schedule_mode_exit()
-                events.append("scheduled")
+        async with agent, agent.modes["gen"]:
+            events.append("active")
+            agent.schedule_mode_exit()
+            events.append("scheduled")
 
-                # Apply the scheduled exit
-                await agent.modes.apply_scheduled_mode_changes()
-                events.append("after_apply")
+            # Apply the scheduled exit
+            await agent.modes.apply_scheduled_mode_changes()
+            events.append("after_apply")
 
         assert events == ["setup", "active", "scheduled", "cleanup", "after_apply"]
 
@@ -751,17 +737,16 @@ class TestExecuteLoopIntegration:
             agent.prompt.append("Research mode active")
             yield agent
 
-        async with agent:
-            async with agent.modes["research"]:
-                mode_active_during_calls.append(agent.mode.name)
+        async with agent, agent.modes["research"]:
+            mode_active_during_calls.append(agent.mode.name)
 
-                with agent.mock("response 1"):
-                    await agent.call("first call")
-                mode_active_during_calls.append(agent.mode.name)
+            with agent.mock("response 1"):
+                await agent.call("first call")
+            mode_active_during_calls.append(agent.mode.name)
 
-                with agent.mock("response 2"):
-                    await agent.call("second call")
-                mode_active_during_calls.append(agent.mode.name)
+            with agent.mock("response 2"):
+                await agent.call("second call")
+            mode_active_during_calls.append(agent.mode.name)
 
         assert mode_active_during_calls == ["research", "research", "research"]
 
@@ -826,18 +811,17 @@ class TestExecuteLoopIntegration:
             yield agent
             agent.mode.set_exit_behavior(ModeExitBehavior.STOP)
 
-        async with agent:
-            async with agent.modes["research"]:
-                # Mock: first call returns tool call, second would be after mode exit
-                with agent.mock(
-                    mock_message("", tool_calls=[("exit_mode_tool", {})]),
-                    "This should not appear",  # STOP should prevent this
-                ):
-                    messages = []
-                    async for msg in agent.execute("Exit the mode"):
-                        messages.append(msg)
-                        if msg.role == "assistant":
-                            llm_calls.append(msg.content or "")
+        async with agent, agent.modes["research"]:
+            # Mock: first call returns tool call, second would be after mode exit
+            with agent.mock(
+                mock_message("", tool_calls=[("exit_mode_tool", {})]),
+                "This should not appear",  # STOP should prevent this
+            ):
+                messages = []
+                async for msg in agent.execute("Exit the mode"):
+                    messages.append(msg)
+                    if msg.role == "assistant":
+                        llm_calls.append(msg.content or "")
 
         # Should only have 1 LLM call (the one with tool call), not 2
         # STOP behavior prevents the second call
@@ -866,17 +850,16 @@ class TestExecuteLoopIntegration:
             yield agent
             agent.mode.set_exit_behavior(ModeExitBehavior.CONTINUE)
 
-        async with agent:
-            async with agent.modes["research"]:
-                with agent.mock(
-                    mock_message("", tool_calls=[("exit_mode_tool", {})]),
-                    "After mode exit",  # CONTINUE should allow this
-                ):
-                    messages = []
-                    async for msg in agent.execute("Exit the mode"):
-                        messages.append(msg)
-                        if msg.role == "assistant":
-                            llm_calls.append(msg.content or "")
+        async with agent, agent.modes["research"]:
+            with agent.mock(
+                mock_message("", tool_calls=[("exit_mode_tool", {})]),
+                "After mode exit",  # CONTINUE should allow this
+            ):
+                messages = []
+                async for msg in agent.execute("Exit the mode"):
+                    messages.append(msg)
+                    if msg.role == "assistant":
+                        llm_calls.append(msg.content or "")
 
         # Should have 2 LLM calls - CONTINUE allows second call after mode exit
         assert len(llm_calls) == 2
@@ -904,7 +887,7 @@ class TestExecuteLoopIntegration:
                 mock_message("", tool_calls=[("enter_mode_a", {})]),
                 "Now in mode A",
             ):
-                async for msg in agent.execute("Enter mode A"):
+                async for _msg in agent.execute("Enter mode A"):
                     mode_during_calls.append(agent.mode.name)
 
         # After tool call is processed, mode should be active

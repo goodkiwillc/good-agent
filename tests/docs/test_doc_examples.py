@@ -1,8 +1,9 @@
-import pytest
-import importlib.util
 import asyncio
+import importlib.util
 import sys
 from pathlib import Path
+
+import pytest
 
 # Discover all python files in examples/docs
 # We use a relative path from this test file to find the examples directory
@@ -44,9 +45,7 @@ async def test_doc_example(example_file, llm_vcr):
         if hasattr(module, "main") and asyncio.iscoroutinefunction(module.main):
             await module.main()
         else:
-            pytest.fail(
-                f"Example {example_file.name} must have an async main() function"
-            )
+            pytest.fail(f"Example {example_file.name} must have an async main() function")
 
     finally:
         # Clean up sys.modules

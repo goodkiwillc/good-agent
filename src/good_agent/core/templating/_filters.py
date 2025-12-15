@@ -13,9 +13,7 @@ def to_yaml(value):
 
 
 @register_filter("strftime", deprecated_aliases=["fmt_datetime"])
-def format_datetime(
-    value: datetime.datetime | datetime.date, fmt: str = "%Y-%m-%d %H:%M:%S"
-):
+def format_datetime(value: datetime.datetime | datetime.date, fmt: str = "%Y-%m-%d %H:%M:%S"):
     """Format datetime/date with strftime; ISO when no format provided."""
     if not value:
         return ""
@@ -88,7 +86,7 @@ def dedent(value):
     if len(lines) > 1:
         # Find if any lines still have leading whitespace
         result_lines = []
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             if line.strip():  # Non-empty line
                 result_lines.append(line.lstrip())
             else:

@@ -6,12 +6,11 @@ import asyncio
 import logging
 from collections.abc import Callable, Coroutine
 from types import MappingProxyType
-from typing import Any, TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 if TYPE_CHECKING:  # pragma: no cover - import cycles guarded at type-check time
-    from good_agent.core.components import AgentComponent
-
     from good_agent.agent.core import Agent
+    from good_agent.core.components import AgentComponent
 
 T = TypeVar("T")
 
@@ -48,7 +47,7 @@ class AgentTaskManager:
         coro: Coroutine[Any, Any, T],
         *,
         name: str | None = None,
-        component: "AgentComponent | str | None" = None,
+        component: AgentComponent | str | None = None,
         wait_on_ready: bool = True,
         cleanup_callback: Callable[[asyncio.Task[T]], None] | None = None,
     ) -> asyncio.Task[T]:
@@ -90,9 +89,7 @@ class AgentTaskManager:
                 pass
             elif completed.exception():
                 self._task_stats["failed"] += 1
-                logger.warning(
-                    "Task %s failed: %s", completed.get_name(), completed.exception()
-                )
+                logger.warning("Task %s failed: %s", completed.get_name(), completed.exception())
             else:
                 self._task_stats["completed"] += 1
 
@@ -128,9 +125,7 @@ class AgentTaskManager:
         """List of tasks that should block :meth:`Agent.initialize`."""
 
         return [
-            task
-            for task, info in self._managed_tasks.items()
-            if info.get("wait_on_ready", True)
+            task for task, info in self._managed_tasks.items() if info.get("wait_on_ready", True)
         ]
 
     async def wait_for_all(self, timeout: float | None = None) -> None:
@@ -156,13 +151,9 @@ class AgentTaskManager:
                 task.cancel()
 
         try:
-            await asyncio.wait_for(
-                asyncio.gather(*tasks, return_exceptions=True), timeout=timeout
-            )
+            await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=timeout)
         except TimeoutError:
-            logger.warning(
-                "Some managed tasks did not cancel within %s seconds", timeout
-            )
+            logger.warning("Some managed tasks did not cancel within %s seconds", timeout)
 
 
 __all__ = ["AgentTaskManager"]

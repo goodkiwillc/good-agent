@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
+
 from good_agent.extensions.template_manager.index import (
     TemplateIndex,
     TemplateMetadata,

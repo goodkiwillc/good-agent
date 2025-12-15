@@ -6,13 +6,12 @@ from typing import Any, Generic, Literal, TypedDict, TypeVar
 from jinja2.exceptions import TemplateError
 from pydantic import BaseModel, Field
 
+from good_agent.core.models.mixins import ModelAllFields
 from good_agent.core.templating import (
     AbstractTemplate,
     create_environment,
 )
 from good_agent.utilities.lxml import extract_first_level_xml
-
-from good_agent.core.models.mixins import ModelAllFields
 
 logger = logging.getLogger(__name__)
 
@@ -49,9 +48,7 @@ class Renderable(BaseModel, ModelAllFields, AbstractTemplate, ABC):
         # If __template_config__ is passed as a class parameter, store it as a class attribute
         # and mark it as set via init_subclass to avoid deprecation warning
         if __template_config__ is not None:
-            cls.__template_config__ = cls.__template_config__.new_child(
-                __template_config__
-            )
+            cls.__template_config__ = cls.__template_config__.new_child(__template_config__)
             cls._template_config_via_init_subclass = True
 
     def __init__(self, *args, __template_config__: dict | None = None, **kwargs):
@@ -116,9 +113,7 @@ class Renderable(BaseModel, ModelAllFields, AbstractTemplate, ABC):
                     elif isinstance(field.item_type, type) and issubclass(
                         field.item_type.type, str
                     ):
-                        _data[key] = [
-                            unindent(item) for item in (getattr(self, key, []) or [])
-                        ]
+                        _data[key] = [unindent(item) for item in (getattr(self, key, []) or [])]
                 else:
                     if isinstance(field.item_type, type) and issubclass(
                         field.type, Renderable
@@ -142,9 +137,7 @@ class Renderable(BaseModel, ModelAllFields, AbstractTemplate, ABC):
                     elif isinstance(field.item_type, type) and issubclass(
                         field.item_type.type, str
                     ):
-                        _data[key] = [
-                            unindent(item) for item in (getattr(self, key, []) or [])
-                        ]
+                        _data[key] = [unindent(item) for item in (getattr(self, key, []) or [])]
                 else:
                     if isinstance(field.item_type, type) and issubclass(
                         field.type, Renderable

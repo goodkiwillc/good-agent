@@ -1,8 +1,9 @@
-import os
-import tomli_w
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
+
+import tomli_w
 
 try:
     import tomllib
@@ -29,7 +30,7 @@ KEY_ALIASES = {
 
 
 class GlobalConfig:
-    def __init__(self, profile: Optional[str] = None):
+    def __init__(self, profile: str | None = None):
         self.profile = profile or os.environ.get("GOOD_AGENT_PROFILE", "default")
         self.config_path = CONFIG_FILE
         self._ensure_config_dir()
@@ -39,7 +40,7 @@ class GlobalConfig:
         if not CONFIG_DIR.exists():
             CONFIG_DIR.mkdir(parents=True, mode=0o700)
 
-    def _load(self) -> Dict[str, Any]:
+    def _load(self) -> dict[str, Any]:
         if not self.config_path.exists():
             return {}
         try:
@@ -62,7 +63,7 @@ class GlobalConfig:
     def _resolve_key(self, key: str) -> str:
         return KEY_ALIASES.get(key.lower(), key)
 
-    def get(self, key: str, profile: Optional[str] = None) -> Any:
+    def get(self, key: str, profile: str | None = None) -> Any:
         """Get a value, checking profile then default."""
         target_profile = profile or self.profile
         resolved_key = self._resolve_key(key)
@@ -77,7 +78,7 @@ class GlobalConfig:
         default_data = self.data.get("default", {})
         return default_data.get(resolved_key)
 
-    def set(self, key: str, value: str, profile: Optional[str] = None):
+    def set(self, key: str, value: str, profile: str | None = None):
         """Set a value in the specified profile (or default)."""
         target_profile = profile or self.profile
         resolved_key = self._resolve_key(key)
@@ -95,7 +96,7 @@ class GlobalConfig:
 
         self.save()
 
-    def list(self, profile: Optional[str] = None) -> Dict[str, Any]:
+    def list(self, profile: str | None = None) -> dict[str, Any]:
         """List all resolved configuration for a profile."""
         target_profile = profile or self.profile
 

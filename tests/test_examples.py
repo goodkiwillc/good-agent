@@ -10,7 +10,6 @@ from pathlib import Path
 
 import pytest
 
-
 EXAMPLES_ROOT = Path(__file__).resolve().parent.parent / "examples"
 
 
@@ -21,9 +20,7 @@ def _is_runtime_example(path: Path) -> bool:
     return not any(part.startswith("_") for part in relative_parts)
 
 
-EXAMPLE_FILES = sorted(
-    path for path in EXAMPLES_ROOT.rglob("*.py") if _is_runtime_example(path)
-)
+EXAMPLE_FILES = sorted(path for path in EXAMPLES_ROOT.rglob("*.py") if _is_runtime_example(path))
 
 
 def _load_module(path: Path) -> types.ModuleType:
@@ -48,7 +45,7 @@ def test_example_main_runs_without_deprecations(script_path: Path) -> None:
     if not hasattr(module, "main"):
         raise AssertionError(f"{script_path} must define a main() entry point")
 
-    runner = getattr(module, "main")
+    runner = module.main
 
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)

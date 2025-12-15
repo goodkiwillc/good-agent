@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, Any, TypeGuard, TypeVar
 from good_agent.core.event_router import EventContext
 from good_agent.events import AgentEvents
 from good_agent.messages import AssistantMessage, AssistantMessageStructuredOutput
+from good_agent.messages.validation import ValidationError
 from good_agent.model.protocols import ResponseWithUsage
 from good_agent.tools import Tool, ToolSignature
-from good_agent.messages.validation import ValidationError
 
 if TYPE_CHECKING:
     from litellm.types.utils import Choices
@@ -161,9 +161,7 @@ class LLMCoordinator:
 
             else:
                 # Use complete for regular chat
-                _messages = await self.agent.model.format_message_list_for_llm(
-                    self.agent.messages
-                )
+                _messages = await self.agent.model.format_message_list_for_llm(self.agent.messages)
 
                 llm_response = await self.agent.model.complete(
                     _messages,
@@ -178,9 +176,7 @@ class LLMCoordinator:
                 # Check if it's a real Pydantic model (not MagicMock)
                 # MagicMock will have __class__.__module__ starting with 'unittest.mock'
                 usage = llm_response.usage
-                if hasattr(usage, "__class__") and hasattr(
-                    usage.__class__, "__module__"
-                ):
+                if hasattr(usage, "__class__") and hasattr(usage.__class__, "__module__"):
                     is_mock = usage.__class__.__module__.startswith("unittest.mock")
                 else:
                     is_mock = False
@@ -247,11 +243,7 @@ class LLMCoordinator:
                 psf = None
             if not psf:
                 psf = getattr(choice, "provider_specific_fields", None)
-            if (
-                isinstance(psf, dict)
-                and psf.get("reasoning_content")
-                and "reasoning" not in kwargs
-            ):
+            if isinstance(psf, dict) and psf.get("reasoning_content") and "reasoning" not in kwargs:
                 norm = _normalize_reasoning(psf.get("reasoning_content"))
                 if norm:
                     kwargs["reasoning"] = norm
@@ -289,7 +281,5 @@ class LLMCoordinator:
             # Propagate cancellations immediately so outer callers can stop
             raise
         except Exception as e:
-            self.agent.do(
-                AgentEvents.LLM_ERROR, error=e, parameters=llm_params, agent=self.agent
-            )
+            self.agent.do(AgentEvents.LLM_ERROR, error=e, parameters=llm_params, agent=self.agent)
             raise

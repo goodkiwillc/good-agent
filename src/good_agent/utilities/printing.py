@@ -42,9 +42,7 @@ def _format_tool_calls(tool_calls, format: str) -> str:
                 name = "unknown"
 
             # Get arguments
-            if hasattr(tool_call, "function") and hasattr(
-                tool_call.function, "arguments"
-            ):
+            if hasattr(tool_call, "function") and hasattr(tool_call.function, "arguments"):
                 args_str = tool_call.function.arguments
             else:
                 args_str = "{}"
@@ -59,16 +57,12 @@ def _format_tool_calls(tool_calls, format: str) -> str:
             # Format based on output type
             if format == "markdown":
                 if len(tool_calls) > 1:
-                    tool_section = (
-                        f"### Tool {i}: `{name}`\n\n```json\n{formatted_args}\n```"
-                    )
+                    tool_section = f"### Tool {i}: `{name}`\n\n```json\n{formatted_args}\n```"
                 else:
                     tool_section = f"### `{name}`\n\n```json\n{formatted_args}\n```"
             else:  # rich format
                 if len(tool_calls) > 1:
-                    tool_section = (
-                        f"**Tool {i}: {name}**\n\n```json\n{formatted_args}\n```"
-                    )
+                    tool_section = f"**Tool {i}: {name}**\n\n```json\n{formatted_args}\n```"
                 else:
                     tool_section = f"**Tool: {name}**\n\n```json\n{formatted_args}\n```"
 
@@ -88,9 +82,7 @@ def _format_tool_calls(tool_calls, format: str) -> str:
                 name = "unknown"
 
             # Get arguments
-            if hasattr(tool_call, "function") and hasattr(
-                tool_call.function, "arguments"
-            ):
+            if hasattr(tool_call, "function") and hasattr(tool_call.function, "arguments"):
                 args_str = tool_call.function.arguments
             else:
                 args_str = "{}"
@@ -259,14 +251,11 @@ def _detect_markdown(content: str | None) -> bool:
     # Check for numbered lists (1. 2. etc)
     import re
 
-    if re.search(r"^\d+\.\s", content, re.MULTILINE):
-        return True
-
-    return False
+    return bool(re.search(r"^\d+\.\s", content, re.MULTILINE))
 
 
 def print_message(
-    message: "Message",
+    message: Message,
     console: Console | None = None,
     format: Literal["plain", "markdown", "rich"] = "rich",
     title: str | None = None,
@@ -275,7 +264,7 @@ def print_message(
     include_tool_calls: bool = True,
     truncate: bool = False,
     max_length: int = 500,
-    render_mode: "RenderMode | str | None" = None,
+    render_mode: RenderMode | str | None = None,
     force_markdown: bool | None = None,
 ) -> None:
     """Print a message with Rich formatting support.
@@ -335,24 +324,16 @@ def print_message(
             content = str(message)
 
         # Handle tool calls for AssistantMessage even with render_mode
-        if (
-            isinstance(message, AssistantMessage)
-            and message.tool_calls
-            and include_tool_calls
-        ):
+        if isinstance(message, AssistantMessage) and message.tool_calls and include_tool_calls:
             tool_content = _format_tool_calls(message.tool_calls, format)
 
             # Combine content and tool calls
             if content:
                 # Both content and tool calls present
                 if format == "markdown":
-                    content = (
-                        f"{content}\n\n---\n\n## 🔧 Tool Calls\n\n{tool_content}\n"
-                    )
+                    content = f"{content}\n\n---\n\n## 🔧 Tool Calls\n\n{tool_content}\n"
                 elif format == "rich":
-                    content = (
-                        f"{content}\n\n**───── Tool Calls ─────**\n\n{tool_content}"
-                    )
+                    content = f"{content}\n\n**───── Tool Calls ─────**\n\n{tool_content}"
                 else:  # plain
                     content = f"{content}\n\n--- Tool Calls ---\n{tool_content}"
             else:
@@ -372,38 +353,26 @@ def print_message(
                 if format == "markdown":
                     content = f"{content}\n\n---\n\n## 🔧 Tool Calls\n\n{tool_content}"
                 elif format == "rich":
-                    content = (
-                        f"{content}\n\n**───── Tool Calls ─────**\n\n{tool_content}"
-                    )
+                    content = f"{content}\n\n**───── Tool Calls ─────**\n\n{tool_content}"
                 else:  # plain
                     content = f"{content}\n\n--- Tool Calls ---\n{tool_content}"
             else:
                 # Only tool calls, no content
                 content = tool_content
-    elif (
-        not render_mode
-    ):  # Only apply default logic if render_mode wasn't already handled
+    elif not render_mode:  # Only apply default logic if render_mode wasn't already handled
         # Use display rendering for all other message types
         content = message.__display__()
 
     # Add reasoning if requested (for assistant messages)
-    if (
-        include_reasoning
-        and isinstance(message, AssistantMessage)
-        and message.reasoning
-    ):
+    if include_reasoning and isinstance(message, AssistantMessage) and message.reasoning:
         if format == "markdown":
-            content = (
-                f"💭 **Reasoning:**\n```\n{message.reasoning}\n```\n\n---\n\n{content}"
-            )
+            content = f"💭 **Reasoning:**\n```\n{message.reasoning}\n```\n\n---\n\n{content}"
         else:
             content = f"<reasoning>\n{message.reasoning}\n</reasoning>\n\n{content}"
 
     # Add citations if requested (for assistant messages)
     if include_citations and isinstance(message, AssistantMessage):
-        citations = getattr(message, "citations", None) or getattr(
-            message, "citation_urls", None
-        )
+        citations = getattr(message, "citations", None) or getattr(message, "citation_urls", None)
         if citations and content:
             citation_text = "\n\n---\n📚 **Citations:**\n"
             for idx, citation in enumerate(citations, 1):
@@ -429,9 +398,7 @@ def print_message(
     if not content:
         # Check if this is a tool-only assistant message that we already handled
         if not (
-            isinstance(message, AssistantMessage)
-            and message.tool_calls
-            and include_tool_calls
+            isinstance(message, AssistantMessage) and message.tool_calls and include_tool_calls
         ):
             content = "(empty message)"
 

@@ -123,9 +123,9 @@ class HandlerRegistry:
         self._lock = threading.RLock()
         """RLock for thread-safe handler registration and access."""
 
-        self._events: dict[
-            EventName, dict[EventPriority, list[HandlerRegistration]]
-        ] = collections.defaultdict(lambda: collections.defaultdict(list))
+        self._events: dict[EventName, dict[EventPriority, list[HandlerRegistration]]] = (
+            collections.defaultdict(lambda: collections.defaultdict(list))
+        )
         """Nested dict: event_name -> priority -> list of handlers."""
 
         self._debug = debug
@@ -137,9 +137,7 @@ class HandlerRegistry:
         self._next_handler_id: int = 0
         """Auto-incrementing counter for unique handler IDs."""
 
-        self._handler_map: dict[
-            int, tuple[EventName, EventPriority, HandlerRegistration]
-        ] = {}
+        self._handler_map: dict[int, tuple[EventName, EventPriority, HandlerRegistration]] = {}
         """Mapping from handler ID to (event, priority, registration) for deregistration."""
 
     def register_handler(
@@ -183,9 +181,7 @@ class HandlerRegistry:
                     # Update predicate for existing handler
                     registration.predicate = predicate
                     if self._debug:
-                        logger.debug(
-                            f"Updated predicate for {handler.__name__} on {event!r}"
-                        )
+                        logger.debug(f"Updated predicate for {handler.__name__} on {event!r}")
                     return handler_id
 
             # Add new registration with unique ID
@@ -228,9 +224,7 @@ class HandlerRegistry:
                 try:
                     self._events[event][priority].remove(registration)
                     if self._debug:
-                        logger.debug(
-                            f"Deregistered handler ID {handler_id} for {event!r}"
-                        )
+                        logger.debug(f"Deregistered handler ID {handler_id} for {event!r}")
                 except ValueError:
                     # Handler was already removed (edge case)
                     pass
@@ -285,7 +279,7 @@ class HandlerRegistry:
             # Merge and sort priorities
             if matches:
                 # Use a set to collect all unique priority levels
-                all_priorities: set["EventPriority"] = set()
+                all_priorities: set[EventPriority] = set()
                 for match in matches:
                     all_priorities.update(match.keys())
 
@@ -298,11 +292,7 @@ class HandlerRegistry:
                         handlers.extend(self._events[event][priority])
 
                     # Then add wildcard handlers
-                    if (
-                        event != "*"
-                        and "*" in self._events
-                        and priority in self._events["*"]
-                    ):
+                    if event != "*" and "*" in self._events and priority in self._events["*"]:
                         handlers.extend(self._events["*"][priority])
 
             # Get handlers from broadcast targets
@@ -319,9 +309,7 @@ class HandlerRegistry:
 
         return handlers
 
-    def should_run_handler(
-        self, registration: HandlerRegistration, ctx: EventContext
-    ) -> bool:
+    def should_run_handler(self, registration: HandlerRegistration, ctx: EventContext) -> bool:
         """Check if handler should run based on its predicate.
 
         If the handler has no predicate, it always runs. If it has a predicate,

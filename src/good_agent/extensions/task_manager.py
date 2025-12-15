@@ -45,14 +45,10 @@ class TaskManager(MessageInjectorComponent):
         self.lists = {}
         super().__init__(*args, **kwargs)
 
-    def create_list(
-        self, name: str | None = None, items: list[str] | None = None
-    ) -> ToDoList:
+    def create_list(self, name: str | None = None, items: list[str] | None = None) -> ToDoList:
         """Create a new to-do list with an optional name."""
         name = name or f"List {len(self.lists) + 1}"
-        self.lists[name] = ToDoList(
-            name=name, items=[ToDoItem(item=i) for i in (items or [])]
-        )
+        self.lists[name] = ToDoList(name=name, items=[ToDoItem(item=i) for i in (items or [])])
         return self.lists[name]
 
     def add_item(self, list_name: str, item: str) -> str:
@@ -80,16 +76,12 @@ class TaskManager(MessageInjectorComponent):
                     item_index = idx
                     break
             if item_index is None:
-                raise ValueError(
-                    f'Item with text "{item_text}" not found in list {list_name}.'
-                )
+                raise ValueError(f'Item with text "{item_text}" not found in list {list_name}.')
 
         if list_name not in self.lists:
             raise ValueError(f"List ID {list_name} does not exist.")
         if item_index < 0 or item_index >= len(self.lists[list_name].items):
-            raise IndexError(
-                f"Item index {item_index} is out of range for list {list_name}."
-            )
+            raise IndexError(f"Item index {item_index} is out of range for list {list_name}.")
         self.lists[list_name].items[item_index].complete = True
         return f"`{self.lists[list_name].items[item_index].item}` marked as complete."
 
@@ -100,9 +92,7 @@ class TaskManager(MessageInjectorComponent):
         return self.lists[list_name]
 
     @tool(name="create_list")  # type: ignore[arg-type]
-    def create_list_tool(
-        self, name: str | None = None, items: list[str] | None = None
-    ) -> ToDoList:
+    def create_list_tool(self, name: str | None = None, items: list[str] | None = None) -> ToDoList:
         """Tool wrapper for create_list."""
         return self.create_list(name=name, items=items)
 
@@ -119,9 +109,7 @@ class TaskManager(MessageInjectorComponent):
         item_text: str | None = None,
     ) -> str:
         """Tool wrapper for complete_item."""
-        return self.complete_item(
-            list_name=list_name, item_index=item_index, item_text=item_text
-        )
+        return self.complete_item(list_name=list_name, item_index=item_index, item_text=item_text)
 
     @tool(name="view_list")  # type: ignore[arg-type]
     def view_list_tool(self, list_name: str) -> ToDoList:

@@ -99,9 +99,7 @@ def test_handle_signal_triggers_shutdown(monkeypatch):
     assert handler.is_shutdown_initiated() is True
 
     # Restore original KeyboardInterrupt for subsequent assertions
-    monkeypatch.setitem(
-        builtins.__dict__, "KeyboardInterrupt", original_keyboard_interrupt
-    )
+    monkeypatch.setitem(builtins.__dict__, "KeyboardInterrupt", original_keyboard_interrupt)
 
     exit_mock = MagicMock()
     exit_mock.side_effect = SystemExit(1)

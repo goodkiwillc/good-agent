@@ -14,9 +14,7 @@ class ParameterNameGenerator:
         """Initialize the parameter name generator."""
         self._counters: dict[str, int] = {}
 
-    def generate(
-        self, field: str, operator: str, value: Any, counter: int | None = None
-    ) -> str:
+    def generate(self, field: str, operator: str, value: Any, counter: int | None = None) -> str:
         """
         Generate a unique parameter name.
 
@@ -84,9 +82,7 @@ class ParameterNameGenerator:
 _default_generator = ParameterNameGenerator()
 
 
-def generate_param_name(
-    field: str, operator: str, value: Any, counter: int | None = None
-) -> str:
+def generate_param_name(field: str, operator: str, value: Any, counter: int | None = None) -> str:
     """
     Convenience function to generate parameter names using the default generator.
 
@@ -117,9 +113,7 @@ def generate_condition_param_name(
     Returns:
         A unique parameter name
     """
-    return _default_generator.generate_for_condition(
-        field, operator, value, condition_id
-    )
+    return _default_generator.generate_for_condition(field, operator, value, condition_id)
 
 
 def reset_param_counters():

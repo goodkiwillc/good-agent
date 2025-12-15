@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import logging
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -118,9 +119,7 @@ def get_managed_router_class():
                 """No-op replacement for deployment callbacks that expect bool return."""
                 return True
 
-            async def async_deployment_callback_on_failure(
-                self, *args, **kwargs
-            ) -> None:
+            async def async_deployment_callback_on_failure(self, *args, **kwargs) -> None:
                 """Async no-op replacement for deployment callbacks."""
                 pass
 
@@ -128,22 +127,18 @@ def get_managed_router_class():
                 """Async no-op replacement for deployment callbacks."""
                 pass
 
-            def sync_deployment_callback_on_success(
-                self, *args, **kwargs
-            ) -> str | None:
+            def sync_deployment_callback_on_success(self, *args, **kwargs) -> str | None:
                 """No-op replacement for deployment callbacks that expect str|None return."""
                 return None
 
-            async def async_deployment_callback_on_success(
-                self, *args, **kwargs
-            ) -> None:
+            async def async_deployment_callback_on_success(self, *args, **kwargs) -> None:
                 """Async no-op replacement for deployment callbacks."""
                 pass
 
             def __init__(
                 self,
                 model_list: list[dict[str, Any]] | None = None,
-                managed_callbacks: list["CustomLogger"] | None = None,
+                managed_callbacks: list[CustomLogger] | None = None,
                 **router_kwargs,
             ):
                 """
@@ -196,7 +191,7 @@ def get_managed_router_class():
                     if hasattr(callback, method_name):
                         try:
                             method = getattr(callback, method_name)
-                            if asyncio.iscoroutinefunction(method):
+                            if inspect.iscoroutinefunction(method):
                                 await method(*args, **kwargs)
                             else:
                                 method(*args, **kwargs)
@@ -212,7 +207,7 @@ def get_managed_router_class():
                 messages: list[Any],
                 stream: Literal[True],
                 **kwargs: Any,
-            ) -> "CustomStreamWrapper": ...
+            ) -> CustomStreamWrapper: ...
 
             @overload
             async def acompletion(
@@ -221,12 +216,12 @@ def get_managed_router_class():
                 messages: list[Any],
                 stream: Literal[False] = ...,
                 **kwargs: Any,
-            ) -> "ModelResponse": ...
+            ) -> ModelResponse: ...
 
             @overload
             async def acompletion(
                 self, model: str, messages: list[Any], stream: bool = ..., **kwargs: Any
-            ) -> "ModelResponse | CustomStreamWrapper": ...
+            ) -> ModelResponse | CustomStreamWrapper: ...
 
             async def acompletion(self, *args, **kwargs):
                 """
@@ -320,17 +315,13 @@ def get_managed_router_class():
                         self._instructor_client, "create"
                     ):
                         self.aextract = self._instructor_client.create
-                        self.extract = (
-                            self._instructor_client.create
-                        )  # Same for sync version
+                        self.extract = self._instructor_client.create  # Same for sync version
                 except ImportError:
-                    logger.warning(
-                        "Instructor not installed, structured output unavailable"
-                    )
+                    logger.warning("Instructor not installed, structured output unavailable")
 
                 return self
 
-            def add_callback(self, callback: "CustomLogger") -> None:
+            def add_callback(self, callback: CustomLogger) -> None:
                 """
                 Add a callback handler to this instance.
 
@@ -341,7 +332,7 @@ def get_managed_router_class():
                     self._managed_callbacks.append(callback)
                     logger.debug(f"Added callback: {callback.__class__.__name__}")
 
-            def remove_callback(self, callback: "CustomLogger") -> None:
+            def remove_callback(self, callback: CustomLogger) -> None:
                 """
                 Remove a callback handler from this instance.
 
@@ -360,11 +351,7 @@ def get_managed_router_class():
             def get_available_models(self) -> list[str]:
                 """Get list of available model names."""
                 return list(
-                    {
-                        m.get("model_name", "")
-                        for m in self.model_list
-                        if m.get("model_name")
-                    }
+                    {m.get("model_name", "") for m in self.model_list if m.get("model_name")}
                 )
 
             def cleanup(self):
@@ -406,13 +393,13 @@ def create_managed_router(*args, **kwargs) -> ManagedRouter:
 
 
 # Global router pool to avoid LiteLLM's callback limit
-_GLOBAL_ROUTER_POOL: list["Router"] = []
+_GLOBAL_ROUTER_POOL: list[Router] = []
 _ROUTER_POOL_SIZE = 10
 _router_pool_index = 0
 _router_pool_lock = asyncio.Lock() if asyncio else None
 
 
-def _get_or_create_base_router(model_list: list[dict[str, Any]]) -> "Router":
+def _get_or_create_base_router(model_list: list[dict[str, Any]]) -> Router:
     """Get a base Router from the pool or create one if under the limit.
 
     This helps avoid LiteLLM's internal callback limit (30) by reusing
@@ -452,9 +439,7 @@ class ModelManager:
         """Initialize the model manager."""
         self._models: dict[str, ModelDefinition] = {}
         self._overrides = model_override_registry
-        self._router_pool: WeakValueDictionary[int, ManagedRouter] = (
-            WeakValueDictionary()
-        )
+        self._router_pool: WeakValueDictionary[int, ManagedRouter] = WeakValueDictionary()
 
     def register_model(self, name: str, provider: str, **kwargs) -> None:
         """
@@ -493,7 +478,7 @@ class ModelManager:
         self,
         primary_model: str,
         fallback_models: list[str] | None = None,
-        managed_callbacks: list["CustomLogger"] | None = None,
+        managed_callbacks: list[CustomLogger] | None = None,
         **router_kwargs,
     ) -> ManagedRouter:
         """
@@ -578,9 +563,7 @@ class ModelManager:
             if hasattr(override, "pattern"):
                 # Can't list all possible pattern matches
                 continue
-            elif (
-                hasattr(override, "model_pattern") and "*" not in override.model_pattern
-            ):
+            elif hasattr(override, "model_pattern") and "*" not in override.model_pattern:
                 # Only add exact model names, not patterns
                 all_models.add(override.model_pattern)
 

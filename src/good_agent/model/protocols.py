@@ -1,7 +1,7 @@
 """Type protocols and data structures for the model package."""
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Protocol, TypedDict, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, TypeAlias, TypedDict, runtime_checkable
 
 if TYPE_CHECKING:
     from litellm.types.utils import Choices, StreamingChoices, Usage
@@ -17,7 +17,7 @@ class ModelResponseProtocol(Protocol):
     def id(self) -> str: ...
 
     @property
-    def choices(self) -> "Choices | StreamingChoices": ...
+    def choices(self) -> Choices | StreamingChoices: ...
 
     @property
     def model(self) -> str | Any: ...
@@ -29,7 +29,7 @@ class ModelResponseProtocol(Protocol):
 @runtime_checkable
 class ResponseWithUsage(Protocol):
     @property
-    def usage(self) -> "Usage | None": ...
+    def usage(self) -> Usage | None: ...
 
 
 @runtime_checkable
@@ -44,16 +44,16 @@ class ResponseWithResponseHeaders(ModelResponseProtocol, Protocol):
     def _response_headers(self) -> dict[str, Any] | Any: ...
 
 
-type ModelName = str
+ModelName: TypeAlias = str
 
 
 class CompletionEvent(TypedDict):
     """Event type for chat completion without response model extraction."""
 
-    messages: list["Any"]  # ChatCompletionMessageParam
-    config: "ModelConfig"
-    response_model: type["BaseModel"] | None
-    llm: "Any"  # LanguageModel
+    messages: list[Any]  # ChatCompletionMessageParam
+    config: ModelConfig
+    response_model: type[BaseModel] | None
+    llm: Any  # LanguageModel
 
 
 @dataclass

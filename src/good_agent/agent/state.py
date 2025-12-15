@@ -82,9 +82,7 @@ class AgentStateMachine:
 
         # Validate state transition
         if state not in STATE_FLOWS[current_state]:
-            raise ValueError(
-                f"Invalid state transition from {current_state} to {state}"
-            )
+            raise ValueError(f"Invalid state transition from {current_state} to {state}")
 
         self._state = state
 
@@ -118,6 +116,5 @@ class AgentStateMachine:
             await asyncio.wait_for(self._ready_event.wait(), timeout=timeout)
         except TimeoutError as e:
             raise TimeoutError(
-                f"Agent did not become ready within {timeout} seconds. "
-                f"Current state: {self._state}"
+                f"Agent did not become ready within {timeout} seconds. Current state: {self._state}"
             ) from e

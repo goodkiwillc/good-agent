@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+
 from good_agent import Agent, tool
 from good_agent.extensions.citations import CitationManager
 from good_agent.extensions.citations.citation_adapter import CitationAdapter

@@ -1,5 +1,6 @@
 """ToolExecutor manages tool execution, parallel invocation, and pending tool call resolution."""
 
+import contextlib
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
@@ -35,7 +36,7 @@ class ToolExecutor:
     - Tool error handling and event emission
     """
 
-    def __init__(self, agent: "Agent") -> None:
+    def __init__(self, agent: Agent) -> None:
         """Initialize ToolExecutor.
 
         Args:
@@ -172,9 +173,7 @@ class ToolExecutor:
         # Execute the tool
         try:
             # Coerce JSON-like strings to proper types based on tool schema
-            execution_params = self._coerce_tool_parameters(
-                resolved_tool, execution_params
-            )
+            execution_params = self._coerce_tool_parameters(resolved_tool, execution_params)
 
             # Remove special parameters if they're in execution_params to avoid duplicates
             execution_params.pop("_agent", None)
@@ -342,6 +341,7 @@ class ToolExecutor:
                 tn=tool_name,
                 tc=tool_call,
                 error=tool_error,
+                is_bound=is_bound_invoke,
             ):
                 if error:
                     return ToolResponse(
@@ -367,7 +367,7 @@ class ToolExecutor:
                     # Coerce parameters
                     execution_params = self._coerce_tool_parameters(t, p)
 
-                    if is_bound_invoke:
+                    if is_bound:
                         # Route through bound invoke_func helper so hidden params merge properly
                         bound_callable = cast(Callable[..., Awaitable[ToolResponse]], t)
                         result = await bound_callable(
@@ -379,9 +379,7 @@ class ToolExecutor:
                         )
                     else:
                         # Execute tool
-                        result = await t(
-                            **execution_params, _agent=self.agent, _tool_call=tc
-                        )
+                        result = await t(**execution_params, _agent=self.agent, _tool_call=tc)
 
                     # Handle return types
                     if isinstance(result, ToolResponse):
@@ -448,10 +446,7 @@ class ToolExecutor:
         for tool_response in results:
             if tool_response.tool_call_id in (None, "") and pending_tool_call_ids:
                 tool_response.tool_call_id = pending_tool_call_ids.pop(0)
-            elif (
-                tool_response.tool_call_id
-                and tool_response.tool_call_id in pending_tool_call_ids
-            ):
+            elif tool_response.tool_call_id and tool_response.tool_call_id in pending_tool_call_ids:
                 pending_tool_call_ids.remove(tool_response.tool_call_id)
 
             tool_message = self.agent.model.create_message(
@@ -590,9 +585,7 @@ class ToolExecutor:
             tool_name = tool_call.function.name
 
             if tool_name not in self.agent.tools:
-                logger.warning(
-                    f"Tool '{tool_name}' not found for pending tool call {tool_call.id}"
-                )
+                logger.warning(f"Tool '{tool_name}' not found for pending tool call {tool_call.id}")
 
                 # Create error response
                 tool_response = ToolResponse(
@@ -648,9 +641,7 @@ class ToolExecutor:
 
         tool_name = self._resolve_tool_name(tool)
         tool_call_id = tool_call_id or f"call_{ULID()}"
-        tool_response = self._coerce_tool_response(
-            response, tool_name, tool_call_id, parameters
-        )
+        tool_response = self._coerce_tool_response(response, tool_name, tool_call_id, parameters)
         visible_params = parameters or tool_response.parameters or {}
 
         if not skip_assistant_message:
@@ -930,10 +921,9 @@ class ToolExecutor:
         def _resolve_tool_for_schema(t: Any) -> Any:
             if isinstance(t, Tool):
                 return t.get_schema()  # type: ignore[attr-defined]
-            elif isinstance(t, type):
+            elif isinstance(t, type) and hasattr(t, "model_json_schema"):
                 # For Pydantic models, get schema
-                if hasattr(t, "model_json_schema"):
-                    return t.model_json_schema()  # type: ignore[attr-defined]
+                return t.model_json_schema()  # type: ignore[attr-defined]
             return None
 
         for param_name, param_value in parameters.items():
@@ -965,18 +955,16 @@ class ToolExecutor:
                         # Default to string but try to infer if it looks like JSON
                         param_type = "string"
                         if (
-                            param_value.startswith("{") and param_value.endswith("}")
-                        ) or (
-                            param_value.startswith("[") and param_value.endswith("]")
-                        ):
+                            (param_value.startswith("{") and param_value.endswith("}"))
+                            or (param_value.startswith("[") and param_value.endswith("]"))
+                        ) and ("object" in types or "array" in types):
                             # Check if object or array are allowed types in anyOf
-                            if "object" in types or "array" in types:
-                                try:
-                                    coerced[param_name] = orjson.loads(param_value)
-                                    # Skip further coercion if successful
-                                    continue
-                                except Exception:
-                                    pass
+                            try:
+                                coerced[param_name] = orjson.loads(param_value)
+                                # Skip further coercion if successful
+                                continue
+                            except Exception:
+                                pass
                 else:
                     param_type = param_schema.get("type")
 
@@ -987,20 +975,14 @@ class ToolExecutor:
                     elif param_value.lower() in ("false", "0", "no"):
                         coerced[param_name] = False
                 elif param_type == "integer":
-                    try:
+                    with contextlib.suppress(ValueError):
                         coerced[param_name] = int(param_value)
-                    except ValueError:
-                        pass
                 elif param_type == "number":
-                    try:
+                    with contextlib.suppress(ValueError):
                         coerced[param_name] = float(param_value)
-                    except ValueError:
-                        pass
                 elif param_type in ("object", "array"):
-                    try:
+                    with contextlib.suppress(Exception):
                         coerced[param_name] = orjson.loads(param_value)
-                    except Exception:
-                        pass
                 # Some tools define dict parameters as simply 'type: object' without Pydantic definition
                 elif param_type == "object":
                     try:
@@ -1019,14 +1001,12 @@ class ToolExecutor:
 
                 # Fallback: If schema has type=object or type=array but wasn't caught above
                 # e.g. because it wasn't processed correctly
-                elif param_schema.get("type") in ("object", "array"):
-                    if (param_value.startswith("{") and param_value.endswith("}")) or (
-                        param_value.startswith("[") and param_value.endswith("]")
-                    ):
-                        try:
-                            coerced[param_name] = orjson.loads(param_value)
-                        except Exception:
-                            pass
+                elif param_schema.get("type") in ("object", "array") and (
+                    (param_value.startswith("{") and param_value.endswith("}"))
+                    or (param_value.startswith("[") and param_value.endswith("]"))
+                ):
+                    with contextlib.suppress(Exception):
+                        coerced[param_name] = orjson.loads(param_value)
                 # Handle simple types that might be wrapped in anyOf
                 # Or handle generic string inputs that look like JSON but have no explicit type (or unknown type)
                 elif (param_value.startswith("{") and param_value.endswith("}")) or (
@@ -1042,13 +1022,12 @@ class ToolExecutor:
                             should_coerce = False
 
                             # Case 1: Schema is ambiguous (no type specified)
-                            if "type" not in param_schema:
-                                should_coerce = True
-                            # Case 2: Schema type is explicitly complex
-                            elif param_schema.get("type") in ("object", "array"):
-                                should_coerce = True
-                            # Case 3: Schema uses anyOf/oneOf
-                            elif "anyOf" in param_schema or "oneOf" in param_schema:
+                            if (
+                                "type" not in param_schema
+                                or param_schema.get("type") in ("object", "array")
+                                or "anyOf" in param_schema
+                                or "oneOf" in param_schema
+                            ):
                                 should_coerce = True
                             # Case 4: Schema says string but it looks like JSON (risky but sometimes needed)
                             # Some LLMs output JSON even for string fields if they think it should be structured.

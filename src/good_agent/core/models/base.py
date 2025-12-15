@@ -25,7 +25,7 @@ class PrivateAttrBase(PydanticBaseModel):
 
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs):
-        for k in cls.model_fields.keys():
+        for k in cls.model_fields:
             if f"_{k}" in cls.__private_attributes__:
                 warnings.warn(
                     f"Model field `{k}` has the same name as a private attribute (with prefix).\n"
@@ -57,9 +57,7 @@ class PrivateAttrBase(PydanticBaseModel):
                 default_value = None
 
             # Try to get value from data (with or without underscore prefix)
-            _private_attributes[_k] = data.pop(
-                _k.lstrip("_"), data.pop(_k, default_value)
-            )
+            _private_attributes[_k] = data.pop(_k.lstrip("_"), data.pop(_k, default_value))
 
         # Validate each private attribute individually
         for key, type_hint in _private_attribute_types.items():

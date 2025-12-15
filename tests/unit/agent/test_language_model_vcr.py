@@ -1,11 +1,13 @@
+from typing import cast
+
 import pytest
-from good_agent import Agent
-from good_agent.messages import AssistantMessage
-from good_agent.model.llm import LanguageModel, StreamChunk
 from litellm.types.completion import ChatCompletionMessageParam
 from litellm.types.utils import Choices
 from pydantic import BaseModel
-from typing import cast
+
+from good_agent import Agent
+from good_agent.messages import AssistantMessage
+from good_agent.model.llm import LanguageModel, StreamChunk
 
 
 class WeatherInfo(BaseModel):
@@ -111,9 +113,7 @@ async def test_stream_with_real_api(llm_vcr):
 @pytest.mark.vcr
 async def test_extract_with_real_api(llm_vcr):
     """Test structured extraction with real API call via VCR."""
-    pytest.importorskip(
-        "instructor", reason="instructor module required for extract test"
-    )
+    pytest.importorskip("instructor", reason="instructor module required for extract test")
     lm = LanguageModel(model="gpt-4o-mini", temperature=0)
     async with Agent(
         "You are a weather assistant", model="gpt-4o-mini", language_model=lm
@@ -156,9 +156,7 @@ async def test_fallback_models_with_real_api(llm_vcr):
         model="gpt-4o-mini",  # Use valid model for VCR
         temperature=0.5,
     )
-    async with Agent(
-        "You are helpful", model="gpt-4o-mini", language_model=lm
-    ) as agent:
+    async with Agent("You are helpful", model="gpt-4o-mini", language_model=lm) as agent:
         # Get the language model from agent
         lm = agent.model
 
@@ -183,9 +181,7 @@ async def test_fallback_models_with_real_api(llm_vcr):
 async def test_usage_tracking_across_calls(llm_vcr):
     """Test that usage is properly accumulated across multiple API calls."""
     lm = LanguageModel(model="gpt-4o-mini", temperature=0.5)
-    async with Agent(
-        "You are helpful", model="gpt-4o-mini", language_model=lm
-    ) as agent:
+    async with Agent("You are helpful", model="gpt-4o-mini", language_model=lm) as agent:
         lm = agent.model
 
         # First call
@@ -241,9 +237,7 @@ async def test_agent_integration_with_real_api(llm_vcr):
 @pytest.mark.vcr
 async def test_streaming_through_agent(llm_vcr):
     """Test streaming through Agent's language model with real API."""
-    async with Agent(
-        "You are a helpful assistant", model="gpt-4o-mini", temperature=0.5
-    ) as agent:
+    async with Agent("You are a helpful assistant", model="gpt-4o-mini", temperature=0.5) as agent:
         # Stream a response through the language model
         messages: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": "You are a helpful assistant"},
@@ -268,9 +262,7 @@ async def test_streaming_through_agent(llm_vcr):
 async def test_error_handling_with_vcr(llm_vcr):
     """Test error handling with VCR recording."""
     lm = LanguageModel(model="gpt-4o-mini", temperature=0.5)
-    async with Agent(
-        "You are helpful", model="gpt-4o-mini", language_model=lm
-    ) as agent:
+    async with Agent("You are helpful", model="gpt-4o-mini", language_model=lm) as agent:
         lm = agent.model
 
         # Test with valid messages - VCR replay won't trigger real errors
@@ -297,9 +289,7 @@ async def test_model_override_configuration(llm_vcr):
         temperature=0.9,  # Override temperature
         max_tokens=50,  # Limit response length
     )
-    async with Agent(
-        "You are helpful", model="gpt-4o-mini", language_model=lm
-    ) as agent:
+    async with Agent("You are helpful", model="gpt-4o-mini", language_model=lm) as agent:
         lm = agent.model
 
         messages: list[ChatCompletionMessageParam] = [

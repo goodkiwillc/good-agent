@@ -70,9 +70,7 @@ class TestMessageTokenCounting:
 
     def test_user_message_multiline(self):
         """Test counting tokens in multiline user message."""
-        msg = UserMessage(
-            "This is line 1\nThis is line 2\nThis is line 3\nThis is line 4"
-        )
+        msg = UserMessage("This is line 1\nThis is line 2\nThis is line 3\nThis is line 4")
         count = len(msg)
         assert count > 10
 
@@ -100,9 +98,7 @@ class TestMessageTokenCounting:
             ),
         )
 
-        msg = AssistantMessage(
-            "Let me check the weather for you.", tool_calls=[tool_call]
-        )
+        msg = AssistantMessage("Let me check the weather for you.", tool_calls=[tool_call])
 
         # Count with tools
         count_with_tools = get_message_token_count(msg, include_tools=True)

@@ -243,8 +243,7 @@ def run_agent(
         if not isinstance(agent_obj, Agent):
             agent_type = type(agent_obj).__name__
             print(
-                "Error: The object at "
-                f"'{agent_path}' is not an Agent instance (got {agent_type})."
+                f"Error: The object at '{agent_path}' is not an Agent instance (got {agent_type})."
             )
             return
 

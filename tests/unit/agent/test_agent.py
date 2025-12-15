@@ -1,6 +1,7 @@
 import warnings
 
 import pytest
+
 from good_agent import Agent
 from good_agent.content import FileContentPart, ImageContentPart, TextContentPart
 
@@ -174,9 +175,7 @@ class TestAgentInitialization:
             )
 
             assert agent[-1].role == "user"
-            assert (
-                agent[-1].content == "This is a user message with context 5 10 15 35."
-            )
+            assert agent[-1].content == "This is a user message with context 5 10 15 35."
 
             agent.append(
                 "This is a user message with context {{a}} {{b}} {{c}} {{d}}.",
@@ -210,9 +209,7 @@ class TestAgentInitialization:
 
             @agent.context_provider("current_time")
             def current_time_provider():
-                return str(
-                    _mock_current_time
-                )  # Return string representation, not isoformat
+                return str(_mock_current_time)  # Return string representation, not isoformat
 
             agent.append(
                 "Current time is {{current_time}}.",
@@ -342,9 +339,7 @@ class TestAgentIndexing:
             agent.assistant.append("First assistant response")
             agent.user.append("Second user message")
             agent.assistant.append("Second assistant response")
-            agent.tool.append(
-                "Tool response", tool_name="calculator", tool_call_id="123"
-            )
+            agent.tool.append("Tool response", tool_name="calculator", tool_call_id="123")
             agent.user.append("Third user message")
 
             # Test user message filtering
@@ -426,10 +421,7 @@ class TestAgentIndexing:
             assert image_message.role == "user"
             assert isinstance(image_message.content_parts[0], TextContentPart)
             assert isinstance(image_message.content_parts[1], ImageContentPart)
-            assert (
-                image_message.content_parts[1].image_url
-                == "https://example.com/cat.png"
-            )
+            assert image_message.content_parts[1].image_url == "https://example.com/cat.png"
             assert image_message.content_parts[1].detail == "high"
 
             agent.attach_image(
@@ -491,9 +483,7 @@ class TestAgentIndexing:
             assert len(agent) == 1  # Should replace, not add
 
             # Test system message with configuration
-            agent.system.set(
-                "Configured system prompt", temperature=0.7, max_tokens=1000
-            )
+            agent.system.set("Configured system prompt", temperature=0.7, max_tokens=1000)
             assert agent.system.content == "Configured system prompt"
             assert agent.config.temperature == 0.7
             assert agent.config.max_tokens == 1000
@@ -508,9 +498,7 @@ class TestAgentIndexing:
             for i in range(3):
                 agent.assistant.append(f"Assistant {i}")
             for i in range(2):
-                agent.tool.append(
-                    f"Tool {i}", tool_name=f"tool_{i}", tool_call_id=str(i)
-                )
+                agent.tool.append(f"Tool {i}", tool_name=f"tool_{i}", tool_call_id=str(i))
 
             # Test counts
             assert len(agent) == 11  # 1 system + 5 user + 3 assistant + 2 tool

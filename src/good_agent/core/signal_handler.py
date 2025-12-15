@@ -1,11 +1,11 @@
 import asyncio
+import logging
 import signal
 import sys
 import threading
 import weakref
-from typing import Any, Callable
-
-import logging
+from collections.abc import Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ class _RouterRef:
 
     __slots__ = ("_weakref", "_strong", "_hash")
 
-    def __init__(self, router: Any, finalizer: Callable[["_RouterRef"], None]):
+    def __init__(self, router: Any, finalizer: Callable[[_RouterRef], None]):
         self._hash = id(router)
         self._weakref: weakref.ref[Any] | None = None
         self._strong: Any | None = None
@@ -164,9 +164,7 @@ class SignalHandler:
                 ):
                     # asyncio.Runner handler - don't call from signal context
                     # Instead just raise KeyboardInterrupt which is what it would do
-                    logger.debug(
-                        "Detected asyncio.Runner handler, raising KeyboardInterrupt"
-                    )
+                    logger.debug("Detected asyncio.Runner handler, raising KeyboardInterrupt")
                     raise KeyboardInterrupt()
                 else:
                     # Safe to call other handlers
@@ -319,9 +317,9 @@ class GracefulShutdownMixin:
         # Wait for tasks to complete
         join_coro: Any = None
         if hasattr(self, "join"):
-            join_coro = getattr(self, "join")()
+            join_coro = self.join()
         elif hasattr(self, "join_async"):
-            join_coro = getattr(self, "join_async")()
+            join_coro = self.join_async()
 
         if join_coro is not None:
             try:

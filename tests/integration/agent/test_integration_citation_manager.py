@@ -1,9 +1,10 @@
 import pytest
+from loguru import logger
+
 from good_agent import Agent
 from good_agent.content import RenderMode
-from good_agent.extensions.citations import CitationIndex, CitationManager
 from good_agent.core.types import URL
-from loguru import logger
+from good_agent.extensions.citations import CitationIndex, CitationManager
 
 
 @pytest.mark.asyncio
@@ -142,9 +143,7 @@ class TestCitationExtractionPipeline:
         # XML should use idx attributes
         message = agent.messages[-1]
         # Check the normalized content in content_parts, not str(message) which returns original
-        content = (
-            message.content_parts[0].text if message.content_parts else str(message)
-        )
+        content = message.content_parts[0].text if message.content_parts else str(message)
         assert 'idx="1"' in content
         assert 'idx="2"' in content
         assert 'url="https://example.com/article1"' not in content
@@ -244,9 +243,7 @@ class TestCitationRenderingTransformation:
         # Add message with citations
         citations = [URL("https://example.com/page"), URL("https://test.org/article")]
 
-        agent.append(
-            "See source [!CITE_1!] and reference [!CITE_2!]", citations=citations
-        )
+        agent.append("See source [!CITE_1!] and reference [!CITE_2!]", citations=citations)
 
         message = agent.messages[-1]
 
@@ -386,9 +383,7 @@ class TestRealWorldScenarios:
         )
 
         # 4. User asks follow-up with additional source
-        agent.append(
-            "What about the findings in https://anthropic.com/safety-research?"
-        )
+        agent.append("What about the findings in https://anthropic.com/safety-research?")
 
         # Verify citation management
         assert len(manager.index) == 4  # 3 from search + 1 from user
@@ -449,9 +444,7 @@ class TestRealWorldScenarios:
         # Invoke the tool through the agent's invoke method
         # This tests the internal message routing
         # No need to add_tool - just pass it directly to invoke
-        tool_response = await agent.invoke(
-            tool=search_news, query="Xavier Becerra", max_results=10
-        )
+        tool_response = await agent.invoke(tool=search_news, query="Xavier Becerra", max_results=10)
 
         # Check that the tool executed successfully
         assert tool_response.success
@@ -539,10 +532,7 @@ class TestRealWorldScenarios:
         # Content should be normalized to [!CITE_X!] format for LLM
         # but displayed as markdown links for users
         display_content = str(message)
-        assert (
-            "[climate.nasa.gov](https://climate.nasa.gov/latest-data)"
-            in display_content
-        )
+        assert "[climate.nasa.gov](https://climate.nasa.gov/latest-data)" in display_content
         assert "[nature.com](https://nature.com/climate-study-2024)" in display_content
         assert "[ipcc.ch](https://ipcc.ch/ar6-synthesis)" in display_content
         assert "[1]" not in display_content  # Original format should be replaced
@@ -563,9 +553,7 @@ class TestRealWorldScenarios:
         # Multiple messages referencing same sources
         agent.append("First reference to https://example.com/paper")
 
-        agent.append(
-            "Analysis based on [!CITE_1!]", citations=[URL("https://example.com/paper")]
-        )
+        agent.append("Analysis based on [!CITE_1!]", citations=[URL("https://example.com/paper")])
 
         agent.append("Additional insights from https://example.com/paper")
 
@@ -691,9 +679,7 @@ class TestRealWorldScenarios:
         tool_message = agent.messages[-1]
         # Check the normalized content in content_parts, not str(message) which returns original
         message_content = (
-            tool_message.content_parts[0].text
-            if tool_message.content_parts
-            else str(tool_message)
+            tool_message.content_parts[0].text if tool_message.content_parts else str(tool_message)
         )
         logger.debug(message_content)
 
@@ -787,9 +773,7 @@ class TestRealWorldScenarios:
         tool_message = agent.messages[-1]
         # Check the normalized content in content_parts, not str(message) which returns original
         message_content = (
-            tool_message.content_parts[0].text
-            if tool_message.content_parts
-            else str(tool_message)
+            tool_message.content_parts[0].text if tool_message.content_parts else str(tool_message)
         )
         assert 'idx="1"' in message_content
         assert 'idx="2"' in message_content
@@ -887,9 +871,7 @@ The comprehensive review [3] provides additional insights.
         tool_message = agent.messages[-1]
         # Check the normalized content in content_parts, not str(message) which returns original
         message_content = (
-            tool_message.content_parts[0].text
-            if tool_message.content_parts
-            else str(tool_message)
+            tool_message.content_parts[0].text if tool_message.content_parts else str(tool_message)
         )
 
         # XML urls should be replaced with idx attributes
@@ -942,9 +924,7 @@ Also see https://another-inline.org/reference for more details."""
         tool_message = agent.messages[-1]
         # Check the normalized content in content_parts, not str(message) which returns original
         message_content = (
-            tool_message.content_parts[0].text
-            if tool_message.content_parts
-            else str(tool_message)
+            tool_message.content_parts[0].text if tool_message.content_parts else str(tool_message)
         )
 
         # Inline URLs should be replaced with citations
@@ -1052,9 +1032,7 @@ class TestCitationManagerAPI:
         await agent.initialize()
 
         # Add citations with metadata and tags
-        manager.index.add(
-            URL("https://example.com"), tags=["research"], title="Example Paper"
-        )
+        manager.index.add(URL("https://example.com"), tags=["research"], title="Example Paper")
 
         # Test JSON export
         json_export = manager.export_citations("json")
@@ -1132,9 +1110,7 @@ class TestCitationAdapterIntegration:
 
         # Add various types of URLs to demonstrate different use cases
         research_idx = manager.index.add(URL("https://arxiv.org/abs/2301.07041"))
-        docs_idx = manager.index.add(
-            URL("https://docs.python.org/3/library/asyncio.html")
-        )
+        docs_idx = manager.index.add(URL("https://docs.python.org/3/library/asyncio.html"))
         repo_idx = manager.index.add(URL("https://github.com/microsoft/TypeScript"))
 
         # Step 2: Create agent with citation-aware tools
@@ -1152,9 +1128,7 @@ class TestCitationAdapterIntegration:
 
         # Check that the CitationAdapter was created and registered
         citation_adapter = manager._citation_adapter
-        assert citation_adapter is not None, (
-            "CitationAdapter should be created by manager"
-        )
+        assert citation_adapter is not None, "CitationAdapter should be created by manager"
 
         # Verify adapter recognizes the tools
         should_adapt_url = citation_adapter.should_adapt(fetch_url_tool, agent)
@@ -1198,18 +1172,12 @@ class TestCitationAdapterIntegration:
 
         # Step 5: Test parameter transformation - single URL
         llm_params = {"citation_idx": research_idx, "timeout": 30}
-        transformed_params = citation_adapter.adapt_parameters(
-            "fetch_url", llm_params, agent
-        )
+        transformed_params = citation_adapter.adapt_parameters("fetch_url", llm_params, agent)
 
         # Verify transformation worked correctly
-        assert "citation_idx" not in transformed_params, (
-            "citation_idx should be removed"
-        )
+        assert "citation_idx" not in transformed_params, "citation_idx should be removed"
         assert "url" in transformed_params, "url should be present after transformation"
-        assert str(transformed_params["url"]) == str(
-            manager.index.get_url(research_idx)
-        )
+        assert str(transformed_params["url"]) == str(manager.index.get_url(research_idx))
         assert transformed_params["timeout"] == 30
 
         # Execute tool with transformed parameters
@@ -1224,19 +1192,11 @@ class TestCitationAdapterIntegration:
         )
 
         # Verify transformation worked correctly
-        assert "citation_idxs" not in transformed_multi_params, (
-            "citation_idxs should be removed"
-        )
-        assert "urls" in transformed_multi_params, (
-            "urls should be present after transformation"
-        )
+        assert "citation_idxs" not in transformed_multi_params, "citation_idxs should be removed"
+        assert "urls" in transformed_multi_params, "urls should be present after transformation"
         assert len(transformed_multi_params["urls"]) == 2, "Should have 2 URLs"
-        assert str(transformed_multi_params["urls"][0]) == str(
-            manager.index.get_url(docs_idx)
-        )
-        assert str(transformed_multi_params["urls"][1]) == str(
-            manager.index.get_url(repo_idx)
-        )
+        assert str(transformed_multi_params["urls"][0]) == str(manager.index.get_url(docs_idx))
+        assert str(transformed_multi_params["urls"][1]) == str(manager.index.get_url(repo_idx))
         assert transformed_multi_params["parallel"] is True
 
         # Execute multi-URL tool with transformed parameters
@@ -1257,27 +1217,17 @@ class TestCitationAdapterIntegration:
         )
 
         # Should keep the invalid citation_idx since it couldn't be resolved
-        assert "citation_idx" in invalid_transformed_params, (
-            "Invalid citation_idx should be kept"
-        )
+        assert "citation_idx" in invalid_transformed_params, "Invalid citation_idx should be kept"
         assert invalid_transformed_params["citation_idx"] == 999
-        assert "url" not in invalid_transformed_params, (
-            "url should not be added for invalid index"
-        )
+        assert "url" not in invalid_transformed_params, "url should not be added for invalid index"
 
         # Step 8: Verify tool descriptions were updated
         url_desc = adapted_url_signature["function"]["description"]
         urls_desc = adapted_urls_signature["function"]["description"]
 
-        assert "citation" in url_desc.lower(), (
-            "Tool description should mention citations"
-        )
-        assert "index" in url_desc.lower(), (
-            "Tool description should mention index usage"
-        )
-        assert "citation" in urls_desc.lower(), (
-            "Multi-URL tool should mention citations"
-        )
+        assert "citation" in url_desc.lower(), "Tool description should mention citations"
+        assert "index" in url_desc.lower(), "Tool description should mention index usage"
+        assert "citation" in urls_desc.lower(), "Multi-URL tool should mention citations"
 
         # Step 9: Verify final citation state
         assert len(manager.index.url_to_index) == 3, "Should have 3 citations total"

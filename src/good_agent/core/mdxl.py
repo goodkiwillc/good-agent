@@ -609,9 +609,7 @@ class MDXL:
         def _on_change(obj, key, value, action, is_root):
             """Callback when Box data changes - sync back to YAML text."""
             # Update the YAML text with the modified Box data
-            self.text = yaml.dump(
-                obj.to_dict(), default_flow_style=False, sort_keys=False
-            )
+            self.text = yaml.dump(obj.to_dict(), default_flow_style=False, sort_keys=False)
             # Clear the text cache since content changed
             self._clear_cache()
 
@@ -970,9 +968,7 @@ class MDXL:
 
     # ===== Structure Modification Methods =====
 
-    def append(
-        self, element: str | MDXL | Any, text: str | None = None, **attributes
-    ) -> MDXL:
+    def append(self, element: str | MDXL | Any, text: str | None = None, **attributes) -> MDXL:
         """Append child element to this element.
 
         Args:
@@ -1205,11 +1201,7 @@ class MDXL:
 
         elif isinstance(element, MDXL):
             # For MDXL, use the root element directly if not wrapped
-            if (
-                element._root.tag == "root"
-                and element._parent is None
-                and len(element._root) == 1
-            ):
+            if element._root.tag == "root" and element._parent is None and len(element._root) == 1:
                 # It's a standalone MDXL with single child - use the child
                 return copy.deepcopy(element._root[0])
             else:
@@ -1250,11 +1242,7 @@ class MDXL:
 
             # Check for bold text that appears to be a header
             # (starts and ends with ** and is the only thing on the line)
-            elif (
-                stripped.startswith("**")
-                and stripped.endswith("**")
-                and len(stripped) > 4
-            ):
+            elif stripped.startswith("**") and stripped.endswith("**") and len(stripped) > 4:
                 # Make sure it's not inline bold (check if it's the whole line)
                 if stripped == line.strip():
                     is_bold_header = True
@@ -1297,9 +1285,7 @@ class MDXL:
 
         # Check if element has children or text
         has_children = len(element) > 0
-        has_text = (
-            element.text is not None and element.text.strip()
-        )  # Ignore whitespace-only
+        has_text = element.text is not None and element.text.strip()  # Ignore whitespace-only
 
         # Handle self-closing empty elements
         if not has_children and not has_text:
@@ -1337,9 +1323,7 @@ class MDXL:
 
                 # Check if original has trailing blank lines (2+ newlines)
                 # A single trailing newline is just the line ending, not a blank line
-                has_trailing_blank_line = (
-                    dedented_text.rstrip("\n") != dedented_text.rstrip()
-                )
+                has_trailing_blank_line = dedented_text.rstrip("\n") != dedented_text.rstrip()
 
                 # Strip surrounding whitespace/newlines
                 dedented_text = dedented_text.strip()
@@ -1391,7 +1375,7 @@ class MDXL:
             if has_text:
                 lines.append("")
 
-            for i, child in enumerate(element):
+            for _i, child in enumerate(element):
                 # Format child recursively
                 child_str = self._format_element(child, indent + 1)
                 lines.append(child_str)
@@ -1560,6 +1544,7 @@ class MDXL:
                 current_scope_defs=current_scope_defs,
                 section_refs=section_refs,
                 i=i,
+                current_scope_defs_2=current_scope_defs_2,
             ):
                 idx = match.group(1)
                 url = None

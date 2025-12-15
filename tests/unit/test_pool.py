@@ -155,7 +155,7 @@ class TestAgentPoolIteration:
         second_list = list(pool)
 
         assert len(first_list) == len(second_list) == 3
-        assert all(a is b for a, b in zip(first_list, second_list))
+        assert all(a is b for a, b in zip(first_list, second_list, strict=False))
 
 
 class TestAgentPoolConcurrentAccess:

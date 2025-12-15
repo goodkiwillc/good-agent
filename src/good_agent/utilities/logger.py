@@ -3,22 +3,14 @@ from __future__ import annotations
 import logging
 
 
-def get_logger(name: str | None = None):
-    """
-    Get appropriate logger based on execution context.
+DEFAULT_FORMAT = "%(levelname)s %(name)s - %(message)s"
 
-    RETURNS:
-        Logger instance - Prefect run logger in flow context, standard logger otherwise.
 
-    NOTES:
-        - Automatically detects Prefect execution context
-        - Falls back to standard logging for standalone execution
-        - Provides consistent logging interface across environments
-    """
-    try:
-        from prefect import get_run_logger  # type: ignore[import-not-found]
+def configure_library_logging(level: int = logging.INFO, format: str = DEFAULT_FORMAT, **kwargs):
+    """Configure a basic logging setup for the library if none is present."""
 
-        return get_run_logger()
-    except Exception:
-        # Fallback to standard logging logger if get_run_logger fails
-        return logging.getLogger(name or __name__)
+    root_logger = logging.getLogger()
+    if root_logger.handlers:
+        return
+
+    logging.basicConfig(level=level, format=format, **kwargs)

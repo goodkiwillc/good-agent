@@ -79,9 +79,7 @@ class AgentEvents(StrEnum):
     LLM_ERROR = "llm:error"
 
     TOOLS_PROVIDE = "tools:provide"
-    TOOLS_GENERATE_SIGNATURE = (
-        "tools:generate_signature"  # DEPRECATED: Use tools:provide
-    )
+    TOOLS_GENERATE_SIGNATURE = "tools:generate_signature"  # DEPRECATED: Use tools:provide
 
     # ===== Tool Events =====
     TOOL_CALL_BEFORE = "tool:call:before"

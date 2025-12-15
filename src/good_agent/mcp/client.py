@@ -1,7 +1,7 @@
 import asyncio
+import logging
 from typing import Any, TypedDict
 from urllib.parse import urlparse
-import logging
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
@@ -57,9 +57,7 @@ class MCPClientManager(AgentComponent):
         self._lock = asyncio.Lock()
         self._initialized = False
 
-    async def initialize(
-        self, server_configs: list[str | MCPServerConfig] | None = None
-    ):
+    async def initialize(self, server_configs: list[str | MCPServerConfig] | None = None):
         """
         Initialize the manager and connect to configured servers.
 
@@ -92,9 +90,7 @@ class MCPClientManager(AgentComponent):
 
         for i, result in enumerate(results):
             if isinstance(result, Exception):
-                logger.error(
-                    f"Failed to connect to server {server_configs[i]}: {result}"
-                )
+                logger.error(f"Failed to connect to server {server_configs[i]}: {result}")
 
     async def connect(self, config: MCPServerConfig) -> MCPConnection:
         """
@@ -214,9 +210,7 @@ class MCPClientManager(AgentComponent):
 
                 # Create adapter with namespace if configured
                 namespace = connection.config.get("namespace")
-                tool_name = (
-                    f"{namespace}:{tool_info.name}" if namespace else tool_info.name
-                )
+                tool_name = f"{namespace}:{tool_info.name}" if namespace else tool_info.name
 
                 # Create the adapter
                 adapter: MCPToolAdapter[Any] = MCPToolAdapter(
@@ -232,9 +226,7 @@ class MCPClientManager(AgentComponent):
                 if self.agent and hasattr(self.agent, "tools"):
                     self.agent.tools[tool_name] = adapter
 
-            logger.debug(
-                f"Discovered {len(connection.tools)} tools from {connection.server_id}"
-            )
+            logger.debug(f"Discovered {len(connection.tools)} tools from {connection.server_id}")
 
         except Exception as e:
             logger.error(f"Failed to discover tools from {connection.server_id}: {e}")
@@ -261,9 +253,7 @@ class MCPClientManager(AgentComponent):
                     "description": resource.description
                     if hasattr(resource, "description")
                     else None,
-                    "mimeType": resource.mimeType
-                    if hasattr(resource, "mimeType")
-                    else None,
+                    "mimeType": resource.mimeType if hasattr(resource, "mimeType") else None,
                 }
 
             logger.debug(
@@ -271,9 +261,7 @@ class MCPClientManager(AgentComponent):
             )
 
         except Exception as e:
-            logger.error(
-                f"Failed to discover resources from {connection.server_id}: {e}"
-            )
+            logger.error(f"Failed to discover resources from {connection.server_id}: {e}")
 
     async def disconnect(self, server_id: str):
         """

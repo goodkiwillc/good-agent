@@ -104,9 +104,7 @@ class MessageManager:
         self.agent._update_version()
 
         # Emit consistent MESSAGE_APPEND_AFTER event
-        self.agent.do(
-            AgentEvents.MESSAGE_APPEND_AFTER, message=message, agent=self.agent
-        )
+        self.agent.do(AgentEvents.MESSAGE_APPEND_AFTER, message=message, agent=self.agent)
 
     def replace_message(self, index: int, new_message: Message) -> None:
         """Replace a message at the given index with a new message.
@@ -172,9 +170,7 @@ class MessageManager:
 
         ctx: EventContext[Any, SystemMessage] = self.agent.events.typed(
             return_type=SystemMessage
-        ).apply_sync(
-            AgentEvents.MESSAGE_SET_SYSTEM_BEFORE, output=message, agent=self.agent
-        )
+        ).apply_sync(AgentEvents.MESSAGE_SET_SYSTEM_BEFORE, output=message, agent=self.agent)
 
         if ctx.return_value is not None:
             message = ctx.return_value
@@ -195,9 +191,7 @@ class MessageManager:
         put_message(message)
 
         # Fire the AFTER event so components can modify the system message
-        self.agent.do(
-            AgentEvents.MESSAGE_SET_SYSTEM_AFTER, message=message, agent=self.agent
-        )
+        self.agent.do(AgentEvents.MESSAGE_SET_SYSTEM_AFTER, message=message, agent=self.agent)
 
         # Update version
         self.agent._update_version()

@@ -3,6 +3,7 @@ import json
 from typing import Any, cast
 
 import pytest
+
 from good_agent import Agent
 from good_agent.messages import AssistantMessage, ToolCall, ToolMessage
 from good_agent.tools import ToolCallFunction, ToolContext, ToolResponse, tool
@@ -44,9 +45,7 @@ class TestAgentInvoke:
             # Assistant message was created by invoke
             assistant_msg = agent[-2]
             assert isinstance(assistant_msg, AssistantMessage)
-            assert (
-                assistant_msg.content == ""
-            )  # Tool calls typically have empty content
+            assert assistant_msg.content == ""  # Tool calls typically have empty content
             tool_calls = assistant_msg.tool_calls
             assert tool_calls is not None
             assert len(tool_calls) == 1
@@ -72,9 +71,7 @@ class TestAgentInvoke:
             return x * 2
 
         async with Agent("Test agent", tools=[simple_tool_custom_id]) as agent:
-            result = await agent.invoke(
-                simple_tool_custom_id, tool_call_id="custom_id_123", x=10
-            )
+            result = await agent.invoke(simple_tool_custom_id, tool_call_id="custom_id_123", x=10)
 
             assert result.tool_call_id == "custom_id_123"
             tool_msg = agent[-1]
@@ -280,9 +277,9 @@ class TestAgentInvoke:
             return x + y
 
         tool_decorator = cast(Any, tool)
-        calc = tool_decorator(
-            name="custom_calculator", description="A custom calculator tool"
-        )(calc_impl)
+        calc = tool_decorator(name="custom_calculator", description="A custom calculator tool")(
+            calc_impl
+        )
 
         async with Agent("Test agent", tools=[calc]) as agent:
             result = await agent.invoke(calc, x=10, y=20)
@@ -340,9 +337,7 @@ class TestAgentInvokeFunc:
             return x * 2
 
         async with Agent("Test agent", tools=[simple_tool_with_id]) as agent:
-            bound_func = agent.invoke_func(
-                simple_tool_with_id, tool_call_id="preset_id_456"
-            )
+            bound_func = agent.invoke_func(simple_tool_with_id, tool_call_id="preset_id_456")
 
             result = await bound_func(x=7)
             assert result.tool_call_id == "preset_id_456"
@@ -437,9 +432,7 @@ class TestAgentInvokeMany:
             raise RuntimeError("This tool always fails")
 
         async with Agent("Test agent", tools=[safe_tool, failing_tool]) as agent:
-            results = await agent.invoke_many(
-                [(safe_tool, {"x": 10}), (failing_tool, {"x": 20})]
-            )
+            results = await agent.invoke_many([(safe_tool, {"x": 10}), (failing_tool, {"x": 20})])
 
             assert len(results) == 2
             assert results[0].success is True
@@ -505,9 +498,7 @@ class TestAgentInvokeMany:
             return x * 2
 
         async with Agent("Test agent", tools=[tool_a, tool_b]) as agent:
-            results = await agent.invoke_many(
-                [(tool_a, {"x": 10}), ("tool_b", {"x": 20})]
-            )
+            results = await agent.invoke_many([(tool_a, {"x": 10}), ("tool_b", {"x": 20})])
 
             assert len(results) == 2
             assert results[0].response == 11
@@ -658,9 +649,7 @@ class TestAgentInvokeManyFunc:
             return val * 10
 
         async with Agent("Test agent", tools=[tool_x, tool_y]) as agent:
-            bound_func = agent.invoke_many_func(
-                [(tool_x, {"val": 5}), ("tool_y", {"val": 7})]
-            )
+            bound_func = agent.invoke_many_func([(tool_x, {"val": 5}), ("tool_y", {"val": 7})])
 
             results = await bound_func()
             assert len(results) == 2
@@ -724,9 +713,7 @@ class TestAgentInvokeEdgeCases:
             tool_call = ToolCall(
                 id="test_call_1",
                 type="function",
-                function=ToolCallFunction(
-                    name="dummy_tool", arguments=json.dumps({"x": 5})
-                ),
+                function=ToolCallFunction(name="dummy_tool", arguments=json.dumps({"x": 5})),
             )
             agent.assistant.append("", tool_calls=[tool_call])
 
@@ -789,9 +776,7 @@ class TestAgentInvokeEdgeCases:
             tool_call = ToolCall(
                 id="unknown_call",
                 type="function",
-                function=ToolCallFunction(
-                    name="unknown_tool", arguments=json.dumps({"x": 5})
-                ),
+                function=ToolCallFunction(name="unknown_tool", arguments=json.dumps({"x": 5})),
             )
             agent.assistant.append("", tool_calls=[tool_call])
 

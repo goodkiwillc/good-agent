@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent
 from good_agent.content import RenderMode
 from good_agent.extensions.citations import CitationManager
@@ -83,9 +84,7 @@ class TestMessageCreationWithCitations:
 
             # Content should have idx attributes
             rendered = message.render(RenderMode.DISPLAY)
-            assert (
-                'idx="1"' in rendered or 'url="https://example.com/item1"' in rendered
-            )
+            assert 'idx="1"' in rendered or 'url="https://example.com/item1"' in rendered
 
 
 class TestLocalCitationStorage:
@@ -156,10 +155,7 @@ class TestMessageRenderingForDisplay:
             rendered = message.render(RenderMode.DISPLAY)
 
             # Should have markdown link format [domain](url)
-            assert (
-                "[example.com](https://example.com/study.pdf)" in rendered
-                or "[1]" in rendered
-            )
+            assert "[example.com](https://example.com/study.pdf)" in rendered or "[1]" in rendered
             # Reference block should be removed
             assert "[1]:" not in rendered
 
@@ -182,9 +178,7 @@ class TestMessageRenderingForDisplay:
             rendered = message.render(RenderMode.DISPLAY)
 
             # idx should convert to url for display
-            assert (
-                'url="https://example.com/item1"' in rendered or 'idx="1"' in rendered
-            )
+            assert 'url="https://example.com/item1"' in rendered or 'idx="1"' in rendered
 
 
 class TestMessageRenderingForLLM:

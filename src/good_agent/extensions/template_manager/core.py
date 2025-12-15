@@ -1,16 +1,17 @@
-import asyncio
+import inspect
 import logging
+import os
 from collections import ChainMap
 from collections.abc import Callable
+from datetime import UTC
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from jinja2 import ChoiceLoader
 
-from good_agent.core.components import AgentComponent
 from good_agent.core import templating
+from good_agent.core.components import AgentComponent
 from good_agent.events import AgentEvents
-
 from good_agent.extensions.template_manager.injection import (
     ContextResolver,
     _modify_function_for_injection,
@@ -71,9 +72,9 @@ def _provide_today():
         return now.replace(hour=0, minute=0, second=0, microsecond=0)
     except ImportError:
         # Fall back to UTC if good_common is not available
-        from datetime import datetime, timezone
+        from datetime import datetime
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         # Return datetime at midnight for consistency
         return now.replace(hour=0, minute=0, second=0, microsecond=0)
 
@@ -92,14 +93,24 @@ def _provide_now():
         return now_pt()
     except ImportError:
         # Fall back to UTC if good_common is not available
-        from datetime import datetime, timezone
+        from datetime import datetime
 
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
 
 def find_prompts_directory() -> Path | None:
-    """Find the prompts directory by looking for prompts.yaml."""
+    """Find the prompts directory from env override or by looking for prompts.yaml."""
+    env_dir = os.getenv("GOOD_AGENT_PROMPTS_DIR")
+    logger.info("Searching for prompts directory...")
+    if env_dir:
+        env_path = Path(env_dir).expanduser()
+        logger.info(f"Using prompts directory from GOOD_AGENT_PROMPTS_DIR: {env_path}")
+        if env_path.exists():
+            return env_path
+
     current = Path.cwd()
+
+    logger.info(current)
 
     # Check current directory and parents
     for directory in [current] + list(current.parents):
@@ -187,6 +198,11 @@ class TemplateManager(AgentComponent):
         self._context_stack: list[dict[str, Any]] = []
         self.use_sandbox = use_sandbox
 
+        logger.info(
+            f"Initializing TemplateManager with file templates "
+            f"{'enabled' if enable_file_templates else 'disabled'}."
+        )
+
         # Initialize context resolver
         self._context_resolver = ContextResolver(self)
 
@@ -197,9 +213,7 @@ class TemplateManager(AgentComponent):
         self._template_cache: dict[str, Any] = {}
 
         # Create a local registry with the global registry as parent
-        self._registry = templating.TemplateRegistry(
-            parent=templating.TEMPLATE_REGISTRY
-        )
+        self._registry = templating.TemplateRegistry(parent=templating.TEMPLATE_REGISTRY)
 
         # Set up the environment
         if enable_file_templates:
@@ -207,7 +221,7 @@ class TemplateManager(AgentComponent):
         else:
             # Basic environment without file support
             self._env = templating.create_environment(
-                config=dict(trim_blocks=False),
+                config={"trim_blocks": False},
                 loader=self._registry,
                 use_sandbox=self.use_sandbox,
             )
@@ -224,9 +238,7 @@ class TemplateManager(AgentComponent):
         state["context_providers"] = dict(self._context_providers)
         state["context_stack"] = [dict(ctx) for ctx in self._context_stack]
         state["template_cache"] = dict(self._template_cache)
-        state["registry_maps"] = [
-            dict(mapping) for mapping in self._registry.templates.maps
-        ]
+        state["registry_maps"] = [dict(mapping) for mapping in self._registry.templates.maps]
         return state
 
     def _import_state(self, state: dict[str, Any]) -> None:
@@ -238,9 +250,7 @@ class TemplateManager(AgentComponent):
         if registry_maps is not None:
             from collections import ChainMap
 
-            self._registry._templates = ChainMap(
-                *[dict(mapping) for mapping in registry_maps]
-            )
+            self._registry._templates = ChainMap(*[dict(mapping) for mapping in registry_maps])
 
     def context_provider(self, name: str):
         """Register an instance-specific context provider with dependency injection support"""
@@ -255,16 +265,14 @@ class TemplateManager(AgentComponent):
             needs_agent = False
             needs_message = False
 
-            for param_name, param in sig.parameters.items():
+            for _param_name, param in sig.parameters.items():
                 if param.annotation == inspect.Parameter.empty:
                     continue
                 # Check for Agent type without Depends
                 param_type = str(param.annotation)
                 if "Agent" in param_type and param.default == inspect.Parameter.empty:
                     needs_agent = True
-                elif (
-                    "Message" in param_type and param.default == inspect.Parameter.empty
-                ):
+                elif "Message" in param_type and param.default == inspect.Parameter.empty:
                     needs_message = True
 
             if needs_agent or needs_message:
@@ -272,11 +280,7 @@ class TemplateManager(AgentComponent):
                 @functools.wraps(func)
                 async def agent_wrapper(*args, **kwargs):
                     # Inject agent and message if needed
-                    if (
-                        needs_agent
-                        and "agent" not in kwargs
-                        and hasattr(self, "_agent")
-                    ):
+                    if needs_agent and "agent" not in kwargs and hasattr(self, "_agent"):
                         kwargs["agent"] = self._agent
                     if needs_message and "message" not in kwargs:
                         # Get last message if available
@@ -289,7 +293,7 @@ class TemplateManager(AgentComponent):
                                 kwargs["message"] = self._agent.messages[-1]
 
                     # Call the function
-                    if asyncio.iscoroutinefunction(func):
+                    if inspect.iscoroutinefunction(func):
                         return await func(*args, **kwargs)
                     else:
                         return func(*args, **kwargs)
@@ -315,6 +319,8 @@ class TemplateManager(AgentComponent):
             FileSystemStorage,
             StorageTemplateLoader,
         )
+
+        logger.info("Setting up file-based template loading...")
 
         # Build storage chain
         storages = []
@@ -365,7 +371,7 @@ class TemplateManager(AgentComponent):
         else:
             # No file sources found, use basic environment
             self._env = templating.create_environment(
-                config=dict(trim_blocks=False),
+                config={"trim_blocks": False},
                 loader=self._registry,
                 use_sandbox=self.use_sandbox,
             )
@@ -517,9 +523,7 @@ class TemplateManager(AgentComponent):
         for key in provider_keys:
             if key not in resolved_base:
                 try:
-                    value = await self._context_resolver.resolve_value(
-                        key, resolved_base
-                    )
+                    value = await self._context_resolver.resolve_value(key, resolved_base)
                     resolved_base[key] = value
                 except Exception:
                     # Skip failed providers in production
@@ -550,9 +554,7 @@ class TemplateManager(AgentComponent):
 
         # Use our enhanced environment with file loaders if available
         try:
-            result = templating.render_template(
-                template, resolved_context, environment=self._env
-            )
+            result = templating.render_template(template, resolved_context, environment=self._env)
         except Exception:
             # Re-raise template errors to make them fatal
             raise
@@ -663,7 +665,7 @@ class TemplateManager(AgentComponent):
                     )
 
                 # Only support sync providers in sync context
-                if not asyncio.iscoroutinefunction(provider):
+                if not inspect.iscoroutinefunction(provider):
                     value = provider()
 
                     # Emit context:provider:response event (modifiable)
@@ -695,7 +697,7 @@ class TemplateManager(AgentComponent):
                     )
 
                 # Only support sync providers in sync context
-                if not asyncio.iscoroutinefunction(provider):
+                if not inspect.iscoroutinefunction(provider):
                     value = provider()
 
                     # Emit context:provider:response event (modifiable)

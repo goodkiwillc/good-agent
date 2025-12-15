@@ -124,7 +124,7 @@ class ModelCapabilities:
         }
 
         for key, value in kwargs.items():
-            target = incoming_map.get(key, None)
+            target = incoming_map.get(key)
             if target and hasattr(self, target):
                 setattr(self, target, value)
 
@@ -224,12 +224,8 @@ class ModelOverride:
 
     model_pattern: str  # Can be exact match or pattern like "gpt-5*"
     parameter_overrides: dict[str, ParameterOverride] = field(default_factory=dict)
-    defaults: dict[str, Any] = field(
-        default_factory=dict
-    )  # Default values for this model
-    capabilities: ModelCapabilities = field(
-        default_factory=ModelCapabilities
-    )  # Model capabilities
+    defaults: dict[str, Any] = field(default_factory=dict)  # Default values for this model
+    capabilities: ModelCapabilities = field(default_factory=ModelCapabilities)  # Model capabilities
 
     def matches(self, model_name: str) -> bool:
         """Check if this override applies to the given model"""
@@ -399,9 +395,7 @@ class ModelOverrideRegistry:
         for override in self._overrides:
             if override.matches(model_name):
                 # Only apply overrides for parameters not yet processed
-                filtered_config = {
-                    k: v for k, v in result.items() if k not in applied_params
-                }
+                filtered_config = {k: v for k, v in result.items() if k not in applied_params}
                 override_result = override.apply_to_config(filtered_config)
 
                 # Track which parameters were processed

@@ -1,5 +1,7 @@
+from collections.abc import MutableMapping
+from typing import Any, Protocol, cast
+
 import markdown
-from typing import Any, MutableMapping, Protocol, cast
 
 from good_agent.core.markdown import CitationManager, CitationPreprocessor
 

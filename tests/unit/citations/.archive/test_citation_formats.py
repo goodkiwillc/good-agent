@@ -96,9 +96,7 @@ class TestCitationExtractor:
 
     def test_extract_xml_idx_citations(self):
         """Test extracting XML idx citations."""
-        text = (
-            '<search_result idx="1">Result 1</search_result><item idx="2">Item</item>'
-        )
+        text = '<search_result idx="1">Result 1</search_result><item idx="2">Item</item>'
 
         matches = CitationExtractor.extract_citations(text, CitationFormat.XML_IDX)
 
@@ -180,9 +178,7 @@ class TestCitationTransformer:
         text = "See [1] and [2] for details."
         mapping = {1: 101, 2: 102}  # Local -> Global mapping
 
-        result = CitationTransformer.transform_to_llm_format(
-            text, mapping, CitationFormat.MARKDOWN
-        )
+        result = CitationTransformer.transform_to_llm_format(text, mapping, CitationFormat.MARKDOWN)
 
         expected = "See [!CITE_101!] and [!CITE_102!] for details."
         assert result == expected
@@ -192,9 +188,7 @@ class TestCitationTransformer:
         text = '<item idx="1">Content</item><ref idx="2"/>'
         mapping = {1: 5, 2: 6}
 
-        result = CitationTransformer.transform_to_llm_format(
-            text, mapping, CitationFormat.XML_IDX
-        )
+        result = CitationTransformer.transform_to_llm_format(text, mapping, CitationFormat.XML_IDX)
 
         expected = '<item idx="5">Content</item><ref idx="6"/>'
         assert result == expected
@@ -204,9 +198,7 @@ class TestCitationTransformer:
         text = "Check [!CITE_1!] and [!CITE_2!]"
         mapping = {1: 10, 2: 11}
 
-        result = CitationTransformer.transform_to_llm_format(
-            text, mapping, CitationFormat.LLM
-        )
+        result = CitationTransformer.transform_to_llm_format(text, mapping, CitationFormat.LLM)
 
         expected = "Check [!CITE_10!] and [!CITE_11!]"
         assert result == expected
@@ -219,9 +211,7 @@ class TestCitationTransformer:
             URL("https://research.org/paper"),
         ]
 
-        result = CitationTransformer.transform_to_user_format(
-            text, citations, CitationFormat.LLM
-        )
+        result = CitationTransformer.transform_to_user_format(text, citations, CitationFormat.LLM)
 
         expected = "See [example.com](https://example.com/study) and [research.org](https://research.org/paper) for details."
         assert result == expected
@@ -245,9 +235,7 @@ class TestCitationTransformer:
         text = "See [!CITE_1!] and [!CITE_5!]"  # Index 5 doesn't exist
         citations = [URL("https://example.com")]  # Only 1 citation
 
-        result = CitationTransformer.transform_to_user_format(
-            text, citations, CitationFormat.LLM
-        )
+        result = CitationTransformer.transform_to_user_format(text, citations, CitationFormat.LLM)
 
         # Should transform valid index, leave invalid unchanged
         assert "[example.com](https://example.com" in result  # May have trailing slash
@@ -258,9 +246,7 @@ class TestCitationTransformer:
         """Test extracting and normalizing mixed citation formats."""
         text = "Visit https://example.com and see [1] for more details."
 
-        normalized_text, citations = (
-            CitationTransformer.extract_and_normalize_citations(text)
-        )
+        normalized_text, citations = CitationTransformer.extract_and_normalize_citations(text)
 
         # Should extract inline URL
         assert len(citations) == 1
@@ -275,10 +261,8 @@ class TestCitationTransformer:
         text = "New source https://new.com and existing [1]"
         existing_citations = [URL("https://existing.com")]
 
-        normalized_text, citations = (
-            CitationTransformer.extract_and_normalize_citations(
-                text, existing_citations
-            )
+        normalized_text, citations = CitationTransformer.extract_and_normalize_citations(
+            text, existing_citations
         )
 
         # Should extend existing citations
@@ -294,9 +278,7 @@ class TestCitationTransformer:
         """Test handling duplicate URLs in normalization."""
         text = "Visit https://example.com and also https://example.com again."
 
-        normalized_text, citations = (
-            CitationTransformer.extract_and_normalize_citations(text)
-        )
+        normalized_text, citations = CitationTransformer.extract_and_normalize_citations(text)
 
         # Should deduplicate URLs
         assert len(citations) == 1
@@ -336,9 +318,7 @@ class TestCitationFormatsEdgeCases:
 
         # Mixed formats in same text
         text = "Check [1] and [!CITE_2!]"
-        markdown_matches = CitationExtractor.extract_citations(
-            text, CitationFormat.MARKDOWN
-        )
+        markdown_matches = CitationExtractor.extract_citations(text, CitationFormat.MARKDOWN)
         llm_matches = CitationExtractor.extract_citations(text, CitationFormat.LLM)
 
         assert len(markdown_matches) == 1
@@ -365,9 +345,7 @@ class TestCitationFormatsEdgeCases:
         """Test handling very large citation indices."""
         text = "See [999999] and [!CITE_1000000!]"
 
-        markdown_matches = CitationExtractor.extract_citations(
-            text, CitationFormat.MARKDOWN
-        )
+        markdown_matches = CitationExtractor.extract_citations(text, CitationFormat.MARKDOWN)
         llm_matches = CitationExtractor.extract_citations(text, CitationFormat.LLM)
 
         assert len(markdown_matches) == 1

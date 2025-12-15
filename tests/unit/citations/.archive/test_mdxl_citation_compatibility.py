@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent
 from good_agent.content import RenderMode
 from good_agent.extensions.citations import CitationManager
@@ -20,9 +21,9 @@ class TestMDXLCitationCompatibility:
                 The research [3] shows important findings.
             </content>
         </document>
-        
+
         [1]: https://example.com/paper1.pdf
-        [2]: https://example.com/paper2.pdf  
+        [2]: https://example.com/paper2.pdf
         [3]: https://example.com/research.pdf
         """
 
@@ -132,11 +133,11 @@ class TestMDXLCitationCompatibility:
         mdxl_content = """
         <document>
             <content>
-                Some citations use markdown format [1] while others 
+                Some citations use markdown format [1] while others
                 use the LLM format [!CITE_10!] in the same document.
             </content>
         </document>
-        
+
         [1]: https://markdown.com/ref.pdf
         """
 
@@ -196,7 +197,7 @@ class TestMDXLCitationCompatibility:
                 New document with citations [1], [2], [3].
             </content>
         </document>
-        
+
         [1]: https://new.com/ref1.pdf
         [2]: https://new.com/ref2.pdf
         [3]: https://new.com/ref3.pdf

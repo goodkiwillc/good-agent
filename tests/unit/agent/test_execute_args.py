@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent
 from good_agent.messages import AssistantMessage, UserMessage
 
@@ -12,9 +13,7 @@ class TestExecuteArgs:
         agent = Agent("System prompt")
 
         # Mock response
-        with agent.mock(
-            agent.mock.create("I heard you", role="assistant")
-        ) as mock_agent:
+        with agent.mock(agent.mock.create("I heard you", role="assistant")) as mock_agent:
             # Execute with message content
             messages = []
             async for message in mock_agent.execute("Hello there"):

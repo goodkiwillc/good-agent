@@ -1,6 +1,7 @@
 import asyncio
 
 import pytest
+
 from good_agent import Agent, global_context_provider
 from good_agent.messages import UserMessage
 
@@ -10,18 +11,14 @@ class TestTemplateContext:
 
     def test_basic_context(self):
         """Test basic context on agent"""
-        agent = Agent(
-            "System prompt", context={"location": "New York", "unit": "Celsius"}
-        )
+        agent = Agent("System prompt", context={"location": "New York", "unit": "Celsius"})
 
         assert agent.vars["location"] == "New York"
         assert agent.vars["unit"] == "Celsius"
 
     def test_context_manager(self):
         """Test temporary context override"""
-        agent = Agent(
-            "System prompt", context={"location": "New York", "unit": "Celsius"}
-        )
+        agent = Agent("System prompt", context={"location": "New York", "unit": "Celsius"})
 
         # Test original context
         assert agent.vars["location"] == "New York"
@@ -97,9 +94,7 @@ class TestTemplateContext:
             return "2024-01-01T12:00:00"
 
         # Resolve context with providers
-        resolved = await agent.template.resolve_context(
-            {"base": "value"}, {"override": "value2"}
-        )
+        resolved = await agent.template.resolve_context({"base": "value"}, {"override": "value2"})
 
         assert resolved["base"] == "value"
         assert resolved["override"] == "value2"
@@ -162,18 +157,14 @@ class TestTemplateContext:
             def global_provider():
                 return "global"
 
-            async with Agent(
-                "System prompt", context={"priority_test": "agent"}
-            ) as agent:
+            async with Agent("System prompt", context={"priority_test": "agent"}) as agent:
                 # Set up instance provider
                 @agent.context_provider("priority_test")
                 def instance_provider():
                     return "instance"
 
                 # Test resolution - agent context should win over providers
-                resolved = await agent.template.resolve_context(
-                    agent.vars.as_dict(), None
-                )
+                resolved = await agent.template.resolve_context(agent.vars.as_dict(), None)
                 assert resolved["priority_test"] == "agent"
 
                 # Test with message context - should override everything

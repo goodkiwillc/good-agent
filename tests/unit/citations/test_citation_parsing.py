@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent.extensions.citations import CitationManager
 
 
@@ -43,9 +44,7 @@ This is a sample markdown content with citations [1] and [2].
             "https://example.com/source2.html",
         ]
 
-        parsed_content, extracted_citations = citation_manager.parse(
-            content, content_format="llm"
-        )
+        parsed_content, extracted_citations = citation_manager.parse(content, content_format="llm")
 
         assert (
             parsed_content.strip()
@@ -137,9 +136,7 @@ This content uses XML-style tags for some sections.
         [1]: https://example.com/source1.pdf
         """
 
-        parsed_content, extracted_citations = citation_manager.parse(
-            content, content_format="llm"
-        )
+        parsed_content, extracted_citations = citation_manager.parse(content, content_format="llm")
 
         assert (
             parsed_content.strip()
@@ -231,9 +228,7 @@ This content uses inline citations (see https://example.com/source1.pdf)."""
         - Angle brackets: <https://example.com/page4>
         """
 
-        _, extracted_citations = citation_manager.parse(
-            content, content_format="markdown"
-        )
+        _, extracted_citations = citation_manager.parse(content, content_format="markdown")
 
         # Should extract URLs (excluding those in quotes to avoid href conflicts)
         assert len(extracted_citations) == 3
@@ -253,9 +248,7 @@ This content uses inline citations (see https://example.com/source1.pdf)."""
         [source]: https://example.com/source2.html
         """
 
-        _, extracted_citations = citation_manager.parse(
-            content, content_format="markdown"
-        )
+        _, extracted_citations = citation_manager.parse(content, content_format="markdown")
 
         # Should extract both citations
         assert len(extracted_citations) == 2
@@ -297,8 +290,6 @@ This content uses inline citations (see https://example.com/source1.pdf)."""
         assert citations == []
 
         # Whitespace only
-        parsed, citations = citation_manager.parse(
-            "   \n\n   ", content_format="markdown"
-        )
+        parsed, citations = citation_manager.parse("   \n\n   ", content_format="markdown")
         assert parsed.strip() == ""
         assert citations == []

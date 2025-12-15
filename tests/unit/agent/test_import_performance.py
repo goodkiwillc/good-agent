@@ -56,9 +56,7 @@ heavy_modules = ['litellm', 'litellm.utils', 'litellm.types']
 imported_heavy = [m for m in heavy_modules if m in sys.modules]
 print(','.join(imported_heavy) if imported_heavy else 'NONE')
 """
-        result = subprocess.run(
-            [sys.executable, "-c", code], capture_output=True, text=True
-        )
+        result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
 
         imported = result.stdout.strip()
 
@@ -148,9 +146,7 @@ for module in isolated_modules:
 
 print('|'.join(results))
 """
-        result = subprocess.run(
-            [sys.executable, "-c", code], capture_output=True, text=True
-        )
+        result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
 
         if result.returncode == 0:
             times = result.stdout.strip().split("|")
@@ -162,9 +158,7 @@ print('|'.join(results))
                         print(f"  {module:20} {float(time) * 1000:7.1f} ms")
 
     @pytest.mark.performance
-    @pytest.mark.skipif(
-        sys.platform == "win32", reason="Memory profiling not reliable on Windows"
-    )
+    @pytest.mark.skipif(sys.platform == "win32", reason="Memory profiling not reliable on Windows")
     def test_import_memory_usage(self):
         """Monitor memory usage during import."""
         code = """
@@ -188,9 +182,7 @@ total_kb = sum(stat.size_diff for stat in stats) / 1024
 
 print(f"{total_kb:.1f}")
 """
-        result = subprocess.run(
-            [sys.executable, "-c", code], capture_output=True, text=True
-        )
+        result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
 
         if result.returncode == 0:
             memory_kb = float(result.stdout.strip())
@@ -202,15 +194,11 @@ print(f"{total_kb:.1f}")
 
 
 @pytest.mark.benchmark
-@pytest.mark.skipif(
-    "benchmark" not in dir(pytest), reason="pytest-benchmark not installed"
-)
+@pytest.mark.skipif("benchmark" not in dir(pytest), reason="pytest-benchmark not installed")
 class TestImportBenchmarks:
     """Benchmark tests for tracking import performance over time."""
 
-    @pytest.mark.skipif(
-        True, reason="pytest-benchmark not installed, skipping benchmark tests"
-    )
+    @pytest.mark.skipif(True, reason="pytest-benchmark not installed, skipping benchmark tests")
     def test_benchmark_minimal_import(self, benchmark):
         """Benchmark minimal import scenario."""
 
@@ -226,9 +214,7 @@ class TestImportBenchmarks:
         # Run benchmark
         benchmark(import_minimal)
 
-    @pytest.mark.skipif(
-        True, reason="pytest-benchmark not installed, skipping benchmark tests"
-    )
+    @pytest.mark.skipif(True, reason="pytest-benchmark not installed, skipping benchmark tests")
     def test_benchmark_full_import(self, benchmark):
         """Benchmark full import with all features."""
 
@@ -236,9 +222,7 @@ class TestImportBenchmarks:
             # Clear module cache
             import sys
 
-            modules_to_clear = [
-                m for m in sys.modules.keys() if m.startswith("good_agent")
-            ]
+            modules_to_clear = [m for m in sys.modules.keys() if m.startswith("good_agent")]
             for m in modules_to_clear:
                 del sys.modules[m]
 

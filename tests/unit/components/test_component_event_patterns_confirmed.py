@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent, AgentComponent, AgentEvents
 from good_agent.core.event_router import EventContext, on
 
@@ -113,9 +114,7 @@ class TestComponentEventPatternsConfirmed:
 
         # ✅ Verify that AgentComponent prevents auto-registration on itself
         # (to avoid double registration when used with agent)
-        assert len(component._events) == 0, (
-            "Component should not auto-register handlers on itself"
-        )
+        assert len(component._events) == 0, "Component should not auto-register handlers on itself"
 
         # ✅ Verify decorator handlers work with agent
         async with Agent("Test system", extensions=[component]) as agent:
@@ -166,9 +165,7 @@ class TestComponentEventPatternsConfirmed:
             decorator_events = [e for e in component.decorator_events if "message" in e]
             manual_events = [e for e in component.manual_events if "message" in e]
 
-            assert len(decorator_events) > 0, (
-                f"Decorator events: {component.decorator_events}"
-            )
+            assert len(decorator_events) > 0, f"Decorator events: {component.decorator_events}"
             assert len(manual_events) > 0, f"Manual events: {component.manual_events}"
 
         print("✅ CONFIRMED: Hybrid pattern (decorator + manual) works!")
@@ -184,9 +181,7 @@ class TestComponentEventPatternsConfirmed:
             # ✅ Test enabled state (both patterns fire)
             agent.append("Enabled state test")
 
-            decorator_count = len(
-                [e for e in component.decorator_events if "message" in e]
-            )
+            decorator_count = len([e for e in component.decorator_events if "message" in e])
             manual_count = len([e for e in component.manual_events if "message" in e])
 
             assert decorator_count > 0, "Decorator handlers should fire when enabled"
@@ -201,17 +196,11 @@ class TestComponentEventPatternsConfirmed:
 
             # Manual handlers check self.enabled
             disabled_manual = [e for e in component.manual_events if "message" in e]
-            assert len(disabled_manual) == 0, (
-                "Manual handlers should respect enabled=False"
-            )
+            assert len(disabled_manual) == 0, "Manual handlers should respect enabled=False"
 
             # Decorator handlers don't auto-check enabled (developer choice)
-            disabled_decorator = [
-                e for e in component.decorator_events if "message" in e
-            ]
-            assert len(disabled_decorator) > 0, (
-                "Decorator handlers don't auto-check enabled"
-            )
+            disabled_decorator = [e for e in component.decorator_events if "message" in e]
+            assert len(disabled_decorator) > 0, "Decorator handlers don't auto-check enabled"
 
         print("✅ CONFIRMED: Component state integration works as expected!")
 
@@ -271,9 +260,7 @@ async def test_eventrouter_inheritance_final_proof():
 
     # ✅ Decorated handlers are NOT auto-registered on component itself
     # (This is intentional to prevent double registration with agent)
-    assert len(component._events) == 0, (
-        "Component should not auto-register decorated handlers"
-    )
+    assert len(component._events) == 0, "Component should not auto-register decorated handlers"
 
     # ✅ But metadata is preserved for registration with agent
     assert hasattr(component.on_message_decorator, "_event_handler_config")
@@ -291,9 +278,7 @@ async def test_eventrouter_inheritance_final_proof():
 
     assert "direct_eventrouter_usage" in test_events
 
-    print(
-        "✅ FINAL CONFIRMATION: AgentComponent fully supports EventRouter functionality!"
-    )
+    print("✅ FINAL CONFIRMATION: AgentComponent fully supports EventRouter functionality!")
 
 
 if __name__ == "__main__":

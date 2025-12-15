@@ -27,9 +27,7 @@ class EditableResource(StatefulResource[str]):
         from good_agent import tool
 
         @tool(name="read", description="Read the current content")  # type: ignore[arg-type,misc]
-        async def read(
-            start_line: int | None = None, num_lines: int | None = None
-        ) -> str:
+        async def read(start_line: int | None = None, num_lines: int | None = None) -> str:
             """Read document content."""
             lines = self.state.split("\n")
 
@@ -44,14 +42,10 @@ class EditableResource(StatefulResource[str]):
             # Return with line numbers
             # Fix: enumerate's start affects the iteration count, not the line number display
             actual_start = start_line or 1
-            return "\n".join(
-                f"{actual_start + i:4}: {line}" for i, line in enumerate(lines)
-            )
+            return "\n".join(f"{actual_start + i:4}: {line}" for i, line in enumerate(lines))
 
         @tool(name="replace", description="Replace text in document")  # type: ignore[arg-type,misc]
-        async def replace(
-            old_text: str, new_text: str, all_occurrences: bool = False
-        ) -> str:
+        async def replace(old_text: str, new_text: str, all_occurrences: bool = False) -> str:
             """Replace text in document."""
             content = self.state
 

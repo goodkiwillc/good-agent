@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import functools
 import logging
 import warnings
@@ -20,6 +21,7 @@ from typing import (
     Literal,
     ParamSpec,
     Self,
+    TypeAlias,
     TypedDict,
     TypeGuard,
     TypeVar,
@@ -118,7 +120,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-type FilterPattern = str
+FilterPattern: TypeAlias = str
 
 P_Message = TypeVar("P_Message", bound=Message)
 
@@ -366,9 +368,7 @@ class Agent(EventRouter):
             multi_turn=multi_turn,
         ).as_tool()
 
-    def print(
-        self, message: int | Message | None = None, mode: str | None = None
-    ) -> None:
+    def print(self, message: int | Message | None = None, mode: str | None = None) -> None:
         """
         Pretty print a message using rich.
 
@@ -459,9 +459,7 @@ class Agent(EventRouter):
 
         # Initialize identifiers
         self._id = create_monotonic_ulid()
-        self._session_id = (
-            self._id
-        )  # Session ID starts as agent ID, but can be overridden
+        self._session_id = self._id  # Session ID starts as agent ID, but can be overridden
         self._name = self.config.get("name")
 
         # Initialize versioning infrastructure
@@ -515,9 +513,7 @@ class Agent(EventRouter):
 
         # Initialize message sequence validator
         validation_mode = config.get("message_validation_mode", "warn")
-        self._sequence_validator = MessageSequenceValidator(
-            mode=ValidationMode(validation_mode)
-        )
+        self._sequence_validator = MessageSequenceValidator(mode=ValidationMode(validation_mode))
 
         # Initialize EventRouter with signal handling disabled by default
         # Signal handling should be opt-in via GOODINTEL_ENABLE_SIGNAL_HANDLING env var
@@ -996,9 +992,7 @@ class Agent(EventRouter):
         """
         return self._context_manager.thread_context(truncate_at)
 
-    def fork_context(
-        self, truncate_at: int | None = None, **fork_kwargs
-    ) -> ForkContext:
+    def fork_context(self, truncate_at: int | None = None, **fork_kwargs) -> ForkContext:
         """Create a fork context for isolated operations.
 
         .. deprecated::
@@ -1094,9 +1088,7 @@ class Agent(EventRouter):
                         timeout=5.0,  # 5 second timeout
                     )
                 except TimeoutError:
-                    logger.warning(
-                        "Timeout loading tools from patterns after 5 seconds"
-                    )
+                    logger.warning("Timeout loading tools from patterns after 5 seconds")
 
             # Register direct tools
             for direct_tool in direct_tools:
@@ -1153,9 +1145,7 @@ class Agent(EventRouter):
                     asyncio.gather(*ready_tasks, return_exceptions=True), timeout=10.0
                 )
             except TimeoutError:
-                logger.warning(
-                    f"Timeout waiting for {len(ready_tasks)} managed tasks to complete"
-                )
+                logger.warning(f"Timeout waiting for {len(ready_tasks)} managed tasks to complete")
                 # Don't fail initialize() due to task timeouts, just warn
 
         # Final check
@@ -1345,9 +1335,7 @@ class Agent(EventRouter):
         """
         self._component_registry.clone_extensions_for_config(target_config, skip)
 
-    def _track_component_task(
-        self, component: AgentComponent, task: asyncio.Task
-    ) -> None:
+    def _track_component_task(self, component: AgentComponent, task: asyncio.Task) -> None:
         """Track a component initialization task.
 
         Args:
@@ -1405,9 +1393,7 @@ class Agent(EventRouter):
 
         # Initialize version history with current state
         if new_agent._messages:
-            new_agent._versioning_manager._versions = [
-                [msg.id for msg in new_agent._messages]
-            ]
+            new_agent._versioning_manager._versions = [[msg.id for msg in new_agent._messages]]
 
         return new_agent
 
@@ -1512,21 +1498,15 @@ class Agent(EventRouter):
         if isinstance(image, ImageContentPart):
             part = image
         elif isinstance(image, bytes):
-            part = ImageContentPart.from_bytes(
-                image, detail=detail, mime_type=mime_type
-            )
+            part = ImageContentPart.from_bytes(image, detail=detail, mime_type=mime_type)
         elif isinstance(image, str):
             image_str = image.strip()
             if image_str.startswith("data:"):
-                part = ImageContentPart.from_base64(
-                    image_str, detail=detail, mime_type=mime_type
-                )
+                part = ImageContentPart.from_base64(image_str, detail=detail, mime_type=mime_type)
             elif image_str.startswith("http://") or image_str.startswith("https://"):
                 part = ImageContentPart.from_url(image_str, detail=detail)
             else:
-                part = ImageContentPart.from_base64(
-                    image_str, detail=detail, mime_type=mime_type
-                )
+                part = ImageContentPart.from_base64(image_str, detail=detail, mime_type=mime_type)
         else:
             raise TypeError("image must be bytes, str, or ImageContentPart instance")
 
@@ -1554,13 +1534,9 @@ class Agent(EventRouter):
         elif inline:
             if not isinstance(file, str):
                 raise TypeError("inline file content must be provided as a string")
-            part = FileContentPart.from_content(
-                file, mime_type=mime_type, file_name=file_name
-            )
+            part = FileContentPart.from_content(file, mime_type=mime_type, file_name=file_name)
         elif isinstance(file, str):
-            part = FileContentPart.from_file_id(
-                file, mime_type=mime_type, file_name=file_name
-            )
+            part = FileContentPart.from_file_id(file, mime_type=mime_type, file_name=file_name)
         else:
             raise TypeError("file must be a str or FileContentPart instance")
 
@@ -1628,9 +1604,7 @@ class Agent(EventRouter):
         Returns:
             Assistant message response (may contain tool calls)
         """
-        return await self._llm_coordinator.llm_call(
-            response_model=response_model, **kwargs
-        )
+        return await self._llm_coordinator.llm_call(response_model=response_model, **kwargs)
 
     @overload
     async def call(
@@ -1680,9 +1654,7 @@ class Agent(EventRouter):
             final_message = None
             last_assistant_message = None
 
-            async for message in self.execute(
-                *content_parts, role=role, context=context, **kwargs
-            ):
+            async for message in self.execute(*content_parts, role=role, context=context, **kwargs):
                 match message:
                     case AssistantMessage() | AssistantMessageStructuredOutput():
                         last_assistant_message = message
@@ -1691,9 +1663,7 @@ class Agent(EventRouter):
 
             # If the last message is a tool message (e.g., max_iterations hit during tool execution),
             # return the last assistant message instead
-            if not isinstance(
-                final_message, (AssistantMessage, AssistantMessageStructuredOutput)
-            ):
+            if not isinstance(final_message, (AssistantMessage, AssistantMessageStructuredOutput)):
                 if last_assistant_message is not None:
                     return last_assistant_message
                 # If we don't have any assistant message, something went wrong
@@ -1807,9 +1777,7 @@ class Agent(EventRouter):
         message_index = 0
         pending_tool_calls = self._tool_executor.get_pending_tool_calls()
         if pending_tool_calls:
-            logger.debug(
-                f"Resolving {len(pending_tool_calls)} pending tool calls before execution"
-            )
+            logger.debug(f"Resolving {len(pending_tool_calls)} pending tool calls before execution")
             async for tool_message in self._tool_executor.resolve_pending_tool_calls():
                 # Create and yield tool message for each resolved call
                 tool_message._i = message_index
@@ -1839,9 +1807,7 @@ class Agent(EventRouter):
             # Check if the response has tool calls that need to be executed
             if response.tool_calls:
                 # Resolve the tool calls that were just added
-                async for (
-                    tool_message
-                ) in self._tool_executor.resolve_pending_tool_calls():
+                async for tool_message in self._tool_executor.resolve_pending_tool_calls():
                     tool_message._i = message_index
                     message_index += 1
                     # Yield each tool response message
@@ -1851,19 +1817,19 @@ class Agent(EventRouter):
                 if self._mode_manager.has_pending_transition():
                     from good_agent.agent.modes import ModeExitBehavior
 
-                    exit_behavior = (
-                        await self._mode_manager.apply_scheduled_mode_changes()
-                    )
+                    exit_behavior = await self._mode_manager.apply_scheduled_mode_changes()
 
                     # Handle exit behavior if a mode exited
                     if exit_behavior is not None:
                         if exit_behavior == ModeExitBehavior.STOP:
                             # Don't call LLM again, end execution
                             break
-                        elif exit_behavior == ModeExitBehavior.AUTO:
+                        elif (
+                            exit_behavior == ModeExitBehavior.AUTO
+                            and not self._is_conversation_pending()
+                        ):
                             # Only continue if conversation is pending
-                            if not self._is_conversation_pending():
-                                break
+                            break
                         # CONTINUE: fall through to next iteration
 
                 # Continue to next iteration for another LLM call
@@ -1881,7 +1847,7 @@ class Agent(EventRouter):
         )
 
     @on(AgentEvents.MESSAGE_APPEND_AFTER)
-    def _handle_message_append(self, ctx: EventContext[Any, Message], **kwargs):
+    def _handle_message_append(self, ctx: EventContext[Any, Message], **_kwargs):
         message = ctx.return_value
         if message is None:
             return
@@ -2041,9 +2007,7 @@ class Agent(EventRouter):
 
         return context
 
-    async def _render_template_parameters(
-        self, parameters: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def _render_template_parameters(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """
         Render any Template parameters in the parameters dict.
 
@@ -2068,9 +2032,7 @@ class Agent(EventRouter):
 
         return rendered
 
-    def _coerce_tool_parameters(
-        self, tool: Any, parameters: dict[str, Any]
-    ) -> dict[str, Any]:
+    def _coerce_tool_parameters(self, tool: Any, parameters: dict[str, Any]) -> dict[str, Any]:
         """Coerce JSON-like string values into dict/list for object/array params.
 
         This runs before tool execution so that Pydantic validation in the tool
@@ -2166,14 +2128,13 @@ class Agent(EventRouter):
                 except Exception:
                     return value
             # Heuristic fallback when no schema (try object/array detection)
-            if expected_type is None:
-                if (s.startswith("{") and s.endswith("}")) or (
-                    s.startswith("[") and s.endswith("]")
-                ):
-                    try:
-                        return orjson.loads(s)
-                    except Exception:
-                        return value
+            if expected_type is None and (
+                (s.startswith("{") and s.endswith("}")) or (s.startswith("[") and s.endswith("]"))
+            ):
+                try:
+                    return orjson.loads(s)
+                except Exception:
+                    return value
             return value
 
         coerced = dict(parameters)
@@ -2486,9 +2447,7 @@ class Agent(EventRouter):
         # Validate all values are Messages
         for v in values:
             if not isinstance(v, Message):
-                raise TypeError(
-                    f"All values must be Message objects, got {type(v).__name__}"
-                )
+                raise TypeError(f"All values must be Message objects, got {type(v).__name__}")
 
         # Normalize key to a list of indices
         if isinstance(key, int):
@@ -2500,9 +2459,7 @@ class Agent(EventRouter):
         elif isinstance(key, list):
             indices = key
         else:
-            raise TypeError(
-                f"Key must be int, slice, or list[int], got {type(key).__name__}"
-            )
+            raise TypeError(f"Key must be int, slice, or list[int], got {type(key).__name__}")
 
         # Validate indices are within bounds
         for idx in indices:
@@ -2510,9 +2467,7 @@ class Agent(EventRouter):
                 # Handle negative indexing
                 idx = len(self._messages) + idx
             if idx < 0 or idx >= len(self._messages):
-                raise IndexError(
-                    f"Index {idx} out of range for {len(self._messages)} messages"
-                )
+                raise IndexError(f"Index {idx} out of range for {len(self._messages)} messages")
 
         # Check if we have the right number of values
         if len(indices) != len(values):
@@ -2582,10 +2537,8 @@ class Agent(EventRouter):
         # Cancel init task if still running
         if self._state_machine._init_task and not self._state_machine._init_task.done():
             self._state_machine._init_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._state_machine._init_task
-            except asyncio.CancelledError:
-                pass
 
         # Cancel managed tasks
         await self.tasks.cancel_all()

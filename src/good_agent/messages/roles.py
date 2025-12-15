@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-from typing import Generic, Literal, TypeAlias, TypeVar, overload
+from typing import Any, Generic, Literal, TypeAlias, TypeVar, overload
 
 from pydantic import BaseModel
 
 from good_agent.core.types import URL
-
-from good_agent.tools import ToolCall, ToolResponse
 from good_agent.messages.base import (
-    AnnotationLike,
     IMAGE,
+    Annotation,
+    AnnotationLike,
     ImageDetail,
     Message,
     MessageContent,
     RenderMode,
 )
+from good_agent.tools import ToolCall, ToolResponse
 
 CitationURL: TypeAlias = URL
 
@@ -107,8 +107,7 @@ class ToolMessage(Message, Generic[T_ToolResponse]):
         content_stripped = content.strip()
         if content_stripped and (
             (content_stripped.startswith("<") and content_stripped.endswith(">"))
-            or "</"
-            in content_stripped[:100]  # Check for closing tags in first 100 chars
+            or "</" in content_stripped[:100]  # Check for closing tags in first 100 chars
         ):
             # Wrap in XML code block for proper display
             return f"```xml\n{content_stripped}\n```"
@@ -190,4 +189,9 @@ __all__ = [
     "T_ToolResponse",
     "T_Output",
     "CitationURL",
+    "Annotation",
 ]
+
+# Rebuild models to resolve forward references (required for Python 3.14+)
+AssistantMessage.model_rebuild()
+AssistantMessageStructuredOutput.model_rebuild()

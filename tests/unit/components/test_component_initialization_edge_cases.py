@@ -137,9 +137,7 @@ class TestComponentInitializationEdgeCases:
         failing = FailingInitializationComponent()
         no_tools = ComponentWithNoTools()
 
-        async with Agent(
-            "Test agent", extensions=[working, failing, no_tools]
-        ) as agent:
+        async with Agent("Test agent", extensions=[working, failing, no_tools]) as agent:
             # Working component tools should be available
             assert "working_tool" in agent.tools
             # Failing component tools should still be available

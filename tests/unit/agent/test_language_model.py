@@ -3,10 +3,11 @@ import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from good_agent.agent.config import AgentConfigManager
-from good_agent.model.llm import LanguageModel
 from litellm.router import Router
 from pydantic import BaseModel
+
+from good_agent.agent.config import AgentConfigManager
+from good_agent.model.llm import LanguageModel
 
 # Add the tests directory to the path so we can import test_helpers
 tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -41,9 +42,7 @@ class MockStreamChunk:
         # Create a proper delta object that behaves like a dict
         delta = MagicMock()
         delta.get = MagicMock(
-            side_effect=lambda key, default=None: content
-            if key == "content"
-            else default
+            side_effect=lambda key, default=None: content if key == "content" else default
         )
         delta.content = content  # Also set as attribute for fallback
 
@@ -174,9 +173,7 @@ class TestLanguageModelConfiguration:
         assert lm._get_config_value("nonexistent", "default") == "default"
 
     def test_prepare_request_config(self, language_model):
-        config = language_model._prepare_request_config(
-            max_tokens=100, custom_param="test"
-        )
+        config = language_model._prepare_request_config(max_tokens=100, custom_param="test")
 
         assert config["model"] == "gpt-4o-mini"
         assert config["temperature"] == 0.8
@@ -197,9 +194,7 @@ class TestLanguageModelConfiguration:
 class TestLanguageModelUsageTracking:
     def test_update_usage(self, language_model):
         mock_response = MagicMock()
-        mock_response.usage = MockUsage(
-            prompt_tokens=20, completion_tokens=10, total_tokens=30
-        )
+        mock_response.usage = MockUsage(prompt_tokens=20, completion_tokens=10, total_tokens=30)
 
         # Mock litellm.completion_cost directly at the module level where it's imported
         with patch("litellm.completion_cost", return_value=0.002):
@@ -353,9 +348,7 @@ class TestLanguageModelExtraction:
         mock_instructor_client.create = AsyncMock(return_value=expected_response)
 
         # Mock from_litellm to return our instructor client
-        mock_instructor_module.from_litellm = MagicMock(
-            return_value=mock_instructor_client
-        )
+        mock_instructor_module.from_litellm = MagicMock(return_value=mock_instructor_client)
         mock_instructor_module.Mode.TOOLS = "tools"
 
         with patch.dict("sys.modules", {"instructor": mock_instructor_module}):
@@ -390,9 +383,7 @@ class TestLanguageModelExtraction:
         # Override config to use json_mode
         language_model._override_config = {"instructor_mode": "json_mode"}
 
-        await language_model.extract(
-            messages, MockResponse, instructor_mode="json_mode"
-        )
+        await language_model.extract(messages, MockResponse, instructor_mode="json_mode")
 
         # Verify patch_with_instructor was called with the right mode
         mock_router.patch_with_instructor.assert_called_once_with(mode="json_mode")
@@ -437,9 +428,7 @@ class TestLanguageModelStreaming:
     @pytest.mark.asyncio
     async def test_stream_tracks_responses(self, language_model):
         messages = [{"role": "user", "content": "Test"}]
-        chunks = [
-            MockStreamChunk("test", "stop")
-        ]  # Add finish_reason to complete the stream
+        chunks = [MockStreamChunk("test", "stop")]  # Add finish_reason to complete the stream
 
         async def mock_stream():
             for chunk in chunks:

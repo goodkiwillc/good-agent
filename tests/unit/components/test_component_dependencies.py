@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent, AgentComponent
 
 
@@ -77,9 +78,7 @@ class TestComponentDependencies:
                 pass  # Should not reach here
 
         assert "Component dependency validation failed" in str(exc_info.value)
-        assert "ComponentWithMissingDep requires NonExistentComponent" in str(
-            exc_info.value
-        )
+        assert "ComponentWithMissingDep requires NonExistentComponent" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_transitive_dependencies(self):
@@ -113,9 +112,7 @@ class TestComponentDependencies:
         comp_b = ComponentB()
         comp_multi = ComponentWithMultipleDeps()  # Depends on both A and B
 
-        async with Agent(
-            "Test system", extensions=[comp_a, comp_b, comp_multi]
-        ) as agent:
+        async with Agent("Test system", extensions=[comp_a, comp_b, comp_multi]) as agent:
             # All should be available
             assert agent[ComponentA] is comp_a
             assert agent[ComponentB] is comp_b
@@ -125,9 +122,7 @@ class TestComponentDependencies:
     async def test_partially_missing_dependencies(self):
         """Test that partially satisfied dependencies still fail."""
         comp_a = ComponentA()
-        comp_multi = (
-            ComponentWithMultipleDeps()
-        )  # Depends on both A and B, but B is missing
+        comp_multi = ComponentWithMultipleDeps()  # Depends on both A and B, but B is missing
 
         with pytest.raises(ValueError) as exc_info:
             async with Agent("Test system", extensions=[comp_a, comp_multi]):

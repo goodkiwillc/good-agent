@@ -1,4 +1,6 @@
 import pytest
+from pydantic import BaseModel
+
 from good_agent.mock import (
     MockLanguageModel,
     create_failing_mock_llm,
@@ -6,7 +8,6 @@ from good_agent.mock import (
     create_streaming_mock_llm,
     create_successful_mock_llm,
 )
-from pydantic import BaseModel
 
 
 class MockResponse(BaseModel):

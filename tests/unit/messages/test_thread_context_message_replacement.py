@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent, tool
 from good_agent.content.parts import TextContentPart
 from good_agent.messages import (
@@ -73,8 +74,7 @@ class TestBranchMessageReplacement:
 
             # Tool messages should be truncated
             assert not any(
-                isinstance(msg, AssistantMessage) and msg.tool_calls
-                for msg in ctx.messages
+                isinstance(msg, AssistantMessage) and msg.tool_calls for msg in ctx.messages
             )
             assert not any(isinstance(msg, ToolMessage) for msg in ctx.messages)
 
@@ -88,10 +88,7 @@ class TestBranchMessageReplacement:
         assert len(agent.messages) == original_message_count + 2
 
         # Verify original tool messages are still there
-        assert (
-            isinstance(agent.messages[3], AssistantMessage)
-            and agent.messages[3].tool_calls
-        )
+        assert isinstance(agent.messages[3], AssistantMessage) and agent.messages[3].tool_calls
         assert isinstance(agent.messages[4], ToolMessage)
         assert agent.messages[5] == original_last_msg
 

@@ -112,9 +112,7 @@ class TestLLMIntegration:
                 AsyncMock(return_value=mock_response),
             ):
                 # Make the call
-                response = await agent_with_tools.call(
-                    "What's the weather in New York?"
-                )
+                response = await agent_with_tools.call("What's the weather in New York?")
 
                 # Verify response
                 assert isinstance(response, AssistantMessage)
@@ -169,14 +167,10 @@ class TestLLMIntegration:
             tool_call = ToolCall(
                 id="call_456",
                 type="function",
-                function=ToolCallFunction(
-                    name="calculate", arguments='{"expression": "2 + 2"}'
-                ),
+                function=ToolCallFunction(name="calculate", arguments='{"expression": "2 + 2"}'),
             )
             agent_with_tools.messages.append(
-                AssistantMessage(
-                    content="Let me calculate that", tool_calls=[tool_call]
-                )
+                AssistantMessage(content="Let me calculate that", tool_calls=[tool_call])
             )
 
             # Add tool response
@@ -211,9 +205,7 @@ class TestLLMIntegration:
             assert "tool_calls" in litellm_messages[2]
             assert len(litellm_messages[2]["tool_calls"]) == 1
             assert litellm_messages[2]["tool_calls"][0]["id"] == "call_456"
-            assert (
-                litellm_messages[2]["tool_calls"][0]["function"]["name"] == "calculate"
-            )
+            assert litellm_messages[2]["tool_calls"][0]["function"]["name"] == "calculate"
 
             # Check tool message
             assert litellm_messages[3]["role"] == "tool"
@@ -265,9 +257,7 @@ class TestExecuteMethod:
                     "I'll check the weather in London for you.",
                     tool_calls=[mock_tool_call],
                 ),
-                MockLLMResponse(
-                    "The weather in London is sunny and 72°F. It's a beautiful day!"
-                ),
+                MockLLMResponse("The weather in London is sunny and 72°F. It's a beautiful day!"),
             ]
 
             with patch.object(
@@ -285,9 +275,7 @@ class TestExecuteMethod:
 
                 # First message: assistant with tool call
                 assert isinstance(messages[0], AssistantMessage)
-                assert (
-                    messages[0].content == "I'll check the weather in London for you."
-                )
+                assert messages[0].content == "I'll check the weather in London for you."
                 assert messages[0].tool_calls is not None
                 assert len(messages[0].tool_calls) == 1
 
@@ -440,9 +428,7 @@ class TestExecuteMethod:
                     messages.append(msg)
 
                 # Should stop at 3 iterations (3 assistant + 3 tool messages = 6 total)
-                assistant_messages = [
-                    m for m in messages if isinstance(m, AssistantMessage)
-                ]
+                assistant_messages = [m for m in messages if isinstance(m, AssistantMessage)]
                 assert len(assistant_messages) == 3
 
                 # Each assistant message should have tool calls
@@ -461,9 +447,7 @@ class TestExecuteMethod:
             mock_tool_call.function.arguments = json.dumps({"location": "Tokyo"})
 
             responses = [
-                MockLLMResponse(
-                    "Let me check the weather.", tool_calls=[mock_tool_call]
-                ),
+                MockLLMResponse("Let me check the weather.", tool_calls=[mock_tool_call]),
                 MockLLMResponse(
                     "The weather in Tokyo is sunny and 72°F. Enjoy your day!"
                 ),  # No tool calls
@@ -475,9 +459,7 @@ class TestExecuteMethod:
                 AsyncMock(side_effect=responses),
             ):
                 messages = []
-                async for msg in agent_with_tools.execute(
-                    max_iterations=10
-                ):  # High limit
+                async for msg in agent_with_tools.execute(max_iterations=10):  # High limit
                     messages.append(msg)
 
                 # Should stop after second response (no tool calls)
@@ -562,17 +544,13 @@ class TestExecuteMethod:
                 # Verify the conditional injection happened
                 # Find the message that triggered injection
                 trigger_messages = [
-                    m
-                    for m in messages_yielded
-                    if hasattr(m, "_conditional_injection_triggered")
+                    m for m in messages_yielded if hasattr(m, "_conditional_injection_triggered")
                 ]
                 assert len(trigger_messages) == 1
                 assert "TRIGGER" in str(trigger_messages[0].content)
 
                 # Verify the injected user message is in the agent's message history
-                user_messages = [
-                    m for m in agent_with_tools.messages if isinstance(m, UserMessage)
-                ]
+                user_messages = [m for m in agent_with_tools.messages if isinstance(m, UserMessage)]
                 assert len(user_messages) == 2  # Original + injected
                 assert "additional context" in user_messages[-1].content
 

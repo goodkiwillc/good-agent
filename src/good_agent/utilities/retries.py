@@ -4,12 +4,12 @@ import abc
 import asyncio
 import datetime
 import functools
+import inspect
 import logging
 import random
 import sys
-import typing
 from collections import ChainMap
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable, Mapping, MutableMapping
 from enum import Enum, auto
 from typing import (
     Any,
@@ -18,11 +18,10 @@ from typing import (
     TypeVar,
     cast,
 )
-from collections.abc import Awaitable, Callable, Mapping, MutableMapping
 
 logger = logging.getLogger(__name__)
 
-TIME_UNIT_TYPE = typing.Union[int, float, datetime.timedelta]
+TIME_UNIT_TYPE = int | float | datetime.timedelta
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -48,9 +47,7 @@ def _to_seconds(time_unit: TIME_UNIT_TYPE) -> float:
         - Used internally by backoff strategies
     """
     return float(
-        time_unit.total_seconds()
-        if isinstance(time_unit, datetime.timedelta)
-        else time_unit
+        time_unit.total_seconds() if isinstance(time_unit, datetime.timedelta) else time_unit
     )
 
 
@@ -73,7 +70,7 @@ class wait_base(abc.ABC):
         raise TypeError("Unsupported operand type for wait_base addition")
 
 
-WaitBaseT = typing.Union[wait_base, Callable[["RetryState[Any]"], float | int]]
+WaitBaseT = wait_base | Callable[["RetryState[Any]"], float | int]
 
 
 class wait_fixed(wait_base):
@@ -481,7 +478,7 @@ class Retry(Generic[T]):
         kwargs: Mapping[str, Any],
     ) -> AsyncGenerator[RetryState[T]]:
         """Async generator for retry operations."""
-        is_async = asyncio.iscoroutinefunction(function)
+        is_async = inspect.iscoroutinefunction(function)
         current_attempt = 0
         current_args = args
         current_kwargs: MutableMapping[str, Any] = dict(kwargs)
@@ -504,9 +501,7 @@ class Retry(Generic[T]):
                 wait_time = self.wait(state)
                 self.log(f"Wait time for attempt {current_attempt}: {wait_time:.2f}s")
                 if wait_time > 0:
-                    self.log(
-                        f"Waiting {wait_time:.2f}s before attempt {current_attempt}"
-                    )
+                    self.log(f"Waiting {wait_time:.2f}s before attempt {current_attempt}")
                     await asyncio.sleep(wait_time)
 
             # Execute the function
@@ -517,17 +512,13 @@ class Retry(Generic[T]):
                         function, state.args, state.kwargs, is_async
                     )
                 else:
-                    result = await self._execute(
-                        function, state.args, state.kwargs, is_async
-                    )
+                    result = await self._execute(function, state.args, state.kwargs, is_async)
                 # logger.debug(f"{result=}")
                 state.result = result
                 state.action = RetryAction.SUCCEED
             except Exception as exc:
                 state.exception = exc
-                self.log(
-                    f"Attempt {current_attempt} failed with: {type(exc).__name__}: {exc}"
-                )
+                self.log(f"Attempt {current_attempt} failed with: {type(exc).__name__}: {exc}")
 
                 if isinstance(exc, self._break_and_propagate):
                     state.action = RetryAction.STOP
@@ -546,9 +537,7 @@ class Retry(Generic[T]):
             # Yield state to caller and let them process it
             yield state
 
-            self.log(
-                f"{state.attempt=} {state.kwargs=} {state.result=} {state.action=} "
-            )
+            self.log(f"{state.attempt=} {state.kwargs=} {state.result=} {state.action=} ")
 
             # Check what action to take based on state
             if state.action == RetryAction.SUCCEED:
@@ -570,9 +559,7 @@ class Retry(Generic[T]):
 
                 # Check if we've reached max attempts
                 if current_attempt >= self.max_attempts:
-                    self.log(
-                        f"Max attempts ({self.max_attempts}) reached, stopping retry loop"
-                    )
+                    self.log(f"Max attempts ({self.max_attempts}) reached, stopping retry loop")
                     break
 
     async def _execute_with_timeout(

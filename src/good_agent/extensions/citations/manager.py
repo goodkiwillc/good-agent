@@ -4,10 +4,9 @@ import logging
 import re
 from typing import TYPE_CHECKING, Any, Literal, cast
 
+from good_agent.content import RenderMode
 from good_agent.core.components import AgentComponent
 from good_agent.core.event_router import EventContext, on
-
-from good_agent.content import RenderMode
 from good_agent.events import (
     AgentEvents,
     MessageAppendParams,
@@ -120,9 +119,7 @@ class CitationManager(AgentComponent):
         return signature
 
     @on(AgentEvents.MESSAGE_APPEND_AFTER, priority=150)
-    def _on_message_append_after(
-        self, ctx: EventContext[MessageAppendParams, None]
-    ) -> None:
+    def _on_message_append_after(self, ctx: EventContext[MessageAppendParams, None]) -> None:
         """
         Process citations for messages that are directly appended.
 
@@ -156,12 +153,12 @@ class CitationManager(AgentComponent):
                         content_text += str(part)
 
             # Check for citation patterns
-            if CitationPatterns.LLM_CITE.search(
+            if CitationPatterns.LLM_CITE.search(content_text) or CitationPatterns.MARKDOWN.search(
                 content_text
-            ) or CitationPatterns.MARKDOWN.search(content_text):
+            ):
                 # Process content to extract and resolve citations
-                processed_content, resolved_citations = (
-                    self._lookup_and_resolve_citations(content_text)
+                processed_content, resolved_citations = self._lookup_and_resolve_citations(
+                    content_text
                 )
 
                 if resolved_citations:
@@ -180,9 +177,7 @@ class CitationManager(AgentComponent):
                         # Replace first text content part with processed content
                         for i, part in enumerate(message.content_parts):
                             if hasattr(part, "text"):
-                                message.content_parts[i] = TextContentPart(
-                                    text=processed_content
-                                )
+                                message.content_parts[i] = TextContentPart(text=processed_content)
                                 break
 
                     if self._debug:
@@ -194,9 +189,7 @@ class CitationManager(AgentComponent):
             logger.error(f"Error in _on_message_append_after: {e}", exc_info=True)
 
     @on(AgentEvents.MESSAGE_CREATE_BEFORE, priority=150)
-    def _on_message_create_before(
-        self, ctx: EventContext[MessageCreateParams, Message]
-    ) -> None:
+    def _on_message_create_before(self, ctx: EventContext[MessageCreateParams, Message]) -> None:
         """
         Extract citations during message creation using default render mode.
 
@@ -259,9 +252,7 @@ class CitationManager(AgentComponent):
             logger.error(f"Error in _on_message_create_before: {e}", exc_info=True)
 
     @on(AgentEvents.MESSAGE_RENDER_BEFORE)
-    def _on_message_render_before(
-        self, ctx: EventContext[MessageRenderParams, None]
-    ) -> None:
+    def _on_message_render_before(self, ctx: EventContext[MessageRenderParams, None]) -> None:
         """
         Transform citations based on render mode.
 
@@ -336,9 +327,7 @@ class CitationManager(AgentComponent):
 
                     # Transform based on render mode
                     if mode == RenderMode.LLM:
-                        transformed_text = self._transform_for_llm(
-                            original_text, message.citations
-                        )
+                        transformed_text = self._transform_for_llm(original_text, message.citations)
                     elif mode == RenderMode.DISPLAY:
                         # Pass message role to determine transformation behavior
                         message_role = getattr(message, "role", "user")
@@ -431,9 +420,8 @@ class CitationManager(AgentComponent):
         # )
         # logger.debug(f"CitationManager: Content preview: {str(content_parts)[:100]}...")
 
-        from good_agent.core.types import URL
-
         from good_agent.content import TemplateContentPart, TextContentPart, is_template
+        from good_agent.core.types import URL
 
         # Default to DISPLAY mode if not provided (for backward compatibility)
         if mode is None:
@@ -452,9 +440,7 @@ class CitationManager(AgentComponent):
         # If we already have citations and proper format, AND there are no XML URLs to extract,
         # return as-is. Messages with XML may have additional URLs to extract even when citations are provided.
         # Use the specified render mode to check for citation patterns
-        has_cite_format = any(
-            "[!CITE_" in safe_render(part, mode) for part in content_parts
-        )
+        has_cite_format = any("[!CITE_" in safe_render(part, mode) for part in content_parts)
         has_xml_urls = any('url="' in safe_render(part, mode) for part in content_parts)
 
         if citations and has_cite_format and not has_xml_urls:
@@ -504,9 +490,7 @@ class CitationManager(AgentComponent):
                 # Also remove already-processed reference blocks like [!CITE_X!]: [!CITE_Y!]
                 if CitationPatterns.PROCESSED_REF_BLOCK.search(content):
                     # Count before removing
-                    removed_count = len(
-                        CitationPatterns.PROCESSED_REF_BLOCK.findall(content)
-                    )
+                    removed_count = len(CitationPatterns.PROCESSED_REF_BLOCK.findall(content))
                     content = CitationPatterns.PROCESSED_REF_BLOCK.sub("", content)
 
                     # Clean up multiple blank lines and trailing whitespace after removal
@@ -534,9 +518,7 @@ class CitationManager(AgentComponent):
 
                 # Extract markdown inline links: [text](https://example.com)
                 try:
-                    markdown_link_pattern = re.compile(
-                        r"\[([^\]]+)\]\((https?://[^\s)]+)\)"
-                    )
+                    markdown_link_pattern = re.compile(r"\[([^\]]+)\]\((https?://[^\s)]+)\)")
                     for m in markdown_link_pattern.finditer(content):
                         url = URL(m.group(2))
                         if url not in part_citations:
@@ -558,9 +540,7 @@ class CitationManager(AgentComponent):
                         part_citations.append(url)
 
                 all_found_citations.extend(part_citations)
-                content_texts.append(
-                    (content, part, part_citations, markdown_ref_mapping)
-                )
+                content_texts.append((content, part, part_citations, markdown_ref_mapping))
             else:
                 # Non-text parts pass through unchanged
                 content_texts.append((None, part, [], {}))  # type: ignore[arg-type]
@@ -580,10 +560,7 @@ class CitationManager(AgentComponent):
                 for match in CitationPatterns.LLM_CITE.finditer(content_text):
                     idx = int(match.group(1))
                     # Look up in global index if not in markdown mappings
-                    if (
-                        idx not in all_referenced_mappings
-                        and idx in self.index.as_dict()
-                    ):
+                    if idx not in all_referenced_mappings and idx in self.index.as_dict():
                         url = self.index.as_dict()[idx]
                         all_referenced_mappings[idx] = url
 
@@ -613,7 +590,7 @@ class CitationManager(AgentComponent):
                 final_citations.append(citation)
 
         # Phase 3: Normalize content to use local indices
-        for content, part, part_citations, markdown_mapping in content_texts:
+        for content, part, _part_citations, _markdown_mapping in content_texts:
             if content is None:
                 # Non-text part, pass through
                 processed_parts.append(part)
@@ -624,13 +601,9 @@ class CitationManager(AgentComponent):
 
             # FIRST: Reindex sparse [!CITE_X!] references using our mapping
             if CitationPatterns.LLM_CITE.search(normalized_content):
-                for match in reversed(
-                    list(CitationPatterns.LLM_CITE.finditer(normalized_content))
-                ):
+                for match in reversed(list(CitationPatterns.LLM_CITE.finditer(normalized_content))):
                     original_idx = int(match.group(1))
-                    logger.info(
-                        f"CitationManager: Processing LLM citation [!CITE_{original_idx}!]"
-                    )
+                    logger.info(f"CitationManager: Processing LLM citation [!CITE_{original_idx}!]")
                     # Use reindex mapping if available
                     if original_idx in reindex_mapping:
                         new_idx = reindex_mapping[original_idx]
@@ -647,9 +620,7 @@ class CitationManager(AgentComponent):
                     elif original_idx in self.index.as_dict():
                         # Try global index lookup
                         url = self.index.as_dict()[original_idx]
-                        logger.info(
-                            f"CitationManager: Found global index {original_idx} -> {url}"
-                        )
+                        logger.info(f"CitationManager: Found global index {original_idx} -> {url}")
                         if url in final_citations:
                             local_idx = final_citations.index(url) + 1
                             if local_idx != original_idx:
@@ -678,9 +649,7 @@ class CitationManager(AgentComponent):
             # SECOND: Handle XML url attributes -> idx attributes
             # Support XML URLs in any message type (not just tool messages)
             if 'url="' in normalized_content:
-                url_matches = list(
-                    CitationPatterns.XML_URL_ATTR.finditer(normalized_content)
-                )
+                url_matches = list(CitationPatterns.XML_URL_ATTR.finditer(normalized_content))
 
                 # First, collect all URLs in order to add to final_citations
                 for match in url_matches:
@@ -740,9 +709,7 @@ class CitationManager(AgentComponent):
 
             # THIRD-B: Convert markdown links [text](url) -> 'text [!CITE_X!]'
             markdown_link_pattern = re.compile(r"\[([^\]]+)\]\((https?://[^\s)]+)\)")
-            for match in reversed(
-                list(markdown_link_pattern.finditer(normalized_content))
-            ):
+            for match in reversed(list(markdown_link_pattern.finditer(normalized_content))):
                 link_text = match.group(1)
                 url = URL(match.group(2))
                 if url not in final_citations:
@@ -760,9 +727,7 @@ class CitationManager(AgentComponent):
 
             # FOURTH: Handle [X] markdown references -> [!CITE_X!] with reindexing
             if CitationPatterns.MARKDOWN.search(normalized_content):
-                for match in reversed(
-                    list(CitationPatterns.MARKDOWN.finditer(normalized_content))
-                ):
+                for match in reversed(list(CitationPatterns.MARKDOWN.finditer(normalized_content))):
                     original_idx = int(match.group(1))
                     # Check if this needs reindexing (sparse reference)
                     if original_idx in reindex_mapping:
@@ -906,9 +871,7 @@ class CitationManager(AgentComponent):
 
         # Extract all citation references from the content
         citation_refs = CitationExtractor.extract_citations(content, current_format)
-        logger.debug(
-            f"Extracted citation refs: {[ref.citation_index for ref in citation_refs]}"
-        )
+        logger.debug(f"Extracted citation refs: {[ref.citation_index for ref in citation_refs]}")
 
         if not citation_refs:
             logger.debug("No citation refs found")
@@ -984,11 +947,7 @@ class CitationManager(AgentComponent):
         Args:
             message: Message to process for citations
         """
-        content = (
-            message.render(RenderMode.DISPLAY)
-            if hasattr(message, "render")
-            else str(message)
-        )
+        content = message.render(RenderMode.DISPLAY) if hasattr(message, "render") else str(message)
         message_type = type(message).__name__
 
         logger.debug(f"Processing citations for {message_type}")
@@ -1039,9 +998,7 @@ class CitationManager(AgentComponent):
 
         if current_format == CitationFormat.MARKDOWN:
             # Map [1], [2] to local indices
-            matches = CitationExtractor.extract_citations(
-                content, CitationFormat.MARKDOWN
-            )
+            matches = CitationExtractor.extract_citations(content, CitationFormat.MARKDOWN)
             for i, match in enumerate(matches, 1):
                 if match.citation_index is None:
                     continue
@@ -1094,9 +1051,7 @@ class CitationManager(AgentComponent):
             local_idx = len(url_matches) - i  # This gives us n, n-1, ..., 2, 1
             url = match.group(1)
             replacement = f'idx="{local_idx}"'
-            logger.info(
-                f"CitationManager: Converting URL to index: {url} -> idx={local_idx}"
-            )
+            logger.info(f"CitationManager: Converting URL to index: {url} -> idx={local_idx}")
             transformed_content = (
                 transformed_content[: match.start()]
                 + replacement
@@ -1176,9 +1131,7 @@ class CitationManager(AgentComponent):
             message: Message to update
             content: Content with potential inline URLs
         """
-        normalized_content, citations = (
-            CitationTransformer.extract_and_normalize_citations(content)
-        )
+        normalized_content, citations = CitationTransformer.extract_and_normalize_citations(content)
 
         if citations:
             self._update_message_citations(message, normalized_content, citations)
@@ -1231,7 +1184,6 @@ class CitationManager(AgentComponent):
         # This covers cases where creation-time normalization didn't run
         try:
             from good_agent.core.types import URL
-
             from good_agent.extensions.citations.formats import CitationPatterns as _CP
 
             if 'url="' in cleaned:
@@ -1255,9 +1207,7 @@ class CitationManager(AgentComponent):
             source_format=current_format,  # Use the detected format, not assume LLM
         )
 
-    def _transform_for_user(
-        self, content: str, citations: list, role: str = "user"
-    ) -> str:
+    def _transform_for_user(self, content: str, citations: list, role: str = "user") -> str:
         """
         Transform content for user display with clickable links.
 
@@ -1367,9 +1317,7 @@ class CitationManager(AgentComponent):
 
         return result
 
-    def _update_message_citations(
-        self, message: Message, content: str, citations: list
-    ) -> None:
+    def _update_message_citations(self, message: Message, content: str, citations: list) -> None:
         """
         Update message with new content and citations list.
 
@@ -1452,9 +1400,7 @@ class CitationManager(AgentComponent):
         )
 
         # Check for any reference blocks (well-formed or malformed)
-        has_refs = ref_block_pattern.search(content) or malformed_ref_pattern.search(
-            content
-        )
+        has_refs = ref_block_pattern.search(content) or malformed_ref_pattern.search(content)
 
         if has_refs:
             # Extract well-formed references
@@ -1630,9 +1576,7 @@ class CitationManager(AgentComponent):
                 "citations": {
                     str(index): {
                         "url": str(url),
-                        "metadata": self.index.get_metadata(
-                            index
-                        ),  # Use index, not URL
+                        "metadata": self.index.get_metadata(index),  # Use index, not URL
                         "tags": list(self.index.get_tags(index)),  # Use index, not URL
                     }
                     for index, url in self.index.items()
@@ -1651,9 +1595,7 @@ class CitationManager(AgentComponent):
         elif format == "csv":
             lines = ["Index,URL,Tags"]
             for index, url in self.index.items():
-                tags_str: str = "; ".join(
-                    self.index.get_tags(index)
-                )  # Use index, not URL
+                tags_str: str = "; ".join(self.index.get_tags(index))  # Use index, not URL
                 lines.append(f'{index},{url},"{tags_str}"')
             return "\n".join(lines)
 

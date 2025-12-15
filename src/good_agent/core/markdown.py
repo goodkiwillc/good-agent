@@ -1,7 +1,6 @@
 import re
 import xml.etree.ElementTree as etree
-
-from typing import Match, Tuple
+from re import Match
 
 from markdown.extensions import Extension
 from markdown.inlinepatterns import InlineProcessor
@@ -25,7 +24,7 @@ class CitationPreprocessor(Preprocessor):
 class SuperscriptCitationProcessor(InlineProcessor):
     def handleMatch(  # type: ignore[override]
         self, m: Match[str], data: str
-    ) -> Tuple[etree.Element, int, int]:
+    ) -> tuple[etree.Element, int, int]:
         el = etree.Element("sup")
         link = etree.SubElement(el, "a")
         link.set("href", f"#{m.group(1)}")
@@ -47,9 +46,7 @@ class CitationManager(Extension):
     def extendMarkdown(self, md):
         # Add the citation preprocessor if enabled
         if self.enable_citation_preprocessor:
-            md.preprocessors.register(
-                CitationPreprocessor(md), "citation_preprocessor", 175
-            )
+            md.preprocessors.register(CitationPreprocessor(md), "citation_preprocessor", 175)
 
         # Add the superscript citation processor if enabled
         if self.enable_superscript_citation:

@@ -7,14 +7,14 @@ from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
     Any,
-    Self,
-    runtime_checkable,
-    TypeAlias,
     Literal,
     Protocol,
+    Self,
+    TypeAlias,
     TypedDict,
     TypeVar,
     cast,
+    runtime_checkable,
 )
 from unittest.mock import MagicMock
 
@@ -23,8 +23,8 @@ from pydantic import BaseModel
 from ulid import ULID
 
 from good_agent.agent.config import AgentConfigManager
-from good_agent.core.components import AgentComponent
 from good_agent.content import TextContentPart
+from good_agent.core.components import AgentComponent
 from good_agent.messages import (
     Annotation,
     AnnotationLike,
@@ -143,9 +143,7 @@ def _augment_tool_message_for_context(message: ToolMessage) -> ToolMessage:
     base_content = str(message.content)
     if base_content:
         augmented_content = (
-            base_content
-            if json_content in base_content
-            else f"{base_content}\n{json_content}"
+            base_content if json_content in base_content else f"{base_content}\n{json_content}"
         )
     else:
         augmented_content = json_content
@@ -263,9 +261,7 @@ def _mock_response_to_llm_response(
     mock_response: MockResponse, model_name: str
 ) -> _MockLLMResponse:
     tool_calls = (
-        _build_tool_call_payloads(mock_response.tool_calls)
-        if mock_response.tool_calls
-        else None
+        _build_tool_call_payloads(mock_response.tool_calls) if mock_response.tool_calls else None
     )
 
     message = _MockLiteLLMMessage(
@@ -418,9 +414,7 @@ class QueuedResponseHandler:
     """Simple FIFO queue of responses (implements current mock behavior as handler)"""
 
     def __init__(self, *responses: MockResponse | str) -> None:
-        self.responses: list[MockResponse] = [
-            _ensure_mock_response(r) for r in responses
-        ]
+        self.responses: list[MockResponse] = [_ensure_mock_response(r) for r in responses]
         self.index: int = 0
 
     async def handle(self, context: MockContext) -> MockResponse:
@@ -442,9 +436,7 @@ class ConditionalHandler:
         self.rules: list[tuple[Callable[[MockContext], bool], MockResponse]] = []
         self.default_response: MockResponse | None = None
 
-    def when(
-        self, condition: Callable[[MockContext], bool], respond: str | MockResponse
-    ) -> Self:
+    def when(self, condition: Callable[[MockContext], bool], respond: str | MockResponse) -> Self:
         """Add conditional rule"""
         response = _ensure_mock_response(respond)
         self.rules.append((condition, response))
@@ -674,18 +666,14 @@ class MockHandlerLanguageModel(AgentComponent):
             return UserMessage(*content_parts, **params)
         elif role == "assistant":
             if output:
-                return AssistantMessageStructuredOutput(
-                    *content_parts, output=output, **params
-                )
+                return AssistantMessageStructuredOutput(*content_parts, output=output, **params)
             return AssistantMessage(*content_parts, **params)
         elif role == "tool":
             return ToolMessage(*content_parts, **params)
         else:
             raise ValueError(f"Unknown role: {role}")
 
-    def transform_message_list(
-        self, messages: Sequence[Message]
-    ) -> list[dict[str, Any]]:
+    def transform_message_list(self, messages: Sequence[Message]) -> list[dict[str, Any]]:
         """Transform agent messages to LLM format"""
         messages_for_llm: list[dict[str, Any]] = []
         for message in messages:
@@ -712,9 +700,7 @@ class MockQueuedLanguageModel(AgentComponent):
 
     name = "language_model"
 
-    def __init__(
-        self, responses: Sequence[MockResponse], agent: Agent | None = None
-    ) -> None:
+    def __init__(self, responses: Sequence[MockResponse], agent: Agent | None = None) -> None:
         self.responses: list[MockResponse] = list(responses)
         self.response_index: int = 0
         self._local_config: _MockModelConfig = _MockModelConfig()
@@ -735,9 +721,7 @@ class MockQueuedLanguageModel(AgentComponent):
         """Install method to satisfy component interface"""
         self._agent = agent
 
-    async def complete(
-        self, messages: list[dict[str, Any]], **kwargs: Any
-    ) -> _MockLLMResponse:
+    async def complete(self, messages: list[dict[str, Any]], **kwargs: Any) -> _MockLLMResponse:
         """Mock complete that returns the next queued response"""
         # Track the request just like real LanguageModel does
         request_data: dict[str, Any] = {"messages": messages, **kwargs}
@@ -779,18 +763,14 @@ class MockQueuedLanguageModel(AgentComponent):
                 )
 
         # Log what we're returning
-        content_preview = (
-            (response.content or "")[:100] if response.content else "<empty>"
-        )
+        content_preview = (response.content or "")[:100] if response.content else "<empty>"
         logger.debug(
             f"  Mock response: {content_preview}{'...' if len(content_preview) == 100 else ''}"
         )
 
         # Only process assistant messages from the queue
         if response.type != "message" or response.role != "assistant":
-            raise ValueError(
-                f"Expected assistant message, got {response.type}:{response.role}"
-            )
+            raise ValueError(f"Expected assistant message, got {response.type}:{response.role}")
 
         mock_llm_response = _mock_response_to_llm_response(response, self.config.model)
 
@@ -893,18 +873,14 @@ class MockQueuedLanguageModel(AgentComponent):
             return UserMessage(*content_parts, **params)
         elif role == "assistant":
             if output:
-                return AssistantMessageStructuredOutput(
-                    *content_parts, output=output, **params
-                )
+                return AssistantMessageStructuredOutput(*content_parts, output=output, **params)
             return AssistantMessage(*content_parts, **params)
         elif role == "tool":
             return ToolMessage(*content_parts, **params)
         else:
             raise ValueError(f"Unknown role: {role}")
 
-    def transform_message_list(
-        self, messages: Sequence[Message]
-    ) -> list[dict[str, Any]]:
+    def transform_message_list(self, messages: Sequence[Message]) -> list[dict[str, Any]]:
         """Transform agent messages to LLM format - mimics LanguageModel.transform_message_list"""
         messages_for_llm: list[dict[str, Any]] = []
         for message in messages:
@@ -942,9 +918,7 @@ class MockAgent:
         )  # Internal queue - primarily for testing/debugging
         self._response_index: int = 0
         self._original_model: LanguageModel | None = None
-        self._mock_model: MockQueuedLanguageModel | MockHandlerLanguageModel | None = (
-            None
-        )
+        self._mock_model: MockQueuedLanguageModel | MockHandlerLanguageModel | None = None
         self._handler: MockHandler | HandlerCallable | None = handler
 
     def __enter__(self) -> MockAgent:
@@ -970,9 +944,7 @@ class MockAgent:
         # Replace the LanguageModel component in the agent's extensions
         mock_component = cast(AgentComponent, self._mock_model)
         self.agent._component_registry._extensions[LanguageModel] = mock_component
-        self.agent._component_registry._extension_names["LanguageModel"] = (
-            mock_component
-        )
+        self.agent._component_registry._extension_names["LanguageModel"] = mock_component
 
         logger.debug(
             f"Replaced model {self._original_model.__class__.__name__} with {self._mock_model.__class__.__name__}"
@@ -996,9 +968,7 @@ class MockAgent:
 
         # Restore the original LanguageModel component
         self.agent._component_registry._extensions[LanguageModel] = original_component
-        self.agent._component_registry._extension_names["LanguageModel"] = (
-            original_component
-        )
+        self.agent._component_registry._extension_names["LanguageModel"] = original_component
 
         # Log appropriate message based on mock type
         if isinstance(self._mock_model, MockHandlerLanguageModel):
@@ -1013,9 +983,7 @@ class MockAgent:
                 f"Used {responses_used}/{len(self.responses)} responses"
             )
 
-        logger.debug(
-            f"Restored original model {self._original_model.__class__.__name__}"
-        )
+        logger.debug(f"Restored original model {self._original_model.__class__.__name__}")
 
         return False
 
@@ -1148,9 +1116,7 @@ class MockAgent:
             kwargs["auto_execute_tools"] = False
 
         # Delegate to agent's call() which will use the mocked LanguageModel
-        result = await self.agent.call(
-            *content_parts, role=role, context=context, **kwargs
-        )
+        result = await self.agent.call(*content_parts, role=role, context=context, **kwargs)
         return cast(Message, result)
 
     def _convert_tool_calls(
@@ -1182,9 +1148,7 @@ class AgentMockInterface(AgentComponent):
     - agent.mock.tool_call() to create mock tool calls
     """
 
-    def __call__(
-        self, *responses: MockResponse | str | MockHandler | Callable
-    ) -> MockAgent:
+    def __call__(self, *responses: MockResponse | str | MockHandler | Callable) -> MockAgent:
         """
         Create a mock agent context manager.
 
@@ -1318,9 +1282,7 @@ class MockLanguageModel(AgentComponent):
 
     def __init__(self, config, **kwargs):
         self._local_config = (
-            config
-            if isinstance(config, AgentConfigManager)
-            else MockAgentConfigManager(config)
+            config if isinstance(config, AgentConfigManager) else MockAgentConfigManager(config)
         )
         self._override_config = kwargs
 
@@ -1427,9 +1389,7 @@ class MockLanguageModel(AgentComponent):
 
         return self.mock_complete_response
 
-    async def extract(
-        self, messages: list[dict[str, Any]], response_model: type[T], **kwargs
-    ) -> T:
+    async def extract(self, messages: list[dict[str, Any]], response_model: type[T], **kwargs) -> T:
         """Mock extract implementation"""
         self.extract_calls.append(
             {"messages": messages, "response_model": response_model, "kwargs": kwargs}

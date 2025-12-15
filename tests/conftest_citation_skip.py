@@ -53,9 +53,7 @@ def pytest_collection_modifyitems(config, items):
         reason="Test migrated to test_citation_manager_v2.py or test_citation_manager_migration.py"
     )
 
-    skip_pending = pytest.mark.skip(
-        reason="Test pending migration to new CitationManager"
-    )
+    skip_pending = pytest.mark.skip(reason="Test pending migration to new CitationManager")
 
     for item in items:
         test_path = str(item.fspath)

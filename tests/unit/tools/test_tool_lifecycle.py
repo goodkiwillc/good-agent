@@ -29,9 +29,7 @@ def tool_executor(mock_agent):
 
 class TestToolLifecycle:
     @pytest.mark.asyncio
-    async def test_tool_call_before_parameter_modification(
-        self, tool_executor, mock_agent
-    ):
+    async def test_tool_call_before_parameter_modification(self, tool_executor, mock_agent):
         """Test that TOOL_CALL_BEFORE handler can modify tool parameters."""
 
         async def my_tool(arg: str, _agent=None, _tool_call=None) -> str:
@@ -186,8 +184,6 @@ class TestToolLifecycle:
         assert mock_agent.events.apply.call_count == 0
 
         after_calls = [
-            c
-            for c in mock_agent.do.call_args_list
-            if c[0][0] == AgentEvents.TOOL_CALL_AFTER
+            c for c in mock_agent.do.call_args_list if c[0][0] == AgentEvents.TOOL_CALL_AFTER
         ]
         assert len(after_calls) == 2

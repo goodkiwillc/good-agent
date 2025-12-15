@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent
 
 
@@ -123,9 +124,7 @@ class TestEditableResource:
 
         # Replace all occurrences
         resource.state = "foo bar foo baz foo"
-        result = await replace_tool(
-            old_text="foo", new_text="qux", all_occurrences=True
-        )
+        result = await replace_tool(old_text="foo", new_text="qux", all_occurrences=True)
         assert "Replaced 3 occurrence(s)" in result.response
         assert resource.state == "qux bar qux baz qux"
 
@@ -227,9 +226,7 @@ class TestEditableResource:
 
                 # Test using a tool
                 replace_tool = agent.tools["replace"]
-                result = await replace_tool(
-                    _agent=agent, old_text="world", new_text="universe"
-                )
+                result = await replace_tool(_agent=agent, old_text="world", new_text="universe")
                 assert result.response == "Replaced 1 occurrence(s)"
                 assert resource.state == "Hello universe"
 

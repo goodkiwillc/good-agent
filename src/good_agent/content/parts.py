@@ -139,9 +139,7 @@ class TemplateContentPart(BaseContentPart):
         # Render template
         try:
             if template_manager:
-                rendered = template_manager.render_template(
-                    self.template, render_context
-                )
+                rendered = template_manager.render_template(self.template, render_context)
             else:
                 # Simple Jinja2 fallback with sandbox by default
                 from good_agent.core import templating
@@ -185,7 +183,7 @@ class ImageContentPart(BaseContentPart):
         return None
 
     @model_validator(mode="after")
-    def _validate_and_normalize(self) -> "ImageContentPart":
+    def _validate_and_normalize(self) -> ImageContentPart:
         if self.image_url and self.image_base64:
             raise ValueError("image_url and image_base64 are mutually exclusive")
 
@@ -203,7 +201,7 @@ class ImageContentPart(BaseContentPart):
     @classmethod
     def from_url(
         cls, url: str, *, detail: Literal["high", "low", "auto"] = "auto"
-    ) -> "ImageContentPart":
+    ) -> ImageContentPart:
         return cls(image_url=url, detail=detail)
 
     @classmethod
@@ -213,7 +211,7 @@ class ImageContentPart(BaseContentPart):
         *,
         detail: Literal["high", "low", "auto"] = "auto",
         mime_type: str | None = None,
-    ) -> "ImageContentPart":
+    ) -> ImageContentPart:
         return cls(image_base64=data, detail=detail, mime_type=mime_type)
 
     @classmethod
@@ -223,7 +221,7 @@ class ImageContentPart(BaseContentPart):
         *,
         detail: Literal["high", "low", "auto"] = "auto",
         mime_type: str | None = None,
-    ) -> "ImageContentPart":
+    ) -> ImageContentPart:
         detected_mime = mime_type
         if detected_mime is None:
             try:
@@ -309,7 +307,7 @@ class FileContentPart(BaseContentPart):
     file_name: str | None = None
 
     @model_validator(mode="after")
-    def _validate_source(self) -> "FileContentPart":
+    def _validate_source(self) -> FileContentPart:
         if self.file_path and self.file_content:
             raise ValueError("file_path and file_content are mutually exclusive")
         return self
@@ -317,13 +315,13 @@ class FileContentPart(BaseContentPart):
     @classmethod
     def from_file_id(
         cls, file_id: str, *, mime_type: str | None = None, file_name: str | None = None
-    ) -> "FileContentPart":
+    ) -> FileContentPart:
         return cls(file_path=file_id, mime_type=mime_type, file_name=file_name)
 
     @classmethod
     def from_content(
         cls, content: str, *, mime_type: str | None = None, file_name: str | None = None
-    ) -> "FileContentPart":
+    ) -> FileContentPart:
         return cls(file_content=content, mime_type=mime_type, file_name=file_name)
 
     def render(self, mode: RenderMode, context: dict[str, Any] | None = None) -> str:

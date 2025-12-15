@@ -1,9 +1,9 @@
 import hashlib
 import json
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-import logging
 
 import yaml  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field
@@ -76,17 +76,13 @@ class TemplateIndex:
                             meta["path"] = self._normalize_name(str(meta["path"]))
                         # Convert datetime strings back to datetime objects
                         if "last_modified" in meta:
-                            meta["last_modified"] = datetime.fromisoformat(
-                                meta["last_modified"]
-                            )
+                            meta["last_modified"] = datetime.fromisoformat(meta["last_modified"])
                         if meta.get("version_history"):
                             for entry in meta["version_history"]:
                                 timestamp = entry.get("timestamp")
                                 if isinstance(timestamp, str):
                                     try:
-                                        entry["timestamp"] = datetime.fromisoformat(
-                                            timestamp
-                                        )
+                                        entry["timestamp"] = datetime.fromisoformat(timestamp)
                                     except ValueError:
                                         # Leave as string if parsing fails
                                         entry["timestamp"] = timestamp
@@ -117,9 +113,7 @@ class TemplateIndex:
                 data["templates"][name] = meta_dict
 
             self.index_file.parent.mkdir(parents=True, exist_ok=True)
-            self.index_file.write_text(
-                yaml.dump(data, default_flow_style=False, sort_keys=False)
-            )
+            self.index_file.write_text(yaml.dump(data, default_flow_style=False, sort_keys=False))
         except Exception as e:
             logger.error(f"Failed to save index: {e}")
 
@@ -209,9 +203,7 @@ class TemplateIndex:
                             existing.tags = frontmatter.get("tags", [])
                         existing.frontmatter = frontmatter
 
-                    logger.info(
-                        f"Template '{template_name}' modified (v{existing.version})"
-                    )
+                    logger.info(f"Template '{template_name}' modified (v{existing.version})")
                 else:
                     changes[template_name] = "unchanged"
             else:

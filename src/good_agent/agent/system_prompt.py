@@ -279,16 +279,10 @@ To switch modes, use the appropriate mode entry tool."""
         snapshot = self._snapshot_stack.pop()
 
         # Get persistent items added since snapshot
-        persistent_prepends = [
-            s for s in self._prepends[len(snapshot.prepends) :] if s.persist
-        ]
-        persistent_appends = [
-            s for s in self._appends[len(snapshot.appends) :] if s.persist
-        ]
+        persistent_prepends = [s for s in self._prepends[len(snapshot.prepends) :] if s.persist]
+        persistent_appends = [s for s in self._appends[len(snapshot.appends) :] if s.persist]
         persistent_sections = {
-            k: v
-            for k, v in self._sections.items()
-            if k not in snapshot.sections and v.persist
+            k: v for k, v in self._sections.items() if k not in snapshot.sections and v.persist
         }
 
         # Restore to snapshot state

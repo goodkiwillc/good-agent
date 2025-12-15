@@ -11,7 +11,6 @@ from box import Box
 from pydantic import Field
 
 from good_agent import tool
-
 from good_agent.resources.base import StatefulResource
 
 logger = logging.getLogger(__name__)
@@ -128,9 +127,7 @@ def _ensure_parents(doc: Box | dict[str, Any], parts: list[str]) -> None:
         cur = cur[p]
 
 
-def _set_node(
-    doc: Box | dict[str, Any], path: str, value: Any, create_missing: bool
-) -> None:
+def _set_node(doc: Box | dict[str, Any], path: str, value: Any, create_missing: bool) -> None:
     parts = path.split(".") if path else []
     if not parts:
         if not _is_mapping(value):
@@ -225,9 +222,7 @@ def _merge_array(existing: Any, patch: Any, key: str | None = None) -> Any:
     return result_out
 
 
-def _apply_strategy(
-    current: Any, value: Any, strategy: str, array_key: str | None = None
-) -> Any:
+def _apply_strategy(current: Any, value: Any, strategy: str, array_key: str | None = None) -> Any:
     s = (strategy or "assign").lower()
     if s == "assign":
         return copy.deepcopy(_deep_to_box(value))
@@ -243,9 +238,7 @@ def _apply_strategy(
 
 
 ValidatorReturn = dict[str, Any] | tuple[bool, list[str]]
-ValidatorType = (
-    Callable[[dict[str, Any]], ValidatorReturn] | Callable[[str], ValidatorReturn]
-)
+ValidatorType = Callable[[dict[str, Any]], ValidatorReturn] | Callable[[str], ValidatorReturn]
 
 
 class EditableYAML(StatefulResource[Box]):
@@ -297,12 +290,8 @@ class EditableYAML(StatefulResource[Box]):
     @tool
     async def read(
         self,
-        start_line: int | None = Field(
-            default=None, description="1-based line to start from"
-        ),
-        num_lines: int | None = Field(
-            default=None, description="Number of lines to return"
-        ),
+        start_line: int | None = Field(default=None, description="1-based line to start from"),
+        num_lines: int | None = Field(default=None, description="Number of lines to return"),
     ) -> str:
         text = _dump_box_to_yaml(self.state)
         lines = text.split("\n")
@@ -327,9 +316,7 @@ class EditableYAML(StatefulResource[Box]):
     async def _tool_set(
         self,
         path: str = Field(..., description="Dot-path to set"),
-        value: Any = Field(
-            ..., description="JSON value to set (dict/list/str/number/bool/null)"
-        ),
+        value: Any = Field(..., description="JSON value to set (dict/list/str/number/bool/null)"),
         create_missing: bool = Field(True, description="Create containers if missing"),
         strategy: str = Field(
             "assign",
@@ -358,15 +345,8 @@ class EditableYAML(StatefulResource[Box]):
         before = copy.deepcopy(self.state)
         try:
             exists, current = _get_node(self.state, path)
-            new_val = _apply_strategy(
-                current if exists else None, value, strategy, array_key
-            )
-            if (
-                coerce_to_existing_type
-                and exists
-                and _is_scalar(current)
-                and _is_scalar(new_val)
-            ):
+            new_val = _apply_strategy(current if exists else None, value, strategy, array_key)
+            if coerce_to_existing_type and exists and _is_scalar(current) and _is_scalar(new_val):
                 new_val = _coerce_like(current, new_val)
             _set_node(self.state, path, new_val, create_missing=create_missing)
             if run_validation:
@@ -594,9 +574,9 @@ class EditableYAML(StatefulResource[Box]):
                             "errors": [f"test failed: missing {path}"],
                             "yaml": _dump_box_to_yaml(before),
                         }
-                    if yaml.safe_dump(
-                        _deep_to_plain(node), sort_keys=True
-                    ) != yaml.safe_dump(_deep_to_plain(value), sort_keys=True):
+                    if yaml.safe_dump(_deep_to_plain(node), sort_keys=True) != yaml.safe_dump(
+                        _deep_to_plain(value), sort_keys=True
+                    ):
                         return {
                             "ok": False,
                             "errors": [f"test failed at {path}"],

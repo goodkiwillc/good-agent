@@ -2,6 +2,7 @@ from typing import Literal
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+
 from good_agent.extensions.search import (
     DataDomain,
     OperationType,
@@ -406,9 +407,7 @@ class TestSearchProviderRegistry:
         assert registry.list_providers() == []
         assert registry.get_provider("nonexistent") is None
 
-        providers = registry.find_capable_providers(
-            OperationType.SEARCH, DataDomain.WEB
-        )
+        providers = registry.find_capable_providers(OperationType.SEARCH, DataDomain.WEB)
         assert providers == []
 
         best = registry.get_best_provider(OperationType.SEARCH, DataDomain.WEB)

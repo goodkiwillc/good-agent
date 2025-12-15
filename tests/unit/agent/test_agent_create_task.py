@@ -183,9 +183,7 @@ class TestAgentCreateTask:
             cleanup_called["task"] = task
 
         async with Agent("Test") as agent:
-            task = agent.tasks.create(
-                simple_async_task(7), cleanup_callback=cleanup_callback
-            )
+            task = agent.tasks.create(simple_async_task(7), cleanup_callback=cleanup_callback)
 
             result = await task
             assert result == 14
@@ -201,12 +199,8 @@ class TestAgentCreateTask:
         """Test getting task statistics."""
         async with Agent("Test") as agent:
             # Create various tasks
-            task1 = agent.tasks.create(
-                simple_async_task(1), name="task1", wait_on_ready=True
-            )
-            task2 = agent.tasks.create(
-                long_running_task(), name="task2", wait_on_ready=False
-            )
+            task1 = agent.tasks.create(simple_async_task(1), name="task1", wait_on_ready=True)
+            task2 = agent.tasks.create(long_running_task(), name="task2", wait_on_ready=False)
 
             # Get stats before completion
             stats = agent.tasks.stats()

@@ -42,7 +42,7 @@ async def test_citation_fix():
     # Test: Create message with specific citation references
     test_message = AssistantMessage("""Testing citation resolution:
     - Citation 1: [!CITE_1!] should be first.com
-    - Citation 4: [!CITE_4!] should be fourth.com  
+    - Citation 4: [!CITE_4!] should be fourth.com
     - Citation 6: [!CITE_6!] should be sixth.com
     - Citation 2: [!CITE_2!] should be second.com
     """)

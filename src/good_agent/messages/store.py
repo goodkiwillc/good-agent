@@ -20,19 +20,19 @@ class MessageNotFoundError(Exception):
 class MessageStore(Protocol):
     """Protocol for message storage implementations"""
 
-    def get(self, message_id: ULID) -> "Message":
+    def get(self, message_id: ULID) -> Message:
         """Get a message by ID (synchronous)"""
         ...
 
-    async def aget(self, message_id: ULID) -> "Message":
+    async def aget(self, message_id: ULID) -> Message:
         """Get a message by ID (asynchronous)"""
         ...
 
-    def put(self, message: "Message") -> None:
+    def put(self, message: Message) -> None:
         """Store a message (synchronous)"""
         ...
 
-    async def aput(self, message: "Message") -> None:
+    async def aput(self, message: Message) -> None:
         """Store a message (asynchronous)"""
         ...
 
@@ -61,7 +61,7 @@ class InMemoryMessageStore:
             redis_client: Optional Redis client for backing store
             ttl: Time-to-live for Redis entries in seconds (default: 1 hour)
         """
-        self._memory_cache: dict[str, "Message"] = {}
+        self._memory_cache: dict[str, Message] = {}
         self._redis_client = redis_client
         self._ttl = ttl
         self._lock = asyncio.Lock()
@@ -69,7 +69,7 @@ class InMemoryMessageStore:
         # Weak reference set to track all message stores for cleanup
         self._weak_refs: set[weakref.ref] = set()
 
-    def get(self, message_id: ULID) -> "Message":
+    def get(self, message_id: ULID) -> Message:
         """
         Get a message by ID (synchronous).
 
@@ -99,7 +99,7 @@ class InMemoryMessageStore:
 
         raise MessageNotFoundError(f"Message {message_id} not found")
 
-    async def aget(self, message_id: ULID) -> "Message":
+    async def aget(self, message_id: ULID) -> Message:
         """
         Get a message by ID (asynchronous).
 
@@ -156,7 +156,7 @@ class InMemoryMessageStore:
 
             raise MessageNotFoundError(f"Message {message_id} not found")
 
-    def put(self, message: "Message") -> None:
+    def put(self, message: Message) -> None:
         """
         Store a message (synchronous).
 
@@ -168,7 +168,7 @@ class InMemoryMessageStore:
         # Messages always have IDs due to default_factory
         self._memory_cache[str(message.id)] = message
 
-    async def aput(self, message: "Message") -> None:
+    async def aput(self, message: Message) -> None:
         """
         Store a message (asynchronous).
 
@@ -319,22 +319,22 @@ def set_message_store(store: MessageStore) -> None:
 
 
 # Convenience functions that delegate to global store
-def get_message(message_id: ULID) -> "Message":
+def get_message(message_id: ULID) -> Message:
     """Get a message by ID using the global store"""
     return get_message_store().get(message_id)
 
 
-async def aget_message(message_id: ULID) -> "Message":
+async def aget_message(message_id: ULID) -> Message:
     """Get a message by ID using the global store (async)"""
     return await get_message_store().aget(message_id)
 
 
-def put_message(message: "Message") -> None:
+def put_message(message: Message) -> None:
     """Store a message using the global store"""
     get_message_store().put(message)
 
 
-async def aput_message(message: "Message") -> None:
+async def aput_message(message: Message) -> None:
     """Store a message using the global store (async)"""
     await get_message_store().aput(message)
 
@@ -353,19 +353,19 @@ async def amessage_exists(message_id: ULID) -> bool:
 class MessageStoreGlobal:
     """Global message store interface matching the spec usage"""
 
-    def get(self, message_id: ULID) -> "Message":
+    def get(self, message_id: ULID) -> Message:
         """Get a message by ID"""
         return get_message(message_id)
 
-    async def aget(self, message_id: ULID) -> "Message":
+    async def aget(self, message_id: ULID) -> Message:
         """Get a message by ID (async)"""
         return await aget_message(message_id)
 
-    def put(self, message: "Message") -> None:
+    def put(self, message: Message) -> None:
         """Store a message"""
         put_message(message)
 
-    async def aput(self, message: "Message") -> None:
+    async def aput(self, message: Message) -> None:
         """Store a message (async)"""
         await aput_message(message)
 

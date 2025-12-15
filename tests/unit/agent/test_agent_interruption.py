@@ -1,15 +1,17 @@
 import asyncio
 import signal
 import sys
+from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import Sequence, cast
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 import pytest
+from litellm.types.completion import ChatCompletionMessageParam
+
 from good_agent import Agent
 from good_agent.agent import AgentState
 from good_agent.tools import tool
-from litellm.types.completion import ChatCompletionMessageParam
 
 
 def _make_mock_llm_response(content: str = "mock response"):
@@ -52,7 +54,7 @@ class TestAgentInterruption:
             cleanup_called = True
             await original_close()
 
-        setattr(agent.events, "close", tracked_close)
+        agent.events.close = tracked_close
 
         with _stub_agent_complete(agent, delay=5.0):
             # Simulate some work
@@ -92,7 +94,7 @@ class TestAgentInterruption:
             """Helper to consume the async generator."""
             formatted = await agent.model.format_message_list_for_llm(agent.messages)
             formatted_sequence = cast(Sequence[ChatCompletionMessageParam], formatted)
-            async for chunk in agent.model.stream(formatted_sequence):
+            async for _chunk in agent.model.stream(formatted_sequence):
                 pass  # Just consume chunks
 
         with patch.object(agent.model, "stream", mock_stream):
@@ -159,9 +161,7 @@ class TestAgentInterruption:
         mock_choice.message.tool_calls = [
             MockToolCall(
                 id=f"call_{i}",
-                function=MockFunction(
-                    name="slow_tool", arguments='{"task_id": ' + str(i) + "}"
-                ),
+                function=MockFunction(name="slow_tool", arguments='{"task_id": ' + str(i) + "}"),
             )
             for i in range(5)
         ]
@@ -396,12 +396,8 @@ class TestAgentInterruption:
 
                 # The tool should have started but not completed
                 assert tool_started_event.is_set(), "Tool should have started"
-                assert nested_call_started_event.is_set(), (
-                    "Nested call should have started"
-                )
-                assert not tool_completed, (
-                    "Tool should not have completed due to cancellation"
-                )
+                assert nested_call_started_event.is_set(), "Nested call should have started"
+                assert not tool_completed, "Tool should not have completed due to cancellation"
 
         finally:
             # Always cleanup
@@ -412,9 +408,7 @@ class TestSignalHandling:
     """Test actual signal handling with Agent."""
 
     @pytest.mark.asyncio
-    @pytest.mark.skipif(
-        sys.platform == "win32", reason="Signal handling differs on Windows"
-    )
+    @pytest.mark.skipif(sys.platform == "win32", reason="Signal handling differs on Windows")
     async def test_sigint_during_agent_execution(self):
         """Test SIGINT handling during agent execution."""
         agent = Agent("Test assistant")
@@ -431,9 +425,7 @@ class TestSignalHandling:
                 await asyncio.sleep(10)
                 mock_response = MagicMock()
                 mock_choice = MagicMock()
-                mock_choice.__class__.__name__ = (
-                    "Choices"  # Make it look like a Choices object
-                )
+                mock_choice.__class__.__name__ = "Choices"  # Make it look like a Choices object
                 mock_response.choices = [mock_choice]
                 mock_choice.message = MagicMock(content="Response", tool_calls=None)
                 return mock_response
@@ -457,9 +449,7 @@ class TestSignalHandling:
             # Patch the model's complete method to simulate long operation
             with patch.object(agent.model, "complete", side_effect=mock_complete):
                 # Start long-running operation
-                exec_task = asyncio.create_task(
-                    agent.call("Generate a very long response")
-                )
+                exec_task = asyncio.create_task(agent.call("Generate a very long response"))
 
                 # Let the task start executing
                 await asyncio.sleep(0.05)

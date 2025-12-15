@@ -20,11 +20,7 @@ from jinja2.runtime import Context
 
 
 def _extract_template(cls):
-    return (
-        inspect.cleandoc(cls.__template__).strip()
-        if cls.__template__
-        else inspect.getdoc(cls)
-    )
+    return inspect.cleandoc(cls.__template__).strip() if cls.__template__ else inspect.getdoc(cls)
 
 
 class AbstractTemplate(ABC):
@@ -47,9 +43,7 @@ class AbstractTemplate(ABC):
         super().__init_subclass__()
 
         # Get the existing template config or create a new one
-        base_config: ChainMap[str, Any] = getattr(
-            cls, "__template_config__", ChainMap()
-        )
+        base_config: ChainMap[str, Any] = getattr(cls, "__template_config__", ChainMap())
         if not isinstance(base_config, ChainMap):
             base_config = ChainMap(base_config if base_config else {})
 
@@ -140,9 +134,7 @@ class TemplateDependencyRegistry:
             elif pass_context == "env":
                 func = _pass_environment(func)
             if not callable(func):
-                raise TypeError(
-                    f"Filter function must be callable, got {type(func).__name__}"
-                )
+                raise TypeError(f"Filter function must be callable, got {type(func).__name__}")
             # Register primary name
             self.filters[name] = func
             # Register deprecated aliases as wrappers that emit a warning
@@ -198,8 +190,7 @@ class TemplateDependencyRegistry:
         for name, func in self.functions.items():
             if name in env.globals:
                 raise ValueError(
-                    f"Function name '{name}' is already registered. "
-                    "Please choose a different name."
+                    f"Function name '{name}' is already registered. Please choose a different name."
                 )
             env.globals[name] = func
 

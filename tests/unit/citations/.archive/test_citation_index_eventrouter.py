@@ -1,6 +1,7 @@
 import pytest
-from good_agent import Agent
 from good_agent.extensions.index import Citation, CitationIndex, Paragraph
+
+from good_agent import Agent
 
 
 @pytest.mark.asyncio

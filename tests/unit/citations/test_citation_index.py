@@ -1,6 +1,7 @@
 import pytest
-from good_agent.extensions.citations import CitationIndex
+
 from good_agent.core.types import URL
+from good_agent.extensions.citations import CitationIndex
 
 
 class TestCitationIndex:
@@ -46,9 +47,7 @@ class TestCitationIndex:
             title="Example",
         )
 
-        alias_idx = citation_index.add_alias(
-            "https://example.com", "http://example.com"
-        )
+        alias_idx = citation_index.add_alias("https://example.com", "http://example.com")
         assert alias_idx == idx
         assert citation_index.lookup("http://example.com") == idx
         assert citation_index.get_value("http://example.com") == "Content"

@@ -5,6 +5,7 @@ from datetime import date, datetime
 from statistics import median
 
 import pytest
+
 from good_agent import Agent
 from good_agent.core.types import URL
 from good_agent.extensions.search import (
@@ -167,9 +168,7 @@ class TestPerformance:
                 for i in range(100):
                     # Every 5th result is duplicate content
                     content = (
-                        f"Duplicate content {i // 5}"
-                        if i % 5 == 0
-                        else f"Unique {self.name} {i}"
+                        f"Duplicate content {i // 5}" if i % 5 == 0 else f"Unique {self.name} {i}"
                     )
                     results.append(
                         SearchResult(
@@ -229,13 +228,9 @@ class TestPerformance:
         no_dedup_timings: list[float] = []
 
         for _ in range(measurement_iterations):
-            dedup_timings.append(
-                await _invoke_and_measure(agent_dedup, query="benchmark")
-            )
+            dedup_timings.append(await _invoke_and_measure(agent_dedup, query="benchmark"))
             await asyncio.sleep(0)
-            no_dedup_timings.append(
-                await _invoke_and_measure(agent_no_dedup, query="benchmark")
-            )
+            no_dedup_timings.append(await _invoke_and_measure(agent_no_dedup, query="benchmark"))
             await asyncio.sleep(0)
 
         dedup_median = median(dedup_timings)
@@ -508,8 +503,7 @@ class TestScalability:
         """Test with many providers registered."""
         # Create 50 providers
         providers = [
-            VariableSpeedProvider(f"provider_{i}", delay=0.01, result_count=5)
-            for i in range(50)
+            VariableSpeedProvider(f"provider_{i}", delay=0.01, result_count=5) for i in range(50)
         ]
 
         search = AgentSearch(

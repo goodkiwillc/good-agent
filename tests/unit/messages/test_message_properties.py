@@ -3,6 +3,8 @@ from collections import ChainMap
 from typing import cast
 
 import pytest
+from pydantic import BaseModel
+
 from good_agent.agent import Agent
 from good_agent.content import TextContentPart
 from good_agent.messages import (
@@ -12,7 +14,6 @@ from good_agent.messages import (
     ToolMessage,
     UserMessage,
 )
-from pydantic import BaseModel
 
 
 class DummyAgent:
@@ -58,9 +59,7 @@ class TestMessageProperties:
 
     def test_private_attributes_custom_values(self):
         """Test setting custom values for private attributes"""
-        msg = UserMessage(
-            content="Hello", ok=False, attempt=3, retry=True, last_attempt=True, i=5
-        )
+        msg = UserMessage(content="Hello", ok=False, attempt=3, retry=True, last_attempt=True, i=5)
 
         assert msg.ok is False
         assert msg.attempt == 3
@@ -170,14 +169,10 @@ class TestMessageProperties:
             temperature: float
             condition: str
 
-        weather = WeatherResponse(
-            location="New York", temperature=25.0, condition="sunny"
-        )
+        weather = WeatherResponse(location="New York", temperature=25.0, condition="sunny")
 
         msg = AssistantMessageStructuredOutput[WeatherResponse](
-            content_parts=[
-                TextContentPart(text="The weather in New York is 25.0°C with sunny.")
-            ],
+            content_parts=[TextContentPart(text="The weather in New York is 25.0°C with sunny.")],
             output=weather,
         )
 

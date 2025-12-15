@@ -2,6 +2,7 @@ from datetime import date, datetime
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+
 from good_agent import Agent
 from good_agent.core.types import URL
 from good_agent.extensions.search import (
@@ -177,9 +178,7 @@ class TestDateHandling:
         # Check that the until date is either today or yesterday relative to system time
         until_date = query.until.date()
         delta = abs((until_date - today).days)
-        assert delta <= 1, (
-            f"Query until date {until_date} too far from system date {today}"
-        )
+        assert delta <= 1, f"Query until date {until_date} too far from system date {today}"
 
         # Check that since date is 1 day before until date
         since_date = query.since.date()

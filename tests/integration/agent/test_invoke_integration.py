@@ -1,6 +1,7 @@
 import json
 
 import pytest
+
 from good_agent import Agent
 from good_agent.messages import ToolCall
 from good_agent.tools import ToolCallFunction, tool
@@ -201,9 +202,7 @@ class TestInvokeIntegration:
             tools=[search_web, summarize],
         ) as agent:
             # User asks complex question
-            agent.append(
-                "Search for information about quantum computing and summarize it"
-            )
+            agent.append("Search for information about quantum computing and summarize it")
 
             # Simulate LLM response with multiple tool calls
             agent.assistant.append(
@@ -222,9 +221,7 @@ class TestInvokeIntegration:
                         type="function",
                         function=ToolCallFunction(
                             name="search_web",
-                            arguments=json.dumps(
-                                {"query": "quantum computing applications"}
-                            ),
+                            arguments=json.dumps({"query": "quantum computing applications"}),
                         ),
                     ),
                 ],

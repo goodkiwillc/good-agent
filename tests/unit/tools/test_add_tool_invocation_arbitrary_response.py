@@ -33,14 +33,10 @@ class TestAddToolInvocationArbitraryResponse:
         )
 
         # Add tool invocation
-        agent.add_tool_invocation(
-            tool="search", response=response, parameters={"query": "test"}
-        )
+        agent.add_tool_invocation(tool="search", response=response, parameters={"query": "test"})
 
         # Verify messages were added
-        assert (
-            len(agent.messages) == 3
-        )  # system, assistant with tool call, tool response
+        assert len(agent.messages) == 3  # system, assistant with tool call, tool response
 
         # Check assistant message
         assistant_msg = agent.assistant[-1]
@@ -131,10 +127,7 @@ class TestAddToolInvocationArbitraryResponse:
         assert tool_response.success is True
 
         # Verify content shows the model correctly
-        assert (
-            str(custom_response) in tool_msg.content
-            or "CustomResponse" in tool_msg.content
-        )
+        assert str(custom_response) in tool_msg.content or "CustomResponse" in tool_msg.content
 
     @pytest.mark.asyncio
     async def test_record_invocation_with_list_response(self):

@@ -48,9 +48,7 @@ def test_run_agent_factory_receives_extra_args(mock_load, mock_loop, mock_asynci
 @patch("good_agent.cli.run.asyncio.run")
 @patch("good_agent.cli.run.run_interactive_loop", new_callable=AsyncMock)
 @patch("good_agent.cli.run.load_agent_from_path")
-def test_run_agent_rejects_non_agent_objects(
-    mock_load, mock_loop, mock_asyncio_run, mock_print
-):
+def test_run_agent_rejects_non_agent_objects(mock_load, mock_loop, mock_asyncio_run, mock_print):
     factory = MagicMock(return_value="not-an-agent")
     mock_load.return_value = (factory, {})
 
@@ -69,9 +67,7 @@ def test_run_agent_rejects_non_agent_objects(
 @patch("good_agent.cli.run.asyncio.run")
 @patch("good_agent.cli.run.run_interactive_loop", new_callable=AsyncMock)
 @patch("good_agent.cli.run.load_agent_from_path")
-def test_run_agent_reports_load_errors(
-    mock_load, mock_loop, mock_asyncio_run, mock_print
-):
+def test_run_agent_reports_load_errors(mock_load, mock_loop, mock_asyncio_run, mock_print):
     mock_load.side_effect = Exception("boom")
 
     run_agent("module:agent")
@@ -85,17 +81,13 @@ def test_run_agent_reports_load_errors(
 @patch("good_agent.cli.run.asyncio.run")
 @patch("good_agent.cli.run.run_interactive_loop", new_callable=AsyncMock)
 @patch("good_agent.cli.run.load_agent_from_path")
-def test_run_agent_reports_factory_errors(
-    mock_load, mock_loop, mock_asyncio_run, mock_print
-):
+def test_run_agent_reports_factory_errors(mock_load, mock_loop, mock_asyncio_run, mock_print):
     factory = MagicMock(side_effect=ValueError("factory boom"))
     mock_load.return_value = (factory, {})
 
     run_agent("module:factory", extra_args=["--foo", "bar"])
 
     factory.assert_called_once_with("--foo", "bar")
-    mock_print.assert_called_once_with(
-        "Error instantiating agent factory: factory boom"
-    )
+    mock_print.assert_called_once_with("Error instantiating agent factory: factory boom")
     mock_loop.assert_not_called()
     mock_asyncio_run.assert_not_called()

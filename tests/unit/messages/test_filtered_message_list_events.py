@@ -1,4 +1,5 @@
 import pytest
+
 from good_agent import Agent, AgentEvents
 from good_agent.messages import ToolMessage
 
@@ -90,15 +91,9 @@ async def test_user_message_via_filtered_list_triggers_events():
         agent.user.append("User message content")
 
         # Verify all events were triggered
-        assert events_triggered["create_before"], (
-            "MESSAGE_CREATE_BEFORE was not triggered"
-        )
-        assert events_triggered["create_after"], (
-            "MESSAGE_CREATE_AFTER was not triggered"
-        )
-        assert events_triggered["append_after"], (
-            "MESSAGE_APPEND_AFTER was not triggered"
-        )
+        assert events_triggered["create_before"], "MESSAGE_CREATE_BEFORE was not triggered"
+        assert events_triggered["create_after"], "MESSAGE_CREATE_AFTER was not triggered"
+        assert events_triggered["append_after"], "MESSAGE_APPEND_AFTER was not triggered"
 
         # Verify the message was properly added (agent has 2 messages: system + user)
         assert len(agent.messages) == 2

@@ -1,7 +1,8 @@
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 
-from good_agent import AgentComponent, Agent
+from good_agent import Agent, AgentComponent
 from good_agent.agent.components import ComponentRegistry
 from good_agent.events import AgentEvents
 

@@ -3,6 +3,7 @@ import time
 from typing import Any, cast
 
 import pytest
+
 from good_agent import Agent, tool
 
 
@@ -44,15 +45,11 @@ async def test_agent_initialization_with_simple_tools():
     start_time = time.time()
 
     # Create agent with simple tools
-    async with Agent(
-        "You are a helpful assistant", tools=[simple_tool, async_tool]
-    ) as agent:
+    async with Agent("You are a helpful assistant", tools=[simple_tool, async_tool]) as agent:
         elapsed = time.time() - start_time
 
         # Should complete well within the 10 second timeout
-        assert elapsed < 2.0, (
-            f"Agent took {elapsed:.2f}s to initialize (should be < 2s)"
-        )
+        assert elapsed < 2.0, f"Agent took {elapsed:.2f}s to initialize (should be < 2s)"
 
         # Verify tools are registered
         assert "simple_tool" in agent.tools
@@ -98,9 +95,7 @@ async def test_agent_initialization_with_tool_patterns():
 
     # Create agent with tool patterns (these will be loaded from registry)
     # Using a pattern that shouldn't exist to avoid loading real tools
-    async with Agent(
-        "You are a helpful assistant", tools=["nonexistent:*", "fake_tool"]
-    ) as agent:
+    async with Agent("You are a helpful assistant", tools=["nonexistent:*", "fake_tool"]) as agent:
         elapsed = time.time() - start_time
 
         # Should complete within timeout even when patterns don't match anything
@@ -133,9 +128,7 @@ async def test_agent_initialization_timeout_detection():
         elapsed = time.time() - start_time
 
         # Should complete well within the 10 second timeout
-        assert elapsed < 5.0, (
-            f"Agent took {elapsed:.2f}s to initialize (should be < 5s)"
-        )
+        assert elapsed < 5.0, f"Agent took {elapsed:.2f}s to initialize (should be < 5s)"
 
         # Verify the tool was registered
         assert "quick_tool" in agent.tools
@@ -180,9 +173,7 @@ async def test_agent_initialization_with_mixed_tool_types():
         elapsed = time.time() - start_time
 
         # Should complete quickly
-        assert elapsed < 2.0, (
-            f"Agent took {elapsed:.2f}s to initialize with mixed tools"
-        )
+        assert elapsed < 2.0, f"Agent took {elapsed:.2f}s to initialize with mixed tools"
 
         # Verify tools are registered (raw_function gets converted)
         assert "sync_tool" in agent.tools

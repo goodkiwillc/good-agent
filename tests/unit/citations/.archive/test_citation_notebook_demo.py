@@ -20,11 +20,11 @@ async def demo_citation_access():
 
     # Simulate a response with citations (like from the campaign analysis)
     agent.append("""Based on recent news [1] and analysis [2], the California Governor race shows:
-    
+
     - Katie Porter leads in polls [1]
     - Gavin Newsom's approval rating has changed [2]
     - New candidate announcements expected [3]
-    
+
     [1]: https://politico.com/california-governor-2026
     [2]: https://latimes.com/newsom-approval-rating
     [3]: https://sfchronicle.com/candidate-announcements

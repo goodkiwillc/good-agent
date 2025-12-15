@@ -6,14 +6,14 @@ readme = "README.md"
 authors = [
     { name = "Chris Goddard", email = "chris@goodkiwi.llc" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     "good-common>=1.2.1",
     "instructor>=1.12.0",
     "jinja2>=3.1.6",
     "lxml-html-clean>=0.4.3",
     "markdown>=3.9",
-    "litellm>=1.50.0",
+    "litellm",
     "mcp>=1.0.0",
     "rich>=13.7.0",
     "numpy>=2.3.4",
@@ -32,6 +32,16 @@ good-agent = "good_agent.cli.main:app"
 [build-system]
 requires = ["uv_build>=0.8.22,<0.9.0"]
 build-backend = "uv_build"
+
+[tool.uv.sources]
+litellm = { git = "https://github.com/BerriAI/litellm.git", branch="main" }
+
+[tool.uv]
+override-dependencies = [
+    "grpcio>=1.76.0",  # Force Python 3.14 compatible version
+]
+
+
 
 [dependency-groups]
 dev = [
@@ -140,4 +150,35 @@ omit = [
     "src/good_agent/core/models/reference.py",
     "src/good_agent/core/models/protocols.py",
     "src/good_agent/core/templating/type_safety_patterns.py",
+]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+ignore = [
+    "E501",    # Line too long - handled by formatter
+    "SIM102",  # Use a single if statement - sometimes nested ifs are clearer
+    "SIM108",  # Use ternary operator - sometimes if-else is clearer
+    "SIM105",  # Use contextlib.suppress - sometimes try-except-pass is intentional
+    "UP040",   # TypeAlias annotation - keep for broader Python compatibility
+    "UP046",   # Use `type` instead of TypeAlias - keep for broader Python compatibility
+    "UP047",   # Generic functions - keep for broader Python compatibility
+    "B008",    # Do not perform function call in argument defaults - common pattern in CLI
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "ARG001",  # Unused function argument - pytest fixtures
+    "ARG002",  # Unused method argument - pytest fixtures
+    "ARG005",  # Unused lambda argument - test mocks
+    "SIM116",  # Use dictionary instead of if - test readability
+    "SIM117",  # Use single with statement - test readability
+    "SIM118",  # Use `key in dict` - test explicitness
+]
+"src/**/*.py" = [
+    "ARG002",  # Unused method argument - interface implementations
+    "ARG001",  # Unused function argument - callback signatures
 ]

@@ -8,7 +8,6 @@ from good_agent import tool
 from good_agent.core.mdxl import MDXL
 from good_agent.extensions.citations.formats import CitationPatterns
 from good_agent.extensions.citations.manager import CitationManager
-
 from good_agent.resources.base import StatefulResource
 
 logger = logging.getLogger(__name__)
@@ -170,9 +169,7 @@ class EditableMDXL(StatefulResource[MDXL]):
             logger.debug(f"Updating text content for element at {xpath}")
             # Convert global [!CITE_X!] markers to section-level markdown references
             try:
-                transformed = self._convert_llm_citations_to_markdown_refs(
-                    text_content, cm
-                )
+                transformed = self._convert_llm_citations_to_markdown_refs(text_content, cm)
             except Exception:
                 transformed = text_content
             element._root.text = transformed
@@ -205,7 +202,9 @@ class EditableMDXL(StatefulResource[MDXL]):
 
         update_desc = ", ".join(updates)
         if len(elements) > 1:
-            result = f"Updated {update_desc} on first of {len(elements)} matching elements at {xpath}"
+            result = (
+                f"Updated {update_desc} on first of {len(elements)} matching elements at {xpath}"
+            )
         else:
             result = f"Updated {update_desc} at {xpath}"
 
@@ -244,9 +243,7 @@ class EditableMDXL(StatefulResource[MDXL]):
         text = re.sub(r"\n\s*\n\s*\n+", "\n\n", text).strip()
 
         # Determine current highest numeric citation used in the text
-        present_numeric = [
-            int(m.group(1)) for m in CitationPatterns.MARKDOWN.finditer(text)
-        ]
+        present_numeric = [int(m.group(1)) for m in CitationPatterns.MARKDOWN.finditer(text)]
         next_idx = max(present_numeric) if present_numeric else 0
 
         # Replace [!CITE_X!] with sequential numeric indices continuing after existing ones
@@ -269,7 +266,7 @@ class EditableMDXL(StatefulResource[MDXL]):
             # Apply replacements in reverse order to keep positions stable
             for m in reversed(llm_matches):
                 gidx = int(m.group(1))
-                lidx = assigned.get(gidx, None)
+                lidx = assigned.get(gidx)
                 if lidx is not None:
                     text = text[: m.start()] + f"[{lidx}]" + text[m.end() :]
 
@@ -320,9 +317,7 @@ class EditableMDXL(StatefulResource[MDXL]):
             Description of what was replaced
         """
         xpath = self._clean_xpath(xpath)
-        logger.debug(
-            f"Replace text in {xpath}: '{old_text[:50]}...' -> '{new_text[:50]}...'"
-        )
+        logger.debug(f"Replace text in {xpath}: '{old_text[:50]}...' -> '{new_text[:50]}...'")
 
         elements = self.state.select_all(xpath)
         if not elements:
@@ -376,16 +371,12 @@ class EditableMDXL(StatefulResource[MDXL]):
             ...,
             description="XPath to EXISTING reference element. New element will be inserted as its SIBLING. Reference must exist.",
         ),
-        element_tag: str = Field(
-            ..., description="Tag name for the new SIBLING element"
-        ),
+        element_tag: str = Field(..., description="Tag name for the new SIBLING element"),
         position: str = Field(
             "after",
             description="Where to insert relative to reference: 'before' or 'after' (default: 'after')",
         ),
-        text_content: str | None = Field(
-            None, description="Text content for the new element"
-        ),
+        text_content: str | None = Field(None, description="Text content for the new element"),
         attributes: dict[str, str] | None = Field(
             None, description="Attributes for the new element"
         ),
@@ -435,9 +426,7 @@ class EditableMDXL(StatefulResource[MDXL]):
 
         if text_content:
             # Normalize citations to self-contained markdown with refs
-            normalized_text = self._convert_llm_citations_to_markdown_refs(
-                text_content, cm
-            )
+            normalized_text = self._convert_llm_citations_to_markdown_refs(text_content, cm)
             elem_str += f">{normalized_text}</{element_tag}>"
         else:
             elem_str += "/>"
@@ -538,9 +527,7 @@ class EditableMDXL(StatefulResource[MDXL]):
             ...,
             description="Tag name for the NEW element to create (e.g., 'details', 'description', 'notes')",
         ),
-        text_content: str | None = Field(
-            None, description="Text content for the new element"
-        ),
+        text_content: str | None = Field(None, description="Text content for the new element"),
         attributes: dict[str, str] | None = Field(
             None,
             description="Attributes for the new element (e.g., {'type': 'personal', 'visibility': 'public'})",
@@ -579,9 +566,7 @@ class EditableMDXL(StatefulResource[MDXL]):
 
         if text_content:
             # Normalize citations to self-contained markdown with refs
-            normalized_text = self._convert_llm_citations_to_markdown_refs(
-                text_content, cm
-            )
+            normalized_text = self._convert_llm_citations_to_markdown_refs(text_content, cm)
             elem_str += f">{normalized_text}</{element_tag}>"
         else:
             elem_str += "/>"
