@@ -108,6 +108,7 @@ async def test_component_tools_execution():
         "You are a task management assistant. Use the tools to manage tasks.",
         extensions=[task_manager],
     ) as agent:
+
         @dataclass
         class MockFunction:
             name: str

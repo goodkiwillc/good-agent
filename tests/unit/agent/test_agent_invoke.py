@@ -191,9 +191,7 @@ class TestAgentInvoke:
             return f"Agent {ctx.agent.session_id} processing: {query}"
 
         async with Agent("Test agent", tools=[context_aware_tool]) as agent:
-            result = await agent.invoke(
-                context_aware_tool, query="test query"
-            )
+            result = await agent.invoke(context_aware_tool, query="test query")
 
             assert result.success is True
             assert f"Agent {agent.session_id} processing: test query" in result.response
@@ -327,9 +325,7 @@ class TestAgentInvokeFunc:
 
         async with Agent("Test agent", tools=[format_message]) as agent:
             # Create bound function with some params preset
-            greet = agent.invoke_func(
-                format_message, prefix="Hello", suffix="!"
-            )
+            greet = agent.invoke_func(format_message, prefix="Hello", suffix="!")
 
             # Call with remaining param
             result = await greet(message="World")

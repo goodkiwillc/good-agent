@@ -359,10 +359,7 @@ class TestConcurrency:
         await agent.initialize()
 
         # Launch concurrent searches
-        tasks = [
-            agent.invoke("search", query=f"concurrent_{i}")
-            for i in range(50)
-        ]
+        tasks = [agent.invoke("search", query=f"concurrent_{i}") for i in range(50)]
 
         responses = await asyncio.gather(*tasks)
         results = [r.response for r in responses]

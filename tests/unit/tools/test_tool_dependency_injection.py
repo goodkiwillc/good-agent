@@ -268,9 +268,7 @@ class TestAgentComponentInjection:
             agent.append("What is the name?")
 
             # Manually execute the tool to test injection
-            result: ToolResponse[str] = await agent.invoke(
-                lookup_data, key="name"
-            )
+            result: ToolResponse[str] = await agent.invoke(lookup_data, key="name")
 
             # Verify that component injection worked
             assert result.success
@@ -379,9 +377,7 @@ class TestInjectionEdgeCases:
 
         # Create agent WITHOUT the required extension
         async with Agent("Test system", tools=[requires_store]) as agent:
-            result: ToolResponse[str] = await agent.invoke(
-                requires_store, data="test"
-            )
+            result: ToolResponse[str] = await agent.invoke(requires_store, data="test")
 
             # Should fail gracefully
             assert not result.success
@@ -423,9 +419,7 @@ class TestInjectionEdgeCases:
             return f"Sync: {value}, Agent: {str(agent.session_id)[:8]}"
 
         async with Agent("Test system", tools=[sync_tool]) as agent:
-            result: ToolResponse[str] = await agent.invoke(
-                sync_tool, value="test"
-            )
+            result: ToolResponse[str] = await agent.invoke(sync_tool, value="test")
 
             assert result.success
             response_text = cast(str, result.response)

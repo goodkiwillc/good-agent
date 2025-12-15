@@ -3,10 +3,11 @@ import tomli_w
 import logging
 from pathlib import Path
 from typing import Any, Dict, Optional
+
 try:
     import tomllib
 except ImportError:
-    import tomli as tomllib # type: ignore
+    import tomli as tomllib  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ KEY_ALIASES = {
     "cohere": "cohere_api_key",
     "mistral": "mistral_api_key",
 }
+
 
 class GlobalConfig:
     def __init__(self, profile: Optional[str] = None):
@@ -53,7 +55,7 @@ class GlobalConfig:
             self.config_path.touch(mode=0o600)
         else:
             self.config_path.chmod(0o600)
-            
+
         with open(self.config_path, "wb") as f:
             tomli_w.dump(self.data, f)
 
@@ -64,13 +66,13 @@ class GlobalConfig:
         """Get a value, checking profile then default."""
         target_profile = profile or self.profile
         resolved_key = self._resolve_key(key)
-        
+
         # Check specific profile
         if target_profile != "default":
             profile_data = self.data.get("profile", {}).get(target_profile, {})
             if resolved_key in profile_data:
                 return profile_data[resolved_key]
-        
+
         # Check default
         default_data = self.data.get("default", {})
         return default_data.get(resolved_key)
@@ -79,7 +81,7 @@ class GlobalConfig:
         """Set a value in the specified profile (or default)."""
         target_profile = profile or self.profile
         resolved_key = self._resolve_key(key)
-        
+
         if target_profile == "default":
             if "default" not in self.data:
                 self.data["default"] = {}
@@ -90,21 +92,21 @@ class GlobalConfig:
             if target_profile not in self.data["profile"]:
                 self.data["profile"][target_profile] = {}
             self.data["profile"][target_profile][resolved_key] = value
-            
+
         self.save()
 
     def list(self, profile: Optional[str] = None) -> Dict[str, Any]:
         """List all resolved configuration for a profile."""
         target_profile = profile or self.profile
-        
+
         # Start with defaults
         result = self.data.get("default", {}).copy()
-        
+
         # Overlay profile if not default
         if target_profile != "default":
             profile_data = self.data.get("profile", {}).get(target_profile, {})
             result.update(profile_data)
-            
+
         return result
 
     def inject_into_environ(self):

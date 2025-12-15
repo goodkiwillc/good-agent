@@ -107,9 +107,7 @@ class TestInvokeFuncWithInvokeMany:
 
         async with Agent("You are a data processor", tools=[process_data]) as agent:
             # Create bound function
-            uppercase_processor = agent.invoke_func(
-                process_data, transform="upper"
-            )
+            uppercase_processor = agent.invoke_func(process_data, transform="upper")
 
             # Process multiple items
             items = ["hello", "world", "test"]
