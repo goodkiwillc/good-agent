@@ -2129,8 +2129,7 @@ class Agent(EventRouter):
                     return value
             # Heuristic fallback when no schema (try object/array detection)
             if expected_type is None and (
-                (s.startswith("{") and s.endswith("}"))
-                or (s.startswith("[") and s.endswith("]"))
+                (s.startswith("{") and s.endswith("}")) or (s.startswith("[") and s.endswith("]"))
             ):
                 try:
                     return orjson.loads(s)

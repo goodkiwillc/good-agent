@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, Generic, Literal, TypeAlias, TypeVar, overload
+from typing import Generic, Literal, TypeAlias, TypeVar, overload
 
 from pydantic import BaseModel
 
 from good_agent.core.types import URL
 from good_agent.messages.base import (
     IMAGE,
-    Annotation,
     AnnotationLike,
     ImageDetail,
     Message,

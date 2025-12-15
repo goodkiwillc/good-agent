@@ -1077,10 +1077,7 @@ You are now operating in {mode_name} mode. Your responses should align with this
             self._agent._messages._sync_from_version()
 
         # Restore tool state for CONFIG and FORK
-        if (
-            isolation in (IsolationLevel.CONFIG, IsolationLevel.FORK)
-            and snapshot.tool_state
-        ):
+        if isolation in (IsolationLevel.CONFIG, IsolationLevel.FORK) and snapshot.tool_state:
             from good_agent.tools import ToolManager
 
             tool_manager = self._agent[ToolManager]

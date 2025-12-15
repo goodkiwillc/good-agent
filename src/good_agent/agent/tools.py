@@ -955,12 +955,9 @@ class ToolExecutor:
                         # Default to string but try to infer if it looks like JSON
                         param_type = "string"
                         if (
-                            (
-                                (param_value.startswith("{") and param_value.endswith("}"))
-                                or (param_value.startswith("[") and param_value.endswith("]"))
-                            )
-                            and ("object" in types or "array" in types)
-                        ):
+                            (param_value.startswith("{") and param_value.endswith("}"))
+                            or (param_value.startswith("[") and param_value.endswith("]"))
+                        ) and ("object" in types or "array" in types):
                             # Check if object or array are allowed types in anyOf
                             try:
                                 coerced[param_name] = orjson.loads(param_value)
@@ -1004,12 +1001,9 @@ class ToolExecutor:
 
                 # Fallback: If schema has type=object or type=array but wasn't caught above
                 # e.g. because it wasn't processed correctly
-                elif (
-                    param_schema.get("type") in ("object", "array")
-                    and (
-                        (param_value.startswith("{") and param_value.endswith("}"))
-                        or (param_value.startswith("[") and param_value.endswith("]"))
-                    )
+                elif param_schema.get("type") in ("object", "array") and (
+                    (param_value.startswith("{") and param_value.endswith("}"))
+                    or (param_value.startswith("[") and param_value.endswith("]"))
                 ):
                     with contextlib.suppress(Exception):
                         coerced[param_name] = orjson.loads(param_value)

@@ -101,7 +101,7 @@ def _provide_now():
 def find_prompts_directory() -> Path | None:
     """Find the prompts directory from env override or by looking for prompts.yaml."""
     env_dir = os.getenv("GOOD_AGENT_PROMPTS_DIR")
-    logger.info(f"Searching for prompts directory...")
+    logger.info("Searching for prompts directory...")
     if env_dir:
         env_path = Path(env_dir).expanduser()
         logger.info(f"Using prompts directory from GOOD_AGENT_PROMPTS_DIR: {env_path}")

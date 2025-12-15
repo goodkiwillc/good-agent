@@ -41,11 +41,7 @@ class ConfigField:
 
     def __set__(self, obj, value):
         # Simple type validation
-        if (
-            self.type_hint
-            and value is not None
-            and not self._validate_type(value, self.type_hint)
-        ):
+        if self.type_hint and value is not None and not self._validate_type(value, self.type_hint):
             raise TypeError(f"Field '{self.name}' expected {self.type_hint}, got {type(value)}")
         obj._chainmap[self.name] = value
 
