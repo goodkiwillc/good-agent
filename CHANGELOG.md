@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2025-12-15
+
+- TODO: Document release notes.
+
+
 ### BREAKING CHANGES
 - **Mode handlers must now yield**: All mode handlers must be async generators that yield exactly once.
   Simple async functions (without yield) are no longer supported. This provides cleaner setup/cleanup lifecycle.
