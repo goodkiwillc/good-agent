@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import Generic, Literal, TypeAlias, TypeVar, overload
+from typing import Any, Generic, Literal, TypeAlias, TypeVar, overload
 
 from pydantic import BaseModel
 
 from good_agent.core.types import URL
 from good_agent.messages.base import (
     IMAGE,
+    Annotation,
     AnnotationLike,
     ImageDetail,
     Message,
@@ -188,6 +189,7 @@ __all__ = [
     "T_ToolResponse",
     "T_Output",
     "CitationURL",
+    "Annotation",
 ]
 
 # Rebuild models to resolve forward references (required for Python 3.14+)

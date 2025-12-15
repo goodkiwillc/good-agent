@@ -48,6 +48,38 @@ warnings.filterwarnings(
     module="pydantic.main",
 )
 
+# LiteLLM vendored models still rely on Pydantic's class-based config; silence the
+# deprecation warnings until upstream publishes a ConfigDict-compatible release.
+warnings.filterwarnings(
+    "ignore",
+    category=PydanticDeprecatedSince20,
+    module="litellm.types.llms.anthropic",
+)
+warnings.filterwarnings(
+    "ignore",
+    category=PydanticDeprecatedSince20,
+    module="litellm.types.rag",
+)
+
+# Python 3.14 surfaces asyncio.iscoroutinefunction deprecations from litellm's
+# logging helpers; suppress them to keep the suite noise-free.
+warnings.filterwarnings(
+    "ignore",
+    message="'asyncio.iscoroutinefunction' is deprecated",
+    category=DeprecationWarning,
+    module="litellm.litellm_core_utils.logging_utils",
+)
+
+# LiteLLM's httpx cleanup registers an atexit coroutine that can emit a runtime
+# warning when pytest tears down the event loop. Ignore the warning since we
+# aggressively disable the cleanup logic below.
+warnings.filterwarnings(
+    "ignore",
+    message="coroutine 'close_litellm_async_clients' was never awaited",
+    category=RuntimeWarning,
+    module="litellm.llms.custom_httpx.async_client_cleanup",
+)
+
 # LiteLLM's custom httpx cleanup uses the pre-3.11 event loop getter, which raises
 # a DeprecationWarning during teardown. Ignore it to keep the suite quiet.
 warnings.filterwarnings(
@@ -89,7 +121,59 @@ try:
         async def noop_worker_loop(self):
             pass
 
+        def noop_flush(self):
+            return None
+
         LoggingWorker._worker_loop = noop_worker_loop
+        LoggingWorker._flush_on_exit = noop_flush
+    except ImportError:
+        pass
+
+    # Silence litellm's verbose loggers to avoid stream writes after pytest
+    # closes its capture file descriptors.
+    try:
+        from litellm._logging import ALL_LOGGERS
+
+        for logger in ALL_LOGGERS:
+            logger.handlers = []
+            logger.addHandler(logging.NullHandler())
+            logger.propagate = False
+    except ImportError:
+        pass
+
+    # Disable async httpx cleanup hooks that emit runtime warnings when the
+    # event loop shuts down faster than LiteLLM's atexit handler can drain.
+    try:
+        from litellm.llms.custom_httpx import async_client_cleanup
+
+        def _noop_close_litellm_async_clients():
+            return None
+
+        def _noop_register_async_client_cleanup():
+            return None
+
+        async_client_cleanup.close_litellm_async_clients = _noop_close_litellm_async_clients
+        async_client_cleanup.register_async_client_cleanup = _noop_register_async_client_cleanup
+
+        # Remove any already-registered atexit handlers from this module so the
+        # noop functions above actually take effect.
+        import atexit
+
+        try:
+            filtered_handlers = []
+            for handler in getattr(atexit, "_exithandlers", []):
+                func = handler[0]
+                module_name = getattr(func, "__module__", "")
+                if module_name.startswith("litellm.llms.custom_httpx.async_client_cleanup"):
+                    try:
+                        atexit.unregister(func)
+                    except Exception:
+                        pass
+                else:
+                    filtered_handlers.append(handler)
+            atexit._exithandlers = filtered_handlers  # type: ignore[attr-defined]
+        except Exception:
+            pass
     except ImportError:
         pass
 
