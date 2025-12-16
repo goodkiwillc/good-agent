@@ -34,21 +34,6 @@ Tool adapters SHALL transform responses by hooking into `MESSAGE_APPEND_BEFORE` 
 - **WHEN** `MESSAGE_APPEND_BEFORE` fires
 - **THEN** the adapter handler SHALL NOT attempt transformation
 
-## MODIFIED Requirements
-
-### Requirement: TOOL_CALL_AFTER Observational Only
-The `TOOL_CALL_AFTER` event SHALL be purely observational - handlers SHALL NOT rely on `ctx.output` being used.
-
-#### Scenario: TOOL_CALL_AFTER for logging
-- **GIVEN** a handler registered for `TOOL_CALL_AFTER`
-- **WHEN** a tool call completes
-- **THEN** the handler SHALL receive the response for logging/metrics
-
-#### Scenario: TOOL_CALL_AFTER output ignored
-- **GIVEN** a handler registered for `TOOL_CALL_AFTER`
-- **WHEN** the handler sets `ctx.output`
-- **THEN** the value SHALL be ignored (event dispatched with `do()`)
-
 ### Requirement: AgentComponent Adapter Handler
 The `AgentComponent` base class SHALL provide a `_on_message_append_before_adapter` handler that applies registered `ToolAdapter` response transformations.
 
@@ -67,8 +52,15 @@ The `AgentComponent` base class SHALL provide a `_on_message_append_before_adapt
 - **WHEN** `MESSAGE_APPEND_BEFORE` fires
 - **THEN** the handler SHALL return early without processing
 
-## REMOVED Requirements
+### Requirement: TOOL_CALL_AFTER Observational Only
+The `TOOL_CALL_AFTER` event SHALL be purely observational - handlers SHALL NOT rely on `ctx.output` being used.
 
-### Requirement: _on_tool_call_after_adapter Handler
-**Reason**: This handler cannot work because `TOOL_CALL_AFTER` is dispatched with `do()`, ignoring `ctx.output`.
-**Migration**: Response transformation now happens at `MESSAGE_APPEND_BEFORE`.
+#### Scenario: TOOL_CALL_AFTER for logging
+- **GIVEN** a handler registered for `TOOL_CALL_AFTER`
+- **WHEN** a tool call completes
+- **THEN** the handler SHALL receive the response for logging/metrics
+
+#### Scenario: TOOL_CALL_AFTER output ignored
+- **GIVEN** a handler registered for `TOOL_CALL_AFTER`
+- **WHEN** the handler sets `ctx.output`
+- **THEN** the value SHALL be ignored (event dispatched with `do()`)
