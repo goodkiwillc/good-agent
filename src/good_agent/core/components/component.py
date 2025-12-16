@@ -377,34 +377,39 @@ class AgentComponent(EventRouter, metaclass=AgentComponentType):
             # Also update output for compatibility
             ctx.output = adapted_params
 
-    @on(AgentEvents.TOOL_CALL_AFTER, priority=50)
-    async def _on_tool_call_after_adapter(self, ctx: EventContext):
-        """Handle response adaptation after tool execution."""
+    @on(AgentEvents.MESSAGE_APPEND_BEFORE, priority=50)
+    async def _on_message_append_before_adapter(self, ctx: EventContext):
+        """Handle response adaptation before tool messages are appended."""
+
         if not self.enabled or not self._tool_adapter_registry._adapters:
             return
 
-        tool_name = ctx.parameters.get("tool_name")
-        response = ctx.parameters.get("response")
-
-        if not tool_name or not response:
-            return
-
+        from good_agent.messages import ToolMessage
         from good_agent.tools import ToolResponse
 
-        if not isinstance(response, ToolResponse):
+        message = ctx.parameters.get("message")
+
+        if not isinstance(message, ToolMessage):
             return
 
-        # Apply adapters to transform the response
-        if self._agent is not None:
-            adapted_response = self._tool_adapter_registry.adapt_response(
-                tool_name, response, self._agent
-            )
-        else:
-            adapted_response = response
+        response = message.tool_response
 
-        # Update the response if it was modified
-        if adapted_response != response:
-            ctx.parameters["response"] = adapted_response
+        if response is None or not isinstance(response, ToolResponse):
+            return
+
+        if self._agent is None:
+            return
+
+        adapted_response = self._tool_adapter_registry.adapt_response(
+            message.tool_name, response, self._agent
+        )
+
+        if adapted_response is response:
+            return
+
+        adapted_message = message.with_tool_response(adapted_response)
+        ctx.parameters["message"] = adapted_message
+        ctx.output = adapted_message
 
     @property
     def agent(self) -> Agent:

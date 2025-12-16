@@ -18,7 +18,7 @@ The adapter system hooks into three key events in the tool lifecycle:
 
 1. **TOOLS_GENERATE_SIGNATURE**: Modifies tool signatures before sending to LLM
 2. **TOOL_CALL_BEFORE**: Transforms parameters from LLM before tool execution
-3. **TOOL_CALL_AFTER**: Optionally modifies tool responses
+3. **MESSAGE_APPEND_BEFORE**: Optionally modifies tool responses before they are appended to history (TOOL_CALL_AFTER is observational only)
 
 ## Creating a Tool Adapter
 
@@ -85,6 +85,52 @@ class MyComponent(AgentComponent):
         # Register the adapter
         self.register_tool_adapter(self.adapter)
 ```
+
+## Response Transformation (MESSAGE_APPEND_BEFORE)
+
+Adapters implement `adapt_response()` to rewrite tool responses just before the resulting `ToolMessage` is appended. The `AgentComponent` handler applies these changes during `MESSAGE_APPEND_BEFORE` using `ToolMessage.with_tool_response()`.
+
+```python
+class ResponseAdapter(ToolAdapter):
+    def should_adapt(self, tool, agent):
+        return tool.name == "fetch_url"
+
+    def adapt_signature(self, tool, signature, agent):
+        return copy.deepcopy(signature)
+
+    def adapt_parameters(self, tool_name, parameters, agent):
+        return parameters
+
+    def adapt_response(self, tool_name, response, agent):
+        if not response.success:
+            return None  # leave errors unchanged
+
+        return ToolResponse(
+            tool_name=response.tool_name,
+            tool_call_id=response.tool_call_id,
+            response=f"sanitized:{response.response}",
+            parameters=response.parameters,
+            success=True,
+            error=None,
+        )
+
+
+class ResponseComponent(AgentComponent):
+    def __init__(self):
+        super().__init__()
+        self.adapter = ResponseAdapter(self)
+
+    async def install(self, agent):
+        await super().install(agent)
+        self.register_tool_adapter(self.adapter)
+```
+
+## Migration: TOOL_CALL_AFTER Response Handlers
+
+- `TOOL_CALL_AFTER` is a signal-only event; `ctx.output` is ignored.
+- Move response mutation logic into `adapt_response()` so it runs during `MESSAGE_APPEND_BEFORE`.
+- For custom handlers, use `ToolMessage.with_tool_response()` to replace the message while preserving other fields.
+- Ensure adapters run through `adapt_signature()` so response transformations stay linked to the adapted tool.
 
 ## Common Use Cases
 

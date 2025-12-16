@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from good_agent import Agent, AgentComponent, tool
+from good_agent import Agent, AgentComponent, ToolMessage, tool
 from good_agent.core.components import (
     AdapterMetadata,
     ConflictStrategy,
@@ -145,6 +145,81 @@ class URLToIndexAdapter(ToolAdapter):
             if 0 <= idx < len(self.urls):
                 adapted["url"] = self.urls[idx]
         return adapted
+
+
+class ResponseAdapter(ToolAdapter):
+    """Adapter that transforms tool responses."""
+
+    def __init__(self, component):
+        super().__init__(component, priority=120)
+        self.adapt_response_calls = 0
+
+    def should_adapt(self, tool, agent):
+        return tool.name == "fetch_url"
+
+    def analyze_transformation(self, tool, signature):
+        return AdapterMetadata(modified_params=set(), added_params=set(), removed_params=set())
+
+    def adapt_signature(self, tool, signature, agent):
+        return copy.deepcopy(signature)
+
+    def adapt_parameters(self, tool_name, parameters, agent):
+        return parameters
+
+    def adapt_response(self, tool_name, response, agent):
+        self.adapt_response_calls += 1
+        return ToolResponse(
+            tool_name=response.tool_name,
+            tool_call_id=response.tool_call_id,
+            response=f"adapted:{response.response}",
+            parameters=response.parameters,
+            success=response.success,
+            error=response.error,
+        )
+
+
+class NoResponseAdapter(ResponseAdapter):
+    """Adapter that leaves responses unchanged."""
+
+    def adapt_response(self, tool_name, response, agent):
+        self.adapt_response_calls += 1
+        return None
+
+
+class TestToolMessageHelpers:
+    def test_with_tool_response_creates_new_message(self):
+        original_response = ToolResponse(
+            tool_name="fetch_url",
+            tool_call_id="call-1",
+            response="original",
+            parameters={"url": "example.com"},
+            success=True,
+            error=None,
+        )
+        message = ToolMessage(
+            "original",
+            tool_call_id="call-1",
+            tool_name="fetch_url",
+            tool_response=original_response,
+        )
+
+        new_response = ToolResponse(
+            tool_name="fetch_url",
+            tool_call_id="call-1",
+            response="updated",
+            parameters={"url": "example.com"},
+            success=True,
+            error=None,
+        )
+
+        new_message = message.with_tool_response(new_response)
+
+        assert new_message is not message
+        assert new_message.tool_response == new_response
+        assert new_message.model_dump(exclude={"tool_response"}) == message.model_dump(
+            exclude={"tool_response"}
+        )
+        assert message.tool_response == original_response
 
 
 class TestToolAdapter:
@@ -499,6 +574,106 @@ class TestAgentComponentIntegration:
         # Adapter should not be applied when component is disabled
         # (This is handled by the event handlers checking enabled state)
         assert component.enabled is False
+
+
+@pytest.mark.asyncio
+class TestToolAdapterResponseTransformation:
+    async def test_tool_response_transformation_on_message_append(self):
+        class ResponseComponent(AgentComponent):
+            def __init__(self):
+                super().__init__()
+                self.adapter = ResponseAdapter(self)
+
+            async def install(self, agent):
+                await super().install(agent)
+                self.register_tool_adapter(self.adapter)
+
+        component = ResponseComponent()
+        agent = Agent("Test agent", tools=[fetch_url], extensions=[component])
+        await agent.initialize()
+
+        component._tool_adapter_registry.adapt_signature(fetch_url, fetch_url.signature, agent)
+
+        tool_response = ToolResponse(
+            tool_name="fetch_url",
+            tool_call_id="call-123",
+            response="original",
+            parameters={"url": "http://example.com"},
+            success=True,
+            error=None,
+        )
+
+        message = ToolMessage(
+            "original",
+            tool_call_id="call-123",
+            tool_name="fetch_url",
+            tool_response=tool_response,
+        )
+
+        appended = await agent.append_async(message)
+
+        assert appended is not message
+        assert appended.tool_response.response == "adapted:original"
+        assert appended.tool_response.tool_name == "fetch_url"
+        assert appended.content_parts == message.content_parts
+        assert component.adapter.adapt_response_calls == 1
+
+    async def test_non_tool_messages_pass_through(self):
+        class ResponseComponent(AgentComponent):
+            def __init__(self):
+                super().__init__()
+                self.adapter = ResponseAdapter(self)
+
+            async def install(self, agent):
+                await super().install(agent)
+                self.register_tool_adapter(self.adapter)
+
+        component = ResponseComponent()
+        agent = Agent("Test agent", tools=[fetch_url], extensions=[component])
+        await agent.initialize()
+
+        message = await agent.append_async(agent.model.create_message(content="hi", role="user"))
+
+        assert message.role == "user"
+        assert component.adapter.adapt_response_calls == 0
+
+    async def test_adapter_without_response_transformation(self):
+        class NoResponseComponent(AgentComponent):
+            def __init__(self):
+                super().__init__()
+                self.adapter = NoResponseAdapter(self)
+
+            async def install(self, agent):
+                await super().install(agent)
+                self.register_tool_adapter(self.adapter)
+
+        component = NoResponseComponent()
+        agent = Agent("Test agent", tools=[fetch_url], extensions=[component])
+        await agent.initialize()
+
+        component._tool_adapter_registry.adapt_signature(fetch_url, fetch_url.signature, agent)
+
+        tool_response = ToolResponse(
+            tool_name="fetch_url",
+            tool_call_id="call-456",
+            response="original",
+            parameters={"url": "http://example.com"},
+            success=True,
+            error=None,
+        )
+
+        message = ToolMessage(
+            "original",
+            tool_call_id="call-456",
+            tool_name="fetch_url",
+            tool_response=tool_response,
+        )
+
+        appended = await agent.append_async(message)
+
+        assert appended is message
+        assert appended.tool_response == tool_response
+        assert component.adapter.adapt_response_calls == 1
 
 
 @pytest.mark.asyncio

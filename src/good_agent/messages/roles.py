@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Generic, Literal, TypeAlias, TypeVar, overload
+from typing import Any, Generic, Literal, TypeAlias, TypeVar, cast, overload
 
 from pydantic import BaseModel
 
@@ -52,6 +52,7 @@ class SystemMessage(Message):
 
 
 T_ToolResponse = TypeVar("T_ToolResponse", bound=ToolResponse)
+T_NewToolResponse = TypeVar("T_NewToolResponse", bound=ToolResponse)
 
 
 class ToolMessage(Message, Generic[T_ToolResponse]):
@@ -92,6 +93,14 @@ class ToolMessage(Message, Generic[T_ToolResponse]):
     tool_call_id: str
     tool_name: str  # Name of the tool that was called
     tool_response: T_ToolResponse | None = None
+
+    def with_tool_response(self, response: T_NewToolResponse) -> ToolMessage[T_NewToolResponse]:
+        """Return a new ToolMessage with an updated tool_response."""
+
+        return cast(
+            ToolMessage[T_NewToolResponse],
+            self.model_copy(update={"tool_response": response}),
+        )
 
     def __display__(self) -> str:
         """Protocol method for display rendering.
