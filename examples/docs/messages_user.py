@@ -1,8 +1,10 @@
 import asyncio
+
 from good_agent.messages import UserMessage
 
+
 async def main():
-    # Text-only message  
+    # Text-only message
     user_msg = UserMessage("Hello, how are you?")
     print(f"Text: {user_msg.content}")
 

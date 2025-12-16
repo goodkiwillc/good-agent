@@ -119,6 +119,9 @@ print(f"{profile.name} is {profile.age}")
 
 Switch behaviors and toolsets dynamically using Modes. **All mode handlers must use the generator pattern with `yield`.**
 
+> **Breaking change:** Use `agent.mode("name")` to enter modes.
+> `agent.modes["name"]` has been removed and now raises an error.
+
 ```python
 from good_agent import Agent
 
@@ -134,13 +137,13 @@ async def research_mode(agent: Agent):
     # CLEANUP (optional): runs when exiting mode
 
 # Enter mode
-async with agent.modes['research']:
+async with agent.mode('research'):
     await agent.call("Research quantum computing")
     print(agent.mode.name)   # "research"
     print(agent.mode.stack)  # ["research"]
 
 # Parameterized mode entry
-async with agent.modes['research'](depth="deep", topic="AI"):
+async with agent.mode('research', depth="deep", topic="AI"):
     print(agent.mode.state)  # {"depth": "deep", "topic": "AI", ...}
 
 # Mode history tracking

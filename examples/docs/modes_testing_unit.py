@@ -22,7 +22,7 @@ async def test_research_mode():
     assert "research" in agent.modes.list_modes()
 
     # Test mode context
-    async with agent.modes["research"]:
+    async with agent.mode("research"):
         # Test mode info
         info = agent.modes.get_info("research")
         assert info["name"] == "research"
@@ -50,7 +50,7 @@ async def test_mode_transitions():
 
     # Mock the LLM to avoid actual calls
     with agent.mock("Test response"):
-        async with agent.modes["source"]:
+        async with agent.mode("source"):
             await agent.call("Test transition")
 
     # Verify transition sequence
@@ -83,8 +83,8 @@ async def test_mode_state_scoping():
 
     await agent.initialize()
 
-    async with agent.modes["outer"]:
-        async with agent.modes["inner"]:
+    async with agent.mode("outer"):
+        async with agent.mode("inner"):
             # Inner mode sees its own values
             assert agent.modes.get_state("shared") == "inner_value"
             assert agent.modes.get_state("inner_only") == "inner"

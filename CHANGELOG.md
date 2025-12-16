@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### BREAKING CHANGES
+- **Singular mode entry API**: Enter modes with `agent.mode("name", **params)`.
+  The legacy `agent.modes["name"]` indexer now raises an error to prevent
+  accidental use of the removed API.
+
+### Changed
+- `agent.mode` is callable and returns the mode context manager, keeping
+  `agent.modes` focused on registration/inspection APIs.
+- Documentation, examples, and tests now demonstrate the updated mode entry
+  syntax.
+
 ## [0.6.2] - 2025-12-15
 
 - TODO: Document release notes.
@@ -36,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Parameterized Mode Entry**: Pass parameters when entering modes:
   ```python
-  async with agent.modes["research"](topic="quantum", depth=3):
+  async with agent.mode("research", topic="quantum", depth=3):
       print(agent.mode.state["topic"])  # "quantum"
   ```
 - **Mode-Aware System Prompt**: Invokable modes automatically inject awareness into the system prompt,

@@ -36,7 +36,7 @@ async def main():
         print(f"Normal: {response.content}")
 
         # Research mode - specialized for deep investigation
-        async with agent.modes["research"]:
+        async with agent.mode("research"):
             response = await agent.call("Tell me about quantum physics")
             print(f"Research: {response.content}")
 
@@ -44,7 +44,7 @@ async def main():
             print(f"Current mode: {agent.mode.name}")  # "research"
 
         # Creative mode - specialized for imaginative responses
-        async with agent.modes["creative"]:
+        async with agent.mode("creative"):
             response = await agent.call("Tell me about quantum physics")
             print(f"Creative: {response.content}")
 

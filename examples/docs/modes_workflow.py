@@ -106,7 +106,7 @@ async def main():
             return agent.mode.exit()  # Return to normal mode
 
         # Usage - automatic workflow progression
-        async with agent.modes["workflow_start"]:
+        async with agent.mode("workflow_start"):
             agent.modes.set_state("project_type", "web application")
 
             # This will progress through: start -> analyze -> design -> implement -> complete

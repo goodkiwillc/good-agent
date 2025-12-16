@@ -86,7 +86,7 @@ async def main():
 
         # Enter research mode
         print("\n=== Research Mode ===")
-        async with agent.modes["research"]:
+        async with agent.mode("research"):
             print(f"Current mode: {agent.mode.name}")
             print(f"Mode stack: {agent.mode.stack}")
 
@@ -96,7 +96,7 @@ async def main():
 
             # Modes can be nested
             print("\n=== Nested: Research + Summary Mode ===")
-            async with agent.modes["summary"]:
+            async with agent.mode("summary"):
                 print(f"Current mode: {agent.mode.name}")
                 print(f"Mode stack: {agent.mode.stack}")
                 print(f"In research mode: {agent.mode.in_mode('research')}")
@@ -115,7 +115,7 @@ async def main():
         # Demonstrate handler execution with a mocked LLM response
         print("\n=== Handler Execution Demo ===")
         with agent.mock("[mock] research output"):
-            async with agent.modes["research"]:
+            async with agent.mode("research"):
                 response = await agent.call("How do mode handlers run?")
                 print(f"Assistant (mocked): {response.content}")
                 print(
@@ -139,7 +139,7 @@ async def main():
         # Demonstrate generator mode with setup/cleanup lifecycle
         print("\n=== Generator Mode Demo (Setup/Cleanup) ===")
         with agent.mock("[mock] query 1 response", "[mock] query 2 response"):
-            async with agent.modes["session"]:
+            async with agent.mode("session"):
                 print(f"Current mode: {agent.mode.name}")
                 # Simulate some queries
                 agent.mode.state["queries"].append("query 1")

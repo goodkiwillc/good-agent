@@ -3,8 +3,9 @@
 import asyncio
 from typing import Literal
 
-from good_agent import Agent, tool
 from pydantic import Field
+
+from good_agent import Agent, tool
 
 
 @tool

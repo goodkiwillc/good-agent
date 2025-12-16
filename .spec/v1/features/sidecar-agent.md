@@ -81,3 +81,67 @@ async def research_mode(agent: Agent):
 - [ ] Decide whether sidecar runs via lightweight LLM calls, deterministic heuristics, or hybrid approach.
 - [ ] Establish rate limits and concurrency behavior when multiple sidecars are attached in inter-agent pipelines.
 - [ ] Clarify security boundaries for MCP tool metadata shared with the sidecar.
+
+
+----
+
+API Ideation:
+
+```python
+
+
+class GuardRailDecision(BaseModel):
+    decision: Literal["allow", "warn", "block"]
+    reason: str
+
+class SidecarAgent(Agent):
+
+    @on(AgentEvents.MESSAGE_APPEND_BEFORE)
+    async def on_assistant_message(
+        self,
+        message: AssistantMessage,
+        agent: Agent,
+    ):
+
+        response = await self.call(
+            'Evaluate the following assistant message for compliance with the relevant policies: ',
+            '{{policies}}',
+            '{{message}}',
+            policies=agent.sidecar.get_active_policies(),
+            message=message.content,
+            response_model=GuardRailDecision,
+        )
+
+        match response.output.decision
+            case 'allow':
+                pass  # proceed as normal
+            case 'warn':
+                agent.append(
+                    "<system>Warning: The previous assistant message may violate compliance policies.</system>",
+                    role="system"
+                )
+            case 'block':
+                self.block(
+                    'Assistant message blocked by sidecar compliance check: {{reason}}',
+                    reason=response.reason
+                )
+                # raise SidecarComplianceError("Assistant message blocked by sidecar compliance check."
+
+
+
+
+guardrails_sidecar = Agent(
+    model='gpt-4o-mini',
+)
+
+# limits to just a single sidecar
+
+agent = Agent(
+    'system prompt',
+    model='gpt-4',
+    tools=[...],
+    sidecar=guardrails_sidecar,
+)
+
+
+```

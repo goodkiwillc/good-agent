@@ -75,31 +75,31 @@ async def main():
 
         # Demo: STOP behavior
         print("Test 1: STOP exit behavior")
-        async with agent.modes["stop_after_exit"]:
+        async with agent.mode("stop_after_exit"):
             print("  Mode active...")
         print("  Mode exited\n")
 
         # Demo: CONTINUE behavior
         print("Test 2: CONTINUE exit behavior")
-        async with agent.modes["continue_after_exit"]:
+        async with agent.mode("continue_after_exit"):
             print("  Mode active...")
         print("  Mode exited\n")
 
         # Demo: AUTO behavior
         print("Test 3: AUTO exit behavior")
-        async with agent.modes["auto_exit"]:
+        async with agent.mode("auto_exit"):
             print("  Mode active...")
         print("  Mode exited\n")
 
         # Demo: Conditional behavior
         print("Test 4: Conditional exit behavior (no followup)")
-        async with agent.modes["conditional_exit"]:
+        async with agent.mode("conditional_exit"):
             print("  Mode active...")
             # Not setting needs_followup, so STOP will be used
         print("  Mode exited\n")
 
         print("Test 5: Conditional exit behavior (with followup)")
-        async with agent.modes["conditional_exit"]:
+        async with agent.mode("conditional_exit"):
             print("  Mode active...")
             agent.mode.state["needs_followup"] = True
         print("  Mode exited")

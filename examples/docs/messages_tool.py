@@ -1,6 +1,8 @@
 import asyncio
+
 from good_agent.messages import ToolMessage
 from good_agent.tools import ToolResponse
+
 
 async def main():
     # Basic tool result
@@ -19,10 +21,10 @@ async def main():
         success=True,
         parameters={}
     )
-    
+
     tool_msg = ToolMessage(
         content="Calculation complete",
-        tool_call_id="call_123", 
+        tool_call_id="call_123",
         tool_name="calculator",
         tool_response=calculator_result  # ToolResponse object
     )

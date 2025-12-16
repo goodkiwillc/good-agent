@@ -73,7 +73,7 @@ async def main():
             print(f"  [session] Duration: {duration.total_seconds():.3f}s")
             print(f"  [session] Queries: {len(queries)}")
 
-        async with agent.modes["session_with_export"]:
+        async with agent.mode("session_with_export"):
             print(f"  Mode: {agent.mode.name}")
 
             # Simulate some activity

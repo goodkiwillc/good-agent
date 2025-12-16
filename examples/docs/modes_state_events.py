@@ -27,7 +27,7 @@ async def main():
             yield agent
 
         # Usage - state changes will emit events
-        async with agent.modes["stateful"]:
+        async with agent.mode("stateful"):
             await agent.call("First call")
             await agent.call("Second call")
 

@@ -2,8 +2,9 @@
 
 import asyncio
 
-from good_agent import Agent, tool
 from pydantic import BaseModel, Field
+
+from good_agent import Agent, tool
 
 
 class SearchResult(BaseModel):

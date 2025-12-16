@@ -8,7 +8,6 @@ from good_agent import Agent, AgentComponent, tool
 from good_agent.core.event_router import on
 from good_agent.events import AgentEvents
 
-
 try:  # pragma: no cover - support running via ``python``
     from .._shared.mock_llm import ExampleLanguageModel, assistant_response
 except ImportError:  # pragma: no cover

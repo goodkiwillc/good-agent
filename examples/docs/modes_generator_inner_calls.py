@@ -43,7 +43,7 @@ async def main():
         print("=== Generator Mode: Inner Calls ===\n")
 
         print("Entering research mode (setup will make LLM call)...")
-        async with agent.modes["research"]:
+        async with agent.mode("research"):
             print(f"\n  Mode active: {agent.mode.name}")
             print(f"  Init message: {agent.mode.state['init_message']}")
 

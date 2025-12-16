@@ -30,14 +30,13 @@ async def main():
             agent.mode.state["tasks"] = []
             yield agent
 
-        async with agent.modes["project"]:
-            async with agent.modes["planning"]:
-                # Inner mode can see both project and planning state
-                await agent.call("What's our first milestone?")
+        async with agent.mode("project"), agent.mode("planning"):
+            # Inner mode can see both project and planning state
+            await agent.call("What's our first milestone?")
 
-                # State is scoped - planning state shadows project if keys conflict
-                print(f"Project: {agent.modes.get_state('project_name')}")
-                print(f"Planning: {agent.modes.get_state('planning_phase')}")
+            # State is scoped - planning state shadows project if keys conflict
+            print(f"Project: {agent.modes.get_state('project_name')}")
+            print(f"Planning: {agent.modes.get_state('planning_phase')}")
 
 
 if __name__ == "__main__":

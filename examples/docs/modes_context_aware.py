@@ -40,7 +40,7 @@ async def main():
             yield agent
 
         # Usage
-        async with agent.modes["context_aware"]:
+        async with agent.mode("context_aware"):
             # Each call builds on conversation history
             await agent.call("Tell me about Python")
             await agent.call("How does it relate to AI?")

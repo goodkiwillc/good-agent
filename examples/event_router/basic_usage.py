@@ -6,7 +6,6 @@ import asyncio
 
 from good_agent.core.event_router import EventContext, EventRouter
 
-
 router = EventRouter()
 
 

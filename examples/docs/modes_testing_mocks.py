@@ -38,7 +38,7 @@ async def test_mode_workflow_with_mocks():
         agent.mock.create("Step 2 response"),
         agent.mock.create("Step 3 response"),
     ):
-        async with agent.modes["step1"]:
+        async with agent.mode("step1"):
             response = await agent.call("Start workflow")
 
         # Verify workflow progression

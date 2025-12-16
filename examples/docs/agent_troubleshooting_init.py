@@ -1,16 +1,18 @@
 import asyncio
+
 from good_agent import Agent
+
 
 async def main():
     # ❌ Not waiting for initialization
-    uninitialized_agent = Agent("Assistant") 
+    uninitialized_agent = Agent("Assistant")
     print(f"Initial state: {uninitialized_agent.state}")
     # await uninitialized_agent.call("Hello")  # May fail if not ready
 
     # ✅ Proper initialization
     async with Agent("Assistant") as ready_agent:
         await ready_agent.call("Hello")
-        
+
     # ✅ Manual initialization with error handling
     managed_agent = Agent("Assistant")
     try:

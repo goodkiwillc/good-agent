@@ -57,10 +57,10 @@ async def main():
             yield agent
 
         # Usage - tools are automatically available in each mode
-        async with agent.modes["research"]:
+        async with agent.mode("research"):
             await agent.call("Research quantum computing applications")
 
-        async with agent.modes["creative"]:
+        async with agent.mode("creative"):
             await agent.call("Create a sci-fi story about quantum computers")
 
 

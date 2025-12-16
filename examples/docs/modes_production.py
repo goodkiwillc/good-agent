@@ -35,7 +35,7 @@ async def main():
             yield agent
 
         # Use it
-        async with agent.modes["production_ready"]:
+        async with agent.mode("production_ready"):
             await agent.call("Hello prod")
 
 

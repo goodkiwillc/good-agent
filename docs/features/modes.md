@@ -27,6 +27,11 @@ Modes are **behavioral configurations** that change how your agent responds. Thi
 | **Invokable Modes** | Generate tools so the agent can switch modes autonomously |
 | **Standalone Modes** | Define reusable modes with `@mode()` decorator |
 
+!!! danger "Breaking Change"
+    Mode entry now uses ``agent.mode("name")``. The previous
+    ``agent.modes["name"]`` syntax raises a runtime error and must be
+    replaced in all code snippets.
+
 ### Why Use Modes?
 
 - **Specialization** - Configure agents for specific tasks without creating multiple agents
@@ -60,7 +65,7 @@ async with Agent("You are a helpful assistant.") as agent:
         # CLEANUP (optional) - runs when mode exits
     
     # Use the mode
-    async with agent.modes["research"]:
+    async with agent.mode("research"):
         response = await agent.call("Explain quantum entanglement")
         print(agent.mode.name)  # "research"
 ```
@@ -108,7 +113,7 @@ async def research_mode(agent: Agent):
     yield agent
 
 # Enter with parameters
-async with agent.modes["research"](topic="quantum physics", depth=3):
+async with agent.mode("research", topic="quantum physics", depth=3):
     print(agent.mode.state["topic"])  # "quantum physics"
     print(agent.mode.state["depth"])  # 3
 ```
@@ -149,7 +154,7 @@ The `agent.mode` property provides access to the current mode context:
 
 | Method | Description |
 |--------|-------------|
-| `agent.modes["name"]` | Get mode context manager |
+| `agent.mode("name")` | Get mode context manager |
 | `agent.modes.list_modes()` | List all registered mode names |
 | `agent.modes.get_info(name)` | Get mode metadata (name, description, handler) |
 | `agent.modes.enter_mode(name)` | Enter mode directly (not as context manager) |
@@ -213,14 +218,14 @@ async with Agent("You are a customer support agent.") as agent:
         yield agent
     
     # Usage flow
-    async with agent.modes["greeting"]:
+    async with agent.mode("greeting"):
         await agent.call("Hi, I can't log into my account")
     
-    async with agent.modes["diagnosis"]:
+    async with agent.mode("diagnosis"):
         await agent.call("I've tried resetting my password but it didn't work")
         agent.mode.state["possible_solutions"].append("Manual password reset")
     
-    async with agent.modes["resolution"]:
+    async with agent.mode("resolution"):
         await agent.call("How do I fix this?")
 ```
 
@@ -290,7 +295,7 @@ async with Agent("You are a senior software engineer.") as agent:
     # Run focused reviews
     code = "def get_user(id): return db.execute(f'SELECT * FROM users WHERE id={id}')"
     
-    async with agent.modes["security_review"]:
+    async with agent.mode("security_review"):
         response = await agent.call(f"Review this code:\n```python\n{code}\n```")
         print("Security findings:", response.content)
 ```
@@ -365,20 +370,20 @@ async with Agent("You are a professional writing coach.") as agent:
     # Full writing pipeline
     topic = "The future of remote work"
     
-    async with agent.modes["brainstorm"]:
+    async with agent.mode("brainstorm"):
         response = await agent.call(f"Let's brainstorm ideas about: {topic}")
         agent.mode.state["ideas"] = response.content.split("\n")
     
-    async with agent.modes["outline"]:
+    async with agent.mode("outline"):
         outline = await agent.call("Create an outline from those ideas")
     
-    async with agent.modes["draft"]:
+    async with agent.mode("draft"):
         draft = await agent.call("Write the first draft")
     
-    async with agent.modes["edit"]:
+    async with agent.mode("edit"):
         edited = await agent.call("Edit this draft for clarity")
     
-    async with agent.modes["proofread"]:
+    async with agent.mode("proofread"):
         final = await agent.call("Final proofread")
 ```
 
@@ -470,7 +475,7 @@ async def research_mode(agent: Agent):
     agent.mode.state["confidence"] = 0.0
     yield agent
 
-async with agent.modes["research"]:
+async with agent.mode("research"):
     # State persists across multiple calls
     await agent.call("Find sources about climate change")
     agent.mode.state["sources"].append("IPCC Report 2023")
@@ -500,10 +505,10 @@ async def inner_mode(agent: Agent):
     agent.mode.state["inner_only"] = "new value"
     yield agent
 
-async with agent.modes["outer"]:
+async with agent.mode("outer"):
     print(agent.mode.state["shared"])  # "from outer"
     
-    async with agent.modes["inner"]:
+    async with agent.mode("inner"):
         print(agent.mode.state["shared"])  # "overridden in inner"
         print(agent.mode.state["inner_only"])  # "new value"
     
@@ -521,10 +526,10 @@ async with agent.modes["outer"]:
 Modes can be stacked to combine behaviors:
 
 ```python
-async with agent.modes["research"]:
+async with agent.mode("research"):
     print(agent.mode.stack)  # ["research"]
     
-    async with agent.modes["summary"]:
+    async with agent.mode("summary"):
         print(agent.mode.stack)  # ["research", "summary"]
         print(agent.mode.name)   # "summary" (current/top)
         
@@ -544,8 +549,8 @@ When modes exit, cleanup runs in reverse order:
 # Cleanup order: inner -> middle -> outer
 
 # Even with exceptions:
-async with agent.modes["outer"]:
-    async with agent.modes["inner"]:
+async with agent.mode("outer"):
+    async with agent.mode("inner"):
         raise ValueError("oops")
     # inner cleanup runs FIRST
 # outer cleanup runs SECOND
@@ -595,7 +600,7 @@ async def careful_mode(agent: Agent):
         await cleanup_resources()
 
 # Usage:
-async with agent.modes["careful_mode"]:
+async with agent.mode("careful_mode"):
     raise ValueError("Something went wrong")
     # Exception is caught in handler, logged, then re-raised
 ```
@@ -878,21 +883,21 @@ async def on_mode_transition(ctx):
 
 ```python
 # Pattern 1: Pipeline modes (sequential)
-async with agent.modes["intake"]:
+async with agent.mode("intake"):
     # Gather requirements
     pass
-async with agent.modes["process"]:
+async with agent.mode("process"):
     # Do work
     pass
-async with agent.modes["deliver"]:
+async with agent.mode("deliver"):
     # Return results
     pass
 
 # Pattern 2: Nested modes (hierarchical)
-async with agent.modes["project"]:
-    async with agent.modes["research"]:
+async with agent.mode("project"):
+    async with agent.mode("research"):
         pass
-    async with agent.modes["draft"]:
+    async with agent.mode("draft"):
         pass
 
 # Pattern 3: Self-switching (autonomous)

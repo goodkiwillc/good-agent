@@ -128,7 +128,7 @@ async with Agent("Assistant", tools=[get_user_location]) as agent:
                 # Access message history
                 print(f"Total messages: {len(agent.messages)}")
                 print(f"Last assistant message: {agent.assistant[-1].content}")
-                
+
                 # Inject context when location lookup fails
                 if "Unknown" in message.content:
                     agent.append(
@@ -136,7 +136,7 @@ async with Agent("Assistant", tools=[get_user_location]) as agent:
                         role="system"
                     )
                     print(f"Injected context: {agent[-1].content}")
-            
+
             case AssistantMessage(content=text):
                 print(f"Final response: {text}")
 ```
@@ -147,7 +147,7 @@ async with Agent("Assistant", tools=[get_user_location]) as agent:
 # Access typed message views
 agent.messages          # All messages
 agent.user             # Only user messages
-agent.assistant        # Only assistant messages  
+agent.assistant        # Only assistant messages
 agent.tool             # Only tool messages
 
 # Get recent messages
@@ -167,25 +167,28 @@ if hasattr(last_msg, 'tool_calls'):
 
 You can define an agent and its capabilities upfront, then use it later in your application logic. This allows you to separate agent configuration from execution.
 
+> **Breaking change:** Enter modes via `agent.mode("name")`. The legacy
+> `agent.modes["name"]` syntax now raises an error.
+
 ```python
-from good_agent import Agent, AgentContext
+from good_agent import Agent
 
 # 1. Define the agent
 agent = Agent("General Assistant")
 
 # 2. Register modes or tools on the instance
 @agent.modes('research')
-async def research_mode(ctx: AgentContext):
+async def research_mode(agent: Agent):
     """A specialized mode for deep research."""
     # Add mode-specific context
-    ctx.add_system_message("You are a senior researcher. Be thorough.")
+    agent.add_system_message("You are a senior researcher. Be thorough.")
 
     # Execute within this mode's context
-    return await ctx.call()
+    return await agent.call()
 
 async def main():
     # 3. Use the agent (and its modes) at runtime
-    async with agent.modes['research']:
+    async with agent.mode('research'):
         response = await agent.call("Investigate quantum computing trends.")
         print(response.content)
 ```
@@ -201,15 +204,15 @@ researcher = Agent("researcher prompt", model="gpt-4o", tools=[...])
 async with manager | researcher as convo:
     # manager messages from researcher become user messages to writer
     manager.assistant.append("Find key facts about Python 3.12")
-    
+
     async for message in convo.execute():
         match message:
             case Message(agent=agent) if agent = manager:
                 print(agent.name, message.content)
             case Message(agent=agent) if agent = researcher:
                 print(agent.name, message.content)
-        
-    
+
+
 ```
 
 ### 7. CLI Interface

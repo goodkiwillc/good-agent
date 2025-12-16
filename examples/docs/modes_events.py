@@ -31,7 +31,7 @@ async def main():
             yield agent
 
         # Use mode - events will fire
-        async with agent.modes["monitored"]:
+        async with agent.mode("monitored"):
             await agent.call("Hello from monitored mode")
 
 

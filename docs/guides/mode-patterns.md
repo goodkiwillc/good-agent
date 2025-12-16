@@ -54,14 +54,14 @@ async with Agent("Assistant") as agent:
         yield agent
     
     # Usage
-    async with agent.modes["intake"]:
+    async with agent.mode("intake"):
         response = await agent.call("I need help with my resume")
         agent.mode.state["requirements"].append(response.content)
     
-    async with agent.modes["process"]:
+    async with agent.mode("process"):
         await agent.call("Now process the requirements")
     
-    async with agent.modes["deliver"]:
+    async with agent.mode("deliver"):
         await agent.call("Present the final results")
 ```
 
@@ -355,8 +355,8 @@ async def qualitative_mode(agent: Agent):
     yield agent
 
 # Usage: nested for combined effect
-async with agent.modes["analysis"]:
-    async with agent.modes["quantitative"]:
+async with agent.mode("analysis"):
+    async with agent.mode("quantitative"):
         # Both analysis + quantitative behaviors active
         await agent.call("Analyze the sales data")
 ```
@@ -384,8 +384,8 @@ async def fact_check_mode(agent: Agent):
     yield agent
 
 # Stack for enhanced research
-async with agent.modes["base_research"]:
-    async with agent.modes["fact_check"]:
+async with agent.mode("base_research"):
+    async with agent.mode("fact_check"):
         # Research + fact-checking combined
         await agent.call("Research and verify claims about climate change")
 ```
@@ -414,12 +414,12 @@ async def synthesize_mode(agent: Agent):
     yield agent
 
 # Sequential with state inheritance
-async with agent.modes["gather"]:
+async with agent.mode("gather"):
     await agent.call("Gather info about renewable energy")
     agent.mode.state["findings"].append("solar growth")
     agent.mode.state["findings"].append("wind efficiency")
 
-async with agent.modes["synthesize"]:
+async with agent.mode("synthesize"):
     await agent.call("Synthesize the findings")
 ```
 
@@ -448,7 +448,7 @@ async def session_mode(agent: Agent):
     yield agent
 
 # Usage: accumulate across calls
-async with agent.modes["session"]:
+async with agent.mode("session"):
     response = await agent.call("Tell me about Python")
     agent.mode.state["topics"].add("Python")
     agent.mode.state["interactions"].append(response.content)
@@ -477,7 +477,7 @@ async def exploration_mode(agent: Agent):
     yield agent
 
 # Can restore to checkpoint if needed
-async with agent.modes["exploration"]:
+async with agent.mode("exploration"):
     await agent.call("Try option A")
     # If option A fails, can restore and try B
 ```
@@ -524,7 +524,7 @@ async def database_mode(agent: Agent):
     await pool.close()
 
 # Usage - pool is always closed, even on exception
-async with agent.modes["database"]:
+async with agent.mode("database"):
     await agent.call("Query the users table")
 ```
 
@@ -651,8 +651,8 @@ async def inner_mode(agent: Agent):
         events.append("inner:cleanup")
 
 # Usage
-async with agent.modes["outer"]:
-    async with agent.modes["inner"]:
+async with agent.mode("outer"):
+    async with agent.mode("inner"):
         pass
 # events = ["outer:setup", "inner:setup", "inner:cleanup", "outer:cleanup"]
 ```
@@ -686,7 +686,7 @@ async def greeting_mode(agent: Agent):
 
 # Use via state
 agent.mode.state["style"] = "formal"
-async with agent.modes["greeting"]:
+async with agent.mode("greeting"):
     ...
 ```
 
@@ -695,11 +695,11 @@ async with agent.modes["greeting"]:
 ❌ **Bad**: Deeply nested modes
 
 ```python
-async with agent.modes["level1"]:
-    async with agent.modes["level2"]:
-        async with agent.modes["level3"]:
-            async with agent.modes["level4"]:
-                async with agent.modes["level5"]:
+async with agent.mode("level1"):
+    async with agent.mode("level2"):
+        async with agent.mode("level3"):
+            async with agent.mode("level4"):
+                async with agent.mode("level5"):
                     # Too deep - hard to reason about
                     pass
 ```
@@ -708,9 +708,9 @@ async with agent.modes["level1"]:
 
 ```python
 # Flatten into sequential
-async with agent.modes["phase1"]:
+async with agent.mode("phase1"):
     pass
-async with agent.modes["phase2"]:
+async with agent.mode("phase2"):
     pass
 
 # Or use state to compose
@@ -849,7 +849,7 @@ async def test_research_mode_sets_state():
         yield agent
     
     async with agent:
-        async with agent.modes["research"]:
+        async with agent.mode("research"):
             assert agent.mode.state["depth"] == "deep"
             assert agent.mode.name == "research"
 ```
@@ -897,7 +897,7 @@ async def test_fork_isolation():
         initial_count = len(agent.messages)
         
         with agent.mock("response"):
-            async with agent.modes["isolated"]:
+            async with agent.mode("isolated"):
                 await agent.call("test")
         
         # Messages from fork mode shouldn't persist

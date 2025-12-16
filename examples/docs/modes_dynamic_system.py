@@ -48,7 +48,7 @@ async def main():
             yield agent
 
         # Configure and use dynamic mode
-        async with agent.modes["dynamic"]:
+        async with agent.mode("dynamic"):
             # Configure user preferences
             agent.modes.set_state("user_expertise", "expert")
             agent.modes.set_state("preferred_style", "formal")

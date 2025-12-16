@@ -155,6 +155,7 @@ omit = [
 [tool.ruff]
 target-version = "py314"
 line-length = 100
+extend-exclude = ["notebooks"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]

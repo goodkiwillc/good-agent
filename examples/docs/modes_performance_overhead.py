@@ -44,7 +44,7 @@ async def main():
             yield agent
 
         # Demonstrate usage
-        async with agent.modes["optimized"]:
+        async with agent.mode("optimized"):
             await agent.call("Test")
             # Second call uses cache
             await agent.call("Test 2")

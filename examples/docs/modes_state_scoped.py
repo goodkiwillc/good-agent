@@ -28,23 +28,22 @@ async def main():
         )
         yield agent
 
-    async with agent:  # Initialize agent
-        async with agent.modes["session"]:
-            # First call
-            await agent.call("Hello! Let's discuss AI")
-            print(f"Interactions: {agent.modes.get_state('interaction_count')}")  # 1
+    async with agent, agent.mode("session"):
+        # First call
+        await agent.call("Hello! Let's discuss AI")
+        print(f"Interactions: {agent.modes.get_state('interaction_count')}")  # 1
 
-            # Add topic to our tracking
-            agent.modes.set_state("topics_discussed", ["AI"])
+        # Add topic to our tracking
+        agent.modes.set_state("topics_discussed", ["AI"])
 
-            # Second call
-            await agent.call("What about robotics?")
-            print(f"Interactions: {agent.modes.get_state('interaction_count')}")  # 2
+        # Second call
+        await agent.call("What about robotics?")
+        print(f"Interactions: {agent.modes.get_state('interaction_count')}")  # 2
 
-            # State persists throughout the mode session
-            topics = agent.modes.get_state("topics_discussed")
-            topics.append("robotics")
-            agent.modes.set_state("topics_discussed", topics)
+        # State persists throughout the mode session
+        topics = agent.modes.get_state("topics_discussed")
+        topics.append("robotics")
+        agent.modes.set_state("topics_discussed", topics)
 
 
 if __name__ == "__main__":

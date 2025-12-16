@@ -72,7 +72,7 @@ class TestGeneratorHandlerLifecycle:
 
         async with agent:
             events.append("before enter")
-            async with agent.modes["gen"]:
+            async with agent.mode("gen"):
                 events.append("active")
             events.append("after exit")
 
@@ -96,7 +96,7 @@ class TestGeneratorHandlerLifecycle:
             nonlocal cleanup_ran
             cleanup_ran = True
 
-        async with agent, agent.modes["gen"]:
+        async with agent, agent.mode("gen"):
             pass
 
         assert cleanup_ran is True
@@ -117,7 +117,7 @@ class TestGeneratorHandlerLifecycle:
 
         async with agent:
             with pytest.raises(ValueError):
-                async with agent.modes["gen"]:
+                async with agent.mode("gen"):
                     events.append("active")
                     raise ValueError("oops")
 
@@ -134,7 +134,7 @@ class TestGeneratorHandlerLifecycle:
 
         async with agent:
             with pytest.raises(RuntimeError, match="yielded more than once"):
-                async with agent.modes["bad"]:
+                async with agent.mode("bad"):
                     pass
 
     @pytest.mark.asyncio
@@ -154,7 +154,7 @@ class TestGeneratorHandlerLifecycle:
         async with agent:
             # Generator that doesn't yield should raise ModeHandlerError
             with pytest.raises(ModeHandlerError, match="must yield"):
-                async with agent.modes["gen"]:
+                async with agent.mode("gen"):
                     pass
 
         # Setup code ran before the early return
@@ -170,7 +170,7 @@ class TestGeneratorHandlerLifecycle:
             agent.mode.state["setup_value"] = 42
             yield agent
 
-        async with agent, agent.modes["gen"]:
+        async with agent, agent.mode("gen"):
             assert agent.mode.state["setup_value"] == 42
 
 
@@ -194,9 +194,9 @@ class TestNestedModeGenerators:
             yield agent
             events.append("inner:cleanup")
 
-        async with agent, agent.modes["outer"]:
+        async with agent, agent.mode("outer"):
             events.append("outer:active")
-            async with agent.modes["inner"]:
+            async with agent.mode("inner"):
                 events.append("inner:active")
             events.append("outer:after_inner")
 
@@ -233,8 +233,8 @@ class TestNestedModeGenerators:
 
         async with agent:
             with pytest.raises(ValueError):
-                async with agent.modes["outer"]:
-                    async with agent.modes["inner"]:
+                async with agent.mode("outer"):
+                    async with agent.mode("inner"):
                         raise ValueError("boom")
 
         # Both cleanups should have run, inner first
@@ -261,7 +261,7 @@ class TestNestedModeGenerators:
             inner_saw = agent.mode.state.get("outer_value")
             yield agent
 
-        async with agent, agent.modes["outer"], agent.modes["inner"]:
+        async with agent, agent.mode("outer"), agent.mode("inner"):
             pass
 
         assert inner_saw == 42
@@ -283,7 +283,7 @@ class TestGeneratorHandlerValidation:
             handler_runs.append("cleanup")
 
         async with agent:
-            async with agent.modes["gen"]:
+            async with agent.mode("gen"):
                 # Setup runs at mode entry
                 assert handler_runs == ["setup"]
 
@@ -316,7 +316,7 @@ class TestExceptionHandling:
 
         async with agent:
             # Exception should be suppressed since generator handles it
-            async with agent.modes["gen"]:
+            async with agent.mode("gen"):
                 raise ValueError("test error")
 
         assert caught_exception is not None
@@ -339,7 +339,7 @@ class TestExceptionHandling:
         async with agent:
             events.append("before")
             # No pytest.raises needed - exception is suppressed
-            async with agent.modes["gen"]:
+            async with agent.mode("gen"):
                 events.append("active")
                 raise ValueError("suppressed")
             events.append("after")  # This should run
@@ -362,7 +362,7 @@ class TestExceptionHandling:
 
         async with agent:
             with pytest.raises(ValueError):
-                async with agent.modes["gen"]:
+                async with agent.mode("gen"):
                     events.append("active")
                     raise ValueError("propagated")
 
@@ -382,7 +382,7 @@ class TestExceptionHandling:
 
         async with agent:
             with pytest.raises(RuntimeError, match="Transformed: original"):
-                async with agent.modes["gen"]:
+                async with agent.mode("gen"):
                     raise ValueError("original")
 
     @pytest.mark.asyncio
@@ -403,7 +403,7 @@ class TestExceptionHandling:
         async with agent:
             prompt_before = len(agent.prompt.sections)
             with pytest.raises(RuntimeError, match="cleanup error"):
-                async with agent.modes["gen"]:
+                async with agent.mode("gen"):
                     pass
             prompt_after = len(agent.prompt.sections)
 
@@ -426,7 +426,7 @@ class TestExceptionHandling:
 
         async with agent:
             with pytest.raises(ValueError):
-                async with agent.modes["gen"]:
+                async with agent.mode("gen"):
                     events.append("active")
                     raise ValueError("oops")
 
@@ -449,7 +449,7 @@ class TestModeExitBehavior:
             yield agent
             agent.mode.set_exit_behavior(good_agent.ModeExitBehavior.STOP)
 
-        async with agent, agent.modes["gen"]:
+        async with agent, agent.mode("gen"):
             pass
             # Check that the behavior was set (accessible via internal state)
             # The actual behavior affects execute() loop integration (Phase 4)
@@ -469,7 +469,7 @@ class TestModeExitBehavior:
             yield agent
             agent.mode.set_exit_behavior(good_agent.ModeExitBehavior.CONTINUE)
 
-        async with agent, agent.modes["gen"]:
+        async with agent, agent.mode("gen"):
             pass
 
         assert True
@@ -487,7 +487,7 @@ class TestModeExitBehavior:
         async with agent:
             # We need to capture the behavior during exit
             # This tests the internal mechanism
-            async with agent.modes["gen"]:
+            async with agent.mode("gen"):
                 pass
 
         # No explicit behavior set means AUTO is used
@@ -506,7 +506,7 @@ class TestModeExitBehavior:
             # Set behavior directly in state (alternative to set_exit_behavior)
             agent.mode.state["_exit_behavior"] = good_agent.ModeExitBehavior.STOP
 
-        async with agent, agent.modes["gen"]:
+        async with agent, agent.mode("gen"):
             # Behavior not set yet - we're before cleanup
             assert agent.mode.state.get("_exit_behavior") is None
 
@@ -551,7 +551,7 @@ class TestHasPendingTransition:
         async def test_mode(agent: Agent):
             yield agent
 
-        async with agent, agent.modes["test"]:
+        async with agent, agent.mode("test"):
             agent.schedule_mode_exit()
             assert agent.modes.has_pending_transition() is True
 
@@ -601,7 +601,7 @@ class TestApplyScheduledModeChangesReturnValue:
             yield agent
             agent.mode.set_exit_behavior(ModeExitBehavior.STOP)
 
-        async with agent, agent.modes["test"]:
+        async with agent, agent.mode("test"):
             agent.schedule_mode_exit()
 
             result = await agent.modes.apply_scheduled_mode_changes()
@@ -620,7 +620,7 @@ class TestApplyScheduledModeChangesReturnValue:
         async def mode2(agent: Agent):
             yield agent
 
-        async with agent, agent.modes["mode1"]:
+        async with agent, agent.mode("mode1"):
             agent.schedule_mode_switch("mode2")
 
             result = await agent.modes.apply_scheduled_mode_changes()
@@ -715,7 +715,7 @@ class TestExecuteLoopIntegration:
             yield agent
             events.append("cleanup")
 
-        async with agent, agent.modes["gen"]:
+        async with agent, agent.mode("gen"):
             events.append("active")
             agent.schedule_mode_exit()
             events.append("scheduled")
@@ -737,7 +737,7 @@ class TestExecuteLoopIntegration:
             agent.prompt.append("Research mode active")
             yield agent
 
-        async with agent, agent.modes["research"]:
+        async with agent, agent.mode("research"):
             mode_active_during_calls.append(agent.mode.name)
 
             with agent.mock("response 1"):
@@ -811,7 +811,7 @@ class TestExecuteLoopIntegration:
             yield agent
             agent.mode.set_exit_behavior(ModeExitBehavior.STOP)
 
-        async with agent, agent.modes["research"]:
+        async with agent, agent.mode("research"):
             # Mock: first call returns tool call, second would be after mode exit
             with agent.mock(
                 mock_message("", tool_calls=[("exit_mode_tool", {})]),
@@ -850,7 +850,7 @@ class TestExecuteLoopIntegration:
             yield agent
             agent.mode.set_exit_behavior(ModeExitBehavior.CONTINUE)
 
-        async with agent, agent.modes["research"]:
+        async with agent, agent.mode("research"):
             with agent.mock(
                 mock_message("", tool_calls=[("exit_mode_tool", {})]),
                 "After mode exit",  # CONTINUE should allow this

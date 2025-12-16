@@ -1,6 +1,8 @@
 import asyncio
+
 from good_agent import Agent
 from good_agent.agent.state import AgentState
+
 
 async def main():
     async with Agent("Assistant") as agent:

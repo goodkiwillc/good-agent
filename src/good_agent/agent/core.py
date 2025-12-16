@@ -709,7 +709,7 @@ class Agent(EventRouter):
         """Mode management facade (``agent.modes``).
 
         Use ``@agent.modes('name')`` to register modes and
-        ``async with agent.modes['name']:`` to enter them.
+        ``async with agent.mode('name'):`` to enter them.
         """
         return self._mode_manager
 
@@ -719,11 +719,14 @@ class Agent(EventRouter):
 
         Provides access to mode state and info from within mode handlers.
         This is the preferred way to access mode state in agent-centric handlers.
+        Call ``agent.mode('name', **params)`` as an async context manager to
+        enter a registered mode.
 
         Example:
             @agent.modes('research')
             async def research_mode(agent: Agent):
-                agent.mode.state['topic'] = 'quantum'
+                async with agent.mode('deep-dive', topic='quantum'):
+                    ...
                 print(f"In mode: {agent.mode.name}")
 
         Returns:

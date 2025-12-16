@@ -81,10 +81,10 @@ async def main():
 
         # Test 1: Normal nested execution
         print("Test 1: Normal nested execution")
-        async with agent.modes["outer_tracked"]:
+        async with agent.mode("outer_tracked"):
             print(f"  Stack: {agent.mode.stack}")
 
-            async with agent.modes["inner_tracked"]:
+            async with agent.mode("inner_tracked"):
                 print(f"  Stack: {agent.mode.stack}")
                 captured_events.append("inner:active")
 
@@ -99,10 +99,9 @@ async def main():
         # Test 2: Exception in inner mode
         print("Test 2: Exception in inner mode (both cleanups run)")
         try:
-            async with agent.modes["outer_tracked"]:
-                async with agent.modes["inner_tracked"]:
-                    captured_events.append("inner:active")
-                    raise ValueError("Error in inner mode")
+            async with agent.mode("outer_tracked"), agent.mode("inner_tracked"):
+                captured_events.append("inner:active")
+                raise ValueError("Error in inner mode")
         except ValueError as e:
             print(f"  Caught: {e}")
 

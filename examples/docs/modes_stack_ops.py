@@ -10,7 +10,7 @@ async def main():
         async def research_mode(agent: Agent):
             yield agent
 
-        async with agent.modes["research"]:
+        async with agent.mode("research"):
             # Check what modes are active
             available_modes = agent.modes.list_modes()
             print(f"Available modes: {available_modes}")

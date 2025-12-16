@@ -3,8 +3,9 @@
 import asyncio
 
 import pytest
+from pydantic import Field, ValidationError
+
 from good_agent import Agent, tool
-from pydantic import Field
 
 
 @tool
@@ -40,7 +41,7 @@ async def test_tool_with_validation():
         assert result.success
 
         # Invalid input should fail validation
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             await agent.tools["validated"](_agent=agent, value=150)
 
 

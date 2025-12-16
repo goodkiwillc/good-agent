@@ -1,5 +1,7 @@
 import asyncio
+
 from good_agent import Agent
+
 
 async def main():
     # This example demonstrates the most basic usage of an Agent

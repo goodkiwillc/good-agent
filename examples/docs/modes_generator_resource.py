@@ -63,7 +63,7 @@ async def main():
 
         # Normal usage - pool is always closed
         print("Test 1: Normal usage")
-        async with agent.modes["database"]:
+        async with agent.mode("database"):
             pool = agent.mode.state["db_pool"]
             result = await pool.execute("SELECT * FROM users")
             print(f"  Query result: {result}")
@@ -74,7 +74,7 @@ async def main():
         print("Test 2: With exception (cleanup still runs)")
         tracked_pool = None
         try:
-            async with agent.modes["database"]:
+            async with agent.mode("database"):
                 pool = agent.mode.state["db_pool"]
                 print("  Raising exception...")
                 raise RuntimeError("Database error!")

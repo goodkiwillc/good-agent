@@ -33,7 +33,7 @@ async def test_mode_context_manager():
     async with agent:
         assert agent.current_mode is None
 
-        async with agent.modes["research"] as researcher:
+        async with agent.mode("research") as researcher:
             assert researcher is agent
             assert agent.current_mode == "research"
             assert agent.in_mode("research")
@@ -59,11 +59,11 @@ async def test_mode_stacking():
         assert agent_param.mode.state.get("outer_var") == "outer"
         yield agent_param
 
-    async with agent, agent.modes["outer"]:
+    async with agent, agent.mode("outer"):
         assert agent.current_mode == "outer"
         assert agent.mode_stack == ["outer"]
 
-        async with agent.modes["inner"]:
+        async with agent.mode("inner"):
             assert agent.current_mode == "inner"
             assert agent.mode_stack == ["outer", "inner"]
             assert agent.in_mode("outer")
@@ -97,7 +97,7 @@ async def test_scoped_state():
 
         yield agent_param
 
-    async with agent, agent.modes["outer"]:
+    async with agent, agent.mode("outer"):
         # Manually set state for testing
         agent.modes.set_state("x", "outer")
         agent.modes.set_state("y", "only-outer")
@@ -106,7 +106,7 @@ async def test_scoped_state():
         assert agent.modes.get_state("x") == "outer"
         assert agent.modes.get_state("y") == "only-outer"
 
-        async with agent.modes["inner"]:
+        async with agent.mode("inner"):
             # Shadow outer state
             agent.modes.set_state("x", "inner")
             agent.modes.set_state("z", "only-inner")
@@ -154,8 +154,22 @@ async def test_mode_not_registered_error():
 
     async with agent:
         with pytest.raises(KeyError, match="not registered"):
-            async with agent.modes["nonexistent"]:
+            async with agent.mode("nonexistent"):
                 pass
+
+
+@pytest.mark.asyncio
+async def test_legacy_indexer_removed():
+    """agent.modes["name"] should raise with guidance to use agent.mode()."""
+    agent = Agent("Test agent")
+
+    @agent.modes("research")
+    async def research_mode(agent_param: Agent):
+        yield agent_param
+
+    async with agent:
+        with pytest.raises(RuntimeError, match=r"agent\.mode"):
+            _ = agent.modes["research"]
 
 
 @pytest.mark.asyncio
@@ -199,7 +213,7 @@ async def test_mode_events():
 
     async with agent:
         # Just verify modes work
-        async with agent.modes["test"]:
+        async with agent.mode("test"):
             assert agent.current_mode == "test"
 
         assert agent.current_mode is None
@@ -218,7 +232,7 @@ async def test_mode_context_add_system_message():
 
     async with agent:
         with agent.mock("Mock response"):
-            async with agent.modes["research"]:
+            async with agent.mode("research"):
                 await agent.call("Trigger handler")
 
     system_messages = [m for m in agent.messages if m.role == "system"]
@@ -276,7 +290,7 @@ async def test_mode_handler_execution():
 
     async with agent:
         with agent.mock("Mock response"):
-            async with agent.modes["research"]:
+            async with agent.mode("research"):
                 result = await agent.call("Hello")
                 assert agent.modes.get_state("ran") == 1
                 assert "Mock response" in str(result.content)
@@ -443,7 +457,7 @@ async def test_mode_accessor_properties():
         assert agent.mode.name is None
         assert agent.mode.stack == []
 
-        async with agent.modes["research"]:
+        async with agent.mode("research"):
             # Inside mode - accessor shows current mode
             assert agent.mode.name == "research"
             assert agent.mode.stack == ["research"]
@@ -468,7 +482,7 @@ async def test_mode_accessor_state():
         yield agent_param
 
     async with agent:
-        async with agent.modes["stateful"]:
+        async with agent.mode("stateful"):
             with agent.mock("ok"):
                 await agent.call("test")
 
@@ -495,7 +509,7 @@ async def test_agent_centric_handler():
 
     async with agent:
         with agent.mock("ok"):
-            async with agent.modes["modern"]:
+            async with agent.mode("modern"):
                 await agent.call("test")
                 assert agent.modes.get_state("modern") is True
 
@@ -549,7 +563,7 @@ async def test_legacy_handler_deprecation_warning():
             # Capture warnings at mode entry, where the deprecation is emitted
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always")
-                async with agent.modes["legacy"]:
+                async with agent.mode("legacy"):
                     await agent.call("test")
 
                 # Should have deprecation warning
@@ -578,11 +592,11 @@ async def test_mixed_handler_styles():
 
     async with agent:
         with agent.mock("ok", "ok"):
-            async with agent.modes["outer"]:
+            async with agent.mode("outer"):
                 await agent.call("first")
                 assert agent.modes.get_state("outer_ran") is True
 
-                async with agent.modes["inner"]:
+                async with agent.mode("inner"):
                     await agent.call("second")
                     assert agent.modes.get_state("inner_ran") is True
                     # Can still see outer state
@@ -646,7 +660,7 @@ async def test_system_prompt_manager_mode_restore():
         # Verify no modifications before mode
         assert not agent.prompt.has_modifications
 
-        async with agent.modes["research"]:
+        async with agent.mode("research"):
             # Manually add modifications while in mode
             agent.prompt.append("Research-specific instruction")
             agent.prompt.sections["context"] = "Research context"
@@ -668,7 +682,7 @@ async def test_system_prompt_manager_persist():
         yield agent_param  # Handler for mode registration
 
     async with agent:
-        async with agent.modes["research"]:
+        async with agent.mode("research"):
             # Add modifications while in mode
             agent.prompt.append("Temporary change")
             agent.prompt.append("Permanent change", persist=True)
@@ -699,14 +713,14 @@ async def test_system_prompt_manager_nested_modes():
         yield agent_param
 
     async with agent:
-        async with agent.modes["outer"]:
+        async with agent.mode("outer"):
             # Add content while in outer mode
             agent.prompt.append("Outer content")
             outer_rendered = agent.prompt.render()
             assert "Outer content" in outer_rendered
             assert "Inner content" not in outer_rendered
 
-            async with agent.modes["inner"]:
+            async with agent.mode("inner"):
                 # Add content while in inner mode
                 agent.prompt.append("Inner content")
                 inner_rendered = agent.prompt.render()
@@ -792,7 +806,7 @@ async def test_isolation_none_default():
         agent.append("Before mode")
         initial_count = len(agent.messages)
 
-        async with agent.modes["shared"]:
+        async with agent.mode("shared"):
             # Add message in mode
             agent.append("During mode")
             assert len(agent.messages) == initial_count + 1
@@ -851,10 +865,10 @@ async def test_isolation_hierarchy_validation():
     async def inner_none(agent: Agent):
         yield agent
 
-    async with agent, agent.modes["outer_fork"]:
+    async with agent, agent.mode("outer_fork"):
         # Attempting to enter a less isolated mode should fail
         with pytest.raises(ValueError, match="less restrictive"):
-            async with agent.modes["inner_none"]:
+            async with agent.mode("inner_none"):
                 pass
 
 
@@ -873,9 +887,9 @@ async def test_isolation_hierarchy_valid_increase():
     async def inner_fork(agent: Agent):
         yield agent
 
-    async with agent, agent.modes["outer_none"]:
+    async with agent, agent.mode("outer_none"):
         # More isolated mode is allowed
-        async with agent.modes["inner_fork"]:
+        async with agent.mode("inner_fork"):
             assert agent.mode.stack == ["outer_none", "inner_fork"]
 
 
@@ -895,7 +909,7 @@ async def test_isolation_fork_messages_restored():
         agent.append("Original message")
         original_count = len(agent.messages)
 
-        async with agent.modes["sandbox"]:
+        async with agent.mode("sandbox"):
             # Add messages in sandbox
             agent.append("Sandbox message 1")
             agent.append("Sandbox message 2")
@@ -923,7 +937,7 @@ async def test_isolation_thread_keeps_new_messages():
         agent.append("Original 2")
         original_count = len(agent.messages)
 
-        async with agent.modes["thread_mode"]:
+        async with agent.mode("thread_mode"):
             # Add new message
             agent.append("New message in thread")
             # Thread mode should have original + new
@@ -978,7 +992,7 @@ async def test_isolation_config_restores_tools():
         original_tools = set(tool_manager._tools.keys())
         assert "original_tool" in original_tools
 
-        async with agent.modes["config_isolated"]:
+        async with agent.mode("config_isolated"):
             # Register a new tool in mode
             await tool_manager.register_tool(mode_tool)
             assert "mode_tool" in tool_manager._tools
@@ -1205,7 +1219,7 @@ async def test_modes_register_standalone():
     # Mode should be registered
     assert "analysis" in agent.modes.list_modes()
 
-    async with agent, agent.modes["analysis"]:
+    async with agent, agent.mode("analysis"):
         with agent.mock("ok"):
             await agent.call("test")
         assert agent.modes.get_state("analyzing") is True
@@ -1226,7 +1240,7 @@ async def test_modes_register_raw_handler():
 
     assert "custom_mode" in agent.modes.list_modes()
 
-    async with agent, agent.modes["custom_mode"]:
+    async with agent, agent.mode("custom_mode"):
         with agent.mock("ok"):
             await agent.call("test")
         assert agent.modes.get_state("custom") is True
@@ -1351,7 +1365,7 @@ async def test_mode_aware_system_prompt():
         assert "Current mode: none" in rendered
 
         # Enter a mode and check prompt updates
-        async with agent.modes["research"]:
+        async with agent.mode("research"):
             rendered = agent.prompt.render()
             assert "Current mode: research" in rendered
             assert "research (ACTIVE)" in rendered
@@ -1414,13 +1428,13 @@ async def test_mode_history_tracking():
     async with agent:
         assert agent.mode.history == []
 
-        async with agent.modes["mode_a"]:
+        async with agent.mode("mode_a"):
             assert agent.mode.history == ["mode_a"]
 
-        async with agent.modes["mode_b"]:
+        async with agent.mode("mode_b"):
             assert agent.mode.history == ["mode_a", "mode_b"]
 
-        async with agent.modes["mode_c"]:
+        async with agent.mode("mode_c"):
             assert agent.mode.history == ["mode_a", "mode_b", "mode_c"]
 
         # History persists after mode exit
@@ -1443,10 +1457,10 @@ async def test_mode_previous():
     async with agent:
         assert agent.mode.previous is None
 
-        async with agent.modes["first"]:
+        async with agent.mode("first"):
             assert agent.mode.previous is None  # Only one mode in history
 
-        async with agent.modes["second"]:
+        async with agent.mode("second"):
             assert agent.mode.previous == "first"
 
 
@@ -1464,13 +1478,13 @@ async def test_mode_return_to_previous():
         yield agent
 
     async with agent:
-        async with agent.modes["mode_a"]:
+        async with agent.mode("mode_a"):
             # No previous - should return exit transition
             transition = agent.mode.return_to_previous()
             assert transition.transition_type == "exit"
             assert transition.target_mode is None
 
-        async with agent.modes["mode_b"]:
+        async with agent.mode("mode_b"):
             # Previous is mode_a - should return switch transition
             transition = agent.mode.return_to_previous()
             assert transition.transition_type == "switch"
@@ -1487,7 +1501,7 @@ async def test_parameterized_mode_entry():
         yield agent
 
     async with agent:
-        async with agent.modes["research"](topic="quantum", depth=3):
+        async with agent.mode("research", topic="quantum", depth=3):
             # Parameters should be in mode state
             assert agent.mode.state["topic"] == "quantum"
             assert agent.mode.state["depth"] == 3
@@ -1509,7 +1523,7 @@ async def test_parameterized_mode_entry_handler_access():
         seen_params["max_depth"] = agent.mode.state.get("max_depth")
         yield agent
 
-    async with agent, agent.modes["analysis"](subject="physics", max_depth=5):
+    async with agent, agent.mode("analysis", subject="physics", max_depth=5):
         pass
 
     # Handler should have seen the parameters
@@ -1528,10 +1542,10 @@ async def test_parameterized_mode_without_params():
 
     async with agent:
         # Both styles should work
-        async with agent.modes["simple"]:
+        async with agent.mode("simple"):
             assert agent.mode.name == "simple"
 
-        async with agent.modes["simple"]():
+        async with agent.mode("simple"):
             assert agent.mode.name == "simple"
 
 
@@ -1548,10 +1562,10 @@ async def test_parameterized_mode_nested():
     async def inner_mode(agent: Agent):
         yield agent
 
-    async with agent, agent.modes["outer"](level="outer"):
+    async with agent, agent.mode("outer", level="outer"):
         assert agent.mode.state["level"] == "outer"
 
-        async with agent.modes["inner"](level="inner", extra="data"):
+        async with agent.mode("inner", level="inner", extra="data"):
             # Inner state shadows outer
             assert agent.mode.state["level"] == "inner"
             assert agent.mode.state["extra"] == "data"

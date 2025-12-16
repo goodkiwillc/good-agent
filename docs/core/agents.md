@@ -55,7 +55,7 @@ async with Agent("Assistant") as agent:
         # Add to system prompt (auto-restored on exit)
         agent.prompt.append("Focus on research and citations.")
     
-    async with agent.modes["research"]:
+    async with agent.mode("research"):
         # Mode properties
         print(agent.mode.name)              # "research"
         print(agent.mode.stack)             # ["research"]
@@ -103,7 +103,7 @@ async with Agent("Assistant") as agent:
         # Persist changes beyond mode exit
         agent.prompt.append("Always be helpful.", persist=True)
     
-    async with agent.modes["expert"]:
+    async with agent.mode("expert"):
         # Prompt includes all additions
         print(agent.prompt.render())
     

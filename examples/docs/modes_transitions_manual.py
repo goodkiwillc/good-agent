@@ -48,7 +48,7 @@ async def main():
             agent.modes.schedule_mode_exit()
 
         # Usage - modes will automatically transition
-        async with agent.modes["intake"]:
+        async with agent.mode("intake"):
             agent.modes.set_state("user_intent", "technical analysis")
 
             # This will trigger: intake -> technical -> review -> normal

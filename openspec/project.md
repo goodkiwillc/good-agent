@@ -21,7 +21,7 @@ Good Agent is an async-first Python framework for building composable, stateful 
 - Follow "modify existing code" rule: extend current abstractions (`Agent`, `Component`, `tool`) rather than duplicating files or creating `_v2` variants.
 
 ### Architecture Patterns
-- **Agents as context managers**: `Agent` instances are `async with`-managed, and can fork/branch contexts (`agent.modes[...]`, `agent.branch`, `agent.isolated`).
+- **Agents as context managers**: `Agent` instances are `async with`-managed, and can fork/branch contexts (`agent.mode("name")`, `agent.branch`, `agent.isolated`).
 - **Composable tooling**: Tools are registered via `@tool` (FastDepends-style DI). Components register hooks and expose tools, with dependency resolution handled by `ComponentRegistry`.
 - **Mode + event system**: Modes must yield control (generator style) and can be stacked; events emitted through `good_agent.events` let components observe lifecycle.
 - **State projection**: Message history is a projection over agent state, supporting snapshots/versioning, branching, and multi-agent piping (`agent_a | agent_b`).

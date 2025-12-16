@@ -54,7 +54,7 @@ async def main():
             agent.modes.schedule_mode_exit()  # Return to normal after summary
 
         # Usage
-        async with agent.modes["adaptive"]:
+        async with agent.mode("adaptive"):
             # Simulate conversation
             for i in range(12):
                 # In real usage we'd append user messages and call

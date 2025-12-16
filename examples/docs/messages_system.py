@@ -1,5 +1,7 @@
 import asyncio
+
 from good_agent.messages import SystemMessage
+
 
 async def main():
     # Basic system message

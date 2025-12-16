@@ -97,7 +97,7 @@ async def main():
         # Test 1: Exception caught, logged, and re-raised
         print("Test 1: careful_mode catches, logs, and re-raises")
         try:
-            async with agent.modes["careful_mode_v2"]:
+            async with agent.mode("careful_mode_v2"):
                 print("  Raising ValueError inside mode...")
                 raise ValueError("Something went wrong")
         except ValueError:
@@ -106,7 +106,7 @@ async def main():
 
         # Test 2: Exception suppressed
         print("Test 2: resilient_mode suppresses ValueError")
-        async with agent.modes["resilient_mode_v2"]:
+        async with agent.mode("resilient_mode_v2"):
             print("  Raising ValueError inside mode...")
             raise ValueError("This will be suppressed")
         # If we get here, exception was suppressed

@@ -29,8 +29,8 @@ async def fetch_url(url: str, timeout: float = 10.0) -> str:
         async with asyncio.timeout(timeout):
             async with client.get(url) as response:
                 return await response.text()
-    except TimeoutError:
-        raise ValueError(f"Timeout fetching {url}")
+    except TimeoutError as err:
+        raise ValueError(f"Timeout fetching {url}") from err
 
 
 # Sync tool with caching

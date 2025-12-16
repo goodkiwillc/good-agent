@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
-from good_agent.model.llm import LanguageModel
 from good_agent.mock import MockQueuedLanguageModel, MockResponse, mock_message
+from good_agent.model.llm import LanguageModel
 
 
 def assistant_response(text: str) -> MockResponse:

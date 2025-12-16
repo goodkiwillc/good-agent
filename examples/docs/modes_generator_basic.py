@@ -43,7 +43,7 @@ async def main():
 
         # Enter mode - setup runs
         print("Entering database_mode...")
-        async with agent.modes["database_mode"]:
+        async with agent.mode("database_mode"):
             print(f"  Mode active: {agent.mode.name}")
             print(f"  DB connected: {agent.mode.state['db']['connected']}")
 

@@ -1,6 +1,8 @@
 import asyncio
+
 from good_agent.messages import AssistantMessage
 from good_agent.tools import ToolCall, ToolCallFunction
+
 
 async def main():
     # Text response
@@ -13,9 +15,9 @@ async def main():
         "Let me calculate that for you.",
         tool_calls=[
             ToolCall(
-                id="call_123", 
+                id="call_123",
                 function=ToolCallFunction(
-                    name="calculator", 
+                    name="calculator",
                     arguments="{}"
                 )
             )

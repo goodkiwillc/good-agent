@@ -26,7 +26,7 @@ async def main():
             agent.mode.state["call_count"] = agent.mode.state.get("call_count", 0) + 1
             yield agent
 
-        async with agent.modes["efficient"]:
+        async with agent.mode("efficient"):
             await agent.call("Call 1")
             print(f"Call count: {agent.modes.get_state('call_count')}")
             await agent.call("Call 2")

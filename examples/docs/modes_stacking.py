@@ -27,20 +27,18 @@ async def main():
             agent.mode.state["interaction_style"] = "supportive"
             yield agent
 
-        async with agent.modes["expert"]:
-            async with agent.modes["teaching"]:
-                async with agent.modes["patient"]:
-                    # Agent now combines all three behavioral modes
-                    print(f"Mode stack: {agent.mode.stack}")
-                    # ["expert", "teaching", "patient"]
+        async with agent.mode("expert"), agent.mode("teaching"), agent.mode("patient"):
+            # Agent now combines all three behavioral modes
+            print(f"Mode stack: {agent.mode.stack}")
+            # ["expert", "teaching", "patient"]
 
-                    print(f"In expert mode: {agent.mode.in_mode('expert')}")  # True
-                    print(f"In teaching mode: {agent.mode.in_mode('teaching')}")  # True
-                    print(f"Current mode: {agent.mode.name}")  # "patient"
+            print(f"In expert mode: {agent.mode.in_mode('expert')}")  # True
+            print(f"In teaching mode: {agent.mode.in_mode('teaching')}")  # True
+            print(f"Current mode: {agent.mode.name}")  # "patient"
 
-                    # Agent will be expert + teaching + patient
-                    response = await agent.call("Explain quantum entanglement")
-                    print(response.content)
+            # Agent will be expert + teaching + patient
+            response = await agent.call("Explain quantum entanglement")
+            print(response.content)
 
 
 if __name__ == "__main__":

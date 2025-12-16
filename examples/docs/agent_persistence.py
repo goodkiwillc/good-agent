@@ -1,6 +1,7 @@
 import asyncio
 import json
 from pathlib import Path
+
 from good_agent import Agent
 
 
@@ -50,8 +51,8 @@ class PersistentAgent(Agent):
 
 
 async def main():
-    import tempfile
     import os
+    import tempfile
 
     with tempfile.NamedTemporaryFile(delete=False) as tmp:
         state_path = tmp.name

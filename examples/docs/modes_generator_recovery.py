@@ -97,7 +97,7 @@ async def main():
         print("Test 1: RateLimitError (recoverable, suppressed)")
         should_retry = False
         recorded_errors = []
-        async with agent.modes["resilient_tracked"]:
+        async with agent.mode("resilient_tracked"):
             agent.mode.state["attempts"] += 1
             raise RateLimitError("Too many requests")
         print(f"  Should retry: {should_retry}")
@@ -108,7 +108,7 @@ async def main():
         should_retry = False
         recorded_errors = []
         try:
-            async with agent.modes["resilient_tracked"]:
+            async with agent.mode("resilient_tracked"):
                 agent.mode.state["attempts"] += 1
                 raise CriticalError("Database connection lost")
         except CriticalError as e:
@@ -118,7 +118,7 @@ async def main():
         print("Test 3: Normal completion (no errors)")
         should_retry = False
         recorded_errors = []
-        async with agent.modes["resilient_tracked"]:
+        async with agent.mode("resilient_tracked"):
             agent.mode.state["attempts"] += 1
             print("  Work completed successfully")
         print(f"  Errors recorded: {recorded_errors}")

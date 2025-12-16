@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import inspect
 import warnings
-from collections.abc import Awaitable, Callable, MutableMapping
+from collections.abc import AsyncGenerator, Awaitable, Callable, MutableMapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum, IntEnum, auto
-from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, ParamSpec, TypeVar
 
 if TYPE_CHECKING:
     from good_agent.agent.core import Agent
@@ -197,19 +197,16 @@ class ModeStateView(MutableMapping[str, Any]):
 
 
 class ModeAccessor:
-    """Provides access to current mode information via agent.mode property.
+    """Provides access to mode state and entry via ``agent.mode``.
 
-    This is the new agent-centric API for accessing mode state from within
-    mode handlers. Instead of receiving a ModeContext, handlers now receive
-    the Agent directly and access mode info via agent.mode.
+    Handlers receive the Agent instance directly and use ``agent.mode`` to
+    inspect state or enter additional modes:
 
-    Example:
         @agent.modes('research')
         async def research_mode(agent: Agent):
-            # Access mode info via agent.mode
             agent.mode.state['topic'] = 'quantum'
-            print(f"In mode: {agent.mode.name}")
-            print(f"Stack: {agent.mode.stack}")
+            async with agent.mode('deep-dive', depth=3):
+                ...
     """
 
     def __init__(self, manager: ModeManager):
@@ -220,6 +217,22 @@ class ModeAccessor:
         """
         self._manager = manager
         self._entered_at: datetime | None = None
+
+    def __call__(self, mode_name: str, **parameters: Any) -> ModeContextManager:
+        """Return the async context manager for ``mode_name``.
+
+        Args:
+            mode_name: Registered mode to enter
+            **parameters: Optional parameters injected into ``agent.mode.state``
+
+        Returns:
+            ModeContextManager for use with ``async with agent.mode(...)``
+
+        Raises:
+            KeyError: If the mode is not registered
+        """
+
+        return self._manager.context(mode_name, **parameters)
 
     @property
     def name(self) -> str | None:
@@ -597,7 +610,10 @@ class ModeStack:
 
 
 # Type for mode handler functions (supports both legacy ModeContext and v2 Agent styles)
-ModeHandler = Callable[[ModeContext], Awaitable[Any]] | Callable[["Agent"], Awaitable[Any]]
+ModeHandler = (
+    Callable[[ModeContext], AsyncGenerator[Any, Any]]
+    | Callable[["Agent"], AsyncGenerator[Any, Any]]
+)
 
 
 class ModeContextManager:
@@ -606,11 +622,11 @@ class ModeContextManager:
     Supports parameterized mode entry via callable syntax:
 
         # Without parameters
-        async with agent.modes["research"]:
+        async with agent.mode("research"):
             ...
 
         # With parameters
-        async with agent.modes["research"](topic="quantum", depth=3):
+        async with agent.mode("research", topic="quantum", depth=3):
             print(agent.mode.state["topic"])  # "quantum"
     """
 
@@ -637,7 +653,7 @@ class ModeContextManager:
             Self for use as context manager
 
         Example:
-            async with agent.modes["research"](topic="quantum", depth=3):
+            async with agent.mode("research", topic="quantum", depth=3):
                 print(agent.mode.state["topic"])  # "quantum"
         """
         self._params = params
@@ -713,7 +729,8 @@ class ModeInfo:
 class ModeManager:
     """Manages mode registration, entry/exit, and discovery.
 
-    Provides decorator for mode registration and subscript access for mode entry.
+    Provides decorator for mode registration and utilities for ``agent.mode(...)``
+    context-managers.
     """
 
     def __init__(self, agent: Agent):
@@ -852,26 +869,33 @@ You are now operating in {mode_name} mode. Your responses should align with this
         tool_manager = self._agent[ToolManager]
         tool_manager[generated_tool_name] = mode_switch_tool
 
-    def __getitem__(self, name: str) -> ModeContextManager:
-        """Get mode context manager for entering a mode.
+    def __getitem__(self, name: str) -> NoReturn:
+        """Legacy entrypoint removed. Use ``agent.mode(name)`` instead."""
+
+        raise RuntimeError(
+            "Mode entry via agent.modes[...] has been removed. "
+            "Call agent.mode('name', **params) to enter a mode."
+        )
+
+    def context(self, name: str, **params: Any) -> ModeContextManager:
+        """Return the context manager used by ``agent.mode(name, **params)``.
 
         Args:
             name: Mode name
+            **params: Optional parameters to inject into mode state
 
         Returns:
-            Context manager for entering the mode
+            ModeContextManager ready for ``async with``
 
         Raises:
             KeyError: If mode is not registered
-
-        Example:
-            async with agent.modes['research']:
-                await agent.call("Research quantum computing")
         """
+
         if name not in self._registry:
             raise KeyError(f"Mode '{name}' is not registered")
 
-        return ModeContextManager(self, name)
+        manager = ModeContextManager(self, name)
+        return manager(**params) if params else manager
 
     def list_modes(self) -> list[str]:
         """List all registered mode names.
