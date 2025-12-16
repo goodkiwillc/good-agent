@@ -101,16 +101,16 @@ def _provide_now():
 def find_prompts_directory() -> Path | None:
     """Find the prompts directory from env override or by looking for prompts.yaml."""
     env_dir = os.getenv("GOOD_AGENT_PROMPTS_DIR")
-    logger.info("Searching for prompts directory...")
+    logger.debug("Searching for prompts directory...")
     if env_dir:
         env_path = Path(env_dir).expanduser()
-        logger.info(f"Using prompts directory from GOOD_AGENT_PROMPTS_DIR: {env_path}")
+        logger.debug(f"Using prompts directory from GOOD_AGENT_PROMPTS_DIR: {env_path}")
         if env_path.exists():
             return env_path
 
     current = Path.cwd()
 
-    logger.info(current)
+    logger.debug(current)
 
     # Check current directory and parents
     for directory in [current] + list(current.parents):
@@ -198,7 +198,7 @@ class TemplateManager(AgentComponent):
         self._context_stack: list[dict[str, Any]] = []
         self.use_sandbox = use_sandbox
 
-        logger.info(
+        logger.debug(
             f"Initializing TemplateManager with file templates "
             f"{'enabled' if enable_file_templates else 'disabled'}."
         )
@@ -320,7 +320,7 @@ class TemplateManager(AgentComponent):
             StorageTemplateLoader,
         )
 
-        logger.info("Setting up file-based template loading...")
+        logger.debug("Setting up file-based template loading...")
 
         # Build storage chain
         storages = []
@@ -654,15 +654,21 @@ class TemplateManager(AgentComponent):
                 # Call instance provider (must be sync)
                 provider = self._context_providers[key]
 
-                # Emit context:provider:call event
+                # Emit context:provider:call event (interceptable)
                 if hasattr(self, "_agent") and self._agent:
-                    self._agent.do(
+                    ctx = self._agent.apply_sync(
                         AgentEvents.CONTEXT_PROVIDER_BEFORE,
                         provider_name=key,
                         provider=provider,
                         agent=self._agent,
                         extension=self,
+                        output=None,
                     )
+
+                    provider = ctx.parameters.get("provider", provider)
+                    if ctx.return_value is not None:
+                        resolved[key] = ctx.return_value
+                        continue
 
                 # Only support sync providers in sync context
                 if not inspect.iscoroutinefunction(provider):
@@ -686,15 +692,21 @@ class TemplateManager(AgentComponent):
                 # Call global provider (must be sync)
                 provider = _GLOBAL_CONTEXT_PROVIDERS[key]
 
-                # Emit context:provider:call event
+                # Emit context:provider:call event (interceptable)
                 if hasattr(self, "_agent") and self._agent:
-                    self._agent.do(
+                    ctx = self._agent.apply_sync(
                         AgentEvents.CONTEXT_PROVIDER_BEFORE,
                         provider_name=key,
                         provider=provider,
                         agent=self._agent,
                         extension=self,
+                        output=None,
                     )
+
+                    provider = ctx.parameters.get("provider", provider)
+                    if ctx.return_value is not None:
+                        resolved[key] = ctx.return_value
+                        continue
 
                 # Only support sync providers in sync context
                 if not inspect.iscoroutinefunction(provider):

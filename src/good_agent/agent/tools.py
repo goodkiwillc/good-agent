@@ -249,7 +249,7 @@ class ToolExecutor:
                 role="assistant",
                 tool_calls=[tool_call],
             )
-            self.agent.append(assistant_message)
+            await self.agent.append_async(assistant_message)
 
         # Create and add tool message
         tool_message = self.agent.model.create_message(
@@ -259,7 +259,7 @@ class ToolExecutor:
             tool_response=tool_response,
             role="tool",
         )
-        self.agent.append(tool_message)
+        await self.agent.append_async(tool_message)
 
         return tool_response
 
@@ -433,7 +433,7 @@ class ToolExecutor:
             role="assistant",
             tool_calls=tool_calls,
         )
-        self.agent.append(assistant_message)
+        await self.agent.append_async(assistant_message)
 
         # Execute all tools in parallel
         import asyncio
@@ -457,7 +457,7 @@ class ToolExecutor:
                 parameters=tool_response.parameters,
                 role="tool",
             )
-            self.agent.append(tool_message)
+            await self.agent.append_async(tool_message)
 
             # Emit events
             if tool_response.success:

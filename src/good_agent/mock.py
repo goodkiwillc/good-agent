@@ -1042,7 +1042,7 @@ class MockAgent:
         """Execute the agent with mocked responses"""
         # Append input message if provided (matching Agent.execute behavior)
         if content_parts:
-            self.agent.append(*content_parts, role=role, context=context)
+            await self.agent.append_async(*content_parts, role=role, context=context)
 
         # Yield messages based on queued responses following conversation flow rules
         for response in self.responses:

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 
 from good_agent.core.event_router import EventContext
 from good_agent.core.types import URL
-from good_agent.events import AgentEvents
+from good_agent.events import AgentEvents, MessageAppendBeforeParams
 from good_agent.messages import (
     AnnotationLike,
     AssistantMessage,
@@ -73,26 +73,85 @@ class MessageManager:
         filtered = self.messages.filter(role="tool")
         return FilteredMessageList(self.agent, "tool", filtered)
 
+    def _prepare_message(
+        self,
+        *content_parts: MessageContent,
+        role: MessageRole = "user",
+        context: dict[str, Any] | None = None,
+        citations: list[URL | str] | None = None,
+        **kwargs: Any,
+    ) -> Message:
+        if not content_parts:
+            raise ValueError("At least one content part is required")
+
+        if citations:
+            citations = [URL(url) for url in citations]
+
+        if len(content_parts) == 1 and isinstance(content_parts[0], Message):
+            message = content_parts[0]
+        else:
+            if citations:
+                kwargs["citation_urls"] = citations
+
+            if role == "tool" and "tool_call_id" not in kwargs:
+                logger.warning(
+                    "Tool messages should include tool_call_id; using 'test_tool_call' as placeholder"
+                    f" for message: {content_parts}"
+                )
+                kwargs["tool_call_id"] = kwargs.get("tool_call_id", "test_tool_call")
+                kwargs["tool_name"] = kwargs.get("tool_name", "test_tool")
+
+            message = self.agent.model.create_message(
+                *content_parts,
+                role=role,
+                context=context,
+                citations=citations,
+                **kwargs,
+            )
+
+        return message
+
     @property
     def system(self) -> FilteredMessageList[SystemMessage]:
         """Filter messages to only system messages."""
         filtered = self.messages.filter(role="system")
         return FilteredMessageList(self.agent, "system", filtered)
 
-    def _append_message(self, message: Message) -> None:
-        """Internal method to append a message to the agent's message list.
+    async def _append_message(self, message: Message) -> Message:
+        """Append a message with interception support.
 
-        This centralized method ensures:
-        - Proper agent reference is set
-        - Message is stored in global store
-        - Version is updated
-        - Consistent event firing
+        Emits ``MESSAGE_APPEND_BEFORE`` via ``apply`` to allow handlers to
+        mutate or replace the message before it is persisted, then appends and
+        fires ``MESSAGE_APPEND_AFTER``.
 
         Args:
             message: Message to append
+
+        Returns:
+            The message that was ultimately appended (after any interception).
         """
-        # Set agent reference on the message
+
+        # Ensure handlers see the agent-bound message
         message._set_agent(self.agent)
+
+        ctx: EventContext[MessageAppendBeforeParams, Message | None] = (
+            await self.agent.events.typed(MessageAppendBeforeParams, Message).apply(
+                AgentEvents.MESSAGE_APPEND_BEFORE,
+                message=message,
+                agent=self.agent,
+                output=message,
+            )
+        )
+
+        replacement = ctx.return_value
+        if replacement is None:
+            out = ctx.output
+            if isinstance(out, Message):
+                replacement = out
+
+        if replacement is not None:
+            message = replacement
+            message._set_agent(self.agent)
 
         # Add to message list
         self.agent._messages.append(message)
@@ -105,6 +164,34 @@ class MessageManager:
 
         # Emit consistent MESSAGE_APPEND_AFTER event
         self.agent.do(AgentEvents.MESSAGE_APPEND_AFTER, message=message, agent=self.agent)
+
+        return message
+
+    @overload
+    async def append_async(self, content: Message) -> Message: ...
+
+    @overload
+    async def append_async(
+        self,
+        *content_parts: MessageContent,
+        role: MessageRole = "user",
+        context: dict[str, Any] | None = None,
+        citations: list[URL | str] | None = None,
+        **kwargs: Any,
+    ) -> Message: ...
+
+    async def append_async(
+        self,
+        *content_parts: MessageContent,
+        role: MessageRole = "user",
+        context: dict[str, Any] | None = None,
+        citations: list[URL | str] | None = None,
+        **kwargs: Any,
+    ) -> Message:
+        message = self._prepare_message(
+            *content_parts, role=role, context=context, citations=citations, **kwargs
+        )
+        return await self._append_message(message)
 
     def replace_message(self, index: int, new_message: Message) -> None:
         """Replace a message at the given index with a new message.
@@ -261,40 +348,11 @@ class MessageManager:
             citations: List of citation URLs that correspond to [1], [2], etc. in content
             **kwargs: Additional message attributes
         """
-        # Validate we have at least one content part
-        if not content_parts:
-            raise ValueError("At least one content part is required")
+        message = self._prepare_message(
+            *content_parts, role=role, context=context, citations=citations, **kwargs
+        )
 
-        if citations:
-            citations = [URL(url) for url in citations]
-
-        # Handle single Message object case
-        if len(content_parts) == 1 and isinstance(content_parts[0], Message):
-            message = content_parts[0]
-        else:
-            # Include citation_urls in the kwargs if provided
-            if citations:
-                kwargs["citation_urls"] = citations
-
-            # For tool messages, ensure required fields are provided
-            if role == "tool" and "tool_call_id" not in kwargs:
-                logger.warning(
-                    "Tool messages should include tool_call_id; using 'test_tool_call' as placeholder"
-                    f" for message: {content_parts}"
-                )
-                kwargs["tool_call_id"] = kwargs.get("tool_call_id", "test_tool_call")
-                kwargs["tool_name"] = kwargs.get("tool_name", "test_tool")
-
-            message = self.agent.model.create_message(
-                *content_parts,
-                role=role,
-                context=context,
-                citations=citations,
-                **kwargs,
-            )
-
-        # Add to conversation using centralized method
-        self._append_message(message)
+        self.agent.events._sync_bridge.run_coroutine_from_sync(self._append_message(message))
 
     def add_tool_response(
         self,

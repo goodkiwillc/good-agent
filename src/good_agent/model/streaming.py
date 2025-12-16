@@ -8,7 +8,7 @@ import time
 from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Protocol, Unpack
 
-from good_agent.events import AgentEvents
+from good_agent.events import AgentEvents, LLMStreamParams
 from good_agent.model.protocols import StreamChunk
 
 if TYPE_CHECKING:
@@ -33,6 +33,8 @@ class SupportsStreamingLanguageModel(Protocol):
     def _update_usage(self, response_obj: Any) -> None: ...
 
     def do(self, event: AgentEvents, **kwargs: Any) -> None: ...
+
+    async def apply_typed(self, event: AgentEvents, params_type, return_type, **kwargs: Any): ...
 
 
 class StreamingHandler:
@@ -86,13 +88,22 @@ class StreamingHandler:
 
         # Fire before event
         start_time = time.time()
-        self.llm.do(
+        before_ctx = await self.llm.apply_typed(
             AgentEvents.LLM_STREAM_BEFORE,
+            LLMStreamParams,
+            dict[str, Any] | None,
             model=model,
             messages=messages,
             parameters=config,
             language_model=self.llm,
+            output=config,
         )
+
+        if before_ctx.return_value is not None:
+            config = before_ctx.return_value
+
+        if isinstance(config, dict):
+            model = config.get("model", model)
 
         # Streaming with retry support
         models_to_try = [self.llm.model] + self.llm.fallback_models

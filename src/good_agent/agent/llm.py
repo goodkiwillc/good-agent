@@ -273,7 +273,7 @@ class LLMCoordinator:
                 )
 
             # Add to message list using centralized method
-            self.agent._append_message(response)
+            await self.agent._append_message(response)
 
             return response
 

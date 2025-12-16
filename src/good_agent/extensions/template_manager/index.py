@@ -203,7 +203,7 @@ class TemplateIndex:
                             existing.tags = frontmatter.get("tags", [])
                         existing.frontmatter = frontmatter
 
-                    logger.info(f"Template '{template_name}' modified (v{existing.version})")
+                    logger.debug(f"Template '{template_name}' modified (v{existing.version})")
                 else:
                     changes[template_name] = "unchanged"
             else:
@@ -225,7 +225,7 @@ class TemplateIndex:
                 )
 
                 self.templates[template_name] = metadata
-                logger.info(f"New template '{template_name}' added (v1.0.0)")
+                logger.debug(f"New template '{template_name}' added (v1.0.0)")
 
         # Check for deleted templates
         for template_name in list(self.templates.keys()):
@@ -350,7 +350,7 @@ class TemplateVersionManager:
         meta_file = version_dir / f"{content_hash}.meta.json"
         meta_file.write_text(json.dumps(metadata, indent=2))
 
-        logger.info(f"Created snapshot {content_hash} for '{template_name}'")
+        logger.debug(f"Created snapshot {content_hash} for '{template_name}'")
         return content_hash
 
     def restore_snapshot(self, template_name: str, version_hash: str) -> bool:
@@ -369,7 +369,7 @@ class TemplateVersionManager:
         target_path.parent.mkdir(parents=True, exist_ok=True)
         target_path.write_text(snapshot_file.read_text())
 
-        logger.info(f"Restored '{template_name}' to version {version_hash}")
+        logger.debug(f"Restored '{template_name}' to version {version_hash}")
         return True
 
     def list_snapshots(self, template_name: str) -> list[dict]:

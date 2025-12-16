@@ -78,6 +78,8 @@ from good_agent.core.components import AgentComponent
 from good_agent.events import (  # Import typed event parameters
     AgentEvents,
     AgentInitializeParams,
+    ExecuteBeforeParams,
+    ExecuteIterationParams,
 )
 from good_agent.extensions.template_manager import (
     Template,
@@ -1308,20 +1310,35 @@ class Agent(EventRouter):
         """
         await self.tasks.wait_for_all(timeout=timeout)
 
-    def _append_message(self, message: Message) -> None:
-        """
-        Internal method to append a message to the agent's message list.
+    async def _append_message(self, message: Message) -> Message:
+        """Append a message via the MessageManager (async)."""
 
-        This centralized method ensures:
-        - Proper agent reference is set
-        - Message is stored in global store
-        - Version is updated
-        - Consistent event firing
+        return await self._message_manager._append_message(message)
 
-        Args:
-            message: Message to append
-        """
-        self._message_manager._append_message(message)
+    @overload
+    async def append_async(self, content: Message) -> Message: ...
+
+    @overload
+    async def append_async(
+        self,
+        *content_parts: MessageContent,
+        role: MessageRole,
+        context: dict[str, Any] | None = None,
+        citations: list[URL | str] | None = None,
+        **kwargs: Any,
+    ) -> Message: ...
+
+    async def append_async(
+        self,
+        *content_parts: MessageContent,
+        role: MessageRole = "user",
+        context: dict[str, Any] | None = None,
+        citations: list[URL | str] | None = None,
+        **kwargs: Any,
+    ) -> Message:
+        return await self._message_manager.append_async(
+            *content_parts, role=role, context=context, citations=citations, **kwargs
+        )
 
     def _register_extension(self, extension: AgentComponent) -> None:
         """Register an extension component (without installing it)."""
@@ -1461,7 +1478,6 @@ class Agent(EventRouter):
         **kwargs: Any,
     ) -> None: ...
 
-    # @validate_call
     def append(
         self,
         *content_parts: MessageContent,
@@ -1470,21 +1486,12 @@ class Agent(EventRouter):
         citations: list[URL | str] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Append a message to the conversation
-
-        Supports multiple content parts that will be concatenated with newlines:
-        agent.append("First line", "Second line", "Third line")
-
-        Args:
-            *content_parts: Content to add to the message
-            role: Message role (user, assistant, system, tool)
-            context: Additional context for the message
-            citations: List of citation URLs that correspond to [1], [2], etc. in content
-            **kwargs: Additional message attributes
-        """
-        self._message_manager.append(
+        """Append a message to the conversation (sync wrapper)."""
+        message = self._message_manager._prepare_message(
             *content_parts, role=role, context=context, citations=citations, **kwargs
         )
+
+        self.events._sync_bridge.run_coroutine_from_sync(self._append_message(message))
 
     def attach_image(
         self,
@@ -1689,7 +1696,7 @@ class Agent(EventRouter):
 
             # Append input message if provided
             if content_parts:
-                self.append(*content_parts, role=role, context=context)
+                await self.append_async(*content_parts, role=role, context=context)
 
             return await self._llm_call(response_model=response_model, **kwargs)
 
@@ -1768,10 +1775,20 @@ class Agent(EventRouter):
 
         # Append input message if provided
         if content_parts:
-            self.append(*content_parts, role=role, context=context)
+            await self.append_async(*content_parts, role=role, context=context)
 
-        # Emit execute:start event
-        self.do(AgentEvents.EXECUTE_BEFORE, agent=self, max_iterations=max_iterations)
+        # Emit execute:start event (interceptable)
+        execute_ctx = await self.apply_typed(
+            AgentEvents.EXECUTE_BEFORE,
+            ExecuteBeforeParams,
+            int,
+            agent=self,
+            max_iterations=max_iterations,
+            output=max_iterations,
+        )
+
+        if execute_ctx.return_value is not None:
+            max_iterations = int(execute_ctx.return_value)
 
         iterations = 0
 
@@ -1788,16 +1805,30 @@ class Agent(EventRouter):
                 yield tool_message
 
         while iterations < max_iterations:
-            # Emit execute:iteration event
-            self.do(
+            # Emit execute:iteration event (interceptable)
+            iteration_ctx = await self.apply_typed(
                 AgentEvents.EXECUTE_ITERATION_BEFORE,
+                ExecuteIterationParams,
+                dict[str, Any] | None,
                 agent=self,
                 iteration=iterations,
                 messages_count=len(self.messages),
             )
 
-            # Call the LLM to get next response (without auto-executing tools)
-            response = await self._llm_call(**kwargs)
+            iteration_directive = iteration_ctx.return_value or {}
+            if isinstance(iteration_directive, dict):
+                if iteration_directive.get("skip"):
+                    iterations += 1
+                    continue
+
+                precomputed = iteration_directive.get("response")
+                if precomputed is not None:
+                    response = precomputed
+                else:
+                    response = await self._llm_call(**kwargs)
+            else:
+                # Call the LLM to get next response (without auto-executing tools)
+                response = await self._llm_call(**kwargs)
             iterations += 1
 
             # Set iteration index

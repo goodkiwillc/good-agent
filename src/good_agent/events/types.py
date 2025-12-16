@@ -105,6 +105,13 @@ class MessageAppendParams(TypedDict):
     agent: Agent
 
 
+class MessageAppendBeforeParams(TypedDict):
+    """Parameters for message:append:before event."""
+
+    message: Message
+    agent: Agent
+
+
 class MessageReplaceParams(TypedDict):
     """Parameters for message:replace:* events."""
 
@@ -379,6 +386,7 @@ __all__ = [
     # Messages
     "MessageCreateParams",
     "MessageAppendParams",
+    "MessageAppendBeforeParams",
     "MessageReplaceParams",
     "MessageSetSystemParams",
     "MessageRenderParams",
