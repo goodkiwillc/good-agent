@@ -574,7 +574,7 @@ class TemplateManager(AgentComponent):
         # Fire event if agent is available
         if self._agent:
             modified_result = self._agent.apply_sync(
-                AgentEvents.TEMPLATE_COMPILE,
+                AgentEvents.TEMPLATE_COMPILE_AFTER,
                 template=template,
                 context=resolved_context,
                 result=result,

@@ -130,6 +130,6 @@ Each phase should:
 
 ## Breaking Changes
 
-- **Phase 1**: `_append_message()` becomes async - audit all callers
+- **Phase 1**: `_append_message()` becomes async - audit all callers (NOTE:this is now changed)
 - **Phase 3**: Deprecated event aliases removed
 - **Phase 5**: Components using `TOOL_CALL_AFTER` for response modification must migrate

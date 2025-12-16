@@ -90,29 +90,16 @@ class AgentEvents(StrEnum):
     TOOL_CALL_AFTER = "tool:call:after"
     TOOL_CALL_ERROR = "tool:call:error"
 
-    # Deprecated tool events
-    TOOL_RESPONSE = "tool:call:after"  # DEPRECATED: Use TOOL_CALL_AFTER
-    TOOL_ERROR = "tool:call:error"  # DEPRECATED: Use TOOL_CALL_ERROR
-
     # ===== Execution Events =====
     # Main execution lifecycle
     EXECUTE_BEFORE = "execute:before"
     EXECUTE_AFTER = "execute:after"
     EXECUTE_ERROR = "execute:error"
 
-    # Legacy execution events (kept for compatibility)
-    EXECUTE_START = "execute:before"  # DEPRECATED: Use EXECUTE_BEFORE
-    EXECUTE_COMPLETE = "execute:after"  # DEPRECATED: Use EXECUTE_AFTER
-
     # Iteration events
     EXECUTE_ITERATION_BEFORE = "execute:iteration:before"
     EXECUTE_ITERATION_AFTER = "execute:iteration:after"
     EXECUTE_ITERATION_ERROR = "execute:iteration:error"
-
-    # Legacy iteration events
-    EXECUTE_ITERATION = "execute:iteration"  # DEPRECATED: Use specific phase events
-    EXECUTE_ITERATION_START = "execute:iteration:before"  # DEPRECATED
-    EXECUTE_ITERATION_COMPLETE = "execute:iteration:after"  # DEPRECATED
 
     # ===== Context and Template Events =====
     # Context provider
@@ -120,15 +107,10 @@ class AgentEvents(StrEnum):
     CONTEXT_PROVIDER_AFTER = "context:provider:after"
     CONTEXT_PROVIDER_ERROR = "context:provider:error"
 
-    # Legacy context events
-    CONTEXT_PROVIDER_CALL = "context:provider:before"  # DEPRECATED
-    CONTEXT_PROVIDER_RESPONSE = "context:provider:after"  # DEPRECATED
-
     # Template compilation
     TEMPLATE_COMPILE_BEFORE = "template:compile:before"
     TEMPLATE_COMPILE_AFTER = "template:compile:after"
     TEMPLATE_COMPILE_ERROR = "template:compile:error"
-    TEMPLATE_COMPILE = "template:compile"  # DEPRECATED: Use specific phase events
 
     # ===== Storage Events (NEW) =====
     STORAGE_SAVE_BEFORE = "storage:save:before"
@@ -179,3 +161,54 @@ class AgentEvents(StrEnum):
     SUMMARY_GENERATE_BEFORE = "summary:generate:before"
     SUMMARY_GENERATE_AFTER = "summary:generate:after"
     SUMMARY_GENERATE_ERROR = "summary:generate:error"
+
+
+# Mark extension point events (not dispatched by core, available for integrations)
+AgentEvents.STORAGE_SAVE_BEFORE.__doc__ = (
+    "Extension point: emitted by storage integrations before saving; core does not dispatch this event."
+)
+AgentEvents.STORAGE_SAVE_AFTER.__doc__ = (
+    "Extension point: emitted by storage integrations after saving; core does not dispatch this event."
+)
+AgentEvents.STORAGE_SAVE_ERROR.__doc__ = (
+    "Extension point: emitted by storage integrations on save errors; core does not dispatch this event."
+)
+AgentEvents.STORAGE_LOAD_BEFORE.__doc__ = (
+    "Extension point: emitted by storage integrations before loading; core does not dispatch this event."
+)
+AgentEvents.STORAGE_LOAD_AFTER.__doc__ = (
+    "Extension point: emitted by storage integrations after loading; core does not dispatch this event."
+)
+AgentEvents.STORAGE_LOAD_ERROR.__doc__ = (
+    "Extension point: emitted by storage integrations on load errors; core does not dispatch this event."
+)
+AgentEvents.CACHE_HIT.__doc__ = (
+    "Extension point: emitted by cache integrations on cache hits; core does not dispatch this event."
+)
+AgentEvents.CACHE_MISS.__doc__ = (
+    "Extension point: emitted by cache integrations on cache misses; core does not dispatch this event."
+)
+AgentEvents.CACHE_SET.__doc__ = (
+    "Extension point: emitted by cache integrations when setting values; core does not dispatch this event."
+)
+AgentEvents.CACHE_INVALIDATE.__doc__ = (
+    "Extension point: emitted by cache integrations when invalidating entries; core does not dispatch this event."
+)
+AgentEvents.VALIDATION_BEFORE.__doc__ = (
+    "Extension point: emitted by validation integrations before checks; core does not dispatch this event."
+)
+AgentEvents.VALIDATION_AFTER.__doc__ = (
+    "Extension point: emitted by validation integrations after checks; core does not dispatch this event."
+)
+AgentEvents.VALIDATION_ERROR.__doc__ = (
+    "Extension point: emitted by validation integrations on errors; core does not dispatch this event."
+)
+AgentEvents.SUMMARY_GENERATE_BEFORE.__doc__ = (
+    "Extension point: emitted by summary integrations before generation; core does not dispatch this event."
+)
+AgentEvents.SUMMARY_GENERATE_AFTER.__doc__ = (
+    "Extension point: emitted by summary integrations after generation; core does not dispatch this event."
+)
+AgentEvents.SUMMARY_GENERATE_ERROR.__doc__ = (
+    "Extension point: emitted by summary integrations on errors; core does not dispatch this event."
+)

@@ -1,4 +1,5 @@
 from good_agent.events.agent import AgentEvents
+from good_agent.events.classification import EVENT_SEMANTICS, EventSemantics, get_event_semantics
 from good_agent.events.decorators import (
     TypedEventHandlersMixin,
     on_agent_init,
@@ -11,6 +12,7 @@ from good_agent.events.decorators import (
     on_message_append,
     on_tool_call,
 )
+from good_agent.events.registry import EVENT_PARAMS, get_params_type
 from good_agent.events.types import (
     AgentCloseParams,
     AgentForkParams,
@@ -53,6 +55,11 @@ from good_agent.events.types import (
 
 __all__ = [
     "AgentEvents",
+    "EventSemantics",
+    "EVENT_SEMANTICS",
+    "EVENT_PARAMS",
+    "get_event_semantics",
+    "get_params_type",
     "AgentInitializeParams",
     "AgentStateChangeParams",
     "AgentForkParams",
