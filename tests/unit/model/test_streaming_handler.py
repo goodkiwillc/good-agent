@@ -47,6 +47,10 @@ class FakeLanguageModel:
     def do(self, event: AgentEvents, **kwargs: Any) -> None:
         self.last_events.append((event, kwargs))
 
+    async def apply_typed(self, event: AgentEvents, params_type, return_type, **kwargs: Any):
+        self.do(event, **kwargs)
+        return None
+
 
 @pytest.mark.asyncio()
 async def test_streaming_handler_strips_parallel_tool_calls_when_no_tools() -> None:
