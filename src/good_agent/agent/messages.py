@@ -122,7 +122,7 @@ class MessageManager:
         # Set agent reference on new message
         new_message._set_agent(self.agent)
 
-        ctx = self.agent.events.apply_sync(
+        ctx = self.agent.apply_sync(
             AgentEvents.MESSAGE_REPLACE_BEFORE,
             index=index,
             output=new_message,

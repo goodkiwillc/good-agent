@@ -695,7 +695,7 @@ class Agent(EventRouter):
 
         Agent inherits from EventRouter, so all event methods are available
         directly on the Agent instance. This property exists for code that
-        uses ``agent.events.apply(...)`` - it now just returns ``self``.
+        uses ``agent.apply(...)`` - it now just returns ``self``.
         """
         return self
 

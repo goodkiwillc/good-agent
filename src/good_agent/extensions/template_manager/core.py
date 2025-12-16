@@ -560,8 +560,8 @@ class TemplateManager(AgentComponent):
             raise
 
         # Fire event if agent is available
-        if hasattr(self, "_agent") and self._agent:
-            modified_result = self._agent.events.apply_sync(
+        if self._agent:
+            modified_result = self._agent.apply_sync(
                 AgentEvents.TEMPLATE_COMPILE,
                 template=template,
                 context=resolved_context,
@@ -702,7 +702,7 @@ class TemplateManager(AgentComponent):
 
                     # Emit context:provider:response event (modifiable)
                     if hasattr(self, "_agent") and self._agent:
-                        result = self._agent.events.apply_sync(
+                        result = self._agent.apply_sync(
                             AgentEvents.CONTEXT_PROVIDER_AFTER,
                             provider_name=key,
                             value=value,

@@ -531,7 +531,7 @@ class MockHandlerLanguageModel(AgentComponent):
         if self._agent:
             from good_agent.events import AgentEvents
 
-            await self._agent.events.apply(
+            await self._agent.apply(
                 AgentEvents.LLM_COMPLETE_BEFORE,
                 messages=messages,
                 config=kwargs,
@@ -567,7 +567,7 @@ class MockHandlerLanguageModel(AgentComponent):
         if self._agent:
             from good_agent.events import AgentEvents
 
-            await self._agent.events.apply(
+            await self._agent.apply(
                 AgentEvents.LLM_COMPLETE_AFTER,
                 response=llm_response,
                 messages=messages,
@@ -731,7 +731,7 @@ class MockQueuedLanguageModel(AgentComponent):
         if self._agent:
             from good_agent.events import AgentEvents
 
-            await self._agent.events.apply(
+            await self._agent.apply(
                 AgentEvents.LLM_COMPLETE_BEFORE,
                 messages=messages,
                 config=kwargs,
@@ -781,7 +781,7 @@ class MockQueuedLanguageModel(AgentComponent):
         if self._agent:
             from good_agent.events import AgentEvents
 
-            await self._agent.events.apply(
+            await self._agent.apply(
                 AgentEvents.LLM_COMPLETE_AFTER,
                 response=mock_llm_response,
                 messages=messages,

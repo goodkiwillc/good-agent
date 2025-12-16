@@ -152,7 +152,7 @@ class ToolExecutor:
         )
 
         # Emit tool:call event with visible parameters only
-        ctx = await self.agent.events.apply(
+        ctx = await self.agent.apply(
             AgentEvents.TOOL_CALL_BEFORE,
             tool_name=resolved_name,
             parameters=visible_params,

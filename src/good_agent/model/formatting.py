@@ -62,7 +62,7 @@ class MessageFormatter:
             Formatted content parts ready for LLM API
         """
         # Fire before render event
-        ctx = await self.llm.agent.events.apply(
+        ctx = await self.llm.agent.apply(
             AgentEvents.MESSAGE_RENDER_BEFORE,
             output=content_parts,
             message=message,
@@ -143,7 +143,7 @@ class MessageFormatter:
                     )
 
         # Fire after render event
-        ctx = await self.llm.agent.events.apply(
+        ctx = await self.llm.agent.apply(
             AgentEvents.MESSAGE_RENDER_AFTER,
             output=result,
             message=message,
