@@ -36,6 +36,7 @@ from ulid import ULID
 
 from good_agent.agent.components import ComponentRegistry
 from good_agent.agent.context import ContextManager
+from good_agent.agent.hooks import HooksAccessor
 from good_agent.agent.llm import LLMCoordinator
 from good_agent.agent.messages import MessageManager
 from good_agent.agent.modes import (
@@ -508,6 +509,9 @@ class Agent(EventRouter):
         self._mode_manager = ModeManager(self)
         self._mode_accessor = ModeAccessor(self._mode_manager)
 
+        # Lazy-created hooks accessor
+        self._hooks_accessor: HooksAccessor | None = None
+
         # Initialize console for rich CLI output
         self._console = AgentConsole(agent=self)
 
@@ -704,6 +708,14 @@ class Agent(EventRouter):
         uses ``agent.apply(...)`` - it now just returns ``self``.
         """
         return self
+
+    @property
+    def hooks(self) -> HooksAccessor:
+        """Typed hook registration helpers (``agent.hooks``)."""
+
+        if self._hooks_accessor is None:
+            self._hooks_accessor = HooksAccessor(self)
+        return self._hooks_accessor
 
     @property
     def versioning(self) -> AgentVersioningManager:

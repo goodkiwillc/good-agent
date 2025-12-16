@@ -165,3 +165,207 @@ The system SHALL provide an `ExecuteErrorParams` TypedDict with fields:
 - **WHEN** they annotate `ctx` with `EventContext[ExecuteErrorParams, Any]`
 - **THEN** type checkers SHALL recognize the parameter and recovery types
 
+### Requirement: Event Semantics Classification
+The system SHALL provide an `EventSemantics` Flag enum to classify event dispatch behavior with values:
+- `INTERCEPTABLE`: Event uses `apply()`, handlers can modify `ctx.output`
+- `SIGNAL`: Event uses `do()`, fire-and-forget
+
+#### Scenario: Query event semantics
+- **GIVEN** a developer wants to know if an event is interceptable
+- **WHEN** they call `get_event_semantics(AgentEvents.TOOL_CALL_BEFORE)`
+- **THEN** they SHALL receive `EventSemantics.INTERCEPTABLE`
+
+#### Scenario: Query signal event
+- **GIVEN** a developer wants to know if an event is fire-and-forget
+- **WHEN** they call `get_event_semantics(AgentEvents.MESSAGE_APPEND_AFTER)`
+- **THEN** they SHALL receive `EventSemantics.SIGNAL`
+
+### Requirement: EVENT_SEMANTICS Mapping
+The system SHALL provide an `EVENT_SEMANTICS` dictionary mapping all `AgentEvents` to their `EventSemantics` classification.
+
+#### Scenario: All events classified
+- **GIVEN** the `EVENT_SEMANTICS` mapping
+- **WHEN** iterating over all `AgentEvents` members
+- **THEN** every event SHALL have a corresponding classification
+
+### Requirement: EVENT_PARAMS Registry
+The system SHALL provide an `EVENT_PARAMS` dictionary mapping `AgentEvents` to their corresponding TypedDict parameter types.
+
+#### Scenario: Get parameter type for event
+- **GIVEN** a developer wants to know the parameter type for an event
+- **WHEN** they call `get_params_type(AgentEvents.TOOL_CALL_BEFORE)`
+- **THEN** they SHALL receive `ToolCallBeforeParams`
+
+#### Scenario: Event with no typed params
+- **GIVEN** an event without a specific TypedDict
+- **WHEN** `get_params_type()` is called
+- **THEN** it SHALL return `None`
+
+### Requirement: get_params_type Helper
+The system SHALL provide a `get_params_type(event)` function that returns the TypedDict type for the event's parameters, or `None` if not defined.
+
+#### Scenario: Lookup by enum
+- **GIVEN** `get_params_type(AgentEvents.MESSAGE_APPEND_BEFORE)`
+- **THEN** return `MessageAppendBeforeParams`
+
+#### Scenario: Lookup by string
+- **GIVEN** `get_params_type("message:append:before")`
+- **THEN** return `MessageAppendBeforeParams`
+
+### Requirement: Extension Point Events Documentation
+Events for Storage, Cache, Validation, and Summary SHALL be documented as extension points that are not dispatched by core but are available for extensions to use.
+
+#### Scenario: Storage events documented
+- **GIVEN** the `STORAGE_SAVE_BEFORE` event
+- **THEN** its docstring SHALL indicate it is an extension point
+
+#### Scenario: Cache events documented
+- **GIVEN** the `CACHE_HIT` event
+- **THEN** its docstring SHALL indicate it is an extension point
+
+### Requirement: Deprecated Event Aliases Removed
+The system SHALL NOT expose deprecated event aliases for Tool, Execute, Context Provider, or Template events.
+
+#### Scenario: Aliases absent from AgentEvents
+- **GIVEN** a developer enumerates `AgentEvents`
+- **WHEN** checking for `TOOL_RESPONSE`, `TOOL_ERROR`, `EXECUTE_START`, `EXECUTE_COMPLETE`, `EXECUTE_ITERATION`, `EXECUTE_ITERATION_START`, `EXECUTE_ITERATION_COMPLETE`, `CONTEXT_PROVIDER_CALL`, `CONTEXT_PROVIDER_RESPONSE`, and `TEMPLATE_COMPILE`
+- **THEN** none SHALL be present
+
+#### Scenario: Aliases not resolved by registries
+- **GIVEN** the `get_event_semantics()` and `get_params_type()` helpers
+- **WHEN** they are called with any deprecated alias name
+- **THEN** they SHALL return `None`
+
+### Requirement: HooksAccessor Class
+The system SHALL provide a `HooksAccessor` class that provides type-safe methods for registering event handlers with clear documentation of event semantics.
+
+#### Scenario: Access via agent.hooks
+- **GIVEN** an Agent instance
+- **WHEN** accessing `agent.hooks`
+- **THEN** a `HooksAccessor` instance SHALL be returned
+
+#### Scenario: Lazy initialization
+- **GIVEN** an Agent instance
+- **WHEN** `agent.hooks` is first accessed
+- **THEN** the `HooksAccessor` SHALL be created and cached
+
+### Requirement: Typed Handler Registration
+Each method on `HooksAccessor` SHALL accept handlers with proper type hints for the event's parameters and return type.
+
+#### Scenario: Type-safe message append handler
+- **GIVEN** `agent.hooks.on_message_append_before()`
+- **WHEN** a handler is registered with `ctx: EventContext[MessageAppendBeforeParams, Message]`
+- **THEN** type checkers SHALL validate parameter access
+
+#### Scenario: Type-safe tool call handler
+- **GIVEN** `agent.hooks.on_tool_call_before()`
+- **WHEN** a handler is registered with `ctx: EventContext[ToolCallBeforeParams, dict]`
+- **THEN** type checkers SHALL validate parameter access
+
+### Requirement: Decorator and Function Syntax
+Each `HooksAccessor` method SHALL support both decorator syntax and direct function call syntax.
+
+#### Scenario: Decorator syntax
+- **GIVEN** `@agent.hooks.on_message_append_before`
+- **WHEN** decorating a handler function
+- **THEN** the handler SHALL be registered for the event
+
+#### Scenario: Function syntax
+- **GIVEN** `agent.hooks.on_message_append_before(my_handler)`
+- **WHEN** called with a handler function
+- **THEN** the handler SHALL be registered for the event
+
+#### Scenario: Parameterized decorator
+- **GIVEN** `@agent.hooks.on_message_append_before(priority=50)`
+- **WHEN** decorating a handler function
+- **THEN** the handler SHALL be registered with priority 50
+
+### Requirement: Priority and Predicate Parameters
+Each `HooksAccessor` method SHALL accept optional `priority` and `predicate` parameters.
+
+#### Scenario: Custom priority
+- **GIVEN** `agent.hooks.on_tool_call_before(priority=200)`
+- **WHEN** the handler is registered
+- **THEN** it SHALL have priority 200
+
+#### Scenario: Predicate filter
+- **GIVEN** `agent.hooks.on_tool_call_before(predicate=lambda ctx: ctx.parameters.get("tool_name") == "search")`
+- **WHEN** the event fires for tool "other"
+- **THEN** the handler SHALL NOT be called
+
+### Requirement: Semantic Documentation
+Each `HooksAccessor` method docstring SHALL clearly document:
+- Whether the event is interceptable or observational
+- What `ctx.output` should contain for interceptable events
+- Available parameters in `ctx.parameters`
+
+#### Scenario: Interceptable method documentation
+- **GIVEN** the `on_message_append_before()` method
+- **THEN** its docstring SHALL indicate it is interceptable and explain how to modify the message
+
+#### Scenario: Signal method documentation
+- **GIVEN** the `on_message_append_after()` method
+- **THEN** its docstring SHALL indicate it is observational and ctx.output is ignored
+
+### Requirement: Interceptable Event Methods
+The following methods SHALL be marked as interceptable (handlers can modify outcome):
+- `on_message_append_before()`
+- `on_message_create_before()`
+- `on_message_render_before()`
+- `on_message_replace_before()`
+- `on_message_set_system_before()`
+- `on_tool_call_before()`
+- `on_tool_call_error()` (for fallback)
+- `on_tools_provide()`
+- `on_tools_generate_signature()`
+- `on_llm_complete_before()`
+- `on_llm_extract_before()`
+- `on_llm_stream_before()`
+- `on_execute_before()`
+- `on_execute_error()` (for recovery)
+- `on_execute_iteration_before()`
+- `on_agent_close_before()`
+
+#### Scenario: Interceptable event modifies outcome
+- **GIVEN** a handler registered via `agent.hooks.on_message_append_before()`
+- **WHEN** the handler sets `ctx.output` to a new Message
+- **THEN** the new message SHALL be used
+
+### Requirement: Signal Event Methods
+The following methods SHALL be marked as signals (fire-and-forget, ctx.output ignored):
+- `on_message_append_after()`
+- `on_message_create_after()`
+- `on_message_render_after()`
+- `on_message_replace_after()`
+- `on_message_set_system_after()`
+- `on_tool_call_after()`
+- `on_llm_complete_after()`
+- `on_llm_extract_after()`
+- `on_llm_stream_after()`
+- `on_llm_stream_chunk()`
+- `on_llm_error()`
+- `on_llm_complete_error()`
+- `on_execute_after()`
+- `on_execute_iteration_after()`
+- `on_agent_init_after()`
+- `on_agent_close_after()`
+- `on_agent_state_change()`
+- `on_agent_version_change()`
+- `on_mode_entering()`
+- `on_mode_entered()`
+- `on_mode_exiting()`
+- `on_mode_exited()`
+
+#### Scenario: Signal event ignores output
+- **GIVEN** a handler registered via `agent.hooks.on_message_append_after()`
+- **WHEN** the handler sets `ctx.output`
+- **THEN** the value SHALL be ignored
+
+### Requirement: TypedEventHandlersMixin Deprecation
+The `TypedEventHandlersMixin` class SHALL be deprecated in favor of `agent.hooks`.
+
+#### Scenario: Deprecation warning
+- **GIVEN** code imports `TypedEventHandlersMixin`
+- **WHEN** the class is used
+- **THEN** a deprecation warning SHALL be issued pointing to `agent.hooks`
+

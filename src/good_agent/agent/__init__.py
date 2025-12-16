@@ -7,6 +7,7 @@ from __future__ import annotations
 from good_agent.agent.components import ComponentRegistry
 from good_agent.agent.context import ContextManager
 from good_agent.agent.core import Agent, AgentConfigParameters, AgentInitialize
+from good_agent.agent.hooks import HooksAccessor
 from good_agent.agent.llm import LLMCoordinator
 from good_agent.agent.messages import MessageManager
 from good_agent.agent.modes import (
@@ -35,6 +36,7 @@ __all__: list[str] = [
     "ToolExecutor",
     "AgentTaskManager",
     "LLMCoordinator",
+    "HooksAccessor",
     "ComponentRegistry",
     "ContextManager",
     "AgentVersioningManager",

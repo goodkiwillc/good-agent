@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, runtime_checkable
 
@@ -29,7 +30,7 @@ class EventRouterProtocol(Protocol):
 
 class TypedEventHandlersMixin(EventRouterProtocol):
     """
-    Mixin class that provides type-safe event handler registration methods.
+    Deprecated: use ``agent.hooks`` for typed event registration.
 
     This mixin adds convenience methods to the Agent class for registering
     event handlers with proper type hints for their EventContext parameters.
@@ -49,6 +50,14 @@ class TypedEventHandlersMixin(EventRouterProtocol):
             message = ctx.parameters["message"]
             agent = ctx.parameters["agent"]
     """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[override]
+        warnings.warn(
+            "TypedEventHandlersMixin is deprecated; use agent.hooks instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
 
     # ========================================================================
     # Agent Lifecycle Events

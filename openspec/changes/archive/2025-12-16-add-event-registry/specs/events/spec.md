@@ -60,20 +60,15 @@ Events for Storage, Cache, Validation, and Summary SHALL be documented as extens
 - **GIVEN** the `CACHE_HIT` event
 - **THEN** its docstring SHALL indicate it is an extension point
 
-## REMOVED Requirements
+### Requirement: Deprecated Event Aliases Removed
+The system SHALL NOT expose deprecated event aliases for Tool, Execute, Context Provider, or Template events.
 
-### Requirement: Deprecated Event Aliases
-**Reason**: These aliases create confusion and maintenance burden.
-**Migration**: Use the canonical event names instead.
+#### Scenario: Aliases absent from AgentEvents
+- **GIVEN** a developer enumerates `AgentEvents`
+- **WHEN** checking for `TOOL_RESPONSE`, `TOOL_ERROR`, `EXECUTE_START`, `EXECUTE_COMPLETE`, `EXECUTE_ITERATION`, `EXECUTE_ITERATION_START`, `EXECUTE_ITERATION_COMPLETE`, `CONTEXT_PROVIDER_CALL`, `CONTEXT_PROVIDER_RESPONSE`, and `TEMPLATE_COMPILE`
+- **THEN** none SHALL be present
 
-Removed aliases:
-- `TOOL_RESPONSE` → use `TOOL_CALL_AFTER`
-- `TOOL_ERROR` → use `TOOL_CALL_ERROR`
-- `EXECUTE_START` → use `EXECUTE_BEFORE`
-- `EXECUTE_COMPLETE` → use `EXECUTE_AFTER`
-- `EXECUTE_ITERATION` → use `EXECUTE_ITERATION_BEFORE` or `EXECUTE_ITERATION_AFTER`
-- `EXECUTE_ITERATION_START` → use `EXECUTE_ITERATION_BEFORE`
-- `EXECUTE_ITERATION_COMPLETE` → use `EXECUTE_ITERATION_AFTER`
-- `CONTEXT_PROVIDER_CALL` → use `CONTEXT_PROVIDER_BEFORE`
-- `CONTEXT_PROVIDER_RESPONSE` → use `CONTEXT_PROVIDER_AFTER`
-- `TEMPLATE_COMPILE` → use `TEMPLATE_COMPILE_BEFORE` or `TEMPLATE_COMPILE_AFTER`
+#### Scenario: Aliases not resolved by registries
+- **GIVEN** the `get_event_semantics()` and `get_params_type()` helpers
+- **WHEN** they are called with any deprecated alias name
+- **THEN** they SHALL return `None`

@@ -127,8 +127,6 @@ The following methods SHALL be marked as signals (fire-and-forget, ctx.output ig
 - **WHEN** the handler sets `ctx.output`
 - **THEN** the value SHALL be ignored
 
-## MODIFIED Requirements
-
 ### Requirement: TypedEventHandlersMixin Deprecation
 The `TypedEventHandlersMixin` class SHALL be deprecated in favor of `agent.hooks`.
 
