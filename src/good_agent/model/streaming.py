@@ -88,7 +88,7 @@ class StreamingHandler:
 
         # Fire before event
         start_time = time.time()
-        before_ctx = await self.llm.apply_typed(
+        before_ctx = await self._apply_stream_event(
             AgentEvents.LLM_STREAM_BEFORE,
             LLMStreamParams,
             dict[str, Any] | None,
@@ -99,7 +99,7 @@ class StreamingHandler:
             output=config,
         )
 
-        if before_ctx.return_value is not None:
+        if before_ctx is not None and getattr(before_ctx, "return_value", None) is not None:
             config = before_ctx.return_value
 
         if isinstance(config, dict):
@@ -220,6 +220,23 @@ class StreamingHandler:
             raise last_exception
         else:
             raise Exception("All model attempts failed during streaming")
+
+    async def _apply_stream_event(
+        self,
+        event: AgentEvents,
+        params_type: type[Any],
+        return_type: type[Any] | Any,
+        **kwargs: Any,
+    ):
+        apply_typed = getattr(self.llm, "apply_typed", None)
+        if apply_typed is not None:
+            return await apply_typed(event, params_type, return_type, **kwargs)
+
+        do_fn = getattr(self.llm, "do", None)
+        if do_fn is not None:
+            do_fn(event, **kwargs)
+
+        return None
 
 
 __all__ = ["StreamingHandler"]

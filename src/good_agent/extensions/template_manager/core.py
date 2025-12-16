@@ -524,6 +524,18 @@ class TemplateManager(AgentComponent):
             if key not in resolved_base:
                 try:
                     value = await self._context_resolver.resolve_value(key, resolved_base)
+
+                    if hasattr(self, "_agent") and self._agent:
+                        ctx = await self._agent.apply(
+                            AgentEvents.CONTEXT_PROVIDER_AFTER,
+                            provider_name=key,
+                            value=value,
+                            agent=self._agent,
+                            extension=self,
+                        )
+                        if ctx.return_value is not None:
+                            value = ctx.return_value
+
                     resolved_base[key] = value
                 except Exception:
                     # Skip failed providers in production

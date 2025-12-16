@@ -62,6 +62,13 @@ class AgentVersionChangeParams(TypedDict):
     changes: dict[str, Any]
 
 
+class AgentCloseParams(TypedDict, total=False):
+    """Parameters for agent:close:* events."""
+
+    agent: Agent
+    reason: str | None
+
+
 # ============================================================================
 # Extension Event Parameters
 # ============================================================================
@@ -227,7 +234,10 @@ class ToolCallAfterParams(TypedDict):
 
 
 class ToolCallErrorParams(TypedDict):
-    """Parameters for tool:call:error event."""
+    """Parameters for tool:call:error event.
+
+    Handlers can provide a fallback ToolResponse via ``ctx.output``.
+    """
 
     error: Exception | str
     tool_call: NotRequired[ToolCall]
@@ -264,6 +274,26 @@ class ExecuteIterationParams(TypedDict):
     agent: Agent
     iteration: int
     messages_count: NotRequired[int]  # For before event
+
+
+class ExecuteIterationAfterParams(TypedDict):
+    """Parameters for execute:iteration:after event."""
+
+    agent: Agent
+    iteration: int
+    messages_count: NotRequired[int]
+    response: NotRequired[Message | None]
+
+
+class ExecuteErrorParams(TypedDict):
+    """Parameters for execute:error event.
+
+    Handlers can set ``ctx.output`` to recovery messages to continue execution.
+    """
+
+    agent: Agent
+    error: Exception
+    iteration: int
 
 
 # ============================================================================
@@ -380,6 +410,7 @@ __all__ = [
     "AgentForkParams",
     "AgentMergeParams",
     "AgentVersionChangeParams",
+    "AgentCloseParams",
     # Extensions
     "ExtensionInstallParams",
     "ExtensionErrorParams",
@@ -404,6 +435,8 @@ __all__ = [
     "ExecuteBeforeParams",
     "ExecuteAfterParams",
     "ExecuteIterationParams",
+    "ExecuteIterationAfterParams",
+    "ExecuteErrorParams",
     # Context/Template
     "ContextProviderParams",
     "TemplateCompileParams",

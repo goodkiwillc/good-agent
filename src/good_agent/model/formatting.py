@@ -62,14 +62,15 @@ class MessageFormatter:
             Formatted content parts ready for LLM API
         """
         # Fire before render event
-        ctx = await self.llm.agent.apply(
+        ctx = await self._apply_render_event(
             AgentEvents.MESSAGE_RENDER_BEFORE,
             output=content_parts,
             message=message,
             mode=mode,
         )
 
-        content_parts = ctx.return_value or content_parts
+        if ctx is not None and getattr(ctx, "return_value", None) is not None:
+            content_parts = ctx.return_value
 
         result = []
         for part in content_parts:
@@ -143,14 +144,35 @@ class MessageFormatter:
                     )
 
         # Fire after render event
-        ctx = await self.llm.agent.apply(
+        ctx = await self._apply_render_event(
             AgentEvents.MESSAGE_RENDER_AFTER,
             output=result,
             message=message,
             mode=mode,
         )
 
-        return ctx.return_value or result
+        if ctx is not None and getattr(ctx, "return_value", None) is not None:
+            result = ctx.return_value
+
+        return result
+
+    async def _apply_render_event(self, event: AgentEvents, **kwargs: Any):
+        agent = getattr(self.llm, "agent", None)
+        if agent is None:
+            return None
+
+        apply_fn = getattr(getattr(agent, "events", None), "apply", None)
+        if apply_fn is None:
+            apply_fn = getattr(agent, "apply", None)
+
+        if apply_fn is not None:
+            return await apply_fn(event, **kwargs)
+
+        do_fn = getattr(agent, "do", None)
+        if do_fn is not None:
+            do_fn(event, **kwargs)
+
+        return None
 
     async def format_message(
         self,

@@ -12,6 +12,7 @@ from good_agent.events.decorators import (
     on_tool_call,
 )
 from good_agent.events.types import (
+    AgentCloseParams,
     AgentForkParams,
     AgentInitializeParams,
     AgentMergeParams,
@@ -24,6 +25,8 @@ from good_agent.events.types import (
     ContextProviderParams,
     ExecuteAfterParams,
     ExecuteBeforeParams,
+    ExecuteErrorParams,
+    ExecuteIterationAfterParams,
     ExecuteIterationParams,
     ExtensionErrorParams,
     ExtensionInstallParams,
@@ -55,6 +58,7 @@ __all__ = [
     "AgentForkParams",
     "AgentMergeParams",
     "AgentVersionChangeParams",
+    "AgentCloseParams",
     "ExtensionInstallParams",
     "ExtensionErrorParams",
     "MessageCreateParams",
@@ -75,6 +79,8 @@ __all__ = [
     "ExecuteBeforeParams",
     "ExecuteAfterParams",
     "ExecuteIterationParams",
+    "ExecuteIterationAfterParams",
+    "ExecuteErrorParams",
     "ContextProviderParams",
     "TemplateCompileParams",
     "StorageSaveParams",

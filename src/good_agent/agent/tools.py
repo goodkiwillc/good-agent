@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 import orjson
 from ulid import ULID
 
+from good_agent.core.event_router import EventContext
 from good_agent.events import AgentEvents
 from good_agent.messages import AssistantMessage, ToolMessage
 from good_agent.tools import (
@@ -43,6 +44,14 @@ class ToolExecutor:
             agent: Parent Agent instance
         """
         self.agent = agent
+
+    async def _apply_tool_event(self, *args: Any, **kwargs: Any):
+        apply_fn = getattr(getattr(self.agent, "events", None), "apply", None)
+        if apply_fn is None:
+            apply_fn = getattr(self.agent, "apply", None)
+        if apply_fn is None:
+            return None
+        return await apply_fn(*args, **kwargs)
 
     def _format_tool_message_content(self, tool_response: ToolResponse) -> str:
         """Render tool responses into message content strings."""
@@ -152,7 +161,7 @@ class ToolExecutor:
         )
 
         # Emit tool:call event with visible parameters only
-        ctx = await self.agent.apply(
+        ctx = await self._apply_tool_event(
             AgentEvents.TOOL_CALL_BEFORE,
             tool_name=resolved_name,
             parameters=visible_params,
@@ -160,15 +169,21 @@ class ToolExecutor:
         )
 
         # Use potentially modified parameters from apply hook
-        modified_params = (
-            ctx.return_value
-            if ctx.return_value is not None
-            else ctx.parameters.get("parameters", visible_params)
-        )
+        if isinstance(ctx, EventContext):
+            modified_params = (
+                ctx.return_value
+                if ctx.return_value is not None
+                else ctx.parameters.get("parameters", visible_params)
+            )
+        else:
+            modified_params = visible_params
 
         # Merge modified visible params with hidden params for execution
         execution_params = dict(rendered_params)
-        execution_params.update(modified_params)
+        if isinstance(modified_params, dict):
+            execution_params.update(modified_params)
+        else:
+            execution_params.update(visible_params)
 
         # Execute the tool
         try:
@@ -214,12 +229,14 @@ class ToolExecutor:
                     success=True,
                 )
             else:
-                self.agent.do(
-                    AgentEvents.TOOL_CALL_ERROR,
+                tool_response = await self._apply_tool_error(
                     tool_name=resolved_name,
                     tool_call_id=tool_call_id,
-                    error=tool_response.error,
+                    error=tool_response.error or "Unknown tool error",
                     parameters=visible_params,
+                    tool=resolved_tool,
+                    tool_call=tool_call,
+                    tool_response=tool_response,
                 )
 
         except Exception as e:
@@ -234,12 +251,14 @@ class ToolExecutor:
             )
 
             # Emit error event
-            self.agent.do(
-                AgentEvents.TOOL_CALL_ERROR,
+            tool_response = await self._apply_tool_error(
                 tool_name=resolved_name,
                 tool_call_id=tool_call_id,
-                error=str(e),
+                error=e,
                 parameters=visible_params,
+                tool=resolved_tool,
+                tool_call=tool_call,
+                tool_response=tool_response,
             )
 
         # Add assistant message with tool call if not skipped
@@ -470,12 +489,14 @@ class ToolExecutor:
                     success=tool_response.success,
                 )
             else:
-                self.agent.do(
-                    AgentEvents.TOOL_CALL_ERROR,
+                tool_response = await self._apply_tool_error(
                     tool_name=tool_response.tool_name,
                     tool_call_id=tool_response.tool_call_id,
-                    error=tool_response.error,
+                    error=tool_response.error or "Unknown tool error",
                     parameters=tool_response.parameters,
+                    tool=tool,
+                    tool_call=None,
+                    tool_response=tool_response,
                 )
 
         return results
@@ -597,6 +618,15 @@ class ToolExecutor:
                     error=f"Tool '{tool_name}' not found",
                 )
 
+                tool_response = await self._apply_tool_error(
+                    tool_name=tool_name,
+                    tool_call_id=tool_call.id,
+                    error=tool_response.error or "Tool not found",
+                    parameters=tool_call.parameters,
+                    tool_call=tool_call,
+                    tool_response=tool_response,
+                )
+
                 # Create and add tool message for the error
                 tool_message = self.agent.model.create_message(
                     content=self._format_tool_message_content(tool_response),
@@ -606,15 +636,6 @@ class ToolExecutor:
                     role="tool",
                 )
                 self.agent.append(tool_message)
-
-                # Emit error event
-                self.agent.do(
-                    AgentEvents.TOOL_CALL_ERROR,
-                    tool_name=tool_name,
-                    tool_call_id=tool_call.id,
-                    error=tool_response.error,
-                    parameters=tool_call.parameters,
-                )
                 yield tool_message
             else:
                 tool_response = await self.invoke(
@@ -799,6 +820,71 @@ class ToolExecutor:
         return len(self.get_pending_tool_calls()) > 0
 
     # Helper methods
+
+    async def _apply_tool_error(
+        self,
+        *,
+        tool_name: str,
+        tool_call_id: str | None,
+        error: Exception | str,
+        parameters: dict[str, Any] | None = None,
+        tool: Tool | Callable | None = None,
+        tool_call: ToolCall | None = None,
+        tool_response: ToolResponse | None = None,
+    ) -> ToolResponse:
+        """Dispatch TOOL_CALL_ERROR with apply() and return fallback response if provided."""
+
+        ctx = await self._apply_tool_event(
+            AgentEvents.TOOL_CALL_ERROR,
+            tool_name=tool_name,
+            tool_call_id=tool_call_id,
+            error=error,
+            parameters=parameters,
+            tool=tool,
+            tool_call=tool_call,
+            response=tool_response,
+        )
+
+        if not isinstance(ctx, EventContext):
+            final_response = tool_response or ToolResponse(
+                tool_name=tool_name,
+                tool_call_id=tool_call_id or f"call_{ULID()}",
+                response=None,
+                parameters=parameters or {},
+                success=False,
+                error=str(error),
+            )
+        elif isinstance(ctx.return_value, ToolResponse):
+            final_response = ctx.return_value
+        elif ctx.return_value is not None:
+            final_response = self._coerce_tool_response(
+                ctx.return_value,
+                tool_name,
+                tool_call_id or f"call_{ULID()}",
+                parameters or {},
+            )
+        elif tool_response is not None:
+            final_response = tool_response
+        else:
+            final_response = ToolResponse(
+                tool_name=tool_name,
+                tool_call_id=tool_call_id or f"call_{ULID()}",
+                response=None,
+                parameters=parameters or {},
+                success=False,
+                error=str(error),
+            )
+
+        self.agent.do(
+            AgentEvents.TOOL_CALL_ERROR,
+            tool_name=tool_name,
+            tool_call_id=final_response.tool_call_id,
+            error=final_response.error or str(error),
+            parameters=parameters,
+            response=final_response,
+        )
+
+        return final_response
 
     def _coerce_tool_response(
         self,

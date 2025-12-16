@@ -11,6 +11,7 @@ from collections.abc import (
     Awaitable,
     Callable,
     Coroutine,
+    Iterable,
     Iterator,
     Sequence,
 )
@@ -76,9 +77,12 @@ from good_agent.agent.pool import AgentPool
 from good_agent.content import FileContentPart, ImageContentPart
 from good_agent.core.components import AgentComponent
 from good_agent.events import (  # Import typed event parameters
+    AgentCloseParams,
     AgentEvents,
     AgentInitializeParams,
     ExecuteBeforeParams,
+    ExecuteErrorParams,
+    ExecuteIterationAfterParams,
     ExecuteIterationParams,
 )
 from good_agent.extensions.template_manager import (
@@ -1804,72 +1808,112 @@ class Agent(EventRouter):
                 message_index += 1
                 yield tool_message
 
-        while iterations < max_iterations:
-            # Emit execute:iteration event (interceptable)
-            iteration_ctx = await self.apply_typed(
-                AgentEvents.EXECUTE_ITERATION_BEFORE,
-                ExecuteIterationParams,
-                dict[str, Any] | None,
+        try:
+            while iterations < max_iterations:
+                # Emit execute:iteration event (interceptable)
+                iteration_ctx = await self.apply_typed(
+                    AgentEvents.EXECUTE_ITERATION_BEFORE,
+                    ExecuteIterationParams,
+                    dict[str, Any],
+                    agent=self,
+                    iteration=iterations,
+                    messages_count=len(self.messages),
+                )
+
+                iteration_directive = iteration_ctx.return_value or {}
+                response: Message | None = None
+                should_continue = True
+
+                if isinstance(iteration_directive, dict):
+                    if iteration_directive.get("skip"):
+                        iterations += 1
+                        iteration_after_params: ExecuteIterationAfterParams = {
+                            "agent": self,
+                            "iteration": iterations - 1,
+                            "messages_count": len(self.messages),
+                            "response": response,
+                        }
+                        self.do(AgentEvents.EXECUTE_ITERATION_AFTER, **iteration_after_params)
+                        continue
+
+                    precomputed = iteration_directive.get("response")
+                    if precomputed is not None:
+                        response = precomputed
+                    else:
+                        response = await self._llm_call(**kwargs)
+                else:
+                    # Call the LLM to get next response (without auto-executing tools)
+                    response = await self._llm_call(**kwargs)
+
+                iterations += 1
+
+                # Set iteration index
+                response._i = message_index
+                message_index += 1
+
+                # Yield the response
+                yield response
+
+                # Check if the response has tool calls that need to be executed
+                if isinstance(response, AssistantMessage) and response.tool_calls:
+                    # Resolve the tool calls that were just added
+                    async for tool_message in self._tool_executor.resolve_pending_tool_calls():
+                        tool_message._i = message_index
+                        message_index += 1
+                        # Yield each tool response message
+                        yield tool_message
+
+                    # Check for mode transitions triggered by tool calls
+                    if self._mode_manager.has_pending_transition():
+                        from good_agent.agent.modes import ModeExitBehavior
+
+                        exit_behavior = await self._mode_manager.apply_scheduled_mode_changes()
+
+                        # Handle exit behavior if a mode exited
+                        if exit_behavior is not None:
+                            if exit_behavior == ModeExitBehavior.STOP:
+                                # Don't call LLM again, end execution
+                                should_continue = False
+                            elif (
+                                exit_behavior == ModeExitBehavior.AUTO
+                                and not self._is_conversation_pending()
+                            ):
+                                # Only continue if conversation is pending
+                                should_continue = False
+                            # CONTINUE: fall through to next iteration
+                else:
+                    # No tool calls in response, execution complete
+                    should_continue = False
+
+                iteration_after_payload: ExecuteIterationAfterParams = {
+                    "agent": self,
+                    "iteration": iterations - 1,
+                    "messages_count": len(self.messages),
+                    "response": response,
+                }
+                self.do(AgentEvents.EXECUTE_ITERATION_AFTER, **iteration_after_payload)
+
+                if not should_continue:
+                    break
+        except (asyncio.CancelledError, KeyboardInterrupt):
+            raise
+        except Exception as exc:
+            error_ctx: EventContext[ExecuteErrorParams, Any] = await self.apply_typed(
+                AgentEvents.EXECUTE_ERROR,
+                ExecuteErrorParams,
+                None,
                 agent=self,
+                error=exc,
                 iteration=iterations,
-                messages_count=len(self.messages),
             )
 
-            iteration_directive = iteration_ctx.return_value or {}
-            if isinstance(iteration_directive, dict):
-                if iteration_directive.get("skip"):
-                    iterations += 1
-                    continue
+            recovery = error_ctx.return_value
+            if recovery is not None:
+                async for recovered in self._yield_recovery_messages(recovery):
+                    yield recovered
+                return
 
-                precomputed = iteration_directive.get("response")
-                if precomputed is not None:
-                    response = precomputed
-                else:
-                    response = await self._llm_call(**kwargs)
-            else:
-                # Call the LLM to get next response (without auto-executing tools)
-                response = await self._llm_call(**kwargs)
-            iterations += 1
-
-            # Set iteration index
-            response._i = message_index
-            message_index += 1
-
-            # Yield the response
-            yield response
-
-            # Check if the response has tool calls that need to be executed
-            if response.tool_calls:
-                # Resolve the tool calls that were just added
-                async for tool_message in self._tool_executor.resolve_pending_tool_calls():
-                    tool_message._i = message_index
-                    message_index += 1
-                    # Yield each tool response message
-                    yield tool_message
-
-                # Check for mode transitions triggered by tool calls
-                if self._mode_manager.has_pending_transition():
-                    from good_agent.agent.modes import ModeExitBehavior
-
-                    exit_behavior = await self._mode_manager.apply_scheduled_mode_changes()
-
-                    # Handle exit behavior if a mode exited
-                    if exit_behavior is not None:
-                        if exit_behavior == ModeExitBehavior.STOP:
-                            # Don't call LLM again, end execution
-                            break
-                        elif (
-                            exit_behavior == ModeExitBehavior.AUTO
-                            and not self._is_conversation_pending()
-                        ):
-                            # Only continue if conversation is pending
-                            break
-                        # CONTINUE: fall through to next iteration
-
-                # Continue to next iteration for another LLM call
-            else:
-                # No tool calls in response, execution complete
-                break
+            raise
 
         # Emit execute:complete event
         final_message = self.messages[-1] if self.messages else None
@@ -1879,6 +1923,32 @@ class Agent(EventRouter):
             iterations=iterations,
             final_message=final_message,
         )
+
+    async def _yield_recovery_messages(self, recovery: Any) -> AsyncIterator[Message]:
+        """Normalize recovery payloads from EXECUTE_ERROR handlers into messages."""
+
+        async def append_if_needed(msg: Message) -> None:
+            if msg in self._messages:
+                return
+            await self.append_async(msg)
+
+        if isinstance(recovery, Message):
+            await append_if_needed(recovery)
+            yield recovery
+            return
+
+        if isinstance(recovery, AsyncIterator):
+            async for msg in recovery:
+                if isinstance(msg, Message):
+                    await append_if_needed(msg)
+                yield msg
+            return
+
+        if isinstance(recovery, Iterable):
+            for msg in recovery:
+                if isinstance(msg, Message):
+                    await append_if_needed(msg)
+                yield msg
 
     @on(AgentEvents.MESSAGE_APPEND_AFTER)
     def _handle_message_append(self, ctx: EventContext[Any, Message], **_kwargs):
@@ -2568,16 +2638,48 @@ class Agent(EventRouter):
         This automatically calls events.join() to wait for all EventRouter tasks to complete,
         preventing "Task was destroyed but it is pending!" warnings.
         """
-        # Cancel init task if still running
-        if self._state_machine._init_task and not self._state_machine._init_task.done():
-            self._state_machine._init_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await self._state_machine._init_task
+        reason = str(exc_val) if exc_val else None
+        await self.close(reason=reason)
 
-        # Cancel managed tasks
-        await self.tasks.cancel_all()
+    async def close(self, reason: str | None = None) -> None:
+        """Clean up resources with lifecycle events."""
 
-        await self.join()
+        close_ctx = await self.apply_typed(
+            AgentEvents.AGENT_CLOSE_BEFORE,
+            AgentCloseParams,
+            str,
+            agent=self,
+            reason=reason,
+        )
+
+        if close_ctx.return_value is not None:
+            reason = close_ctx.return_value
+
+        try:
+            if self._state_machine._init_task and not self._state_machine._init_task.done():
+                self._state_machine._init_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await self._state_machine._init_task
+
+            await self.tasks.cancel_all()
+            await self.join()
+            await super().close()
+        finally:
+            self.do(AgentEvents.AGENT_CLOSE_AFTER, agent=self, reason=reason)
+            await self.join()
+
+    def close_sync(self, reason: str | None = None) -> None:
+        """Synchronous close helper that emits lifecycle events."""
+
+        try:
+            asyncio.run(self.close(reason=reason))
+        except RuntimeError:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self.close(reason=reason))
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        reason = str(exc_val) if exc_val else None
+        self.close_sync(reason=reason)
 
     def get_token_count(
         self,

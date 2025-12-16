@@ -14,6 +14,10 @@ class AgentEvents(StrEnum):
     AGENT_INIT_BEFORE = "agent:init:before"
     AGENT_INIT_AFTER = "agent:init:after"  # Replaces AGENT_INITIALIZED
 
+    # Agent closing
+    AGENT_CLOSE_BEFORE = "agent:close:before"
+    AGENT_CLOSE_AFTER = "agent:close:after"
+
     # Agent state changes
     AGENT_STATE_CHANGE = "agent:state:change"
 

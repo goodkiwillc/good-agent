@@ -4,6 +4,7 @@ import pytest
 
 from good_agent import Agent, AgentEvents, EventContext, Tool
 from good_agent.agent.tools import ToolExecutor
+from good_agent.tools import ToolResponse
 
 
 @pytest.fixture
@@ -106,6 +107,36 @@ class TestToolLifecycle:
         error_calls = [c for c in calls if c[0][0] == AgentEvents.TOOL_CALL_ERROR]
         assert len(error_calls) == 1
         assert error_calls[0][1]["error"] == "Tool execution failed"
+
+    @pytest.mark.asyncio
+    async def test_tool_call_error_allows_fallback_response(self, tool_executor, mock_agent):
+        """TOOL_CALL_ERROR apply hook can supply fallback ToolResponse."""
+
+        async def failing_tool(_agent=None, _tool_call=None):
+            raise ValueError("fail")
+
+        tool = Tool(failing_tool, name="failing_tool")
+
+        async def apply_mock(event, **kwargs):
+            ctx = EventContext(parameters=kwargs, event=event)
+            if event == AgentEvents.TOOL_CALL_ERROR:
+                ctx.output = ToolResponse(
+                    tool_name=kwargs.get("tool_name", "failing_tool"),
+                    tool_call_id=kwargs.get("tool_call_id", "call"),
+                    response="fallback",
+                    parameters=kwargs.get("parameters", {}),
+                    success=True,
+                    error=None,
+                )
+            return ctx
+
+        mock_agent.events.apply.side_effect = apply_mock
+
+        result = await tool_executor.invoke(tool)
+
+        assert result.success is True
+        assert result.error is None
+        assert result.response == "fallback"
 
     @pytest.mark.asyncio
     async def test_tool_call_parameter_coercion(self, tool_executor, mock_agent):
