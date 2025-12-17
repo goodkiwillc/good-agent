@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.3] - 2025-12-17
+
+- TODO: Document release notes.
+
+
 ### BREAKING CHANGES
 - **Singular mode entry API**: Enter modes with `agent.mode("name", **params)`.
   The legacy `agent.modes["name"]` indexer now raises an error to prevent
