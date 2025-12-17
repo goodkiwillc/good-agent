@@ -1,4 +1,5 @@
 import logging
+import warnings
 
 import pytest
 
@@ -208,6 +209,7 @@ class TestMessageRenderEvent:
     @pytest.mark.asyncio
     async def test_render_event_transforms_for_display(self, recwarn):
         """MESSAGE_RENDER_BEFORE transforms citations for DISPLAY mode."""
+        warnings.filterwarnings("ignore", message="unclosed event loop", category=ResourceWarning)
         manager = CitationManager()
         agent = Agent(extensions=[manager])
         await agent.initialize()

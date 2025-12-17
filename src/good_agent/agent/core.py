@@ -4,6 +4,7 @@ import asyncio
 import contextlib
 import functools
 import logging
+import threading
 import warnings
 import weakref
 from collections.abc import (
@@ -38,6 +39,7 @@ from good_agent.agent.components import ComponentRegistry
 from good_agent.agent.context import ContextManager
 from good_agent.agent.hooks import HooksAccessor
 from good_agent.agent.llm import LLMCoordinator
+from good_agent.agent.locking import ReentrantAsyncLock
 from good_agent.agent.messages import MessageManager
 from good_agent.agent.modes import (
     MODE_HANDLER_SKIP_KWARG,
@@ -145,6 +147,7 @@ T_AgentComponent = TypeVar("T_AgentComponent", bound=AgentComponent)
 
 ToolFuncParams = ParamSpec("ToolFuncParams")
 T_FuncResp = TypeVar("T_FuncResp")
+T_State = TypeVar("T_State")
 
 
 def _is_choices_instance(obj: Any) -> TypeGuard[Choices]:
@@ -464,6 +467,9 @@ class Agent(EventRouter):
         self._messages = MessageList[Message]()
         self._messages._set_agent(self)
 
+        # Initialize state lock for serializing mutations
+        self._state_lock = ReentrantAsyncLock()
+
         # Initialize identifiers
         self._id = create_monotonic_ulid()
         self._session_id = self._id  # Session ID starts as agent ID, but can be overridden
@@ -508,6 +514,9 @@ class Agent(EventRouter):
         # Initialize mode manager and accessor
         self._mode_manager = ModeManager(self)
         self._mode_accessor = ModeAccessor(self._mode_manager)
+
+        # Thread-safe proxy initialized lazily
+        self._threadsafe_proxy: AgentThreadsafeProxy | None = None
 
         # Lazy-created hooks accessor
         self._hooks_accessor: HooksAccessor | None = None
@@ -708,6 +717,49 @@ class Agent(EventRouter):
         uses ``agent.apply(...)`` - it now just returns ``self``.
         """
         return self
+
+    @property
+    def state_lock(self) -> ReentrantAsyncLock:
+        """Async lock guarding Agent state mutations."""
+
+        return self._state_lock
+
+    @contextlib.asynccontextmanager
+    async def state_guard(self) -> AsyncIterator[None]:
+        """Serialize stateful operations under the Agent lock."""
+
+        current_task = asyncio.current_task()
+        owner_id = id(current_task) if current_task else id(threading.current_thread())
+
+        await self._state_lock.acquire(owner_id=owner_id)
+        try:
+            yield
+        finally:
+            await self._state_lock.release(owner_id=owner_id)
+
+    async def run_state_guarded(
+        self, coro: Awaitable[T_State] | Callable[[], Awaitable[T_State]]
+    ) -> T_State:
+        """Run the given coroutine while holding the Agent state lock."""
+
+        async with self.state_guard():
+            coro_obj = coro() if callable(coro) else coro
+            task: asyncio.Task[T_State] = asyncio.ensure_future(coro_obj)  # type: ignore[arg-type]
+            try:
+                return await task
+            finally:
+                if not task.done():
+                    task.cancel()
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await task
+
+    @property
+    def threadsafe(self) -> AgentThreadsafeProxy:
+        """Thread-safe proxy scheduling work onto the Agent's event loop."""
+
+        if self._threadsafe_proxy is None:
+            self._threadsafe_proxy = AgentThreadsafeProxy(self)
+        return self._threadsafe_proxy
 
     @property
     def hooks(self) -> HooksAccessor:
@@ -1708,7 +1760,7 @@ class Agent(EventRouter):
             skip_mode_handler = kwargs.pop(MODE_HANDLER_SKIP_KWARG, False)
 
             if not skip_mode_handler:
-                await self._mode_manager.apply_scheduled_mode_changes()
+                await self.run_state_guarded(self._mode_manager.apply_scheduled_mode_changes)
 
             # Append input message if provided
             if content_parts:
@@ -1747,23 +1799,24 @@ class Agent(EventRouter):
 
         params = dict(transition.parameters or {})
 
-        if transition.transition_type == "exit":
-            await self._mode_manager.exit_mode()
-            return
-
-        if transition.transition_type in {"switch", "push"}:
-            if not transition.target_mode:
-                raise ValueError(
-                    f"Mode transition '{transition.transition_type}' requires a target mode"
-                )
-
-            if transition.transition_type == "switch":
+        async with self.state_guard():
+            if transition.transition_type == "exit":
                 await self._mode_manager.exit_mode()
+                return
 
-            await self._mode_manager.enter_mode(transition.target_mode, **params)
-            return
+            if transition.transition_type in {"switch", "push"}:
+                if not transition.target_mode:
+                    raise ValueError(
+                        f"Mode transition '{transition.transition_type}' requires a target mode"
+                    )
 
-        raise ValueError(f"Unknown mode transition type: {transition.transition_type}")
+                if transition.transition_type == "switch":
+                    await self._mode_manager.exit_mode()
+
+                await self._mode_manager.enter_mode(transition.target_mode, **params)
+                return
+
+            raise ValueError(f"Unknown mode transition type: {transition.transition_type}")
 
     @ensure_ready
     async def execute(
@@ -1787,21 +1840,22 @@ class Agent(EventRouter):
         skip_mode_handler = kwargs.pop(MODE_HANDLER_SKIP_KWARG, False)
 
         if not skip_mode_handler:
-            await self._mode_manager.apply_scheduled_mode_changes()
+            await self.run_state_guarded(self._mode_manager.apply_scheduled_mode_changes)
 
         # Append input message if provided
         if content_parts:
             await self.append_async(*content_parts, role=role, context=context)
 
         # Emit execute:start event (interceptable)
-        execute_ctx = await self.apply_typed(
-            AgentEvents.EXECUTE_BEFORE,
-            ExecuteBeforeParams,
-            int,
-            agent=self,
-            max_iterations=max_iterations,
-            output=max_iterations,
-        )
+        async with self.state_guard():
+            execute_ctx = await self.apply_typed(
+                AgentEvents.EXECUTE_BEFORE,
+                ExecuteBeforeParams,
+                int,
+                agent=self,
+                max_iterations=max_iterations,
+                output=max_iterations,
+            )
 
         if execute_ctx.return_value is not None:
             max_iterations = int(execute_ctx.return_value)
@@ -1823,14 +1877,15 @@ class Agent(EventRouter):
         try:
             while iterations < max_iterations:
                 # Emit execute:iteration event (interceptable)
-                iteration_ctx = await self.apply_typed(
-                    AgentEvents.EXECUTE_ITERATION_BEFORE,
-                    ExecuteIterationParams,
-                    dict[str, Any],
-                    agent=self,
-                    iteration=iterations,
-                    messages_count=len(self.messages),
-                )
+                async with self.state_guard():
+                    iteration_ctx = await self.apply_typed(
+                        AgentEvents.EXECUTE_ITERATION_BEFORE,
+                        ExecuteIterationParams,
+                        dict[str, Any],
+                        agent=self,
+                        iteration=iterations,
+                        messages_count=len(self.messages),
+                    )
 
                 iteration_directive = iteration_ctx.return_value or {}
                 response: Message | None = None
@@ -1879,7 +1934,9 @@ class Agent(EventRouter):
                     if self._mode_manager.has_pending_transition():
                         from good_agent.agent.modes import ModeExitBehavior
 
-                        exit_behavior = await self._mode_manager.apply_scheduled_mode_changes()
+                        exit_behavior = await self.run_state_guarded(
+                            self._mode_manager.apply_scheduled_mode_changes
+                        )
 
                         # Handle exit behavior if a mode exited
                         if exit_behavior is not None:
@@ -1903,7 +1960,8 @@ class Agent(EventRouter):
                     "messages_count": len(self.messages),
                     "response": response,
                 }
-                self.do(AgentEvents.EXECUTE_ITERATION_AFTER, **iteration_after_payload)
+                async with self.state_guard():
+                    self.do(AgentEvents.EXECUTE_ITERATION_AFTER, **iteration_after_payload)
 
                 if not should_continue:
                     break
@@ -1929,12 +1987,13 @@ class Agent(EventRouter):
 
         # Emit execute:complete event
         final_message = self.messages[-1] if self.messages else None
-        self.do(
-            AgentEvents.EXECUTE_AFTER,
-            agent=self,
-            iterations=iterations,
-            final_message=final_message,
-        )
+        async with self.state_guard():
+            self.do(
+                AgentEvents.EXECUTE_AFTER,
+                agent=self,
+                iterations=iterations,
+                final_message=final_message,
+            )
 
     async def _yield_recovery_messages(self, recovery: Any) -> AsyncIterator[Message]:
         """Normalize recovery payloads from EXECUTE_ERROR handlers into messages."""
@@ -2677,6 +2736,9 @@ class Agent(EventRouter):
             await self.join()
             await super().close()
         finally:
+            self._message_manager.shutdown_blocking_loop()
+            with contextlib.suppress(Exception):
+                self._state_lock.close()
             self.do(AgentEvents.AGENT_CLOSE_AFTER, agent=self, reason=reason)
             await self.join()
 
@@ -2692,6 +2754,13 @@ class Agent(EventRouter):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         reason = str(exc_val) if exc_val else None
         self.close_sync(reason=reason)
+
+    def __del__(self) -> None:
+        with contextlib.suppress(Exception):
+            if hasattr(self, "_state_lock"):
+                self._state_lock.close()
+            if hasattr(self, "_message_manager"):
+                self._message_manager.shutdown_blocking_loop()
 
     def get_token_count(
         self,
@@ -2792,3 +2861,43 @@ class Agent(EventRouter):
     def __bool__(self):
         """Agent is always truthy - avoids __len__ conflict."""
         return True
+
+
+class AgentThreadsafeProxy:
+    """Thread-safe facade that schedules Agent work onto its event loop."""
+
+    def __init__(self, agent: Agent) -> None:
+        self._agent = agent
+
+    def _run(self, coro: Awaitable[T_State], timeout: float | None = None) -> T_State:
+        async def runner() -> T_State:
+            if timeout is not None:
+                return await asyncio.wait_for(coro, timeout)
+            return await coro
+
+        return self._agent._message_manager._run_blocking(runner())
+
+    def call(
+        self,
+        *content_parts: MessageContent,
+        **kwargs: Any,
+    ) -> AssistantMessage | AssistantMessageStructuredOutput[Any]:
+        """Thread-safe wrapper around :meth:`Agent.call`."""
+
+        return self._run(self._agent.call(*content_parts, **kwargs))
+
+    def execute(self, *content_parts: MessageContent, **kwargs: Any) -> list[Message]:
+        """Run ``Agent.execute`` from another thread and return yielded messages."""
+
+        async def _collect() -> list[Message]:
+            messages: list[Message] = []
+            async for msg in self._agent.execute(*content_parts, **kwargs):
+                messages.append(msg)
+            return messages
+
+        return self._run(_collect())
+
+    def append(self, *content_parts: MessageContent, **kwargs: Any) -> Message:
+        """Append a message from another thread using the Agent lock."""
+
+        return self._run(self._agent.append_async(*content_parts, **kwargs))

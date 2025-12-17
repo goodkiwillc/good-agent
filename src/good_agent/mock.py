@@ -1281,6 +1281,7 @@ class MockLanguageModel(AgentComponent):
     name = "language_model"
 
     def __init__(self, config, **kwargs):
+        super().__init__()
         self._local_config = (
             config if isinstance(config, AgentConfigManager) else MockAgentConfigManager(config)
         )

@@ -10,6 +10,7 @@ import vcr  # type: ignore[import-untyped]
 from pydantic import PydanticDeprecatedSince20, PydanticDeprecatedSince211
 
 from good_agent.core.event_router import current_test_nodeid
+from good_agent.events import decorators as event_decorators
 
 # ---------------------------------------------------------------------------
 # Coverage policy helpers
@@ -48,6 +49,12 @@ warnings.filterwarnings(
     module="pydantic.main",
 )
 
+# Ignore resource warnings from event loop cleanup in tests that intentionally don't await agent.close()
+warnings.filterwarnings(
+    "ignore",
+    message="unclosed event loop",
+    category=ResourceWarning,
+)
 # LiteLLM vendored models still rely on Pydantic's class-based config; silence the
 # deprecation warnings until upstream publishes a ConfigDict-compatible release.
 warnings.filterwarnings(
@@ -69,6 +76,18 @@ warnings.filterwarnings(
     category=DeprecationWarning,
     module="litellm.litellm_core_utils.logging_utils",
 )
+
+# TypedEventHandlersMixin deprecation is covered by dedicated tests; suppress
+# repeats to avoid unrelated recwarn failures in downstream tests.
+warnings.filterwarnings(
+    "ignore",
+    message="TypedEventHandlersMixin is deprecated",
+    category=DeprecationWarning,
+)
+
+# Skip TypedEventHandlersMixin deprecation warnings entirely during tests to
+# avoid recwarn noise in unrelated suites.
+event_decorators._TYPED_EVENT_DEPRECATION_EMITTED = True
 
 # LiteLLM's httpx cleanup registers an atexit coroutine that can emit a runtime
 # warning when pytest tears down the event loop. Ignore the warning since we

@@ -220,14 +220,15 @@ class ToolExecutor:
 
             # Emit event based on success status
             if tool_response.success:
-                self.agent.do(
-                    AgentEvents.TOOL_CALL_AFTER,
-                    tool_name=resolved_name,
-                    tool_call_id=tool_call_id,
-                    response=tool_response,  # Pass the full ToolResponse object
-                    parameters=visible_params,
-                    success=True,
-                )
+                async with self.agent.state_guard():
+                    self.agent.do(
+                        AgentEvents.TOOL_CALL_AFTER,
+                        tool_name=resolved_name,
+                        tool_call_id=tool_call_id,
+                        response=tool_response,  # Pass the full ToolResponse object
+                        parameters=visible_params,
+                        success=True,
+                    )
             else:
                 tool_response = await self._apply_tool_error(
                     tool_name=resolved_name,
@@ -480,14 +481,15 @@ class ToolExecutor:
 
             # Emit events
             if tool_response.success:
-                self.agent.do(
-                    AgentEvents.TOOL_CALL_AFTER,
-                    tool_name=tool_response.tool_name,
-                    tool_call_id=tool_response.tool_call_id,
-                    response=tool_response,  # Pass the full ToolResponse object
-                    parameters=tool_response.parameters,
-                    success=tool_response.success,
-                )
+                async with self.agent.state_guard():
+                    self.agent.do(
+                        AgentEvents.TOOL_CALL_AFTER,
+                        tool_name=tool_response.tool_name,
+                        tool_call_id=tool_response.tool_call_id,
+                        response=tool_response,  # Pass the full ToolResponse object
+                        parameters=tool_response.parameters,
+                        success=tool_response.success,
+                    )
             else:
                 tool_response = await self._apply_tool_error(
                     tool_name=tool_response.tool_name,
@@ -875,14 +877,15 @@ class ToolExecutor:
                 error=str(error),
             )
 
-        self.agent.do(
-            AgentEvents.TOOL_CALL_ERROR,
-            tool_name=tool_name,
-            tool_call_id=final_response.tool_call_id,
-            error=final_response.error or str(error),
-            parameters=parameters,
-            response=final_response,
-        )
+        async with self.agent.state_guard():
+            self.agent.do(
+                AgentEvents.TOOL_CALL_ERROR,
+                tool_name=tool_name,
+                tool_call_id=final_response.tool_call_id,
+                error=final_response.error or str(error),
+                parameters=parameters,
+                response=final_response,
+            )
 
         return final_response
 

@@ -6,9 +6,12 @@ replacing, filtering, and system message management.
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import threading
 import warnings
-from typing import TYPE_CHECKING, Any, Literal, overload
+from collections.abc import Coroutine
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 from good_agent.core.event_router import EventContext
 from good_agent.core.types import URL
@@ -34,6 +37,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+T = TypeVar("T")
+
 
 class MessageManager:
     """Manages message list operations, filtering, and validation.
@@ -48,7 +53,41 @@ class MessageManager:
         Args:
             agent: The agent instance this manager belongs to
         """
+
         self.agent = agent
+        self._blocking_loop: asyncio.AbstractEventLoop | None = None
+        self._blocking_thread: threading.Thread | None = None
+
+    def __del__(self) -> None:
+        try:
+            self.shutdown_blocking_loop()
+        except Exception:
+            # Avoid raising during garbage collection
+            pass
+
+    def _run_blocking(self, coro: Coroutine[Any, Any, T]) -> T:
+        result: list[T] = []
+        error: list[BaseException] = []
+
+        def runner() -> None:
+            try:
+                result.append(asyncio.run(coro))
+            except BaseException as exc:  # noqa: BLE001 - propagate original exception
+                error.append(exc)
+
+        thread = threading.Thread(target=runner, name="AgentMessageLoop", daemon=True)
+        thread.start()
+        thread.join()
+
+        if error:
+            raise error[0]
+
+        return result[0]
+
+    def shutdown_blocking_loop(self) -> None:
+        # No persistent loop to shutdown with per-call asyncio.run
+        self._blocking_loop = None
+        self._blocking_thread = None
 
     @property
     def messages(self) -> MessageList[Message]:
@@ -130,42 +169,42 @@ class MessageManager:
         Returns:
             The message that was ultimately appended (after any interception).
         """
-
-        # Ensure handlers see the agent-bound message
-        message._set_agent(self.agent)
-
-        ctx: EventContext[MessageAppendBeforeParams, Message | None] = (
-            await self.agent.events.typed(MessageAppendBeforeParams, Message).apply(
-                AgentEvents.MESSAGE_APPEND_BEFORE,
-                message=message,
-                agent=self.agent,
-                output=message,
-            )
-        )
-
-        replacement = ctx.return_value
-        if replacement is None:
-            out = ctx.output
-            if isinstance(out, Message):
-                replacement = out
-
-        if replacement is not None:
-            message = replacement
+        async with self.agent.state_guard():
+            # Ensure handlers see the agent-bound message
             message._set_agent(self.agent)
 
-        # Add to message list
-        self.agent._messages.append(message)
+            ctx: EventContext[MessageAppendBeforeParams, Message | None] = (
+                await self.agent.events.typed(MessageAppendBeforeParams, Message).apply(
+                    AgentEvents.MESSAGE_APPEND_BEFORE,
+                    message=message,
+                    agent=self.agent,
+                    output=message,
+                )
+            )
 
-        # Store in global message store
-        put_message(message)
+            replacement = ctx.return_value
+            if replacement is None:
+                out = ctx.output
+                if isinstance(out, Message):
+                    replacement = out
 
-        # Update version
-        self.agent._update_version()
+            if replacement is not None:
+                message = replacement
+                message._set_agent(self.agent)
 
-        # Emit consistent MESSAGE_APPEND_AFTER event
-        self.agent.do(AgentEvents.MESSAGE_APPEND_AFTER, message=message, agent=self.agent)
+            # Add to message list
+            self.agent._messages.append(message)
 
-        return message
+            # Store in global message store
+            put_message(message)
+
+            # Update version
+            self.agent._update_version()
+
+            # Emit consistent MESSAGE_APPEND_AFTER event
+            self.agent.do(AgentEvents.MESSAGE_APPEND_AFTER, message=message, agent=self.agent)
+
+            return message
 
     @overload
     async def append_async(self, content: Message) -> Message: ...
@@ -193,100 +232,98 @@ class MessageManager:
         )
         return await self._append_message(message)
 
-    def replace_message(self, index: int, new_message: Message) -> None:
-        """Replace a message at the given index with a new message.
+    async def replace_message_async(self, index: int, new_message: Message) -> None:
+        """Async replacement of a message while holding the agent lock."""
 
-        This maintains message immutability - the old message still exists
-        in previous versions, but the current thread uses the new message.
-
-        Args:
-            index: Index of message to replace
-            new_message: New message to insert
-        """
         if index < 0 or index >= len(self.agent._messages):
             raise IndexError(f"Message index {index} out of range")
 
-        # Set agent reference on new message
-        new_message._set_agent(self.agent)
+        async with self.agent.state_guard():
+            new_message._set_agent(self.agent)
 
-        ctx = self.agent.apply_sync(
-            AgentEvents.MESSAGE_REPLACE_BEFORE,
-            index=index,
-            output=new_message,
-            agent=self.agent,
-        )
+            ctx = await self.agent.apply_typed(
+                AgentEvents.MESSAGE_REPLACE_BEFORE,
+                dict,
+                Message,
+                index=index,
+                output=new_message,
+                agent=self.agent,
+            )
 
-        new_message = ctx.return_value or new_message
+            new_message = ctx.return_value or new_message
 
-        # Replace the message
-        self.agent._messages[index] = new_message
+            self.agent._messages[index] = new_message
 
-        # Store in global message store
-        put_message(new_message)
+            put_message(new_message)
 
-        # Update version
-        self.agent._update_version()
+            self.agent._update_version()
 
-        # Emit message:replace event
-        self.agent.do(
-            AgentEvents.MESSAGE_REPLACE_AFTER,
-            index=index,
-            message=new_message,
-            agent=self.agent,
-        )
+            self.agent.do(
+                AgentEvents.MESSAGE_REPLACE_AFTER,
+                index=index,
+                message=new_message,
+                agent=self.agent,
+            )
+
+    def replace_message(self, index: int, new_message: Message) -> None:
+        """Replace a message at the given index with a new message."""
+
+        runner = self.replace_message_async(index, new_message)
+        self._run_blocking(runner)
+
+    async def set_system_message_async(
+        self,
+        *content: MessageContent,
+        message: SystemMessage | None = None,
+    ) -> None:
+        """Set or update the system message under the Agent lock."""
+
+        async with self.agent.state_guard():
+            if content:
+                message = self.agent.model.create_message(*content, role="system")
+
+            if not message:
+                raise ValueError("System message content is required")
+
+            message._set_agent(self.agent)
+
+            ctx: EventContext[Any, SystemMessage] = await self.agent.events.typed(
+                return_type=SystemMessage
+            ).apply(
+                AgentEvents.MESSAGE_SET_SYSTEM_BEFORE, output=message, agent=self.agent
+            )
+
+            if ctx.return_value is not None:
+                message = ctx.return_value
+
+            if self.agent._messages:
+                if isinstance(self.agent._messages[0], SystemMessage):
+                    self.agent._messages.replace_at(0, message)
+                else:
+                    self.agent._messages.prepend(message)
+            else:
+                self.agent._messages.append(message)
+
+            put_message(message)
+
+            self.agent.do(AgentEvents.MESSAGE_SET_SYSTEM_AFTER, message=message, agent=self.agent)
+
+            self.agent._update_version()
+
+            if self.agent.config.print_messages and message.role in (
+                self.agent.config.print_messages_role or [message.role]
+            ):
+                self.agent.print(message, mode=self.agent.config.print_messages_mode)
 
     def set_system_message(
         self,
         *content: MessageContent,
         message: SystemMessage | None = None,
     ) -> None:
-        """Set or update the system message.
+        """Set or update the system message."""
 
-        Args:
-            *content: Content parts for the system message
-            message: Pre-created system message (if not using content)
-        """
-        # Create system message
-        if content:
-            message = self.agent.model.create_message(*content, role="system")
-
-        if not message:
-            raise ValueError("System message content is required")
-
-        message._set_agent(self.agent)
-
-        ctx: EventContext[Any, SystemMessage] = self.agent.events.typed(
-            return_type=SystemMessage
-        ).apply_sync(AgentEvents.MESSAGE_SET_SYSTEM_BEFORE, output=message, agent=self.agent)
-
-        if ctx.return_value is not None:
-            message = ctx.return_value
-
-        # Check if we already have a system message
-        if self.agent._messages:
-            if isinstance(self.agent._messages[0], SystemMessage):
-                # Replace existing system message using versioning-aware method
-                self.agent._messages.replace_at(0, message)
-            else:
-                # Prepend system message using versioning-aware method
-                self.agent._messages.prepend(message)
-        else:
-            # First message - use append (which is versioning-aware)
-            self.agent._messages.append(message)
-
-        # Store in global message store (redundant if versioning is active, but kept for compatibility)
-        put_message(message)
-
-        # Fire the AFTER event so components can modify the system message
-        self.agent.do(AgentEvents.MESSAGE_SET_SYSTEM_AFTER, message=message, agent=self.agent)
-
-        # Update version
-        self.agent._update_version()
-
-        if self.agent.config.print_messages and message.role in (
-            self.agent.config.print_messages_role or [message.role]
-        ):
-            self.agent.print(message, mode=self.agent.config.print_messages_mode)
+        runner = self.set_system_message_async(*content, message=message)
+        self._run_blocking(runner)
 
     @overload
     def append(self, content: Message) -> None: ...
@@ -352,7 +389,7 @@ class MessageManager:
             *content_parts, role=role, context=context, citations=citations, **kwargs
         )
 
-        self.agent.events._sync_bridge.run_coroutine_from_sync(self._append_message(message))
+        self._run_blocking(self._append_message(message))
 
     def add_tool_response(
         self,

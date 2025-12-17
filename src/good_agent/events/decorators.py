@@ -14,6 +14,9 @@ if TYPE_CHECKING:
 F = TypeVar("F", bound=Callable[..., Any])
 
 
+_TYPED_EVENT_DEPRECATION_EMITTED = False
+
+
 @runtime_checkable
 class EventRouterProtocol(Protocol):
     """Protocol defining the interface that TypedEventHandlersMixin expects."""
@@ -52,11 +55,15 @@ class TypedEventHandlersMixin(EventRouterProtocol):
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[override]
-        warnings.warn(
-            "TypedEventHandlersMixin is deprecated; use agent.hooks instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
+        global _TYPED_EVENT_DEPRECATION_EMITTED
+
+        if not _TYPED_EVENT_DEPRECATION_EMITTED:
+            warnings.warn(
+                "TypedEventHandlersMixin is deprecated; use agent.hooks instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            _TYPED_EVENT_DEPRECATION_EMITTED = True
         super().__init__(*args, **kwargs)
 
     # ========================================================================
