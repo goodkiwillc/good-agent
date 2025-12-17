@@ -10,6 +10,12 @@
 - Provide a thread-safe proxy or helper that schedules Agent coroutines onto its loop (e.g., via `asyncio.run_coroutine_threadsafe`) while respecting the lock, enabling cross-thread usage without races.
 - Offer a guarded path for event handlers that mutate Agent state: either run them under the lock or explicitly document that only non-mutating handlers should use `do()`; prefer using `apply` for mutating hooks.
 
+## Implementation snapshot
+- `ReentrantAsyncLock` (per-Agent) runs on its own event loop/thread so acquisitions/releases work across tasks and external threads; ownership is tracked by ID for reentrancy.
+- `state_guard()` wraps all Agent state mutations (message append/replace/system set, mode transitions, execute loop emissions, tool call after/error) and is used by `run_state_guarded()` helpers.
+- `MessageManager._run_blocking()` uses a short-lived thread with `asyncio.run` to service sync wrappers without deadlocking the main agent loop; `shutdown_blocking_loop()`/`__del__` guard cleanup.
+- `AgentThreadsafeProxy` schedules `call/execute/append` onto the Agent loop via `_run_blocking` while holding the state lock, enabling safe cross-thread callers.
+
 ## Compatibility considerations
 - Default-on locking minimizes surprises; consider opt-out flag for callers relying on concurrent mutation (documented as unsafe today).
 - Preserve public APIs; changes are behavioral (serialization) and should not alter tool parallelism or event semantics beyond ordering guarantees for Agent state changes.

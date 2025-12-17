@@ -155,6 +155,22 @@ Agents manage background tasks and cleanup automatically:
 --8<-- "examples/docs/agent_cleanup.py"
 ```
 
+### Thread Safety & Locking
+
+Agents now serialize all state mutations (message append/replace/system, mode transitions, execute loop bookkeeping, tool emission) with a per-Agent reentrant async lock. Tool execution remains parallel; only their emissions are serialized. Cross-thread callers should use the thread-safe proxy to schedule work onto the Agent's loop while honoring the lock:
+
+```python
+from good_agent import Agent
+
+agent = Agent("Assistant")
+proxy = agent.threadsafe
+
+# In another thread:
+response = proxy.call("Hello from another thread")
+```
+
+For custom mutation, wrap work with `await agent.run_state_guarded(coro_fn)` or `async with agent.state_guard(): ...` to avoid races.
+
 ## Versioning & State
 
 ### Version Tracking
